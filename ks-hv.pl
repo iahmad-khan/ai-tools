@@ -1,6 +1,13 @@
 #! /usr/bin/perl -w
 
 # Todo:
+
+#
+# - generate "network" directives using MAC addresses
+# - work around AIMS bug (loop "aims2 showhost --full ...")
+# - note: unregistering from PXE does not work
+
+
 #  - filesystem layout?
 #       by default nova and glance uses:
 #          "/var/lib/nova/"
@@ -14,27 +21,41 @@ use Text::Template;
 use POSIX;
 use Getopt::Long;
 use Data::Dumper;
+use SOAP::Lite;# +trace => 'debug';
+use Net::Netrc;
 
 sub Packages($$$);
+sub LandbHostInfo($);
+sub SetupAims($);
 
-my $OS   = "rhel6";
-my $ARCH = "x86_64";
-my $rc = Getopt::Long::GetOptions("os=s"            => \$OS,
-                                  "arch=s"          => \$ARCH,
+my %data = ();
+my $debug = my $verbose = 0;
+my %landb_credentials = ();
+
+my $rc = Getopt::Long::GetOptions("os=s"            => \$data{OS},
+                                  "arch=s"          => \$data{ARCH},
+                                  "user=s"          => \$data{USER},
+                                  "debug"           => \$debug,
+                                  "verbose"         => \$verbose,
                                  );
 if (not $rc){
     print STDERR "Cannot parse options...\n";;
     exit 1;
 }
 
+$data{OS}     ||= "rhel6";
+$data{ARCH}   ||= "x86_64";
+$data{USER}   ||= (getpwuid($<))[0];
+$data{PASSWD} = '$1$ks7kG0$RT27ln7QlojbaLCyGMcoa1';
+
 my @os = qw(slc4 slc5 slc6 rhel4 rhel5 rhel6);
-if (not grep {$_ eq $OS} @os){
-    print "Unsupported OS \"$OS\"\n";
+if (not grep {$_ eq $data{OS}} @os){
+    print "Unsupported OS \"$data{OS}\"\n";
     exit 1;
 }
 my @arch = qw(i386 x86_64);
-if (not grep {$_ eq $ARCH} @arch){
-    print "Unsupported architecture \"$ARCH\"\n";
+if (not grep {$_ eq $data{ARCH}} @arch){
+    print "Unsupported architecture \"$data{ARCH}\"\n";
     exit 1;
 }
 my @host = @ARGV;
@@ -43,8 +64,6 @@ if (not @host){
     exit 1;
 }
 
-my %data = (OS => $OS, ARCH => $ARCH, BOOTLOADER => "");
-$data{USER} = (getpwuid($<))[0];
 
 #print Dumper(\%data);exit;
 
@@ -53,9 +72,36 @@ my $tpl = new Text::Template(TYPE    => "FILEHANDLE",
                              UNTAINT => 1,
                              SOURCE  => *DATA) or die "Couldn't construct template: $Text::Template::ERROR";
 
+my %todo = ();
+
 for my $host (@host){
     $data{HOSTNAME} = $host;
-    $data{"HOSTNAME_GE"} = "${host}-gigeth";
+    if (gethostbyname("${host}-gigeth")){
+	print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
+	$data{"HOSTNAME_GE"} = "${host}-gigeth";
+	my @landb = LandbHostInfo($host);
+	if (not @landb){
+	    print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
+	    next;
+	}
+	$data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
+	$data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
+	for (@landb){
+	    my ($name,$mac) = @$_;
+	    if ($name eq $host){
+		$data{NETWORK} .= "network --bootproto=dhcp --noipv6 --device=$mac --onboot=yes --hostname $host.cern.ch\n";
+	    }elsif ($name eq "${host}-gigeth"){
+		$data{NETWORK} .= "network --bootproto=dhcp --noipv6 --device=$mac --onboot=no\n";
+	    }
+	    #print ">>> $name,$mac\n";
+	}
+    }else{
+	$data{"HOSTNAME_GE"} = $host;
+	$data{NETWORK} = "network --bootproto=dhcp --device=eth0 --hostname $host.cern.ch";
+    }  
+#print $data{NETWORK}."\n";
+#exit;
+
     $data{KSFILE}   = POSIX::tmpnam();
     my $result = $tpl->fill_in(HASH => \%data);
     if (not defined $result) {
@@ -65,12 +111,159 @@ for my $host (@host){
     
     open(F,"> $data{KSFILE}");
     print F $result;
-#    print $result;
+    print $result if $debug;
     close F;
     (my $aims) = $result =~ /(aims2client .*)\n/;
-    print STDOUT "[INFO] Upload KS-file with \"$aims\"\n";
-    system("$aims; aims2client showhost $data{HOSTNAME_GE}");
-    #unlink $data{KSFILE};
+    %{$todo{$host}} = ( ksfile => $data{KSFILE},
+			aimscmd => $aims,
+                        gigeth  => $data{"HOSTNAME_GE"},
+    );
+}
+
+$rc = SetupAims(\%todo);
+
+
+print <<EOMESS;
+
+Right. So you think this is it? Think again...
+
+At the moment of writing this (Sept 22, 2011), there are quite some 
+problems to be/being investigated. Without going into the technical
+details, this is what you should do next to reinstall the machine:
+
+-- Remove the host from the puppetmaster CA to get puppet to configure
+   the host in the post-installation:
+
+      ssh root\@punch puppetca --clean <hostname>
+
+-- Reboot the host to start the installation:
+
+      ssh root\@<hostname> shutdown -r now
+
+-- To see installation in progress:
+
+      ssh lxadm connect2console.sh <hostname>
+
+-- For "*-gigeth" machines: once the installation is underway, run 
+
+      aims2 pxeoff <hostname>-gigeth
+
+    to break out on an install loop
+
+This should become simpler over time. Or not.
+
+
+EOMESS
+
+exit 0;
+
+sub SetupAims($){
+    my $href = shift @_;
+    my %todo = %$href;
+    #print Dumper(\%todo);
+    for my $host (sort keys %todo){
+	my $aims = $todo{$host}{aimscmd};
+        print STDOUT "[INFO] Upload KS-file with \"$aims\"\n";
+        system("$aims");
+        unlink $todo{$host}{ksfile};
+    }
+    print "[INFO] Verifying that AIMS is properly set up, patience please...\n";
+    my $rc = 0;
+    for my $host (sort keys %todo){
+	my $cnt = 0;
+	while (1){
+	    #print "\$cnt = $cnt\n";
+	    open(F,"aims2client showhost $todo{$host}{gigeth} --full |") or die "aargh...";
+	    my @out = grep /PXE boot synced:/, <F>;
+	    close F;
+	    my $out = "@out";
+	    if ($out =~ /PXE boot synced:\s+(\S+)\n/){
+		my $status = $1;
+		#print ">>> $status\n";
+		if (grep {$_ eq $status} qw(YYY YYN YNY NYY)){
+		    print "Machine \"$host\" is ready to be reinstalled.\n";
+		    $cnt = 0;
+		    last;
+		}
+	    }
+	    if ($cnt++ == 20){
+		print "Machine \"$host\" still not properly configured in AIMS, giving up...\n";
+		last;
+	    }
+	    print "Sleeping 5 seconds...\n";
+	    sleep 5;
+	}
+	$rc += $cnt;
+    }
+    
+    return ($rc ? 1 : 0);
+}
+
+sub LandbHostInfo($){
+    my $device = shift @_;
+
+    if (not %landb_credentials){
+	print "[VERB] Getting LANdb credentials\n" if $verbose;
+	my $mach = Net::Netrc->lookup("network.cern.ch");
+	if ($mach){
+	    $landb_credentials{user} = $mach->login;
+	    $landb_credentials{passwd} = $mach->password;
+	}else{
+	    use Term::ReadKey;
+	    print STDOUT "Please give the username/password combination to query LANdb: \n";
+	    print STDOUT "   - username : ";
+	    chomp($landb_credentials{user} = <STDIN>);
+	    if (not defined $landb_credentials{user}){
+		print STDERR "Failed to read a username, exiting\n";
+		exit 1;
+	    }
+	    print STDOUT "   - password : ";
+	    ReadMode("noecho",);
+	    chomp($landb_credentials{passwd} = <STDIN>);
+	    ReadMode("normal");
+	    print "\n";
+	    if (not defined $landb_credentials{passwd}){
+		print STDERR "failed to read a passwd, exiting\n";
+		exit 1;
+	    }
+
+	}
+    }
+    
+    my $client = SOAP::Lite
+	->uri('http://network.cern.ch/NetworkService')
+	->xmlschema('http://www.w3.org/2001/XMLSchema')
+	->proxy('https://network.cern.ch/sc/soap/soap.fcgi?v=4', keep_alive=>1);
+
+    # Get Auth token
+    my $call = $client->getAuthToken($landb_credentials{user},$landb_credentials{passwd},'NICE');
+    
+    my ($auth) = $call->result;
+    if ($call->fault){
+        print "ERROR: failed to authenticate to LANdb.\n";
+        exit 1;
+    }
+
+    my $authHeader = SOAP::Header->name('Auth' => { "token" => $auth });
+
+    $call = $client->getDeviceInfo($authHeader,$device);
+	
+    my $bu = $call->result;
+    if ($call->fault) {
+	print "[WARNING] Device \"$device\" not found in Landb, ignoring it...\n";
+	return ();
+    }
+    #print Dumper($bu);
+    my @landb = ();
+    for (@{$bu->{Interfaces}}) {
+	my $Name = lc($_->{Name});
+	my $HardwareAddress = $_->{BoundInterfaceCard}->{HardwareAddress};
+	$HardwareAddress =~ s/\-/:/g;
+	push(@landb,[$Name,$HardwareAddress]);
+    }
+    #print Dumper(\@landb);
+    #exit;
+    return @landb;
 }
 
 __END__
@@ -78,7 +271,7 @@ __END__
 #
 # KickStart file for {$HOSTNAME}
 #
-#   uploaded with : /usr/bin/aims2client addhost --hostname {$HOSTNAME_GE} --kickstart {$KSFILE} --kopts "text noipv6 network ks ksdevice=bootif latefcload" --pxe --name RHEL6_U1_{$ARCH}
+#   uploaded with : /usr/bin/aims2client addhost --hostname {$HOSTNAME_GE} --kickstart {$KSFILE} --kopts "text noipv6 network ks ksdevice=bootif latefcload console=tty0 console=ttyS2,9600n8" --pxe --name RHEL6_U1_{$ARCH}
 #
 ##############################################################################
 
@@ -86,23 +279,18 @@ text
 
 lang en_US
 
-network --bootproto=dhcp
-network --bootproto=dhcp --device=eth1 --onboot=no
-network --bootproto=dhcp --device=eth2 --onboot=yes --hostname {$HOSTNAME}.cern.ch
-#network --bootproto=dhcp --device=eth0 --hostname {$HOSTNAME_GE}.cern.ch
-#network --bootproto dhcp --device=eth1 --hostname {$HOSTNAME}.cern.ch
+{$NETWORK}
 
 # installation path
 url --url http://linuxsoft.cern.ch/enterprise/6Server_U1/en/os/{$ARCH}
     
-#xconfig --startxonboot
-
 keyboard us
 
 #mouse generic3ps/2
 
 zerombr
 
+# XXX Hardware specific!
 clearpart --drives sda --all
 zerombr
 part /boot    --size 1024 --ondisk sda 
@@ -120,7 +308,7 @@ timezone --utc Europe/Zurich
 
 skipx
 
-rootpw --iscrypted $1$ks7kG0$RT27ln7QlojbaLCyGMcoa1
+rootpw --iscrypted {$PASSWD}
 
 auth --enableshadow --enablemd5
 
@@ -131,6 +319,7 @@ selinux --enforcing
 firstboot --disable
 
 # FIXME logging host=<headnode> inneresting...
+logging --level=debug
 
 # services
 key --skip
@@ -142,7 +331,8 @@ services --disabled=pcscd,nfslock,netfs,portmap,rpcgssd,rpcidmapd,irqbalance,blu
 # bootloader
 bootloader --location=mbr --driveorder=sda
 
-vnc
+#vnc
+#sshpw --username={$USER} {$PASSWD} --iscrypted
 
 reboot
 
@@ -174,33 +364,8 @@ reboot
 %post
 
 fail () \{
-    #
-    # we cannot assume that mail is properly configured at this stage...
-    #
 
     /bin/cat /root/ks-post-anaconda.log | /bin/mail -s "Subject: install failed on {$HOSTNAME}: $1" {$USER}@mail.cern.ch
-
-    exec 4<>/dev/tcp/cernmxlb.cern.ch/25
-    /bin/sleep 2
-    /bin/echo -e "EHLO {$HOSTNAME}.cern.ch\r" >&4
-    /bin/sleep 5
-    /bin/echo -e "MAIL From:<root@{$HOSTNAME}.cern.ch>\r" >&4
-    /bin/sleep 2
-    /bin/echo -e "RCPT To:<{$USER}@mail.cern.ch>\r" >&4
-    /bin/sleep 2
-    # and off we go
-    /bin/echo -e "DATA\r" >&4
-    /bin/sleep 1
-    /bin/echo -e "Subject: install failed on {$HOSTNAME}: $1\r\n" >&4
-    /bin/sleep 1
-    /bin/cat /root/ks-post-anaconda.log >&4
-    /bin/echo -e "\r" >&4
-    /bin/sleep 1
-    /bin/echo -e ".\r" >&4
-    /bin/sleep 1
-    /bin/echo -e "QUIT\r" >&4
-    /bin/sleep 1
-    /bin/cat <&4
 
     exit -1
 \}
@@ -209,15 +374,17 @@ trap "fail unknown\ error" ERR
 
 # redirect the output to the log file
 exec >/root/ks-post-anaconda.log 2>&1
+#escript -f /root/ks-post-anaconda.log
 
 # show the output on the seventh console
 tail -f /root/ks-post-anaconda.log >/dev/tty7 &
 
 # try to save useful stuff
 /bin/mkdir /root/install-logs || :
+ls -l /tmp
 #/bin/cp /tmp/ks-script-*.log /root/ks-post-anaconda.log || :
 /bin/cp /tmp/ks-script-* /root/install-logs/ || :
-/bin/cp /tmp/anaconda.log /root/install-logs/ || :
+/bin/cp /tmp/*.log /root/install-logs/ || :
 
 set -x 
 
@@ -251,7 +418,7 @@ set -x
 #
 # Install & configure Puppet
 #
-/usr/bin/yum --enablerepo=epel-testing install puppet --assumeyes || :
+/usr/bin/yum --enablerepo=epel-testing install puppet ruby-rdoc --assumeyes || :
 
 /bin/cat <<EOFpuppet > /etc/puppet/puppet.conf
 # Initial puppet.conf to bootstrap the initial contact
@@ -277,10 +444,15 @@ EOFpuppet
 /sbin/chkconfig puppet on || :
 
 #
+# Bootstrap puppet
+#
+/usr/bin/puppet agent --no-daemonize --verbose --onetime --waitforcert 30 || :
+
+#
 # Ownership
 #
 #/usr/sbin/cern-config-users
-/bin/echo ai-admins@cern.ch > /root/.forward || :
+/bin/echo {$USER}@mail.cern.ch > /root/.forward || :
 /sbin/restorecon -v /root/.forward || :
 
 #
@@ -299,5 +471,7 @@ EOFpuppet
 #
 # Done
 #
+/bin/cat /root/ks-post-anaconda.log | /bin/mail -s "Subject: installation of {$HOSTNAME} successfully completed" {$USER}@mail.cern.ch
+
 exit 0
 
