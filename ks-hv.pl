@@ -2,9 +2,6 @@
 
 # Todo:
 
-#
-# - generate "network" directives using MAC addresses
-# - work around AIMS bug (loop "aims2 showhost --full ...")
 # - note: unregistering from PXE does not work
 
 
@@ -29,15 +26,22 @@ sub LandbHostInfo($);
 sub SetupAims($);
 
 my %data = ();
-my $debug = my $verbose = 0;
+my $debug = my $verbose = my $dryrun = 0;
+my %opts = (debug   => \$debug,
+            dryrun  => \$dryrun,
+            verbose => \$verbose);
+
 my %landb_credentials = ();
 
-my $rc = Getopt::Long::GetOptions("os=s"            => \$data{OS},
+my $rc = Getopt::Long::GetOptions(\%opts,
+				  "debug","dryrun","verbose","help",
+				  "os=s"            => \$data{OS},
                                   "arch=s"          => \$data{ARCH},
                                   "user=s"          => \$data{USER},
-                                  "debug"           => \$debug,
-                                  "verbose"         => \$verbose,
+                                  #"debug"           => \$debug,
+                                  #"verbose"         => \$verbose,
                                  );
+#print Dumper(\%opts);
 if (not $rc){
     print STDERR "Cannot parse options...\n";;
     exit 1;
@@ -64,6 +68,12 @@ if (not @host){
     exit 1;
 }
 
+my %AimsImg = (
+    rhel6 => "RHEL6_U1",
+    slc6  => "SLC6X",
+    rhel5 => "RHES_5_U7",
+    slc5  => "SLC5X",
+    );
 
 #print Dumper(\%data);exit;
 
@@ -102,25 +112,35 @@ for my $host (@host){
 #print $data{NETWORK}."\n";
 #exit;
 
-    $data{KSFILE}   = POSIX::tmpnam();
+    $data{KSFILE} = POSIX::tmpnam();
+
+    my $image = $AimsImg{$data{OS}} . "_" . $data{ARCH};
+    $data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $data{KSFILE} --kopts \"text noipv6 network ks ksdevice=bootif latefcload console=tty0 console=ttyS2,9600n8\" --pxe --name $image";
+
     my $result = $tpl->fill_in(HASH => \%data);
     if (not defined $result) {
         print STDERR "Couldn't fill in template: $Text::Template::ERROR\n";
         next;
     }
     
-    open(F,"> $data{KSFILE}");
+    if (not open(F,"> $data{KSFILE}")){
+        print STDERR "[ERROR] Could not open \"$data{KSFILE}\" for writing: $!\n";
+	next;
+    }
     print F $result;
     print $result if $debug;
     close F;
-    (my $aims) = $result =~ /(aims2client .*)\n/;
-    %{$todo{$host}} = ( ksfile => $data{KSFILE},
-			aimscmd => $aims,
+
+    %{$todo{$host}} = ( ksfile  => $data{KSFILE},
+			aimscmd => $data{AIMSCMD},
                         gigeth  => $data{"HOSTNAME_GE"},
     );
 }
 
-$rc = SetupAims(\%todo);
+if (SetupAims(\%todo)){
+    print STDERR "[ERROR] Upload to AIMS failed, exiting...\n";
+    exit 1;
+}
 
 
 print <<EOMESS;
@@ -164,15 +184,23 @@ exit 0;
 sub SetupAims($){
     my $href = shift @_;
     my %todo = %$href;
+    my $rc = 0;
     #print Dumper(\%todo);
     for my $host (sort keys %todo){
 	my $aims = $todo{$host}{aimscmd};
+	$aims = "/bin/echo $aims" if $dryrun;
         print STDOUT "[INFO] Upload KS-file with \"$aims\"\n";
-        system("$aims");
+        if (system("$aims") != 0){
+	    print STDERR "[ERROR] Upload to AIMS failed.\n";
+	    $rc++;
+	}
         unlink $todo{$host}{ksfile};
     }
+    return 1 if $rc;
+
     print "[INFO] Verifying that AIMS is properly set up, patience please...\n";
-    my $rc = 0;
+    return 0 if $dryrun;
+    $rc = 0;
     for my $host (sort keys %todo){
 	my $cnt = 0;
 	while (1){
@@ -275,7 +303,7 @@ __END__
 #
 # KickStart file for {$HOSTNAME}
 #
-#   uploaded with : /usr/bin/aims2client addhost --hostname {$HOSTNAME_GE} --kickstart {$KSFILE} --kopts "text noipv6 network ks ksdevice=bootif latefcload console=tty0 console=ttyS2,9600n8" --pxe --name RHEL6_U1_{$ARCH}
+#   uploaded with : {$AIMSCMD}
 #
 ##############################################################################
 
@@ -286,8 +314,16 @@ lang en_US
 {$NETWORK}
 
 # installation path
-url --url http://linuxsoft.cern.ch/enterprise/6Server_U1/en/os/{$ARCH}
-    
+{
+    if     ($OS eq  "slc4"){ $OUT .= "url --url http://linuxsoft.cern.ch/cern/slc4X/$ARCH";
+    }elsif ($OS eq  "slc5"){ $OUT .= "url --url http://linuxsoft.cern.ch/cern/slc5X/$ARCH";
+    }elsif ($OS eq  "slc6"){ $OUT .= "url --url http://linuxsoft.cern.ch/cern/slc6X/$ARCH";
+    }elsif ($OS eq "rhel4"){ $OUT .= "url --url http://linuxsoft.cern.ch/enterprise/4ES_U8/en/os/$ARCH";
+    }elsif ($OS eq "rhel5"){ $OUT .= "url --url http://linuxsoft.cern.ch/enterprise/5Server_U7/en/os/$ARCH";
+    }elsif ($OS eq "rhel6"){ $OUT .= "url --url http://linuxsoft.cern.ch/enterprise/6Server_U1/en/os/$ARCH";
+    }
+}
+
 keyboard us
 
 #mouse generic3ps/2
@@ -408,11 +444,16 @@ set -x
 #
 /usr/bin/wget -O /root/{$HOSTNAME_GE}.ks --quiet http://linuxsoft.cern.ch/aims2server/aims2ks.cgi\?{$HOSTNAME_GE}.ks || :
 
+{
+    if ($OS eq "rhel6"){ $OUT .= <<EOOUT
 #
 # YUM repo's
 #
 /usr/bin/wget -O /etc/yum.repos.d/rhel6.repo --quiet http://cern.ch/linux/rhel6/rhel6.repo
 /usr/bin/wget -O /etc/yum.repos.d/epel.repo  --quiet http://cern.ch/linux/rhel6/epel.repo
+EOOUT
+    }
+}
 
 #
 # Update the machine
