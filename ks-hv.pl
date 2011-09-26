@@ -20,10 +20,12 @@ use Getopt::Long;
 use Data::Dumper;
 use SOAP::Lite;# +trace => 'debug';
 use Net::Netrc;
+use File::Basename;
 
 sub Packages($$$);
 sub LandbHostInfo($);
 sub SetupAims($);
+sub HelpMessage();
 
 my %data = ();
 my $debug = my $verbose = my $dryrun = 0;
@@ -34,16 +36,15 @@ my %opts = (debug   => \$debug,
 my %landb_credentials = ();
 
 my $rc = Getopt::Long::GetOptions(\%opts,
-				  "debug","dryrun","verbose","help",
+				  "debug","dryrun","verbose",
 				  "os=s"            => \$data{OS},
                                   "arch=s"          => \$data{ARCH},
                                   "user=s"          => \$data{USER},
-                                  #"debug"           => \$debug,
-                                  #"verbose"         => \$verbose,
+                                  "help" => sub { HelpMessage() },
                                  );
 #print Dumper(\%opts);
 if (not $rc){
-    print STDERR "Cannot parse options...\n";;
+    HelpMessage();
     exit 1;
 }
 
@@ -181,6 +182,36 @@ EOMESS
 
 exit 0;
 
+sub HelpMessage(){
+
+    my $script = basename $0;
+    my $user = (getpwuid($<))[0];
+
+    print <<EOH;
+
+
+Usage: $script [options] hostname [hostname]
+
+       where options are
+
+           --os   [rhel6|slc6]    : operating system to install
+                                    default: "rhel6"
+           --arch [x86_64|i386]   : architecture to install
+                                    default: "x86_64"
+           --user <username>      : username to be used for LANdb lookups, e-mail sending, etc
+                                    default "$user" :)
+
+           --help     : print this help
+           --verbose  : print more output
+           --debug    : print even more output
+           --dryrun   : do not upload to AIMS
+
+EOH
+
+exit 0;
+
+}
+
 sub SetupAims($){
     my $href = shift @_;
     my %todo = %$href;
@@ -205,7 +236,9 @@ sub SetupAims($){
 	my $cnt = 0;
 	while (1){
 	    #print "\$cnt = $cnt\n";
-	    open(F,"aims2client showhost $todo{$host}{gigeth} --full |") or die "aargh...";
+	    my $aims = "aims2client showhost $todo{$host}{gigeth} --full";
+	    print "[VERB] Running \"$aims\"\n" if $verbose;
+	    open(F,"$aims |") or die "aargh...";
 	    my @out = grep /PXE boot synced:/, <F>;
 	    close F;
 	    my $out = "@out";
