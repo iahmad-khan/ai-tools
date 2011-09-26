@@ -139,6 +139,10 @@ details, this is what you should do next to reinstall the machine:
 -- Reboot the host to start the installation:
 
       ssh root\@<hostname> shutdown -r now
+ 
+   or
+
+      ssh lxadm remote-power-control reset <hostname>
 
 -- To see installation in progress:
 
