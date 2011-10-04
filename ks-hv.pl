@@ -239,10 +239,19 @@ sub SetupAims($){
 	    my $aims = "aims2client showhost $todo{$host}{gigeth} --full";
 	    print "[VERB] Running \"$aims\"\n" if $verbose;
 	    open(F,"$aims |") or die "aargh...";
-	    my @out = grep /PXE boot synced:/, <F>;
+	    my @output = <F>;
 	    close F;
-	    my $out = "@out";
-	    if ($out =~ /PXE boot synced:\s+(\S+)\n/){
+	    print "[DEBUG] \@output:\n @output\n" if $debug;
+	    my $status = join(" ",grep /PXE status:/, @output);
+	    print "[DEBUG] \$status $status\n" if $debug;
+	    if ($status !~ /PXE status:\s+ON\s*\n/){
+		print "AARGH! AIMS did not do its job for host $host! Complain!";
+		$cnt++;
+		last;
+	    }
+	    my $sync = join(" ",grep /PXE boot synced:/, @output);
+	    print "[DEBUG] \$sync    $sync\n" if $debug;
+	    if ($sync =~ /PXE boot synced:\s+(\S+)\n/){
 		my $status = $1;
 		#print ">>> $status\n";
 		if (grep {$_ eq $status} qw(YYY YYN YNY NYY)){
@@ -385,7 +394,7 @@ rootpw --iscrypted {$PASSWD}
 
 auth --enableshadow --enablemd5
 
-firewall --enabled --ssh --port=7001:udp
+firewall --enabled --ssh --port=7001:udp --port=4241:tcp
 
 selinux --enforcing
 
@@ -417,7 +426,6 @@ reboot
 
 %packages
 @ Server Platform
-#nss-pam-ldapd
 
 ##############################################################################
 #
@@ -496,7 +504,7 @@ EOOUT
 #
 # Install & configure Puppet
 #
-/usr/bin/yum --enablerepo=epel-testing install puppet ruby-rdoc --assumeyes || :
+/usr/bin/yum install puppet ruby-rdoc --assumeyes || :
 
 /bin/cat <<EOFpuppet > /etc/puppet/puppet.conf
 # Initial puppet.conf to bootstrap the initial contact
