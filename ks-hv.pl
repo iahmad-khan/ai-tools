@@ -218,16 +218,45 @@ sub SetupAims($){
     my $rc = 0;
     #print Dumper(\%todo);
     for my $host (sort keys %todo){
-	my $aims = $todo{$host}{aimscmd};
-	$aims = "/bin/echo $aims" if $dryrun;
-        print STDOUT "[INFO] Upload KS-file with \"$aims\"\n";
-        if (system("$aims") != 0){
-	    print STDERR "[ERROR] Upload to AIMS failed.\n";
-	    $rc++;
+	my $cnt = 0;
+	while (1){
+	    my $aims = $todo{$host}{aimscmd};
+	    if ($dryrun){
+		print "[DRYRUN] *Not* uploading Kickstart file  for $host to AIMS\n";
+		last;
+	    }
+	    print STDOUT "[INFO] Uploading Kickstart file for $host to AIMS\n";
+	    print STDOUT "[VERB] Running \"$aims\"\n" if $verbose;
+	    if (system("$aims 2>/dev/null 1>/dev/null") != 0){
+		print STDERR "[ERROR] Upload to AIMS failed: $!\n";
+		$rc++;
+	    }
+	    #
+	    $aims = "aims2client showhost $todo{$host}{gigeth} --full";
+	    print "[VERB] Running \"$aims\"\n" if $verbose;
+	    open(F,"$aims |") or die "aargh...";
+	    my @output = <F>;
+	    close F;
+	    print "[DEBUG] \@output:\n @output\n" if $debug;
+	    my $status = join(" ",grep /PXE status:/, @output);
+	    print "[DEBUG] \$status $status\n" if $debug;
+	    if ($status =~ /PXE status:\s+ON\s*\n/){
+		last;
+	    }else{
+		if (++$cnt == 5){
+		    print STDERR "[ERROR] Machine \"$host\" still not properly configured in AIMS, giving up...\n";
+                    $rc++;
+		    unlink $todo{$host}{ksfile};
+		    delete $todo{$host};
+		    last;
+		}
+		print "[WARN] AIMS did not do its job for host $host, let's try again...\n";
+		sleep 5;
+	    }
 	}
         unlink $todo{$host}{ksfile};
     }
-    return 1 if $rc;
+    return 1 unless %todo;
 
     print "[INFO] Verifying that AIMS is properly set up, patience please...\n";
     return 0 if $dryrun;
@@ -242,20 +271,20 @@ sub SetupAims($){
 	    my @output = <F>;
 	    close F;
 	    print "[DEBUG] \@output:\n @output\n" if $debug;
-	    my $status = join(" ",grep /PXE status:/, @output);
-	    print "[DEBUG] \$status $status\n" if $debug;
-	    if ($status !~ /PXE status:\s+ON\s*\n/){
-		print "AARGH! AIMS did not do its job for host $host! Complain!";
-		$cnt++;
-		last;
-	    }
+	    #my $status = join(" ",grep /PXE status:/, @output);
+	    #print "[DEBUG] \$status $status\n" if $debug;
+	    #if ($status !~ /PXE status:\s+ON\s*\n/){
+	    #    print "AARGH! AIMS did not do its job for host $host! Complain && try again...!";
+	    #    $cnt++;
+	    #    last;
+	    #}
 	    my $sync = join(" ",grep /PXE boot synced:/, @output);
 	    print "[DEBUG] \$sync    $sync\n" if $debug;
 	    if ($sync =~ /PXE boot synced:\s+(\S+)\n/){
 		my $status = $1;
 		#print ">>> $status\n";
 		if (grep {$_ eq $status} qw(YYY YYN YNY NYY)){
-		    print "Machine \"$host\" is ready to be reinstalled.\n";
+		    print "[INFO] Machine \"$host\" is ready to be reinstalled.\n";
 		    $cnt = 0;
 		    last;
 		}
@@ -264,7 +293,7 @@ sub SetupAims($){
 		print "Machine \"$host\" still not properly configured in AIMS, giving up...\n";
 		last;
 	    }
-	    print "Sleeping 5 seconds...\n";
+	    print "[INFO] Sleeping 5 seconds...\n";
 	    sleep 5;
 	}
 	$rc += $cnt;
