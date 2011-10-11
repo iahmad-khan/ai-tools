@@ -551,6 +551,7 @@ EOOUT
 
 [main]
   server = punch.cern.ch
+  environment = devel
   logdir = /var/log/puppet
   rundir = /var/run/puppet
   ssldir = \$vardir/ssl
@@ -560,6 +561,10 @@ EOOUT
   report = true
   classfile = \$vardir/classes.txt
   localconfig = \$vardir/localconfig
+
+[devel]
+   modulepath = \$confdir/environments/devel/modules
+   manifest   = \$confdir/environments/devel/manifests/site.pp
 
 EOFpuppet
 
