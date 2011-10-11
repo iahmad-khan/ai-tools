@@ -568,8 +568,8 @@ EOFpuppet
 
 #
 # Bootstrap puppet
-#
-/usr/bin/puppet agent --no-daemonize --verbose --onetime --waitforcert 30 || :
+# Since working wholy in the devel environment boot strap into that.
+/usr/bin/puppet agent --environment devel --no-daemonize --verbose --onetime --waitforcert 30 || :
 
 #
 # Ownership
