@@ -68,6 +68,8 @@ if (not @host){
     print STDERR "No hostname(s) given...\n";;
     exit 1;
 }
+map {s/.cern.ch//} @host;  # strip domain name
+
 
 my %AimsImg = (
     rhel6 => "RHEL6_U1",
@@ -143,6 +145,12 @@ if (SetupAims(\%todo)){
     exit 1;
 }
 
+@host = sort keys %todo;
+my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
+my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
+my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
+my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
+my $mess5 = join("\n",map {"      aims2 pxeoff $_-gigeth"} @host);
 
 print <<EOMESS;
 
@@ -155,23 +163,23 @@ details, this is what you should do next to reinstall the machine:
 -- Remove the host from the puppetmaster CA to get puppet to configure
    the host in the post-installation:
 
-      ssh root\@punch puppetca --clean <hostname>
+$mess1
 
 -- Reboot the host to start the installation:
 
-      ssh root\@<hostname> shutdown -r now
- 
+$mess2
+
    or
 
-      ssh lxadm remote-power-control reset <hostname>
+$mess3
 
 -- To see installation in progress:
 
-      ssh lxadm connect2console.sh <hostname>
+$mess4
 
 -- For "*-gigeth" machines: once the installation is underway, run 
 
-      aims2 pxeoff <hostname>-gigeth
+$mess5
 
     to break out on an install loop
 
