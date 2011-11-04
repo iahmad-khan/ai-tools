@@ -20,12 +20,17 @@ use Getopt::Long;
 use Data::Dumper;
 use SOAP::Lite;# +trace => 'debug';
 use Net::Netrc;
+use Term::ReadKey;
 use File::Basename;
+use LWP;
+use JSON;
+use Socket;
 
-sub Packages($$$);
 sub LandbHostInfo($);
 sub SetupAims($);
+sub SetupForeman($);
 sub HelpMessage();
+sub getId($$$$$);
 
 my %data = ();
 my $debug = my $verbose = my $dryrun = 0;
@@ -33,13 +38,11 @@ my %opts = (debug   => \$debug,
             dryrun  => \$dryrun,
             verbose => \$verbose);
 
-my %landb_credentials = ();
-
 my $rc = Getopt::Long::GetOptions(\%opts,
 				  "debug","dryrun","verbose",
 				  "os=s"            => \$data{OS},
                                   "arch=s"          => \$data{ARCH},
-                                  "user=s"          => \$data{USER},
+                                  "cern-user=s"     => \$data{USER},
                                   "help" => sub { HelpMessage() },
                                  );
 #print Dumper(\%opts);
@@ -70,6 +73,33 @@ if (not @host){
 }
 map {s/.cern.ch//} @host;  # strip domain name
 
+# XXX todo: verify if user has a cern account.
+
+# Get user credentials
+
+my %user_credentials = ();
+my $mach = Net::Netrc->lookup("network.cern.ch",$data{USER});
+if ($mach){
+    $user_credentials{username} = $mach->login;
+    $user_credentials{password} = $mach->password;
+}else{
+    print STDOUT "Please give the CERN username/password combination to query LANdb, talk to Foreman, etc: \n";
+    print STDOUT "   - username : ";
+    chomp($user_credentials{username} = <STDIN>);
+    if (not defined $user_credentials{username}){
+	print STDERR "Failed to read a username, exiting\n";
+	exit 1;
+    }
+    print STDOUT "   - password : ";
+    ReadMode("noecho",);
+    chomp($user_credentials{password} = <STDIN>);
+    ReadMode("normal");
+    print "\n";
+    if (not defined $user_credentials{password}){
+	print STDERR "failed to read a password, exiting\n";
+	exit 1;
+    }
+}
 
 my %AimsImg = (
     rhel6 => "RHEL6_U1",
@@ -89,14 +119,18 @@ my %todo = ();
 
 for my $host (@host){
     $data{HOSTNAME} = $host;
+    print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
+    my @landb = LandbHostInfo($host);
+    if (not @landb){
+	print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
+	next;
+    }
+    my @mac = ();
+    map {push(@mac,$$_[1])} @landb;
+    #print "MAC @mac\n";exit;
+
     if (gethostbyname("${host}-gigeth")){
-	print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
 	$data{"HOSTNAME_GE"} = "${host}-gigeth";
-	my @landb = LandbHostInfo($host);
-	if (not @landb){
-	    print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
-	    next;
-	}
 	$data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
 	$data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
 	for (@landb){
@@ -112,8 +146,6 @@ for my $host (@host){
 	$data{"HOSTNAME_GE"} = $host;
 	$data{NETWORK} = "network --bootproto=dhcp --device=eth0 --hostname $host.cern.ch";
     }  
-#print $data{NETWORK}."\n";
-#exit;
 
     $data{KSFILE} = POSIX::tmpnam();
 
@@ -137,16 +169,28 @@ for my $host (@host){
     %{$todo{$host}} = ( ksfile  => $data{KSFILE},
 			aimscmd => $data{AIMSCMD},
                         gigeth  => $data{"HOSTNAME_GE"},
+			mac     => [@mac],                # to be used in Foreman
     );
 }
 
-if (SetupAims(\%todo)){
+#
+# Add to AIMS
+#
+@host = SetupAims(\%todo);
+if (not @host){
     print STDERR "[ERROR] Upload to AIMS failed, exiting...\n";
     exit 1;
 }
 
-@host = sort keys %todo;
-my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
+#
+# Add to Foreman
+#
+SetupForeman(\%todo);
+
+
+
+
+#my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
 my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
 my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
 my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
@@ -159,11 +203,6 @@ Right. So you think this is it? Think again...
 At the moment of writing this (Sept 22, 2011), there are quite some 
 problems to be/being investigated. Without going into the technical
 details, this is what you should do next to reinstall the machine:
-
--- Remove the host from the puppetmaster CA to get puppet to configure
-   the host in the post-installation:
-
-$mess1
 
 -- Reboot the host to start the installation:
 
@@ -189,6 +228,99 @@ This should become simpler over time. Or not.
 EOMESS
 
 exit 0;
+
+sub SetupForeman($){
+    my $href = shift @_;
+    my %todo = %$href;
+    my $rc = 0;
+#    print Dumper(\%todo);exit;
+
+
+    my $group    = "base";
+    my $environ  = "devel";
+    my $domain   = "cern.ch";
+    my $ptable   = "RedHat default";
+
+    my %OS = (
+	"SLC6" => "SLC 6.1",
+	"RHEL6" => "RedHat 6.1",
+	);
+    die if not exists $OS{uc($data{OS})};
+
+    my $url         = "https://punch.cern.ch";
+    my $netlocation = "punch.cern.ch:443";
+    my $realm       = "Application";
+
+    my $browser  = LWP::UserAgent->new;
+    $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
+
+    my %tmp = (comment => "Machine Provisioned by Kickstart");
+    
+    $tmp{operatingsystem_id} = &getId(\$browser->get("$url/operatingsystems?format=json"),"operatingsystem","name", $OS{uc($data{OS})},         "id");
+    $tmp{hostgroup_id}       = &getId(\$browser->get("$url/hostgroups?format=json"),      "hostgroup",      "label",$group,                     "id");
+    $tmp{environment_id}     = &getId(\$browser->get("$url/environments?format=json"),    "environment",    "name", $environ,                   "id");
+    $tmp{architecture_id}    = &getId(\$browser->get("$url/architectures?format=json"),   "architecture",   "name", $data{ARCH},                "id");
+    $tmp{domain_id}          = &getId(\$browser->get("$url/domains?format=json"),         "domain",         "name", $domain,                    "id");
+    $tmp{ptable_id}          = &getId(\$browser->get("$url/ptables?format=json"),         "ptable",         "name", $ptable,                    "id");
+    $tmp{owner_id}           = &getId(\$browser->get("$url/users?format=json"),           "user",           "login",$user_credentials{username},"id");
+
+    for my $host (sort keys %todo){
+	$tmp{name} = $host;
+
+	# IP address
+	my $iaddr = gethostbyname($host);
+	die "aargh..." if not defined $iaddr;
+	$tmp{ip} = inet_ntoa($iaddr);
+	die "aaargh..." if not defined $tmp{ip};
+
+	# MAC address. Note: Foreman does not seem to handle multiple MAC addresses - JvE, Nov 2011
+	$tmp{mac} = ${$todo{$host}{mac}}[0];
+
+	# First, delete the entry from Foreman
+	my $request = HTTP::Request->new("DELETE","$url/hosts/$host.$domain");
+	$request->header("Content-Type" => "application/json");
+	my $response = $browser->request($request);
+	#if (not $response->is_success){
+	#    print "[ERROR] Cannot remove \"$host\" from Foreman: " . $response->status_line . " :: " . $response->content ."\n";
+	#    #next;
+	#}
+
+	# Then, add it back to Foreman
+	my $json = "{host:{".(join ",", map {"\"$_\":\"$tmp{$_}\""} sort keys %tmp )."}}";
+	#print "$json\n";#next;
+
+	$request = HTTP::Request->new("POST","$url/hosts");
+	$request->header("Content-Type" => "application/json");
+	$request->content($json );
+	
+	$response = $browser->request($request);
+	
+	if (not $response->is_success){
+	    print "[ERROR] Cannot add \"$host\" to Foreman: " . $response->status_line . " :: " . $response->content ."\n";
+	    #print Dumper(\$response);
+	    #next;
+	}
+
+    }
+
+}
+
+sub getId($$$$$) {
+    my ($sref,$name,$search,$field,$value) = @_;
+
+    my $response = $$sref;
+
+    my $id = -1;
+
+    for my $element (@{from_json($response->content)}) {
+        if ($element->{$name}->{$search} eq $field) {
+            $id = $element->{$name}->{$value};
+	    last;
+        }
+    }
+    return $id;
+}
+
 
 sub HelpMessage(){
 
@@ -254,7 +386,7 @@ sub SetupAims($){
 		if (++$cnt == 5){
 		    print STDERR "[ERROR] Machine \"$host\" still not properly configured in AIMS, giving up...\n";
                     $rc++;
-		    unlink $todo{$host}{ksfile};
+		    unlink $todo{$host}{ksfile} unless $debug;
 		    delete $todo{$host};
 		    last;
 		}
@@ -262,13 +394,14 @@ sub SetupAims($){
 		sleep 5;
 	    }
 	}
-        unlink $todo{$host}{ksfile};
+        unlink $todo{$host}{ksfile} unless $debug;
     }
-    return 1 unless %todo;
+    return () unless %todo;
 
     print "[INFO] Verifying that AIMS is properly set up, patience please...\n";
     return 0 if $dryrun;
     $rc = 0;
+    my @done = ();
     for my $host (sort keys %todo){
 	my $cnt = 0;
 	while (1){
@@ -294,6 +427,7 @@ sub SetupAims($){
 		if (grep {$_ eq $status} qw(YYY YYN YNY NYY)){
 		    print "[INFO] Machine \"$host\" is ready to be reinstalled.\n";
 		    $cnt = 0;
+		    push(@done,$host);
 		    last;
 		}
 	    }
@@ -307,47 +441,19 @@ sub SetupAims($){
 	$rc += $cnt;
     }
     
-    return ($rc ? 1 : 0);
+    return @done;
 }
 
 sub LandbHostInfo($){
     my $device = shift @_;
 
-    if (not %landb_credentials){
-	print "[VERB] Getting LANdb credentials\n" if $verbose;
-	my $mach = Net::Netrc->lookup("network.cern.ch");
-	if ($mach){
-	    $landb_credentials{user} = $mach->login;
-	    $landb_credentials{passwd} = $mach->password;
-	}else{
-	    use Term::ReadKey;
-	    print STDOUT "Please give the username/password combination to query LANdb: \n";
-	    print STDOUT "   - username : ";
-	    chomp($landb_credentials{user} = <STDIN>);
-	    if (not defined $landb_credentials{user}){
-		print STDERR "Failed to read a username, exiting\n";
-		exit 1;
-	    }
-	    print STDOUT "   - password : ";
-	    ReadMode("noecho",);
-	    chomp($landb_credentials{passwd} = <STDIN>);
-	    ReadMode("normal");
-	    print "\n";
-	    if (not defined $landb_credentials{passwd}){
-		print STDERR "failed to read a passwd, exiting\n";
-		exit 1;
-	    }
-
-	}
-    }
-    
     my $client = SOAP::Lite
 	->uri('http://network.cern.ch/NetworkService')
 	->xmlschema('http://www.w3.org/2001/XMLSchema')
 	->proxy('https://network.cern.ch/sc/soap/soap.fcgi?v=4', keep_alive=>1);
 
     # Get Auth token
-    my $call = $client->getAuthToken($landb_credentials{user},$landb_credentials{passwd},'NICE');
+    my $call = $client->getAuthToken($user_credentials{username},$user_credentials{password},'NICE');
     
     my ($auth) = $call->result;
     if ($call->fault){
@@ -431,7 +537,10 @@ rootpw --iscrypted {$PASSWD}
 
 auth --enableshadow --enablemd5
 
-firewall --enabled --ssh --port=7001:udp --port=4241:tcp
+firewall --enabled --ssh --port=7001:udp --port=4241:tcp --port=8139:tcp
+# 7001 AFS
+# 4241 ARC
+# 8139 Puppet
 
 selinux --enforcing
 
@@ -573,7 +682,7 @@ EOFpuppet
 
 #
 # Bootstrap puppet
-# Since working wholy in the devel environment boot strap into that.
+# Since working wholly in the devel environment, bootstrap into that.
 /usr/bin/puppet agent --environment devel --no-daemonize --verbose --onetime --waitforcert 30 || :
 
 #
