@@ -666,7 +666,7 @@ EOOUT
   ssldir = \$vardir/ssl
 
 [agent]
-  pluginsync = false
+  pluginsync = true
   report = true
   classfile = \$vardir/classes.txt
   localconfig = \$vardir/localconfig
