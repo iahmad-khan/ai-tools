@@ -697,7 +697,7 @@ EOOUT
 
 [devel]
    modulepath = \$confdir/environments/devel/modules
-   manifest   = \$confdir/environments/devel/manifests/site.pp
+   manifest   = \$confdir/environments/devel/modules/site.pp
 
 EOFpuppet
 
