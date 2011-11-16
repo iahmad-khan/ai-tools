@@ -9,8 +9,6 @@
 #       by default nova and glance uses:
 #          "/var/lib/nova/"
 #          "/var/lib/glance/" 
-#  - root access
-#  - configure SLC6 repo's? cern-config-users...
 
 use strict;
 use diagnostics;
@@ -102,10 +100,10 @@ if ($mach){
 }
 
 my %AimsImg = (
-    rhel6 => "RHEL6_U1",
-    slc6  => "SLC6X",
-    rhel5 => "RHES_5_U7",
-    slc5  => "SLC5X",
+    rhel6 => "RHEL6_U1_$data{ARCH}",
+    slc6  => "SLC6X_$data{ARCH}",
+    rhel5 => "RHES_5_U7_$data{ARCH}",
+    slc5  => "SLC5X_$data{ARCH}",
     );
 
 #print Dumper(\%data);exit;
@@ -120,24 +118,24 @@ my %todo = ();
 for my $host (@host){
     $data{HOSTNAME} = $host;
     print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
-    my @landb = LandbHostInfo($host);
-    if (not @landb){
+    my %landb = LandbHostInfo($host);
+    if (not %landb){
 	print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
 	next;
     }
     my @mac = ();
-    map {push(@mac,$$_[1])} @landb;
+    map {push(@mac,$$_[1])} @{$landb{Interfaces}};
     #print "MAC @mac\n";exit;
 
     if (gethostbyname("${host}-gigeth")){
 	$data{"HOSTNAME_GE"} = "${host}-gigeth";
 	$data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
 	$data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
-	for (@landb){
+	for (@{$landb{Interfaces}}){
 	    my ($name,$mac) = @$_;
 	    if ($name eq $host){
 		$data{NETWORK} .= "network --bootproto=dhcp --noipv6 --device=$mac --onboot=yes --hostname $host.cern.ch\n";
-	    }elsif ($name eq "${host}-gigeth"){
+	    } elsif ($name eq "${host}-gigeth"){
 		$data{NETWORK} .= "network --bootproto=dhcp --noipv6 --device=$mac --onboot=no\n";
 	    }
 	    #print ">>> $name,$mac\n";
@@ -145,12 +143,14 @@ for my $host (@host){
     }else{
 	$data{"HOSTNAME_GE"} = $host;
 	$data{NETWORK} = "network --bootproto=dhcp --device=eth0 --hostname $host.cern.ch";
-    }  
+    }
+    $data{HWMODEL} = $landb{Model};
 
     $data{KSFILE} = POSIX::tmpnam();
 
-    my $image = $AimsImg{$data{OS}} . "_" . $data{ARCH};
-    $data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $data{KSFILE} --kopts \"text noipv6 network ks ksdevice=bootif latefcload console=tty0 console=ttyS2,9600n8\" --pxe --name $image";
+    my $console = uc($data{HWMODEL}) ne "HYPER-V VIRTUAL MACHINE" ? "console=tty0 console=ttyS2,9600n8" : "";
+
+    $data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $data{KSFILE} --kopts \"text noipv6 network ks ksdevice=bootif latefcload $console\" --pxe --name $AimsImg{$data{OS}}";
 
     my $result = $tpl->fill_in(HASH => \%data);
     if (not defined $result) {
@@ -188,6 +188,7 @@ if (not @host){
 SetupForeman(\%todo);
 
 
+map {print "[INFO] Machine \"$_\" is ready to be reinstalled.\n"} sort @host;
 
 
 #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
@@ -291,7 +292,7 @@ sub SetupForeman($){
 
 	$request = HTTP::Request->new("POST","$url/hosts");
 	$request->header("Content-Type" => "application/json");
-	$request->content($json );
+	$request->content($json);
 	
 	$response = $browser->request($request);
 	
@@ -338,7 +339,7 @@ Usage: $script [options] hostname [hostname]
                                     default: "rhel6"
            --arch [x86_64|i386]   : architecture to install
                                     default: "x86_64"
-           --user <username>      : username to be used for LANdb lookups, e-mail sending, etc
+           --cern-user <username> : CERN account to be used for LANdb lookups, e-mail sending, etc
                                     default "$user" :)
 
            --help     : print this help
@@ -394,8 +395,9 @@ sub SetupAims($){
 		sleep 5;
 	    }
 	}
-        unlink $todo{$host}{ksfile} unless $debug;
+        #unlink $todo{$host}{ksfile} unless $debug;
     }
+    map {unlink $todo{$_}{ksfile}} keys %todo unless $debug;
     return () unless %todo;
 
     print "[INFO] Verifying that AIMS is properly set up, patience please...\n";
@@ -425,7 +427,6 @@ sub SetupAims($){
 		my $status = $1;
 		#print ">>> $status\n";
 		if (grep {$_ eq $status} qw(YYY YYN YNY NYY)){
-		    print "[INFO] Machine \"$host\" is ready to be reinstalled.\n";
 		    $cnt = 0;
 		    push(@done,$host);
 		    last;
@@ -471,16 +472,31 @@ sub LandbHostInfo($){
 	return ();
     }
     #print Dumper($bu);
-    my @landb = ();
+    my %landb = ();
+    $landb{Model} = $bu->{Model};
     for (@{$bu->{Interfaces}}) {
 	my $Name = lc($_->{Name});
 	my $HardwareAddress = $_->{BoundInterfaceCard}->{HardwareAddress};
-	$HardwareAddress =~ s/\-/:/g;
-	push(@landb,[$Name,$HardwareAddress]);
+	if (defined $HardwareAddress){
+	    $HardwareAddress =~ s/\-/:/g;
+	    push(@{$landb{Interfaces}},[$Name,$HardwareAddress]);
+	}
     }
-    #print Dumper(\@landb);
+    if (not exists $landb{Interfaces}){
+	my $Name = lc($bu->{DeviceName});
+	for (@{$bu->{NetworkInterfaceCards}}) {
+	    my $HardwareAddress = $_->{HardwareAddress};
+	    if (defined $HardwareAddress){
+		$HardwareAddress =~ s/\-/:/g;
+		push(@{$landb{Interfaces}},[$Name,$HardwareAddress]);
+	    }
+	}
+    }
+
+    #print Dumper(\%landb);
     #exit;
-    return @landb;
+
+    return %landb;
 }
 
 __END__
@@ -537,10 +553,10 @@ rootpw --iscrypted {$PASSWD}
 
 auth --enableshadow --enablemd5
 
-firewall --enabled --ssh --port=7001:udp --port=4241:tcp --port=8139:tcp
 # 7001 AFS
 # 4241 ARC
 # 8139 Puppet
+firewall --enabled --ssh --port=7001:udp --port=4241:tcp --port=8139:tcp
 
 selinux --enforcing
 
@@ -601,10 +617,13 @@ trap "fail unknown\ error" ERR
 
 # redirect the output to the log file
 exec >/root/ks-post-anaconda.log 2>&1
-#escript -f /root/ks-post-anaconda.log
+#script -f /root/ks-post-anaconda.log
 
 # show the output on the seventh console
 tail -f /root/ks-post-anaconda.log >/dev/tty7 &
+
+# changing to VT 7 that we can see what's going on....
+/usr/bin/chvt 7
 
 # try to save useful stuff
 /bin/mkdir /root/install-logs || :
@@ -648,6 +667,11 @@ EOOUT
 /usr/bin/yum update --assumeyes --skip-broken || :
 
 #
+# Make sure iptables_filter is loaded, to allow Puppet firewall configurations
+#
+/sbin/modprobe iptables_filter || :
+
+#
 # Install & configure Puppet
 #
 /usr/bin/yum install puppet ruby-rdoc --assumeyes || :
@@ -677,13 +701,12 @@ EOOUT
 
 EOFpuppet
 
-/sbin/chkconfig --list puppet || :
-/sbin/chkconfig puppet on || :
-
 #
 # Bootstrap puppet
+/usr/bin/puppet agent --no-daemonize --verbose --onetime --tags kickstart --waitforcert 30
+
 # Since working wholly in the devel environment, bootstrap into that.
-/usr/bin/puppet agent --environment devel --no-daemonize --verbose --onetime --waitforcert 30 || :
+/usr/bin/puppet agent --environment devel --no-daemonize --verbose --onetime || :
 
 #
 # Ownership
