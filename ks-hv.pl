@@ -134,9 +134,9 @@ for my $host (@host){
 	for (@{$landb{Interfaces}}){
 	    my ($name,$mac) = @$_;
 	    if ($name eq $host){
-		$data{NETWORK} .= "network --bootproto=dhcp --noipv6 --device=$mac --onboot=yes --hostname $host.cern.ch\n";
+		$data{NETWORK} .= "network --bootproto=dhcp --device=$mac --onboot=yes --hostname $host.cern.ch\n";
 	    } elsif ($name eq "${host}-gigeth"){
-		$data{NETWORK} .= "network --bootproto=dhcp --noipv6 --device=$mac --onboot=no\n";
+		$data{NETWORK} .= "network --bootproto=dhcp --device=$mac --onboot=no\n";
 	    }
 	    #print ">>> $name,$mac\n";
 	}
@@ -150,7 +150,7 @@ for my $host (@host){
 
     my $console = uc($data{HWMODEL}) ne "HYPER-V VIRTUAL MACHINE" ? "console=tty0 console=ttyS2,9600n8" : "";
 
-    $data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $data{KSFILE} --kopts \"text noipv6 network ks ksdevice=bootif latefcload $console\" --pxe --name $AimsImg{$data{OS}}";
+    $data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $data{KSFILE} --kopts \"text network ks ksdevice=bootif latefcload $console\" --pxe --name $AimsImg{$data{OS}}";
 
     my $result = $tpl->fill_in(HASH => \%data);
     if (not defined $result) {
@@ -274,8 +274,9 @@ sub SetupForeman($){
 	$tmp{ip} = inet_ntoa($iaddr);
 	die "aaargh..." if not defined $tmp{ip};
 
-	# MAC address. Note: Foreman does not seem to handle multiple MAC addresses - JvE, Nov 2011
-	$tmp{mac} = ${$todo{$host}{mac}}[0];
+	# MAC address.
+	$tmp{mac} = [@{$todo{$host}{mac}}];
+	$tmp{mac} = ${$todo{$host}{mac}}[0]; # JvE, Nov 2011: Foreman does not handle multiple MAC addresses?
 
 	# First, delete the entry from Foreman
 	my $request = HTTP::Request->new("DELETE","$url/hosts/$host.$domain");
@@ -287,7 +288,16 @@ sub SetupForeman($){
 	#}
 
 	# Then, add it back to Foreman
-	my $json = "{host:{".(join ",", map {"\"$_\":\"$tmp{$_}\""} sort keys %tmp )."}}";
+	for my $key (sort keys %tmp){
+	    #print "$key :: \"".ref($tmp{$key})."\"";
+	    if (ref($tmp{$key}) eq "ARRAY"){
+		$tmp{$key} = "[\"" . join("\",\"",@{$tmp{$key}}) . "\"]";
+	    }else{
+		$tmp{$key} = "\"$tmp{$key}\"";
+	    }
+	    #print " $tmp{$key}\n";
+	}
+	my $json = "{host:{".(join ",", map {"\"$_\":$tmp{$_}"} sort keys %tmp )."}}";
 	#print "$json\n";#next;
 
 	$request = HTTP::Request->new("POST","$url/hosts");
