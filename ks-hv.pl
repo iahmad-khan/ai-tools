@@ -30,6 +30,8 @@ sub SetupForeman($);
 sub HelpMessage();
 sub getId($$$$$);
 
+HelpMessage() if not @ARGV;
+
 my %data = ();
 my $debug = my $verbose = my $dryrun = 0;
 my %opts = (debug   => \$debug,
@@ -44,10 +46,8 @@ my $rc = Getopt::Long::GetOptions(\%opts,
                                   "help" => sub { HelpMessage() },
                                  );
 #print Dumper(\%opts);
-if (not $rc){
-    HelpMessage();
-    exit 1;
-}
+
+HelpMessage() if not $rc;
 
 $data{OS}     ||= "rhel6";
 $data{ARCH}   ||= "x86_64";
@@ -69,7 +69,8 @@ if (not @host){
     print STDERR "No hostname(s) given...\n";;
     exit 1;
 }
-map {s/.cern.ch//} @host;  # strip domain name
+
+map {s/.cern.ch//;$_ = lc} @host;  # strip domain name, change to lower case
 
 # XXX todo: verify if user has a cern account.
 
@@ -580,7 +581,21 @@ key --skip
 services --disabled=pcscd,nfslock,netfs,portmap,rpcgssd,rpcidmapd,irqbalance,bluetooth,autofs,rhnsd,rhsmcertd
 
 # additional repositories
-#repo --name="EPEL" --baseurl http://linuxsoft.cern.ch/epel/6/{$ARCH}
+{
+    if ($OS eq "rhel6"){ $OUT .= <<EOOUT
+repo --name="puppet-bootstrap" --baseurl http://cern.ch/agileinf/yum/puppet-bootstrap/6/$ARCH
+repo --name="EPEL"             --baseurl http://linuxsoft.cern.ch/epel/6/$ARCH
+repo --name="RHEL - optional"  --baseurl http://linuxsoft.cern.ch/rhel/rhel6server-$ARCH/RPMS.optional/
+repo --name="RHEL - updates"   --baseurl http://linuxsoft.cern.ch/rhel/rhel6server-$ARCH/RPMS.updates/
+repo --name="RHEL - fastrack"  --baseurl http://linuxsoft.cern.ch/rhel/rhel6server-$ARCH/RPMS.fastrack/
+EOOUT
+    } elsif ($OS eq "slc6"){ $OUT .= <<EOOUT
+repo --name="puppet-bootstrap" --baseurl http://cern.ch/agileinf/yum/puppet-bootstrap/6/$ARCH
+repo --name="EPEL"             --baseurl http://linuxsoft.cern.ch/epel/6/$ARCH
+repo --name="SLC6 - updates"   --baseurl http://linuxsoft.cern.ch/cern/slc6X/$ARCH/yum/updates/
+EOOUT
+    }
+}
 
 # bootloader
 bootloader --location=mbr --driveorder=sda
@@ -598,6 +613,8 @@ reboot
 
 %packages
 @ Server Platform
+agileinf-puppet-bootstrap
+-fprintd
 
 ##############################################################################
 #
@@ -618,7 +635,7 @@ reboot
 
 fail () \{
 
-    /bin/cat /root/ks-post-anaconda.log | /bin/mail -s "Subject: install failed on {$HOSTNAME}: $1" {$USER}@mail.cern.ch
+    /bin/sed 's/\r//' /root/ks-post-anaconda.log | /bin/mail -s "install failed on {$HOSTNAME}: $1" {$USER}@mail.cern.ch
 
     exit -1
 \}
@@ -677,46 +694,11 @@ EOOUT
 /usr/bin/yum update --assumeyes --skip-broken || :
 
 #
-# Make sure iptables_filter is loaded, to allow Puppet firewall configurations
+# Bootstrap puppet first, then do a full run
 #
-/sbin/modprobe iptables_filter || :
+/sbin/service agileinf-puppet-bootstrap start
 
-#
-# Install & configure Puppet
-#
-/usr/bin/yum install puppet ruby-rdoc --assumeyes || :
-
-/bin/cat <<EOFpuppet > /etc/puppet/puppet.conf
-# Initial puppet.conf to bootstrap the initial contact
-# of this client to puppet master. It will almost
-# certainly overwritten at first puppet succesful puppet
-# execution.
-
-[main]
-  server = punch.cern.ch
-  environment = devel
-  logdir = /var/log/puppet
-  rundir = /var/run/puppet
-  ssldir = \$vardir/ssl
-
-[agent]
-  pluginsync = true
-  report = true
-  classfile = \$vardir/classes.txt
-  localconfig = \$vardir/localconfig
-
-[devel]
-   modulepath = \$confdir/environments/devel/modules
-   manifest   = \$confdir/environments/devel/modules/site.pp
-
-EOFpuppet
-
-#
-# Bootstrap puppet
-/usr/bin/puppet agent --no-daemonize --verbose --onetime --tags kickstart --waitforcert 30
-
-# Since working wholly in the devel environment, bootstrap into that.
-/usr/bin/puppet agent --environment devel --no-daemonize --verbose --onetime || :
+/usr/bin/puppet agent --color=false --no-daemonize --verbose --onetime || :
 
 #
 # Ownership
@@ -726,22 +708,20 @@ EOFpuppet
 /sbin/restorecon -v /root/.forward || :
 
 #
-# Enable some YUM repositories
-#
-
-#
-# /boot/grub/grub.conf
-#
-/usr/bin/perl -ni -e "s/ rhgb quiet//;print" /boot/grub/grub.conf || :
-
-#
 # Misc fixes
 #
+/usr/bin/yum clean all || :
+
+# Make sure the boot sequnece is verbose
+/usr/bin/perl -ni -e "s/ rhgb quiet//;print" /boot/grub/grub.conf || :
+
+# The net.bridge.* entries in /etc/sysctl.conf make "sysctl -p" fail if "bridge" module is not loaded...
+/usr/bin/perl -ni -e '$_ = "### Commented out by CERN... $_" if /^net\.bridge/;print' /etc/sysctl.conf || :
 
 #
 # Done
 #
-/bin/cat /root/ks-post-anaconda.log | /bin/mail -s "Subject: installation of {$HOSTNAME} successfully completed" {$USER}@mail.cern.ch
+/bin/sed 's/\r//' /root/ks-post-anaconda.log | /bin/mail -s "installation of {$HOSTNAME} successfully completed" {$USER}@mail.cern.ch
 
 exit 0
 
