@@ -49,7 +49,7 @@ my $rc = Getopt::Long::GetOptions(\%opts,
 
 HelpMessage() if not $rc;
 
-$data{OS}     ||= "rhel6";
+$data{OS}     ||= "slc6";
 $data{ARCH}   ||= "x86_64";
 $data{USER}   ||= (getpwuid($<))[0];
 $data{PASSWD} = '$1$ks7kG0$RT27ln7QlojbaLCyGMcoa1';
@@ -712,7 +712,7 @@ EOOUT
 #
 /usr/bin/yum clean all || :
 
-# Make sure the boot sequnece is verbose
+# Make sure the boot sequence is verbose
 /usr/bin/perl -ni -e "s/ rhgb quiet//;print" /boot/grub/grub.conf || :
 
 # The net.bridge.* entries in /etc/sysctl.conf make "sysctl -p" fail if "bridge" module is not loaded...
