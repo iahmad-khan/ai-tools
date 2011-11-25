@@ -744,7 +744,7 @@ EOOUT
 {
     if ($OS eq "rhel6" or $OS eq "slc6"){ $OUT .= <<EOOUT
 # The net.bridge.* entries in /etc/sysctl.conf make "sysctl -p" fail if "bridge" module is not loaded...
-/usr/bin/perl -ni -e '$_ = "### Commented out by CERN... $_" if /^net\.bridge/;print' /etc/sysctl.conf || :
+/usr/bin/perl -ni -e '\$_ = "### Commented out by CERN... \$_" if /^net\\\.bridge/;print' /etc/sysctl.conf || :
 EOOUT
     }
 }
