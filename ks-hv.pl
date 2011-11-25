@@ -147,6 +147,12 @@ for my $host (@host){
     }
     $data{HWMODEL} = $landb{Model};
 
+    if ($data{HWMODEL} eq "HYPER-V VIRTUAL MACHINE" and ($data{OS} eq "slc5" or $data{OS} eq "rhel5")){
+	$data{FIRST_DRIVE} = "hda";
+    } else {
+	$data{FIRST_DRIVE} = "sda";
+    }
+
     $data{KSFILE} = POSIX::tmpnam();
 
     my $console = uc($data{HWMODEL}) ne "HYPER-V VIRTUAL MACHINE" ? "console=tty0 console=ttyS2,9600n8" : "";
@@ -245,7 +251,9 @@ sub SetupForeman($){
 
     my %OS = (
 	"SLC6" => "SLC 6.1",
+	"SLC5" => "SLC 5.7",
 	"RHEL6" => "RedHat 6.1",
+	"RHEL5" => "RedHat 5.7",
 	);
     die if not exists $OS{uc($data{OS})};
 
@@ -346,12 +354,12 @@ Usage: $script [options] hostname [hostname]
 
        where options are
 
-           --os   [rhel6|slc6]    : operating system to install
-                                    default: "rhel6"
-           --arch [x86_64|i386]   : architecture to install
-                                    default: "x86_64"
-           --cern-user <username> : CERN account to be used for LANdb lookups, e-mail sending, etc
-                                    default "$user" :)
+           --os   [rhel6|slc6|slc5]    : operating system to install
+                                         default: "slc6"
+           --arch [x86_64|i386]        : architecture to install
+                                         default: "x86_64"
+           --cern-user <username>      : CERN account to be used for LANdb lookups, e-mail sending, etc
+                                         default "$user" :)
 
            --help     : print this help
            --verbose  : print more output
@@ -525,14 +533,40 @@ lang en_US
 
 {$NETWORK}
 
-# installation path
+# installation path, additional repositories
 {
-    if     ($OS eq  "slc4"){ $OUT .= "url --url http://linuxsoft.cern.ch/cern/slc4X/$ARCH";
-    }elsif ($OS eq  "slc5"){ $OUT .= "url --url http://linuxsoft.cern.ch/cern/slc5X/$ARCH";
-    }elsif ($OS eq  "slc6"){ $OUT .= "url --url http://linuxsoft.cern.ch/cern/slc6X/$ARCH";
-    }elsif ($OS eq "rhel4"){ $OUT .= "url --url http://linuxsoft.cern.ch/enterprise/4ES_U8/en/os/$ARCH";
-    }elsif ($OS eq "rhel5"){ $OUT .= "url --url http://linuxsoft.cern.ch/enterprise/5Server_U7/en/os/$ARCH";
-    }elsif ($OS eq "rhel6"){ $OUT .= "url --url http://linuxsoft.cern.ch/enterprise/6Server_U1/en/os/$ARCH";
+    if ($OS eq "slc6"){ $OUT .= <<EOOUT
+url --url http://linuxsoft.cern.ch/cern/slc6X/$ARCH
+repo --name="puppet-bootstrap" --baseurl http://cern.ch/agileinf/yum/puppet-bootstrap/6/$ARCH
+repo --name="EPEL"             --baseurl http://linuxsoft.cern.ch/epel/6/$ARCH
+repo --name="SLC6 - updates"   --baseurl http://linuxsoft.cern.ch/cern/slc6X/$ARCH/yum/updates/
+EOOUT
+    } elsif ($OS eq "rhel6"){ $OUT .= <<EOOUT
+url --url http://linuxsoft.cern.ch/enterprise/6Server_U1/en/os/$ARCH
+repo --name="puppet-bootstrap" --baseurl http://cern.ch/agileinf/yum/puppet-bootstrap/6/$ARCH
+repo --name="EPEL"             --baseurl http://linuxsoft.cern.ch/epel/6/$ARCH
+repo --name="RHEL - optional"  --baseurl http://linuxsoft.cern.ch/rhel/rhel6server-$ARCH/RPMS.optional/
+repo --name="RHEL - updates"   --baseurl http://linuxsoft.cern.ch/rhel/rhel6server-$ARCH/RPMS.updates/
+repo --name="RHEL - fastrack"  --baseurl http://linuxsoft.cern.ch/rhel/rhel6server-$ARCH/RPMS.fastrack/
+EOOUT
+    } elsif ($OS eq "slc5"){ $OUT .= <<EOOUT
+url --url http://linuxsoft.cern.ch/cern/slc5X/$ARCH
+repo --name="puppet-bootstrap" --baseurl http://cern.ch/agileinf/yum/puppet-bootstrap/5/$ARCH
+repo --name="EPEL"             --baseurl http://linuxsoft.cern.ch/epel/5/$ARCH
+repo --name="SLC5 - updates"   --baseurl http://linuxsoft.cern.ch/cern/slc5X/$ARCH/yum/updates/
+EOOUT
+    } elsif ($OS eq "rhel5"){ $OUT .= <<EOOUT
+url --url http://linuxsoft.cern.ch/enterprise/5Server_U7/en/os/$ARCH
+repo --name="EPEL"             --baseurl http://linuxsoft.cern.ch/epel/5/$ARCH
+repo --name="RHEL - updates"   --baseurl http://linuxsoft.cern.ch/rhel/rhel5server-$ARCH/RPMS.updates/
+repo --name="RHEL - fastrack"  --baseurl http://linuxsoft.cern.ch/rhel/rhel5server-$ARCH/RPMS.fastrack/
+EOOUT
+    } elsif ($OS eq "slc4"){ $OUT .= <<EOOUT
+url --url http://linuxsoft.cern.ch/cern/slc4X/$ARCH
+EOOUT
+    } elsif ($OS eq "rhel4"){ $OUT .= <<EOOUT
+url --url http://linuxsoft.cern.ch/enterprise/4ES_U8/en/os/$ARCH
+EOOUT
     }
 }
 
@@ -542,11 +576,11 @@ keyboard us
 
 zerombr
 
-# XXX Hardware specific!
-clearpart --drives sda --all
+# XXX Hardware + function specific!
+clearpart --drives {$FIRST_DRIVE} --all
 zerombr
-part /boot    --size 1024 --ondisk sda 
-part pv.01    --size 1    --ondisk sda  --grow
+part /boot    --size 1024 --ondisk {$FIRST_DRIVE}
+part pv.01    --size 1    --ondisk {$FIRST_DRIVE}  --grow
 volgroup vg1 pv.01 
 logvol /             --vgname=vg1 --size=10000  --name=root --fstype=ext4
 logvol /var/lib/nova --vgname=vg1 --size=10000  --name=nova --fstype=ext4 --grow
@@ -573,32 +607,15 @@ selinux --enforcing
 
 firstboot --disable
 
-# FIXME logging host=<headnode> inneresting...
+# logging
 logging --level=debug
 
 # services
 key --skip
 services --disabled=pcscd,nfslock,netfs,portmap,rpcgssd,rpcidmapd,irqbalance,bluetooth,autofs,rhnsd,rhsmcertd
 
-# additional repositories
-{
-    if ($OS eq "rhel6"){ $OUT .= <<EOOUT
-repo --name="puppet-bootstrap" --baseurl http://cern.ch/agileinf/yum/puppet-bootstrap/6/$ARCH
-repo --name="EPEL"             --baseurl http://linuxsoft.cern.ch/epel/6/$ARCH
-repo --name="RHEL - optional"  --baseurl http://linuxsoft.cern.ch/rhel/rhel6server-$ARCH/RPMS.optional/
-repo --name="RHEL - updates"   --baseurl http://linuxsoft.cern.ch/rhel/rhel6server-$ARCH/RPMS.updates/
-repo --name="RHEL - fastrack"  --baseurl http://linuxsoft.cern.ch/rhel/rhel6server-$ARCH/RPMS.fastrack/
-EOOUT
-    } elsif ($OS eq "slc6"){ $OUT .= <<EOOUT
-repo --name="puppet-bootstrap" --baseurl http://cern.ch/agileinf/yum/puppet-bootstrap/6/$ARCH
-repo --name="EPEL"             --baseurl http://linuxsoft.cern.ch/epel/6/$ARCH
-repo --name="SLC6 - updates"   --baseurl http://linuxsoft.cern.ch/cern/slc6X/$ARCH/yum/updates/
-EOOUT
-    }
-}
-
 # bootloader
-bootloader --location=mbr --driveorder=sda
+bootloader --location=mbr --driveorder={$FIRST_DRIVE}
 
 #vnc
 #sshpw --username={$USER} {$PASSWD} --iscrypted
@@ -611,10 +628,19 @@ reboot
 #
 ##############################################################################
 
-%packages
+%packages --ignoremissing
+{
+    if ($OS eq "rhel6" or $OS eq "slc6"){ $OUT .= <<EOOUT
 @ Server Platform
-agileinf-puppet-bootstrap
 -fprintd
+EOOUT
+    } elsif ($OS eq "rhel5" or $OS eq "slc5"){ $OUT .= <<EOOUT
+@ Core
+ntp
+EOOUT
+    }
+}
+agileinf-puppet-bootstrap
 
 ##############################################################################
 #
@@ -664,7 +690,7 @@ set -x
 #
 # Set the correct time
 #
-/usr/sbin/ntpdate -bus ip-time-1 ip-time-2 || :
+ntpdate -bus ip-time-1 ip-time-2 || :
 /sbin/clock --systohc || :
 
 #
@@ -691,7 +717,7 @@ EOOUT
 #
 # Update the machine
 #
-/usr/bin/yum update --assumeyes --skip-broken || :
+/usr/bin/yum update -y --skip-broken || :
 
 #
 # Bootstrap puppet first, then do a full run
@@ -715,9 +741,13 @@ EOOUT
 # Make sure the boot sequence is verbose
 /usr/bin/perl -ni -e "s/ rhgb quiet//;print" /boot/grub/grub.conf || :
 
+{
+    if ($OS eq "rhel6" or $OS eq "slc6"){ $OUT .= <<EOOUT
 # The net.bridge.* entries in /etc/sysctl.conf make "sysctl -p" fail if "bridge" module is not loaded...
 /usr/bin/perl -ni -e '$_ = "### Commented out by CERN... $_" if /^net\.bridge/;print' /etc/sysctl.conf || :
-
+EOOUT
+    }
+}
 #
 # Done
 #
