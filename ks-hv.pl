@@ -258,12 +258,15 @@ sub SetupForeman($){
     my %todo = %$href;
     my $rc = 0;
 #    print Dumper(\%todo);exit;
+    print "[INFO] Registering machines in Foreman...\n";
 
-    @ARGV = split(/\s+/,$data{FOREMAN_OPTIONS});
     my %foreman_opts = ();
-    $rc = Getopt::Long::GetOptions("hostgroup=s"   => \$foreman_opts{HOSTGROUP},
-                                   "environment=s" => \$foreman_opts{ENVIRONMENT},
-    );
+    if ($data{FOREMAN_OPTIONS}){
+	@ARGV = split(/\s+/,$data{FOREMAN_OPTIONS});
+	$rc = Getopt::Long::GetOptions("hostgroup=s"   => \$foreman_opts{HOSTGROUP},
+				       "environment=s" => \$foreman_opts{ENVIRONMENT},
+	    );
+    }
 
     $foreman_opts{HOSTGROUP}   ||= "base";
     $foreman_opts{ENVIRONMENT} ||= "devel";
