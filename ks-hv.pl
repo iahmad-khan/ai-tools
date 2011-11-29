@@ -4,6 +4,7 @@
 
 # - note: unregistering from PXE does not work
 
+# Use Foreman generated KS file: https://punch.cern.ch:8443/unattended/provision?spoof=10.32.21.144
 
 #  - filesystem layout?
 #       by default nova and glance uses:
@@ -40,10 +41,11 @@ my %opts = (debug   => \$debug,
 
 my $rc = Getopt::Long::GetOptions(\%opts,
 				  "debug","dryrun","verbose",
-				  "os=s"            => \$data{OS},
-                                  "arch=s"          => \$data{ARCH},
-                                  "cern-user=s"     => \$data{USER},
-                                  "help" => sub { HelpMessage() },
+				  "os=s"              => \$data{OS},
+                                  "arch=s"            => \$data{ARCH},
+                                  "cern-user=s"       => \$data{USER},
+                                  "foreman-options=s" => \$data{FOREMAN_OPTIONS},
+                                  "help"              => sub { HelpMessage() },
                                  );
 #print Dumper(\%opts);
 
@@ -71,6 +73,20 @@ if (not @host){
 }
 
 map {s/.cern.ch//;$_ = lc} @host;  # strip domain name, change to lower case
+
+# Parse Foreman options
+
+if ($data{FOREMAN_OPTIONS}){
+    @ARGV = split(/\s+/,$data{FOREMAN_OPTIONS});
+    my %foreman_opts = ();
+    $rc = Getopt::Long::GetOptions("hostgroup=s"   => \$foreman_opts{HOSTGROUP},
+                                   "environment=s" => \$foreman_opts{ENVIRONMENT},
+    );
+    if (not $rc){
+        print STDERR "Failed to parse Foreman options \"$data{FOREMAN_OPTIONS}\"\n";
+        exit 1;
+    }
+}
 
 # XXX todo: verify if user has a cern account.
 
@@ -243,9 +259,14 @@ sub SetupForeman($){
     my $rc = 0;
 #    print Dumper(\%todo);exit;
 
+    @ARGV = split(/\s+/,$data{FOREMAN_OPTIONS});
+    my %foreman_opts = ();
+    $rc = Getopt::Long::GetOptions("hostgroup=s"   => \$foreman_opts{HOSTGROUP},
+                                   "environment=s" => \$foreman_opts{ENVIRONMENT},
+    );
 
-    my $group    = "base";
-    my $environ  = "devel";
+    $foreman_opts{HOSTGROUP}   ||= "base";
+    $foreman_opts{ENVIRONMENT} ||= "devel";
     my $domain   = "cern.ch";
     my $ptable   = "RedHat default";
 
@@ -267,12 +288,16 @@ sub SetupForeman($){
     my %tmp = (comment => "Machine Provisioned by Kickstart");
     
     $tmp{operatingsystem_id} = &getId(\$browser->get("$url/operatingsystems?format=json"),"operatingsystem","name", $OS{uc($data{OS})},         "id");
-    $tmp{hostgroup_id}       = &getId(\$browser->get("$url/hostgroups?format=json"),      "hostgroup",      "label",$group,                     "id");
-    $tmp{environment_id}     = &getId(\$browser->get("$url/environments?format=json"),    "environment",    "name", $environ,                   "id");
+    $tmp{hostgroup_id}       = &getId(\$browser->get("$url/hostgroups?format=json"),      "hostgroup",      "label",$foreman_opts{HOSTGROUP},   "id");
+    $tmp{environment_id}     = &getId(\$browser->get("$url/environments?format=json"),    "environment",    "name", $foreman_opts{ENVIRONMENT}, "id");
     $tmp{architecture_id}    = &getId(\$browser->get("$url/architectures?format=json"),   "architecture",   "name", $data{ARCH},                "id");
     $tmp{domain_id}          = &getId(\$browser->get("$url/domains?format=json"),         "domain",         "name", $domain,                    "id");
     $tmp{ptable_id}          = &getId(\$browser->get("$url/ptables?format=json"),         "ptable",         "name", $ptable,                    "id");
     $tmp{owner_id}           = &getId(\$browser->get("$url/users?format=json"),           "user",           "login",$user_credentials{username},"id");
+    #print Dumper($browser->get("$url/models?format=json"));#exit;
+    $tmp{model_id}           = &getId(\$browser->get("$url/models?format=json"),          "model",          "name", $data{HWMODEL}             ,"id");
+
+    map {delete $tmp{$_} if not defined $tmp{$_}} keys %tmp;
 
     for my $host (sort keys %todo){
 	$tmp{name} = $host;
@@ -330,10 +355,10 @@ sub getId($$$$$) {
 
     my $response = $$sref;
 
-    my $id = -1;
+    my $id = undef;
 
     for my $element (@{from_json($response->content)}) {
-        if ($element->{$name}->{$search} eq $field) {
+        if (lc($element->{$name}->{$search}) eq lc($field)) {
             $id = $element->{$name}->{$value};
 	    last;
         }
@@ -354,12 +379,14 @@ Usage: $script [options] hostname [hostname]
 
        where options are
 
-           --os   [rhel6|slc6|slc5]    : operating system to install
-                                         default: "slc6"
-           --arch [x86_64|i386]        : architecture to install
-                                         default: "x86_64"
-           --cern-user <username>      : CERN account to be used for LANdb lookups, e-mail sending, etc
-                                         default "$user" :)
+           --os   [rhel6|slc6|slc5]        : operating system to install
+                                             default: "slc6"
+           --arch [x86_64|i386]            : architecture to install
+                                             default: "x86_64"
+           --cern-user <username>          : CERN account to be used for LANdb lookups, Foreman access, e-mail sending, etc
+                                             default "$user" :)
+           --foreman-options "--key value" : specify Foreman specific options. Example:
+                                             "--hostgroup base/mytest --environment master"
 
            --help     : print this help
            --verbose  : print more output
@@ -585,6 +612,7 @@ volgroup vg1 pv.01
 logvol /             --vgname=vg1 --size=10000  --name=root --fstype=ext4
 logvol /var/lib/nova --vgname=vg1 --size=10000  --name=nova --fstype=ext4 --grow
 logvol swap          --vgname=vg1 --recommended --name=swap --fstype=swap
+#ignoredisk --only-use=sda,hda
 
 authconfig --useshadow --enablemd5 --enablekrb5
 
@@ -641,6 +669,7 @@ EOOUT
     }
 }
 agileinf-puppet-bootstrap
+%end
 
 ##############################################################################
 #
@@ -648,20 +677,48 @@ agileinf-puppet-bootstrap
 #
 ##############################################################################
 
-%pre
+%pre --log=/mnt/sysimage/root/anaconda-pre-log
 
+#
+# Preserve SSH host keys
+#
+/bin/mkdir -p /tmp/preserve /tmp/fs
+for device in /dev/mapper/vg1-root /dev/sda /dev/hda
+do
+    L=`/sbin/tune2fs -l $device | /bin/grep -E "Last mounted on:" | /bin/awk '{print $4}'`
+    if [ "$L" == "/" ]; then
+        echo Found /root on $device
+        /bin/mount $device /tmp/fs
+        if [ -d /tmp/fs/etc/ssh ]; then
+            /bin/cp -rp /tmp/fs/etc/ssh/ssh_host_* /tmp/preserve
+        fi
+        /bin/umount /tmp/fs
+        break
+    fi
+done
+#
+%end
 
 ##############################################################################
 #
 # post installation part of the KickStart configuration file
 #
 ##############################################################################
+%post --nochroot --log=/mnt/sysimage/anaconda-post-1-log
+
+set -x
+mount
+if [ -d /etc/ssh ]; then
+    /bin/cp -p /tmp/fs/ssh_keys* /mnt/sysimage/etc/ssh/.
+fi
+%end
 
 %post
+#%post --log=/root/anaconda-post-log
 
 fail () \{
 
-    /bin/sed 's/\r//' /root/ks-post-anaconda.log | /bin/mail -s "install failed on {$HOSTNAME}: $1" {$USER}@mail.cern.ch
+    /bin/sed 's/\r//' /root/anaconda-post-log | /bin/mail -s "install failed on {$HOSTNAME}: $1" {$USER}@mail.cern.ch
 
     exit -1
 \}
@@ -669,21 +726,23 @@ fail () \{
 trap "fail unknown\ error" ERR
 
 # redirect the output to the log file
-exec >/root/ks-post-anaconda.log 2>&1
+#exec >/root/ks-post-anaconda.log 2>&1
 #script -f /root/ks-post-anaconda.log
 
 # show the output on the seventh console
-tail -f /root/ks-post-anaconda.log >/dev/tty7 &
+#tail -f /root/ks-post-anaconda.log >/dev/tty7 &
+exec >/root/anaconda-post-log 2>&1
+tail -f /root/anaconda-post-log >/dev/tty7 &
 
 # changing to VT 7 that we can see what's going on....
 /usr/bin/chvt 7
 
-# try to save useful stuff
-/bin/mkdir /root/install-logs || :
-ls -l /tmp
-#/bin/cp /tmp/ks-script-*.log /root/ks-post-anaconda.log || :
-/bin/cp /tmp/ks-script-* /root/install-logs/ || :
-/bin/cp /tmp/*.log /root/install-logs/ || :
+# # try to save useful stuff
+# /bin/mkdir /root/install-logs || :
+# ls -l /tmp
+# #/bin/cp /tmp/ks-script-*.log /root/ks-post-anaconda.log || :
+# /bin/cp /tmp/ks-script-* /root/install-logs/ || :
+# /bin/cp /tmp/*.log /root/install-logs/ || :
 
 set -x 
 
@@ -711,6 +770,13 @@ ntpdate -bus ip-time-1 ip-time-2 || :
 /usr/bin/wget -O /etc/yum.repos.d/rhel6.repo --quiet http://cern.ch/linux/rhel6/rhel6.repo
 /usr/bin/wget -O /etc/yum.repos.d/epel.repo  --quiet http://cern.ch/linux/rhel6/epel.repo
 EOOUT
+    } elsif ($OS eq "rhel5"){ $OUT .= <<EOOUT
+#
+# YUM repo's
+#
+/usr/bin/wget -O /etc/yum.repos.d/rhel5.repo --quiet http://cern.ch/linux/rhel5/rhel5.repo
+/usr/bin/wget -O /etc/yum.repos.d/epel.repo  --quiet http://cern.ch/linux/rhel5/epel.repo
+EOOUT
     }
 }
 
@@ -729,14 +795,27 @@ EOOUT
 #
 # Ownership
 #
-#/usr/sbin/cern-config-users
 /bin/echo {$USER}@mail.cern.ch > /root/.forward || :
 /sbin/restorecon -v /root/.forward || :
 
 #
+# Restore SSH host keys
+#
+if [ -d /etc/ssh ]; then
+    mount
+    df
+    ls -l / | :
+    find / |grep ssh || :
+    pwd
+    find . |grep ssh || :
+    find /mnt/sysimage |grep ssh || :
+    #sleep 10
+    /bin/cp -p /mnt/sysimage/tmp/preserve/ssh_host* /etc/ssh/. || :
+fi
+
+#
 # Misc fixes
 #
-/usr/bin/yum clean all || :
 
 # Make sure the boot sequence is verbose
 /usr/bin/perl -ni -e "s/ rhgb quiet//;print" /boot/grub/grub.conf || :
@@ -751,7 +830,7 @@ EOOUT
 #
 # Done
 #
-/bin/sed 's/\r//' /root/ks-post-anaconda.log | /bin/mail -s "installation of {$HOSTNAME} successfully completed" {$USER}@mail.cern.ch
+/bin/sed 's/\r//' /root/anaconda-post-log | /bin/mail -s "installation of {$HOSTNAME} successfully completed" {$USER}@mail.cern.ch
 
 exit 0
 
