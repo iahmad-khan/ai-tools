@@ -1,15 +1,6 @@
 #! /usr/bin/perl -w
 
-# Todo:
 
-# - note: unregistering from PXE does not work
-
-# Use Foreman generated KS file: https://punch.cern.ch/unattended/provision?spoof=10.32.21.144
-
-#  - filesystem layout?
-#       by default nova and glance uses:
-#          "/var/lib/nova/"
-#          "/var/lib/glance/" 
 
 use strict;
 use diagnostics;
@@ -53,7 +44,7 @@ my $rc = Getopt::Long::GetOptions(\%opts,
 
 HelpMessage() if not $rc;
 
-$data{USER}   ||= (getpwuid($<))[0];
+$data{USER} ||= (getpwuid($<))[0];
 my @host = @ARGV;
 if (not @host){
     print STDERR "No hostname(s) given...\n";;
@@ -173,7 +164,7 @@ for my $host (@host){
 	    print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
 	    next;
 	}
- 	$data{"HOSTNAME_GE"} = "${host}-gigeth";
+ 	#$data{"HOSTNAME_GE"} = "${host}-gigeth";
 	$data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
 	$data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
 	for (@{$landb{Interfaces}}){
@@ -186,7 +177,7 @@ for my $host (@host){
 	    #print ">>> $name,$mac\n";
 	}
     }else{
-	$data{"HOSTNAME_GE"} = $host;
+	#$data{"HOSTNAME_GE"} = $host;
 	$data{NETWORK} = "network --bootproto=dhcp --device=eth0 --hostname $host.cern.ch";
     }
 
@@ -209,7 +200,7 @@ for my $host (@host){
     $request->header("Content-Type" => "application/json");
     my $response = $browser->request($request);
     if (not $response->is_success){
-        print STDERR Dumper($response)."AARGH!\n"; exit;
+        print STDERR Dumper($response)."AARGH! $url/unattended/provision?spoof=$iaddr\n"; exit;
     }
     my $template = $response->content;
 
@@ -223,8 +214,10 @@ for my $host (@host){
         "RedHat 5.7" => "RHES_5_U7",
         "SLC 5.7"    => "SLC5X",
         );
+
     my $console = uc($hwmodel) ne "HYPER-V VIRTUAL MACHINE" ? "console=tty0 console=ttyS2,9600n8" : "";
-    $data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $ksfile --kopts \"text network ks ksdevice=bootif latefcload $console\" --pxe --name $AimsImg{$os}_$arch";
+
+    #$data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $ksfile --kopts \"text network ks ksdevice=bootif latefcload $console\" --pxe --name $AimsImg{$os}_$arch";
 
     my $result = $tpl->fill_in(HASH => \%data);
     if (not defined $result) {
@@ -242,7 +235,7 @@ for my $host (@host){
     
     %{$todo{$host}} = ( ksfile          => $ksfile,
                         #aimscmd         => $data{AIMSCMD},
-                        hostname        => $data{"HOSTNAME_GE"},
+                        hostname        => ( gethostbyname("${host}-gigeth") ? "${host}-gigeth" : $host), # $data{"HOSTNAME_GE"},
 			operatingsystem => $os,
 			architecture    => $arch,
 			console         => $console,
