@@ -240,7 +240,7 @@ sub AddHost($@){
 	}
 
 	map {delete $tmp{$_} if not defined $tmp{$_}} keys %tmp;
-	print Dumper(\%tmp);#exit;
+	print Dumper(\%tmp) if $debug;#exit;
 
 	# Add machine to Foreman
 
