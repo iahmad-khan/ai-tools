@@ -1,0 +1,703 @@
+#! /usr/bin/perl -w
+
+# To-do:
+# - cannot generate KS files for freshly added machines?
+
+
+use strict;
+use diagnostics;
+use POSIX;
+use Getopt::Long;
+use Data::Dumper;
+use SOAP::Lite;# +trace => 'debug';
+use File::Basename;
+use LWP;
+use JSON;
+use Socket;
+
+$Data::Dumper::Sortkeys = 1;
+
+sub ForemanConfig($$);
+sub LandbHostInfo(@);
+sub ShowHost($@);
+sub ShowConfig($);
+sub DeleteHost($@);
+sub AddHost($@);
+sub UpdateHost($@);
+sub GetUserCredentials($);
+sub HelpMessage();
+sub HandleOptions();
+
+HelpMessage() if not @ARGV;
+
+my $debug = my $verbose = my $dryrun = 0;
+my %user_credentials = ();
+
+my ($action,%opts) = HandleOptions();
+
+#print "\@ARGV @ARGV\n";
+
+#print Dumper(\%opts);#exit;
+
+
+my @host = @ARGV;
+if (not @host and $action ne "showconfig"){
+    print STDERR "[ERROR] No hostname(s) given...\n";;
+    exit 1;
+}
+
+map {s/.cern.ch//;$_ = lc} @host;  # strip domain name, change to lower case
+
+# XXX todo: verify if user has a cern account.
+
+# Get user credentials
+($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
+
+#print Dumper(\%opts);# exit;
+
+#
+# Connect to Foreman
+#
+
+my $url         = "https://punch.cern.ch";
+my $netlocation = "punch.cern.ch:443";
+my $realm       = "Application";
+my $browser  = LWP::UserAgent->new;
+$browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
+
+#
+# Easy things first.
+#
+if ($action eq "delhost"){
+    DeleteHost(\%opts,@host);
+    exit 0;
+}
+
+#
+# Resolve Foreman ID's, update host data.
+#
+my %fmdata = ForemanConfig($browser,$url);
+
+#
+# more easy things.
+#
+if ($action eq "showhost"){
+    ShowHost(\%opts,@host);
+    exit 0;
+}elsif ($action eq "showconfig"){
+    ShowConfig(\%fmdata);
+    exit 0;
+}
+
+#
+# Do the user options have correct values?
+#
+my @err = ();
+for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable subnet)){
+    next if not defined $opts{$attr};
+    next if grep {$opts{$attr} eq $_} values %{$fmdata{$attr}};
+    push(@err,"[ERROR] Option \"--$attr\" has unknown value \"$opts{$attr}\". Valid values: ".join(", ",map {"\"$_\""} sort values %{$fmdata{$attr}})."\n");
+}
+if (@err){
+    map {print STDERR $_} @err;
+    exit 1;
+}
+
+#
+# Do the real work
+#
+if ($action eq "addhost"){
+    AddHost(\%opts,@host);
+} elsif ($action eq "updatehost"){
+    UpdateHost(\%opts,@host);
+}
+
+exit 0;
+
+sub ShowHost($@){
+    my ($href,@host) = @_;
+    my %opt = %$href;
+    #print Dumper(\%opt);
+    #print "@host\n";
+    #exit;
+    my $FORMAT = " %-15s %-25s %-15s %20s   %-25s %-10s %s\n";
+    #
+    # Are the hosts known to Foreman?
+    #
+    my @out = ();
+    for my $host (sort @host){
+	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
+	$request->header("Content-Type" => "application/json");
+	my $response = $browser->request($request);
+	if (not $response->is_success){
+	    print STDERR "[ERROR] Host \"$host\" is unknown to Foreman...\n";
+	    next;
+	}
+	my %data = %{from_json($response->content)};
+	%data = %{$data{host}};
+	#print Dumper(\%data);exit;
+	#printf "%15s %-15s %15s %-15s %15s\n",$host,map {$data{$_} || "oops..."} qw(environment_id owner_id domain_id managed);
+
+	# make "Comment" field fit to print
+	my $comment = $data{comment} || "";
+	$comment =~ s/\n//g;
+	$comment =~ s/\s+/ /g;
+
+	# combine OS + arch
+	my $os = sprintf "%s - %s",map {$fmdata{$_}{$data{$_."_id"} || -1} || ""} qw(operatingsystem architecture);
+
+	# other fields
+	my $hostgroup   = $fmdata{hostgroup}  { $data{"hostgroup_id"}   || -1 } || "";
+	my $environment = $fmdata{environment}{ $data{"environment_id"} || -1 } || "";
+	my $owner       = $fmdata{owner}      { $data{"owner_id"}       || -1 } || "";
+	my $model       = $fmdata{model}      { $data{"model_id"}       || -1 } || "";
+	#print Dumper(\%fmdata);
+	#
+	push(@out,sprintf $FORMAT, $host, $hostgroup, $environment, $os, $model, $owner, $comment);
+    }
+    if (@out){
+	printf $FORMAT,qw(Hostname Hostgroup Environment Operating-system Hardware-model Owner Comment);
+	printf $FORMAT,qw(======== ========= =========== ================ ============== ===== =======);
+	map {print $_} @out;
+    }
+    return 0;
+}
+
+sub DeleteHost($@){
+    my ($href,@host) = @_;
+    my %opt = %$href;
+    #
+    # Are the hosts known to Foreman?
+    #
+    my @err = ();
+    for my $host (sort @host){
+	my $request = HTTP::Request->new("DELETE","$url/hosts/$host.cern.ch");
+	$request->header("Content-Type" => "application/json");
+	my $response = $browser->request($request);
+	if ($response->is_success){
+	    print STDOUT "[INFO] Deleted \"$host\" from Foreman.\n";
+	}else{
+	    push(@err,$host);
+	}
+    }
+    if (@err){
+	print STDERR "[ERROR] Could not delete host(s) \"".join("\" - \"",@err). "\" from Foreman.\n";
+	return 1;
+    }
+    return 0;
+}
+
+sub AddHost($@){
+    my ($href,@host) = @_;
+    my %opt = %$href;
+    print Dumper(\%opt) if $debug;
+    #print "@host\n";
+
+    #
+    # get Landb data
+    #
+    my %landb = LandbHostInfo(@host);
+    #print Dumper(\%landb);exit;
+
+    #
+    #
+    #
+    print Dumper(\%fmdata) if $debug;
+    for my $host (sort @host){
+	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
+	$request->header("Content-Type" => "application/json");
+	my $response = $browser->request($request);
+	if ($response->is_success){
+	    print STDERR "[WARN] Ignoring existing host \"$host\".\n";
+	    next;
+	}
+	print STDOUT "[VERB] Adding \"$host\"\n" if $verbose;
+
+	my %tmp = ();
+
+	for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable subnet sp_subnet)){
+	    for (keys %{$fmdata{$attr}}){
+		if (lc(${$fmdata{$attr}}{$_}) eq lc($opt{$attr})){
+		    $tmp{"${attr}_id"} = $_;
+		    last;
+		}
+	    }
+	}
+
+	$tmp{comment} = $opt{comment} || undef;
+
+	# Network info
+	for my $name (keys %{$landb{$host}{Interfaces}}){
+	    if ($name eq $host){
+		$tmp{name}    = $name;
+		$tmp{mac}     = $landb{$host}{Interfaces}{$name}{HardwareAddress};
+		$tmp{ip}      = $landb{$host}{Interfaces}{$name}{IPAddress};
+	    } elsif ($name eq "${host}-ipmi"){
+		$tmp{sp_name} = $name;
+		$tmp{sp_mac}  = $landb{$host}{Interfaces}{$name}{HardwareAddress};
+		$tmp{sp_ip}   = $landb{$host}{Interfaces}{$name}{IPAddress};
+	    }
+	}
+
+	map {delete $tmp{$_} if not defined $tmp{$_}} keys %tmp;
+	print Dumper(\%tmp);#exit;
+
+	# Add machine to Foreman
+
+	#print "{host:" . to_json(\%tmp) ."}" ."\n";
+	#print  to_json({ host =>\%tmp}) ."\n";exit;
+     	$request = HTTP::Request->new("POST","$url/hosts");
+     	$request->header("Content-Type" => "application/json");
+     	$request->content(to_json({host => \%tmp}));
+	
+     	$response = $browser->request($request);
+	
+      	if (not $response->is_success){
+     	    print STDERR "[ERROR] Cannot add \"$host\" to Foreman: " . $response->status_line . " :: " . $response->content ."\n";
+      	    next;
+     	}
+
+	print STDOUT "[INFO] Successfully added $host\n";
+
+	# Update the owner (Bug http://theforeman.org/issues/1370 )
+	my $found = 0;
+	my %owner = %{$fmdata{owner}};
+	while (my ($id,$attr) = each %owner){
+	    next unless $attr eq lc($opt{owner});
+
+	    $request = HTTP::Request->new("PUT","$url/hosts/$host.cern.ch");
+	    $request->header("Content-Type" => "application/json");
+	    $request->content(to_json({host => {owner_id => $id}}));
+	    
+	    $response = $browser->request($request);
+	    $found++;
+	    last;
+	}
+
+	print STDERR "[WARN] Cannot update ownership of host \"$host\"\n" unless $found;
+    }
+
+    return 0;
+}
+
+sub UpdateHost($@){
+    my ($href,@host) = @_;
+    my %opt = %$href;
+    #print Dumper(\%opt);exit;
+    #print "@host\n";
+
+    #
+    # get Landb data
+    #
+    my %landb = LandbHostInfo(@host) if $opt{network};
+    #print Dumper(\%landb);exit;
+
+    #
+    #
+    #
+    #print Dumper(\%fmdata);
+    for my $host (sort @host){
+	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
+	$request->header("Content-Type" => "application/json");
+	my $response = $browser->request($request);
+	if (not $response->is_success){
+	    print STDERR "[WARN] Ignoring non-existent host \"$host\".\n";
+	    next;
+	}
+	print STDOUT "[VERB] Updating \"$host\"\n" if $verbose;
+
+	my %tmp = ();
+
+	for my $attr (keys %opt){
+	    for (keys %{$fmdata{$attr}}){
+		if (lc(${$fmdata{$attr}}{$_}) eq lc($opt{$attr})){
+		    $tmp{"${attr}_id"} = $_;
+		    last;
+		}
+	    }
+	}
+
+	$tmp{comment} = $opt{comment} if exists $opt{comment};
+
+	# Network info
+	if ($opt{network}){
+	    for my $name (keys %{$landb{$host}{Interfaces}}){
+		if ($name eq $host){
+		    $tmp{name} = $name;
+		    $tmp{mac}  = $landb{$host}{Interfaces}{$name}{HardwareAddress};
+		    $tmp{ip}   = $landb{$host}{Interfaces}{$name}{IPAddress};
+		} elsif ($name eq "${host}-ipmi"){
+		    $tmp{sp_name} = $name;
+		    $tmp{sp_mac}  = $landb{$host}{Interfaces}{$name}{HardwareAddress};
+		    $tmp{sp_ip}   = $landb{$host}{Interfaces}{$name}{IPAddress};
+		}
+	    }
+	}
+
+	if (not %tmp){
+	    print STDERR "[ERROR] Nothing to update?!\n";
+	    last;
+	}
+
+	#print Dumper(\%tmp);exit;
+
+	# Now apply the update
+     	$request = HTTP::Request->new("PUT","$url/hosts/$host.cern.ch");
+     	$request->header("Content-Type" => "application/json");
+     	$request->content(to_json({host => \%tmp}));
+	
+     	$response = $browser->request($request);
+	
+     	if ($response->is_success){
+	    print STDOUT "[INFO] Successfully updated $host\n";
+	}else{
+     	    print STDERR "[ERROR] Cannot update \"$host\": " . $response->status_line . " :: " . $response->content ."\n";
+     	}
+    }
+
+    return 0;
+}
+
+sub ForemanConfig($$){
+    my ($browser,$url) = @_;
+    my %config = ();
+
+    # record ptable per OS
+    my %ptable = my %medium = ();
+    for (@{from_json($browser->get("$url/operatingsystems?format=json")->content)}){
+	my %data = %{$$_{operatingsystem}};
+	#print Dumper(\%data);#exit;
+	for (@{$data{ptables}}){
+	    my %pt = %{$$_{ptable}};
+	    my $name = $pt{name};
+	    $ptable{$name}++;
+	}
+	for (@{$data{media}}){
+	    my %med = %{$$_{medium}};
+	    my $name = $med{name};
+	    $medium{$name}++;
+	}
+    }
+    #print Dumper(\%medium);exit;
+
+    # partition tables
+    map {$config{ptable}         {$$_{ptable}         {id}} = $$_{ptable}         {name} } @{from_json($browser->get("$url/ptables?format=json")->content)};
+    map {delete $config{ptable}{$_} unless exists $ptable{$config{ptable}{$_}}} keys %{$config{ptable}}; # remove ptables that are supported for unsupported OS-es :)
+
+    # installation media
+    map {$config{medium}         {$$_{medium}         {id}} = $$_{medium}         {name} } @{from_json($browser->get("$url/media?format=json")->content)};
+    map {delete $config{medium}{$_} unless exists $medium{$config{medium}{$_}}} keys %{$config{medium}}; # remove media that are supported for unsupported OS-es :)
+
+    map {$config{operatingsystem}{$$_{operatingsystem}{id}} = $$_{operatingsystem}{name} } @{from_json($browser->get("$url/operatingsystems?format=json")->content)};
+    map {$config{architecture}   {$$_{architecture}   {id}} = $$_{architecture}   {name} } @{from_json($browser->get("$url/architectures?format=json")->content)};
+    map {$config{model}          {$$_{model}          {id}} = $$_{model}          {name} } @{from_json($browser->get("$url/models?format=json")->content)};
+    map {$config{hostgroup}      {$$_{hostgroup}      {id}} = $$_{hostgroup}      {label}} @{from_json($browser->get("$url/hostgroups?format=json")->content)};
+    map {$config{environment}    {$$_{environment}    {id}} = $$_{environment}    {name} } @{from_json($browser->get("$url/environments?format=json")->content)};
+    map {$config{owner}          {$$_{user}           {id}} = $$_{user}           {login}} @{from_json($browser->get("$url/users?format=json")->content)};
+    map {$config{domain}         {$$_{domain}         {id}} = $$_{domain}         {name} } @{from_json($browser->get("$url/domains?format=json")->content)};
+    map {$config{subnet}         {$$_{subnet}         {id}} = $$_{subnet}         {name} } @{from_json($browser->get("$url/subnets?format=json")->content)};
+    %{$config{sp_subnet}} = %{$config{subnet}};
+
+#    print Dumper(\@{from_json($browser->get("$url/media?format=json")->content)});
+#    print Dumper(\%config);exit;
+    return %config;
+}
+
+sub LandbHostInfo(@){
+    my @device = @_;
+
+    my $client = SOAP::Lite
+	->uri('http://network.cern.ch/NetworkService')
+	->xmlschema('http://www.w3.org/2001/XMLSchema')
+	->proxy('https://network.cern.ch/sc/soap/soap.fcgi?v=4', keep_alive=>1);
+
+    # Get Auth token
+    my $call = $client->getAuthToken($user_credentials{username},$user_credentials{password},'NICE');
+    
+    my ($auth) = $call->result;
+    if ($call->fault){
+        print "ERROR: failed to authenticate to LANdb.\n";
+        exit 1;
+    }
+
+    my $authHeader = SOAP::Header->name('Auth' => { "token" => $auth });
+
+    my %landb = ();
+    for my $device (@device){
+	$call = $client->getDeviceInfo($authHeader,$device);
+	
+	my $bu = $call->result;
+	if ($call->fault) {
+	    print "[WARNING] Device \"$device\" not found in Landb, ignoring it...\n";
+	    next;
+	}
+	#print Dumper($bu);
+
+	$landb{$device}{Model} = $bu->{Model};
+	for (@{$bu->{Interfaces}}) {
+	    #print Dumper(\$_);
+	    my $Name = lc($_->{Name});
+	    my $HardwareAddress = $_->{BoundInterfaceCard}->{HardwareAddress};
+	    my $IPAddress = $_->{IPAddress};
+	    if (defined $HardwareAddress){
+		$HardwareAddress =~ s/\-/:/g;
+		%{$landb{$device}{Interfaces}{$Name}} = (HardwareAddress => $HardwareAddress,IPAddress => $IPAddress);
+		#push(@{$landb{$device}{Interfaces}},[$Name,$HardwareAddress,$IPAddress]);
+	    }
+	}
+	if (not exists $landb{$device}{Interfaces}){
+	    my $Name = lc($bu->{DeviceName});
+	    for (@{$bu->{NetworkInterfaceCards}}) {
+		my $HardwareAddress = $_->{HardwareAddress};
+		my $IPAddress = $_->{IPAddress};
+		if (defined $HardwareAddress){
+		    $HardwareAddress =~ s/\-/:/g;
+		    ${$landb{$device}{Interfaces}{$Name}}{HardwareAddress} = $HardwareAddress;
+		    #%{$landb{$device}{Interfaces}{$Name}} = (HardwareAddress => $HardwareAddress,IPAddress => $IPAddress);
+		    #push(@{$landb{$device}{Interfaces}},[$Name,$HardwareAddress,$IPAddress]);
+		}
+	    }
+	    for (@{$bu->{Interfaces}}) {
+		if ($Name eq lc($_->{Name})){
+		    ${$landb{$device}{Interfaces}{$Name}}{IPAddress} = $_->{IPAddress};
+		    #push(@{$landb{$device}{Interfaces}},[$Name,$HardwareAddress,$IPAddress]);
+		}
+	    }
+	}
+    }
+
+    #print Dumper(\%landb);
+    #exit;
+
+    return %landb;
+}
+
+sub ShowConfig($){
+    my $href = shift @_;
+    my %config = %$href;
+
+    #print Dumper(\%config);
+    for my $attr (sort keys %config){
+	print STDOUT "* Attribute name : $attr\n";
+	my @values = sort values %{$config{$attr}};
+	my $cnt = 0;
+	while (my @tmp = splice(@values,0,5)){
+	    last if not @tmp;
+	    print STDOUT ($cnt == 0 ? "  Allowed values : " : "                   ");
+	    map {printf "%-30s ", /\s/ ? "\"$_\"" : $_} @tmp;
+	    print "\n";
+	    $cnt++
+	}
+	print "\n";
+	#print STDOUT "Allowed values : " . join(", ",map {"\"$_\""} @values)."\n\n";
+    }
+    return 0;
+}
+
+sub HandleOptions(){
+
+    $action = shift @ARGV;
+
+    my %options = (addhost    => [qw(operatingsystem=s architecture=s hostgroup=s model=s owner=s comment=s domain=s ptable=s subnet=s)],
+		   updatehost => [qw(operatingsystem=s architecture=s hostgroup=s model=s owner=s comment=s domain=s ptable=s subnet=s network)],
+		   showhost   => [qw()],
+		   delhost    => [qw()],
+		   showconfig => [qw()],
+    );
+    HelpMessage() unless exists $options{$action};
+
+    my %opts = (debug   => \$debug,
+		dryrun  => \$dryrun,
+		verbose => \$verbose);
+ 
+    my $rc = Getopt::Long::GetOptions(\%opts,
+				      (map {$_ => \$opts{(split(/=/,$_))[0]}} @{$options{$action}}),
+				      "debug","dryrun","verbose",
+				      "cern-user=s"       => \$user_credentials{username},
+	);
+    HelpMessage() if not $rc;
+    map {delete $opts{$_} unless defined $opts{$_}} keys %opts;
+
+    if ($action eq "addhost"){
+        my @err = ();
+	map {push(@err,$_) unless exists $opts{$_}} qw(operatingsystem architecture hostgroup model owner subnet);
+	if (@err){
+	    map {print STDERR "[ERROR] Action \"$action\" requires mandatory option \"$_\"\n"} @err;
+	    exit 1;
+	}
+	$opts{domain}      ||= "cern.ch";
+	$opts{ptable}      ||= "RedHat default";
+	$opts{environment} ||= "production";
+	$opts{sp_subnet}     = $opts{subnet};
+    }elsif ($action eq "updatehost"){
+	$opts{sp_subnet} = $opts{subnet};
+	$opts{medium} = $opts{operatingsystem};
+	#print Dumper(\%opts);
+	map {delete $opts{$_} unless defined $opts{$_}} keys %opts;
+	#print Dumper(\%opts);exit;
+
+	my $cnt = 0;
+	my @opt = qw(operatingsystem architecture hostgroup model owner ptable comment subnet network);
+	map {$cnt++ if defined $opts{$_}} @opt;
+	if ($cnt == 0){
+	    print STDERR "[ERROR] Action \"$action\" requires at least one of the options \"--". join("\", \"--",@opt)."\"\n";
+	    exit 1;
+	}
+    }
+				      
+    return $action,%opts;
+}
+
+sub GetUserCredentials($){
+
+    use Net::Netrc;
+    use Term::ReadKey;
+
+    my $username = shift @_;
+    my $password = undef;
+
+    my $mach = undef;
+    if (defined $username){
+	$mach = Net::Netrc->lookup("network.cern.ch",$username);
+    }
+
+    if ($mach){
+	$password = $mach->password;
+    }else{
+	if (not defined $username){
+	    print STDOUT "Please give the CERN username/password combination to query LANdb, talk to Foreman, etc: \n";
+	    print STDOUT "   - username : ";
+	    chomp($username = <STDIN>);
+	    if (not defined $username){
+		print STDERR "Failed to read a username, exiting\n";
+		return ();
+	    }
+	}else{
+	    print STDOUT "Please give the password for CERN account \"$username\" to query LANdb, talk to Foreman, etc: \n";
+	}
+	print STDOUT "   - password : ";
+	ReadMode("noecho",);
+	chomp($password = <STDIN>);
+	ReadMode("normal");
+	print "\n";
+	if (not defined $password){
+	    print STDERR "failed to read a password, exiting\n";
+	    return ();
+	}
+    }
+
+    return ($username,$password);
+}
+
+sub HelpMessage(){
+
+    my $script = basename $0;
+    my $user = (getpwuid($<))[0];
+
+    print <<EOH;
+
+
+Usage: $script action [options] hostname [hostname]
+
+       "action" should be one of the following
+
+           * showhost     
+           * addhost
+           * delhost
+           * updatehost
+           * showconfig
+           * help
+
+       Options depend on the action:
+
+           * addhost
+             --operatingsystem <name>
+             --architecture <name>
+             --hostgroup <name>
+             --model <name>
+             --owner <name>
+             --comment <comment string>
+             --domain <name>             : default: "cern.ch"
+             --subnet <name>
+             --environment <name>        : default: "production"
+             --ptable <name>             : default: "RedHat default"
+
+	     note: IP and MAC addresses are retrieved from Landb
+
+           * updatehost
+             --hostgroup <name>
+             --model <name>
+             --owner <name>
+             --comment <comment string>
+             --subnet <name>
+             --network                   : IP and MAC addresses are retrieved from Landb
+
+       General options
+
+           --cern-user <username>          : CERN account to be used for LANdb lookups and Foreman access
+                                             default "$user" :)
+
+           --verbose  : print more output
+           --debug    : print even more output
+           --dryrun   : do not upload to AIMS
+
+EOH
+
+exit 0;
+
+}
+
+__END__
+# {host : {"architecture_id":int,
+ # "build":string,
+ # "comment":string,
+ # "disk":string,
+ # "domain_id":int,
+ # "enabled":string,
+ # "environment":string,
+ # "environment_id":int,
+ # "hostgroup_id":int,
+ # "installed_at":string,
+ # "ip":string,
+ # "last_compile":string,
+ # "last_freshcheck":string,
+ # "last_report":string,
+ # "mac":string,
+ # "medium_id":int,
+ # "model_id":int,
+ # "name":string,
+ # "operatingsystem_id":int,
+ # "owner_id":int,
+ # "owner_type":string,
+ # "ptable_id":int,
+ # "puppet_status":string,
+ # "puppetmaster":string,
+ # "root_pass":string,
+ # "serial":string,
+ # "source_file_id":int,
+ # "sp_ip":string,
+ # "sp_mac":string,
+ # "sp_name":string,
+ # "sp_subnet_id":int,
+ # "subnet_id":int}}
+
+[jan@jackson01 trunk]$ ./ai-foreman-cli showhost --cern-user jveldik janvm01
+ Hostname        Hostgroup                 Environment         Operating-system   Hardware-model            Owner      Comment
+ ========        =========                 ===========         ================   ==============            =====      =======
+ janvm01         base                      production            SLC 6 - x86_64   e4_09_21                  jveldik    
+[jan@jackson01 trunk]$ ./ai-foreman-cli delhost --cern-user jveldik janvm01
+[INFO] Deleted "janvm01" from Foreman.
+[jan@jackson01 trunk]$ ./ai-foreman-cli showhost --cern-user jveldik janvm01
+[ERROR] Host "janvm01" is unknown to Foreman...
+[jan@jackson01 trunk]$ ./ai-foreman-cli addhost janvm01 --oper "SLC 6" --model "e4_09_21" --arch x86_64 --host base --owner jveldik --sub "CERN GPN" --cer jveldik
+[INFO] Successfully added janvm01
+[jan@jackson01 trunk]$ ./ai-foreman-cli showhost --cern-user jveldik janvm01
+ Hostname        Hostgroup                 Environment         Operating-system   Hardware-model            Owner      Comment
+ ========        =========                 ===========         ================   ==============            =====      =======
+ janvm01         base                      production            SLC 6 - x86_64   e4_09_21                  jveldik    
+[jan@jackson01 trunk]$ ./ai-foreman-cli updatehost --cern-user jveldik janvm01 --comm 'no comment'
+[INFO] Successfully updated janvm01
+[jan@jackson01 trunk]$ ./ai-foreman-cli showhost --cern-user jveldik janvm01
+ Hostname        Hostgroup                 Environment         Operating-system   Hardware-model            Owner      Comment
+ ========        =========                 ===========         ================   ==============            =====      =======
+ janvm01         base                      production            SLC 6 - x86_64   e4_09_21                  jveldik    no comment
