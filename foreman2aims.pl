@@ -20,7 +20,6 @@ $Data::Dumper::Sortkeys = 1;
 
 sub LandbHostInfo($);
 sub SetupAims($);
-#sub SetupForeman($);
 sub HelpMessage();
 sub getId($$$$$);
 
@@ -28,16 +27,15 @@ HelpMessage() if not @ARGV;
 
 my %data = ();
 my $debug = my $verbose = my $dryrun = 0;
+my $noaims = 0;
 my %opts = (debug   => \$debug,
             dryrun  => \$dryrun,
             verbose => \$verbose);
 
 my $rc = Getopt::Long::GetOptions(\%opts,
 				  "debug","dryrun","verbose",
-				  #"os=s"              => \$data{OS},
-                                  #"arch=s"            => \$data{ARCH},
+				  "noaims"            => \$noaims,
                                   "cern-user=s"       => \$data{USER},
-                                  #"foreman-options=s" => \$data{FOREMAN_OPTIONS},
                                   "help"              => sub { HelpMessage() },
                                  );
 #print Dumper(\%opts);
@@ -142,11 +140,14 @@ for my $host (keys %fmdata){
     my $request = HTTP::Request->new("DELETE","$url/smart_proxies/2-punch-cern-ch/puppetca/$host.cern.ch"); # XXX to-do: replace hardcoded URL by sthg smart :)
     $request->header("Content-Type" => "application/json");
     my $response = $browser->request($request);
-    push(@err,$host) unless $response->is_success;
+    if (not $response->is_success){
+        push(@err,$host);
+	print "[ERROR] ".$response->status_line."\n" if $debug;
+    }
 }
 if (@err){
     print STDERR "[ERROR] Could not revoke certificate for host(s) \"".join("\" - \"",@err). "\" from Puppet Certificate Authority, exiting...\n";
-    exit 1;
+    #exit 1;
 }
 
 #
@@ -164,7 +165,6 @@ for my $host (@host){
 	    print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
 	    next;
 	}
- 	#$data{"HOSTNAME_GE"} = "${host}-gigeth";
 	$data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
 	$data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
 	for (@{$landb{Interfaces}}){
@@ -177,7 +177,6 @@ for my $host (@host){
 	    #print ">>> $name,$mac\n";
 	}
     }else{
-	#$data{"HOSTNAME_GE"} = $host;
 	$data{NETWORK} = "network --bootproto=dhcp --device=eth0 --hostname $host.cern.ch";
     }
 
@@ -200,7 +199,8 @@ for my $host (@host){
     $request->header("Content-Type" => "application/json");
     my $response = $browser->request($request);
     if (not $response->is_success){
-        print STDERR Dumper($response)."AARGH! $url/unattended/provision?spoof=$iaddr\n"; exit;
+        print STDERR Dumper($response)."AARGH! $url/unattended/provision?spoof=$iaddr\n";
+	exit;
     }
     my $template = $response->content;
 
@@ -208,16 +208,7 @@ for my $host (@host){
 				 UNTAINT => 1,
 				 SOURCE  => $template) or die "Couldn't construct template: $Text::Template::ERROR";
 
-    my %AimsImg = (
-        "RedHat 6.1" => "RHEL6_U1",
-        "SLC 6.1"    => "SLC6X",
-        "RedHat 5.7" => "RHES_5_U7",
-        "SLC 5.7"    => "SLC5X",
-        );
-
     my $console = uc($hwmodel) ne "HYPER-V VIRTUAL MACHINE" ? "console=tty0 console=ttyS2,9600n8" : "";
-
-    #$data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $ksfile --kopts \"text network ks ksdevice=bootif latefcload $console\" --pxe --name $AimsImg{$os}_$arch";
 
     my $result = $tpl->fill_in(HASH => \%data);
     if (not defined $result) {
@@ -234,8 +225,7 @@ for my $host (@host){
     close F;
     
     %{$todo{$host}} = ( ksfile          => $ksfile,
-                        #aimscmd         => $data{AIMSCMD},
-                        hostname        => ( gethostbyname("${host}-gigeth") ? "${host}-gigeth" : $host), # $data{"HOSTNAME_GE"},
+                        hostname        => ( gethostbyname("${host}-gigeth") ? "${host}-gigeth" : $host),
 			operatingsystem => $os,
 			architecture    => $arch,
 			console         => $console,
@@ -246,6 +236,11 @@ for my $host (@host){
 #
 # Add to AIMS
 #
+if ($noaims){
+    print "[INFO] Option \"--noaims\" specified, exiting now.\n";
+    exit 0;
+}
+
 @host = SetupAims(\%todo);
 if (not @host){
     print STDERR "[ERROR] Upload to AIMS failed, exiting...\n";
@@ -326,7 +321,10 @@ sub SetupAims($){
     my $rc = 0;
     #print Dumper(\%todo);
     my %AimsImg = (
+        "RedHat 6"   => "RHEL6_U2",
+        "RedHat 6.2" => "RHEL6_U2",
         "RedHat 6.1" => "RHEL6_U1",
+        "SLC 6"      => "SLC6X",
         "SLC 6.1"    => "SLC6X",
         "RedHat 5.7" => "RHES_5_U7",
         "SLC 5.7"    => "SLC5X",
@@ -337,10 +335,13 @@ sub SetupAims($){
 	my $cnt = 0;
 	my $kopts = "text network ks ksdevice=bootif latefcload";
 	$kopts .= " $todo{$host}{console}" if $todo{$host}{console};
+	if (not exists $AimsImg{$todo{$host}{operatingsystem}}){
+	    print STDERR "[ERROR] No suitable AIMS target for Operating System \"$todo{$host}{operatingsystem}\" available. Probably a bug in the script you are running :)\n";
+	    exit 1;
+	}
 	my $imgname = $AimsImg{$todo{$host}{operatingsystem}} . "_" . $todo{$host}{architecture};
 	my $aims = "/usr/bin/aims2client addhost --hostname $todo{$host}{hostname} --kickstart $todo{$host}{ksfile} --kopts \"$kopts\" --pxe --name $imgname";
 	while (1){
-	    #my $aims = $todo{$host}{aimscmd};
 	    if ($dryrun){
 		print "[DRYRUN] *Not* uploading Kickstart file  for $host to AIMS\n";
 		last;
@@ -374,7 +375,7 @@ sub SetupAims($){
 		sleep 5;
 	    }
 	}
-        #unlink $todo{$host}{ksfile} unless $debug;
+        unlink $todo{$host}{ksfile} unless $debug;
     }
     map {unlink $todo{$_}{ksfile}} keys %todo unless $debug;
     return () unless %todo;
@@ -480,114 +481,5 @@ sub LandbHostInfo($){
 
 __END__
 
-
-sub SetupForeman($){
-    my $href = shift @_;
-    my %todo = %$href;
-    my $rc = 0;
-#    print Dumper(\%todo);exit;
-    print "[INFO] Registering machines in Foreman...\n";
-
-    }
-
-    $foreman_opts{HOSTGROUP}   ||= "base";
-    $foreman_opts{ENVIRONMENT} ||= "devel";
-    my $domain   = "cern.ch";
-    my $ptable   = "RedHat default";
-
-    my %OS = (
-	"SLC6" => "SLC 6.1",
-	"SLC5" => "SLC 5.7",
-	"RHEL6" => "RedHat 6.1",
-	"RHEL5" => "RedHat 5.7",
-	);
-    die if not exists $OS{uc($data{OS})};
-
-    my $url         = "https://punch.cern.ch";
-    my $netlocation = "punch.cern.ch:443";
-    my $realm       = "Application";
-
-    my $browser  = LWP::UserAgent->new;
-    $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
-
-    my %tmp = (comment => "Machine Provisioned by Kickstart");
-    
-    $tmp{operatingsystem_id} = &getId(\$browser->get("$url/operatingsystems?format=json"),"operatingsystem","name", $OS{uc($data{OS})},         "id");
-    $tmp{hostgroup_id}       = &getId(\$browser->get("$url/hostgroups?format=json"),      "hostgroup",      "label",$foreman_opts{HOSTGROUP},   "id");
-    $tmp{environment_id}     = &getId(\$browser->get("$url/environments?format=json"),    "environment",    "name", $foreman_opts{ENVIRONMENT}, "id");
-    $tmp{architecture_id}    = &getId(\$browser->get("$url/architectures?format=json"),   "architecture",   "name", $data{ARCH},                "id");
-    $tmp{domain_id}          = &getId(\$browser->get("$url/domains?format=json"),         "domain",         "name", $domain,                    "id");
-    $tmp{ptable_id}          = &getId(\$browser->get("$url/ptables?format=json"),         "ptable",         "name", $ptable,                    "id");
-    $tmp{owner_id}           = &getId(\$browser->get("$url/users?format=json"),           "user",           "login",$user_credentials{username},"id");
-    #print Dumper($browser->get("$url/models?format=json"));#exit;
-    $tmp{model_id}           = &getId(\$browser->get("$url/models?format=json"),          "model",          "name", $data{HWMODEL}             ,"id");
-
-    map {delete $tmp{$_} if not defined $tmp{$_}} keys %tmp;
-
-    for my $host (sort keys %todo){
-	$tmp{name} = $host;
-
-	# IP address
-	my $iaddr = gethostbyname($host);
-	die "aargh..." if not defined $iaddr;
-	$tmp{ip} = inet_ntoa($iaddr);
-	die "aaargh..." if not defined $tmp{ip};
-
-	# MAC address.
-	$tmp{mac} = [@{$todo{$host}{mac}}];
-	$tmp{mac} = ${$todo{$host}{mac}}[0]; # JvE, Nov 2011: Foreman does not handle multiple MAC addresses?
-
-	# First, delete the entry from Foreman
-	my $request = HTTP::Request->new("DELETE","$url/hosts/$host.$domain");
-	$request->header("Content-Type" => "application/json");
-	my $response = $browser->request($request);
-	#if (not $response->is_success){
-	#    print "[ERROR] Cannot remove \"$host\" from Foreman: " . $response->status_line . " :: " . $response->content ."\n";
-	#    #next;
-	#}
-
-	# Then, add it back to Foreman
-	for my $key (sort keys %tmp){
-	    #print "$key :: \"".ref($tmp{$key})."\"";
-	    if (ref($tmp{$key}) eq "ARRAY"){
-		$tmp{$key} = "[\"" . join("\",\"",@{$tmp{$key}}) . "\"]";
-	    }else{
-		$tmp{$key} = "\"$tmp{$key}\"";
-	    }
-	    #print " $tmp{$key}\n";
-	}
-	my $json = "{host:{".(join ",", map {"\"$_\":$tmp{$_}"} sort keys %tmp )."}}";
-	#print "$json\n";#next;
-
-	$request = HTTP::Request->new("POST","$url/hosts");
-	$request->header("Content-Type" => "application/json");
-	$request->content($json);
-	
-	$response = $browser->request($request);
-	
-	if (not $response->is_success){
-	    print "[ERROR] Cannot add \"$host\" to Foreman: " . $response->status_line . " :: " . $response->content ."\n";
-	    #print Dumper(\$response);
-	    #next;
-	}
-
-    }
-
-}
-
-sub getId($$$$$) {
-    my ($sref,$name,$search,$field,$value) = @_;
-
-    my $response = $$sref;
-
-    my $id = undef;
-
-    for my $element (@{from_json($response->content)}) {
-        if (lc($element->{$name}->{$search}) eq lc($field)) {
-            $id = $element->{$name}->{$value};
-	    last;
-        }
-    }
-    return $id;
-}
+Dec  5 14:12:02 lxsoft04 httpd: lxfssm4004.cern.ch - - [05/Dec/2011:14:12:02 +0100] "GET /aims2server/aims2reboot.cgi?pxetarget=localboot HTTP/1.0" 200 57 "-" "Wget/1.12 (linux-gnu)"
 
