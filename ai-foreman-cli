@@ -136,7 +136,7 @@ sub ShowHost($@){
 	my %data = %{from_json($response->content)};
 	%data = %{$data{host}};
 	#print Dumper(\%data);exit;
-	#printf "%15s %-15s %15s %-15s %15s\n",$host,map {$data{$_} || "oops..."} qw(environment_id owner_id domain_id managed);
+	printf "%15s %-15s %15s %-15s %15s\n",$host,map {$data{$_} || "oops..."} qw(environment_id owner_id ip managed);
 
 	# make "Comment" field fit to print
 	my $comment = $data{comment} || "";
@@ -498,8 +498,8 @@ sub HandleOptions(){
 
     $action = shift @ARGV;
 
-    my %options = (addhost    => [qw(operatingsystem=s architecture=s hostgroup=s model=s owner=s comment=s domain=s ptable=s subnet=s)],
-		   updatehost => [qw(operatingsystem=s architecture=s hostgroup=s model=s owner=s comment=s domain=s ptable=s subnet=s network)],
+    my %options = (addhost    => [qw(operatingsystem=s architecture=s hostgroup=s environment=s model=s owner=s comment=s domain=s ptable=s subnet=s)],
+		   updatehost => [qw(operatingsystem=s architecture=s hostgroup=s environment=s model=s owner=s comment=s domain=s ptable=s subnet=s network)],
 		   showhost   => [qw()],
 		   delhost    => [qw()],
 		   showconfig => [qw()],
@@ -537,7 +537,7 @@ sub HandleOptions(){
 	#print Dumper(\%opts);exit;
 
 	my $cnt = 0;
-	my @opt = qw(operatingsystem architecture hostgroup model owner ptable comment subnet network);
+	my @opt = qw(operatingsystem architecture hostgroup model owner ptable comment subnet network environment);
 	map {$cnt++ if defined $opts{$_}} @opt;
 	if ($cnt == 0){
 	    print STDERR "[ERROR] Action \"$action\" requires at least one of the options \"--". join("\", \"--",@opt)."\"\n";
@@ -614,18 +614,19 @@ Usage: $script action [options] hostname [hostname]
              --operatingsystem <name>
              --architecture <name>
              --hostgroup <name>
+             --environment <name>        : default: "production"
              --model <name>
              --owner <name>
              --comment <comment string>
              --domain <name>             : default: "cern.ch"
              --subnet <name>
-             --environment <name>        : default: "production"
              --ptable <name>             : default: "RedHat default"
 
 	     note: IP and MAC addresses are retrieved from Landb
 
            * updatehost
              --hostgroup <name>
+             --environment <name>
              --model <name>
              --owner <name>
              --comment <comment string>
@@ -681,23 +682,3 @@ __END__
  # "sp_subnet_id":int,
  # "subnet_id":int}}
 
-[jan@jackson01 trunk]$ ./ai-foreman-cli showhost --cern-user jveldik janvm01
- Hostname        Hostgroup                 Environment         Operating-system   Hardware-model            Owner      Comment
- ========        =========                 ===========         ================   ==============            =====      =======
- janvm01         base                      production            SLC 6 - x86_64   e4_09_21                  jveldik    
-[jan@jackson01 trunk]$ ./ai-foreman-cli delhost --cern-user jveldik janvm01
-[INFO] Deleted "janvm01" from Foreman.
-[jan@jackson01 trunk]$ ./ai-foreman-cli showhost --cern-user jveldik janvm01
-[ERROR] Host "janvm01" is unknown to Foreman...
-[jan@jackson01 trunk]$ ./ai-foreman-cli addhost janvm01 --oper "SLC 6" --model "e4_09_21" --arch x86_64 --host base --owner jveldik --sub "CERN GPN" --cer jveldik
-[INFO] Successfully added janvm01
-[jan@jackson01 trunk]$ ./ai-foreman-cli showhost --cern-user jveldik janvm01
- Hostname        Hostgroup                 Environment         Operating-system   Hardware-model            Owner      Comment
- ========        =========                 ===========         ================   ==============            =====      =======
- janvm01         base                      production            SLC 6 - x86_64   e4_09_21                  jveldik    
-[jan@jackson01 trunk]$ ./ai-foreman-cli updatehost --cern-user jveldik janvm01 --comm 'no comment'
-[INFO] Successfully updated janvm01
-[jan@jackson01 trunk]$ ./ai-foreman-cli showhost --cern-user jveldik janvm01
- Hostname        Hostgroup                 Environment         Operating-system   Hardware-model            Owner      Comment
- ========        =========                 ===========         ================   ==============            =====      =======
- janvm01         base                      production            SLC 6 - x86_64   e4_09_21                  jveldik    no comment
