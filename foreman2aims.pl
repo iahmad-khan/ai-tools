@@ -251,9 +251,12 @@ map {print "[INFO] Machine \"$_\" is ready to be reinstalled.\n"} sort @host;
 
 #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
 my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
-my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
+my $mess3 = "      ssh lxadm remote-power-control reset ". join(",",@host)."\n";
+#my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
 my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
 my $mess5 = join("\n",map {"      aims2 pxeoff $_-gigeth"} @host);
+$mess5 = undef;
+map {$mess5 .= "      aims2 pxeoff $_-gigeth" if gethostbyname($_ . "-gigeth")} @host;
 
 print <<EOMESS;
 
@@ -275,11 +278,19 @@ $mess3
 
 $mess4
 
+EOMESS
+
+if ($mess5){
+print <<EOMESS;
+
 -- For "*-gigeth" machines: once the installation is underway, run 
 
 $mess5
 
     to break out on an install loop
+EOMESS
+}print <<EOMESS;
+
 
 This should become simpler over time. Or not.
 
@@ -325,11 +336,11 @@ sub SetupAims($){
         "RedHat 6.2" => "RHEL6_U2",
         "RedHat 6.1" => "RHEL6_U1",
         "SLC 6"      => "SLC6X",
-        "SLC 6.1"    => "SLC6X",
+        "SLC 6.1"    => "SLC61",
+        "SLC 6.2"    => "SLC62",
         "RedHat 5.7" => "RHES_5_U7",
         "SLC 5.7"    => "SLC5X",
         );
-
 
     for my $host (sort keys %todo){
 	my $cnt = 0;
@@ -343,7 +354,7 @@ sub SetupAims($){
 	my $aims = "/usr/bin/aims2client addhost --hostname $todo{$host}{hostname} --kickstart $todo{$host}{ksfile} --kopts \"$kopts\" --pxe --name $imgname";
 	while (1){
 	    if ($dryrun){
-		print "[DRYRUN] *Not* uploading Kickstart file  for $host to AIMS\n";
+		print "[DRYRUN] *Not* uploading Kickstart file for $host to AIMS\n";
 		last;
 	    }
 	    print STDOUT "[INFO] Uploading Kickstart file for $host to AIMS\n";
