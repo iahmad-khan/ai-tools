@@ -136,7 +136,7 @@ sub ShowHost($@){
 	my %data = %{from_json($response->content)};
 	%data = %{$data{host}};
 	#print Dumper(\%data);exit;
-	printf "%15s %-15s %15s %-15s %15s\n",$host,map {$data{$_} || "oops..."} qw(environment_id owner_id ip managed);
+	printf "%15s %-15s %15s %-15s %15s\n",$host,map {$data{$_} || "oops..."} qw(environment_id owner_id ip managed) if $debug;
 
 	# make "Comment" field fit to print
 	my $comment = $data{comment} || "";
@@ -344,6 +344,7 @@ sub UpdateHost($@){
 	# Now apply the update
      	$request = HTTP::Request->new("PUT","$url/hosts/$host.cern.ch");
      	$request->header("Content-Type" => "application/json");
+	print "[DEBUG] JSON: ".to_json({host => \%tmp})."\n" if $debug;
      	$request->content(to_json({host => \%tmp}));
 	
      	$response = $browser->request($request);
@@ -682,3 +683,26 @@ __END__
  # "sp_subnet_id":int,
  # "subnet_id":int}}
 
+
+
+Add "pcie_aspm=off"
+
+
+[root@lxfssm4003 ~]# cat ifconfig.txt 
+eth0      Link encap:Ethernet  HWaddr 00:E0:ED:0E:60:70  
+          inet addr:10.32.21.15  Bcast:10.32.21.127  Mask:255.255.255.128
+          inet6 addr: fe80::2e0:edff:fe0e:6070/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:768 errors:1279900253910 dropped:5119601015640 overruns:0 frame:1279900253910
+          TX packets:754 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:124412 (121.4 KiB)  TX bytes:130424 (127.3 KiB)
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:56 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:56 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:5281 (5.1 KiB)  TX bytes:5281 (5.1 KiB)

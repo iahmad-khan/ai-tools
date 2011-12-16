@@ -4,7 +4,7 @@
 
 # - note: unregistering from PXE does not work
 
-# Use Foreman generated KS file: https://punch.cern.ch:8443/unattended/provision?spoof=10.32.21.144
+# Use Foreman generated KS file: https://punch.cern.ch/unattended/provision?spoof=10.32.21.144
 
 #  - filesystem layout?
 #       by default nova and glance uses:
@@ -125,7 +125,6 @@ my %AimsImg = (
 
 #print Dumper(\%data);exit;
 
-
 my $tpl = new Text::Template(TYPE    => "FILEHANDLE",
                              UNTAINT => 1,
                              SOURCE  => *DATA) or die "Couldn't construct template: $Text::Template::ERROR";
@@ -169,11 +168,11 @@ for my $host (@host){
 	$data{FIRST_DRIVE} = "sda";
     }
 
-    $data{KSFILE} = POSIX::tmpnam();
+    my $ksfile = POSIX::tmpnam();
 
     my $console = uc($data{HWMODEL}) ne "HYPER-V VIRTUAL MACHINE" ? "console=tty0 console=ttyS2,9600n8" : "";
 
-    $data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $data{KSFILE} --kopts \"text network ks ksdevice=bootif latefcload $console\" --pxe --name $AimsImg{$data{OS}}";
+    $data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $ksfile --kopts \"text network ks ksdevice=bootif latefcload $console\" --pxe --name $AimsImg{$data{OS}}";
 
     my $result = $tpl->fill_in(HASH => \%data);
     if (not defined $result) {
@@ -181,19 +180,64 @@ for my $host (@host){
         next;
     }
     
-    if (not open(F,"> $data{KSFILE}")){
-        print STDERR "[ERROR] Could not open \"$data{KSFILE}\" for writing: $!\n";
+    if (not open(F,"> $ksfile")){
+        print STDERR "[ERROR] Could not open \"$ksfile\" for writing: $!\n";
 	next;
     }
     print F $result;
     print $result if $debug;
     close F;
 
-    %{$todo{$host}} = ( ksfile  => $data{KSFILE},
+    %{$todo{$host}} = ( ksfile  => $ksfile,
 			aimscmd => $data{AIMSCMD},
                         gigeth  => $data{"HOSTNAME_GE"},
 			mac     => [@mac],                # to be used in Foreman
     );
+
+    # Test Foreman-generated KS files here...
+
+    $ksfile .= "-foreman";
+
+    my $url         = "https://punch.cern.ch";
+    my $netlocation = "punch.cern.ch:443";
+    my $realm       = "Application";
+    my $browser  = LWP::UserAgent->new;
+    $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
+
+    # IP address
+    my $iaddr = gethostbyname($host);
+    die "aargh..." if not defined $iaddr;
+    $iaddr = inet_ntoa($iaddr);
+    my $request = HTTP::Request->new("GET","$url/unattended/provision?spoof=$iaddr");
+    $request->header("Content-Type" => "application/json");
+    my $response = $browser->request($request);
+    if (not $response->is_success){
+        print STDERR Dumper($response)."AARGH!\n"; exit;
+    }
+    my $template = $response->content;
+
+    my $tplf = new Text::Template(TYPE    => "STRING",
+                                  UNTAINT => 1,
+                                  SOURCE  => $template) or die "Couldn't construct template: $Text::Template::ERROR";
+
+    $data{AIMSCMD} = "/usr/bin/aims2client addhost --hostname " . $data{"HOSTNAME_GE"} . " --kickstart $ksfile --kopts \"text network ks ksdevice=bootif latefcload $console\" --pxe --name $AimsImg{$data{OS}}";
+
+    $result = $tplf->fill_in(HASH => \%data);
+    if (not defined $result) {
+        print STDERR "Couldn't fill in template: $Text::Template::ERROR\n";
+        next;
+    }
+    
+    if (not open(F,"> $ksfile")){
+        print STDERR "[ERROR] Could not open \"$ksfile\" for writing: $!\n";
+	next;
+    }
+    print F $result;
+    print $result if $debug;
+    close F;
+    
+    $todo{$host}{ksfile} = $ksfile; # XXXXX
+    $todo{$host}{aimscmd} = $data{AIMSCMD};
 }
 
 #
@@ -208,7 +252,7 @@ if (not @host){
 #
 # Add to Foreman
 #
-SetupForeman(\%todo);
+# XXX SetupForeman(\%todo);
 
 
 map {print "[INFO] Machine \"$_\" is ready to be reinstalled.\n"} sort @host;
@@ -627,8 +671,6 @@ skipx
 
 rootpw --iscrypted {$PASSWD}
 
-auth --enableshadow --enablemd5
-
 # 7001 AFS
 # 4241 ARC
 # 8139 Puppet
@@ -641,8 +683,9 @@ firstboot --disable
 # logging
 logging --level=debug
 
-# services
 key --skip
+
+# services
 services --disabled=pcscd,nfslock,netfs,portmap,rpcgssd,rpcidmapd,irqbalance,bluetooth,autofs,rhnsd,rhsmcertd
 
 # bootloader

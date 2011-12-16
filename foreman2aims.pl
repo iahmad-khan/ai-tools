@@ -336,8 +336,8 @@ sub SetupAims($){
         "RedHat 6.2" => "RHEL6_U2",
         "RedHat 6.1" => "RHEL6_U1",
         "SLC 6"      => "SLC6X",
-        "SLC 6.1"    => "SLC61",
-        "SLC 6.2"    => "SLC62",
+        "SLC 6.1"    => "SLC61_BETA",
+        "SLC 6.2"    => "SLC62_BETA",
         "RedHat 5.7" => "RHES_5_U7",
         "SLC 5.7"    => "SLC5X",
         );
@@ -378,7 +378,7 @@ sub SetupAims($){
 		if (++$cnt == 5){
 		    print STDERR "[ERROR] Machine \"$host\" still not properly configured in AIMS, giving up...\n";
                     $rc++;
-		    unlink $todo{$host}{ksfile} unless $debug;
+		    #unlink $todo{$host}{ksfile} unless $debug;
 		    delete $todo{$host};
 		    last;
 		}
@@ -386,8 +386,9 @@ sub SetupAims($){
 		sleep 5;
 	    }
 	}
-        unlink $todo{$host}{ksfile} unless $debug;
+        #unlink $todo{$host}{ksfile} unless $debug;
     }
+    # delete kickstart files
     map {unlink $todo{$_}{ksfile}} keys %todo unless $debug;
     return () unless %todo;
 
