@@ -229,6 +229,7 @@ for my $host (@host){
 			operatingsystem => $os,
 			architecture    => $arch,
 			console         => $console,
+			hwmodel         => $hwmodel,
 
     );
 }
@@ -330,7 +331,7 @@ sub SetupAims($){
     my $href = shift @_;
     my %todo = %$href;
     my $rc = 0;
-    #print Dumper(\%todo);
+    #print Dumper(\%todo);exit;
     my %AimsImg = (
         "RedHat 6"   => "RHEL6_U2",
         "RedHat 6.2" => "RHEL6_U2",
@@ -346,6 +347,7 @@ sub SetupAims($){
 	my $cnt = 0;
 	my $kopts = "text network ks ksdevice=bootif latefcload";
 	$kopts .= " $todo{$host}{console}" if $todo{$host}{console};
+	$kopts .= " pcie_aspm=off" if $todo{$host}{hwmodel} eq "e4_09_21";
 	if (not exists $AimsImg{$todo{$host}{operatingsystem}}){
 	    print STDERR "[ERROR] No suitable AIMS target for Operating System \"$todo{$host}{operatingsystem}\" available. Probably a bug in the script you are running :)\n";
 	    exit 1;
