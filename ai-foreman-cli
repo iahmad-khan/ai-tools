@@ -24,6 +24,8 @@ sub ShowConfig($);
 sub DeleteHost($@);
 sub AddHost($@);
 sub UpdateHost($@);
+sub InstallHost(@);
+sub SetupAims($);
 sub GetUserCredentials($);
 sub HelpMessage();
 sub HandleOptions();
@@ -39,26 +41,22 @@ my ($action,%opts) = HandleOptions();
 
 #print Dumper(\%opts);#exit;
 
-
 my @host = @ARGV;
-if (not @host and $action ne "showconfig"){
+if (not @host and not ($action eq "showhost" or $action eq "showconfig")){
     print STDERR "[ERROR] No hostname(s) given...\n";;
     exit 1;
 }
 
-map {s/.cern.ch//;$_ = lc} @host;  # strip domain name, change to lower case
+map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
 
-# XXX todo: verify if user has a cern account.
-
+#
 # Get user credentials
+#
 ($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
-
-#print Dumper(\%opts);# exit;
 
 #
 # Connect to Foreman
 #
-
 my $url         = "https://punch.cern.ch";
 my $netlocation = "punch.cern.ch:443";
 my $realm       = "Application";
@@ -83,6 +81,9 @@ my %fmdata = ForemanConfig($browser,$url);
 #
 if ($action eq "showhost"){
     ShowHost(\%opts,@host);
+    exit 0;
+}elsif ($action eq "installhost"){
+    InstallHost(@host);
     exit 0;
 }elsif ($action eq "showconfig"){
     ShowConfig(\%fmdata);
@@ -116,11 +117,22 @@ exit 0;
 
 sub ShowHost($@){
     my ($href,@host) = @_;
-    my %opt = %$href;
+    my %opt = defined $href ? %$href : ();
+    if ($opt{all}){
+	my $request = HTTP::Request->new("GET","$url/hosts");
+	$request->header("Content-Type" => "application/json");
+	my $response = $browser->request($request);
+	if (not $response->is_success){
+	    print STDERR "[ERROR] Could not retrieve list of hosts from Foreman...\n";
+	    return -1;
+	}
+	@host = sort @{from_json($response->content)};	
+	map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
+    }
     #print Dumper(\%opt);
     #print "@host\n";
     #exit;
-    my $FORMAT = " %-15s %-25s %-15s %20s   %-25s %-10s %s\n";
+    my $FORMAT = " %-15s %-30s %-15s %20s   %-25s %-10s %s\n";
     #
     # Are the hosts known to Foreman?
     #
@@ -136,7 +148,7 @@ sub ShowHost($@){
 	my %data = %{from_json($response->content)};
 	%data = %{$data{host}};
 	#print Dumper(\%data);exit;
-	printf "%15s %-15s %15s %-15s %15s\n",$host,map {$data{$_} || "oops..."} qw(environment_id owner_id ip managed) if $debug;
+	#printf "%15s %-15s %15s %-15s %15s\n",$host,map {$data{$_} || "oops..."} qw(environment_id owner_id ip managed) if $debug;
 
 	# make "Comment" field fit to print
 	my $comment = $data{comment} || "";
@@ -151,6 +163,7 @@ sub ShowHost($@){
 	my $environment = $fmdata{environment}{ $data{"environment_id"} || -1 } || "";
 	my $owner       = $fmdata{owner}      { $data{"owner_id"}       || -1 } || "";
 	my $model       = $fmdata{model}      { $data{"model_id"}       || -1 } || "";
+
 	#print Dumper(\%fmdata);
 	#
 	push(@out,sprintf $FORMAT, $host, $hostgroup, $environment, $os, $model, $owner, $comment);
@@ -225,8 +238,11 @@ sub AddHost($@){
 	}
 
 	$tmp{comment} = $opt{comment} || undef;
-
-	# Network info
+	$tmp{owner_type} = "User";
+	
+	#
+	# Get network info
+	#
 	for my $name (keys %{$landb{$host}{Interfaces}}){
 	    if ($name eq $host){
 		$tmp{name}    = $name;
@@ -242,10 +258,10 @@ sub AddHost($@){
 	map {delete $tmp{$_} if not defined $tmp{$_}} keys %tmp;
 	print Dumper(\%tmp) if $debug;#exit;
 
+	#
 	# Add machine to Foreman
-
-	#print "{host:" . to_json(\%tmp) ."}" ."\n";
-	#print  to_json({ host =>\%tmp}) ."\n";exit;
+	#
+	#print  to_json({ host =>\%tmp}) ."\n";#exit;
      	$request = HTTP::Request->new("POST","$url/hosts");
      	$request->header("Content-Type" => "application/json");
      	$request->content(to_json({host => \%tmp}));
@@ -259,22 +275,197 @@ sub AddHost($@){
 
 	print STDOUT "[INFO] Successfully added $host\n";
 
-	# Update the owner (Bug http://theforeman.org/issues/1370 )
-	my $found = 0;
-	my %owner = %{$fmdata{owner}};
-	while (my ($id,$attr) = each %owner){
-	    next unless $attr eq lc($opt{owner});
+	# # Update the owner (Bug http://theforeman.org/issues/1370 )
+	# my $found = 0;
+	# my %owner = %{$fmdata{owner}};
+	# while (my ($id,$attr) = each %owner){
+	#     next unless $attr eq lc($opt{owner});
 
-	    $request = HTTP::Request->new("PUT","$url/hosts/$host.cern.ch");
-	    $request->header("Content-Type" => "application/json");
-	    $request->content(to_json({host => {owner_id => $id}}));
+	#     $request = HTTP::Request->new("PUT","$url/hosts/$host.cern.ch");
+	#     $request->header("Content-Type" => "application/json");
+	#     $request->content(to_json({host => {owner_id => $id}}));
 	    
-	    $response = $browser->request($request);
-	    $found++;
-	    last;
+	#     $response = $browser->request($request);
+	#     $found++;
+	#     last;
+	# }
+
+	# print STDERR "[WARN] Cannot update ownership of host \"$host\"\n" unless $found;
+    }
+
+    return 0;
+}
+
+sub InstallHost(@){
+    my @host = @_;
+
+    #
+    # Show the hosts
+    #
+    ShowHost(undef,@host);
+
+    #
+    # Are the hosts known to Foreman?
+    #
+    my @err = my %todo = ();
+    for my $host (@host){
+     	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
+     	$request->header("Content-Type" => "application/json");
+     	my $response = $browser->request($request);
+	push(@err,$host) unless $response->is_success;
+	next if @err;
+	#
+     	my %data = %{from_json($response->content)};
+     	#print Dumper(\%data);exit;
+	$todo{$host}{operatingsystem} = $fmdata{operatingsystem}{$data{host}{operatingsystem_id}};
+	$todo{$host}{architecture}    = $fmdata{architecture}   {$data{host}{architecture_id}   };
+	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          };
+    }
+    if (@err){
+     	print STDERR "[ERROR] Host(s) \"".join("\" - \"",@err). "\" unknown to Foreman, exiting...\n";
+     	exit 1;
+    }
+
+    #
+    # Delete certs
+    #
+    @err = ();
+    for my $host (keys %todo){
+	my $request = HTTP::Request->new("DELETE","$url/smart_proxies/2-punch-cern-ch/puppetca/$host.cern.ch"); # XXX to-do: replace hardcoded URL by sthg smart :)
+	$request->header("Content-Type" => "application/json");
+	my $response = $browser->request($request);
+	if (not $response->is_success){
+	    push(@err,$host);
+	    print "[ERROR] ".$response->status_line."\n" if $debug;
+	}
+    }
+    if (@err){
+	print STDERR "[WARN] Could not revoke certificate for host(s) \"".join("\" - \"",@err). "\" from Puppet Certificate Authority...\n";
+	#exit 1;
+    }
+
+    #
+    # Prepare Kickstart file
+    #
+    for my $host (sort keys %todo){
+
+	my %data = (USER => $user_credentials{username});
+
+	if (gethostbyname("${host}-gigeth")){
+	    print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
+	    my %landb = LandbHostInfo($host);
+	    #print Dumper(\%landb);
+	    if (not %landb){
+		print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
+		next;
+	    }
+	    $data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
+	    $data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
+	    for my $name (keys %{$landb{$host}{Interfaces}}){
+		my $mac = $landb{$host}{Interfaces}{$name}{HardwareAddress};
+		if ($name eq $host){
+		    $data{NETWORK} .= "network --bootproto=dhcp --device=$mac --onboot=yes --hostname $host.cern.ch\n";
+		} elsif ($name eq "${host}-gigeth"){
+		    $data{NETWORK} .= "network --bootproto=dhcp --device=$mac --onboot=no\n";
+		}
+	    }
+	    #print $data{NETWORK};exit;
+	    $todo{$host}{hostname} = "${host}-gigeth";
+	}else{
+	    $data{NETWORK} = "network --bootproto=dhcp --device=eth0 --hostname $host.cern.ch";
+	    $todo{$host}{hostname} = $host;
+	}
+	
+	$data{HWMODEL} = $todo{$host}{model};
+
+	if (uc($data{HWMODEL}) eq "HYPER-V VIRTUAL MACHINE" and $todo{$host}{operatingsystem} =~ /^(SLC|RedHat) 5\./){
+	    $data{FIRST_DRIVE} = "hda";
+	} else {
+	    $data{FIRST_DRIVE} = "sda";
 	}
 
-	print STDERR "[WARN] Cannot update ownership of host \"$host\"\n" unless $found;
+	# IP address
+	my $iaddr = gethostbyname($host);
+	die "aargh..." if not defined $iaddr;
+	$iaddr = inet_ntoa($iaddr);
+	my $request = HTTP::Request->new("GET","$url/unattended/provision?spoof=$iaddr");
+	$request->header("Content-Type" => "application/json");
+	my $response = $browser->request($request);
+	if (not $response->is_success){
+	    print STDERR Dumper($response)."AARGH! $url/unattended/provision?spoof=$iaddr\n";
+	    exit;
+	}
+	my $template = $response->content;
+
+	use Text::Template;
+	my $tpl = new Text::Template(TYPE    => "STRING",
+				     UNTAINT => 1,
+				     SOURCE  => $template) or die "Couldn't construct template: $Text::Template::ERROR";
+
+	my $result = $tpl->fill_in(HASH => \%data);
+	if (not defined $result) {
+	    print STDERR "Couldn't fill in template: $Text::Template::ERROR\n";
+	    next;
+	}
+    
+	$todo{$host}{ksfile} = POSIX::tmpnam();
+	if (not open(F,"> $todo{$host}{ksfile}")){
+	    print STDERR "[ERROR] Could not open \"$todo{$host}{ksfile}\" for writing: $!\n";
+	    next;
+	}
+	print F $result;
+	#print $result if $debug;
+	close F;
+    
+	$todo{$host}{console} = uc($todo{$host}{model}) ne "HYPER-V VIRTUAL MACHINE" ? "console=tty0 console=ttyS2,9600n8" : "";
+    }
+    #print Dumper(\%todo);exit;
+
+    #
+    # Upload to AIMS
+    #
+    @host = SetupAims(\%todo);
+    if (not @host){
+	print STDERR "[ERROR] Upload to AIMS failed, exiting...\n";
+	exit 1;
+    }
+
+    map {print "[INFO] Machine \"$_\" is ready to be reinstalled.\n"} sort @host;
+
+    #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
+    my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
+    my $mess3 = "      ssh lxadm remote-power-control reset ". join(",",@host)."\n";
+    #my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
+    my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
+    my $mess5 = join("\n",map {"      aims2 pxeoff $_-gigeth"} @host);
+    $mess5 = undef;
+    map {$mess5 .= "      aims2 pxeoff $_-gigeth" if gethostbyname($_ . "-gigeth")} @host;
+
+    print <<EOMESS;
+
+-- Reboot the host to start the installation:
+
+$mess2
+
+   or
+
+$mess3
+
+-- To see installation in progress:
+
+$mess4
+
+EOMESS
+
+    if ($mess5){
+	print <<EOMESS;
+
+-- IMPORTANT NOTE For "*-gigeth" machines: once the installation is underway, run 
+
+$mess5
+
+    to break out on an install loop
+EOMESS
     }
 
     return 0;
@@ -472,6 +663,117 @@ sub LandbHostInfo(@){
 
     return %landb;
 }
+sub SetupAims($){
+    my $href = shift @_;
+    my %todo = %$href;
+    my $rc = 0;
+    #print Dumper(\%todo);exit;
+    my %AimsImg = (
+        "RedHat 6"   => "RHEL6_U2",
+        "RedHat 6.2" => "RHEL6_U2",
+        "RedHat 6.1" => "RHEL6_U1",
+        "SLC 6"      => "SLC6X",
+        "SLC 6.1"    => "SLC61_BETA",
+        "SLC 6.2"    => "SLC62_BETA",
+        "RedHat 5.7" => "RHES_5_U7",
+        "SLC 5.7"    => "SLC5X",
+        );
+
+    for my $host (sort keys %todo){
+	my $cnt = 0;
+	my $kopts = "text network ks ksdevice=bootif latefcload";
+	$kopts .= " $todo{$host}{console}" if $todo{$host}{console};
+	$kopts .= " pcie_aspm=off" if $todo{$host}{model} eq "e4_09_21";
+	if (not exists $AimsImg{$todo{$host}{operatingsystem}}){
+	    print STDERR "[ERROR] No suitable AIMS target for Operating System \"$todo{$host}{operatingsystem}\" available. Probably a bug in the script you are running :)\n";
+	    exit 1;
+	}
+	my $imgname = $AimsImg{$todo{$host}{operatingsystem}} . "_" . $todo{$host}{architecture};
+	my $aims = "/usr/bin/aims2client addhost --hostname $todo{$host}{hostname} --kickstart $todo{$host}{ksfile} --kopts \"$kopts\" --pxe --name $imgname";
+	while (1){
+	    if ($dryrun){
+		print "[DRYRUN] *Not* uploading Kickstart file for $host to AIMS\n";
+		last;
+	    }
+	    print STDOUT "[INFO] Uploading Kickstart file for $host to AIMS\n";
+	    print STDOUT "[VERB] Running \"$aims\"\n" if $verbose;
+	    if (system("$aims 2>/dev/null 1>/dev/null") != 0){
+		print STDERR "[ERROR] Upload to AIMS failed: $!\n";
+		$rc++;
+	    }
+	    #
+	    $aims = "aims2client showhost $todo{$host}{hostname} --full";
+	    print "[VERB] Running \"$aims\"\n" if $verbose;
+	    open(F,"$aims |") or die "aargh...";
+	    my @output = <F>;
+	    close F;
+	    print "[DEBUG] \@output:\n @output\n" if $debug;
+	    my $status = join(" ",grep /PXE status:/, @output);
+	    print "[DEBUG] \$status $status\n" if $debug;
+	    if ($status =~ /PXE status:\s+ON\s*\n/){
+		last;
+	    }else{
+		if (++$cnt == 5){
+		    print STDERR "[ERROR] Machine \"$host\" still not properly configured in AIMS, giving up...\n";
+                    $rc++;
+		    #unlink $todo{$host}{ksfile} unless $debug;
+		    delete $todo{$host};
+		    last;
+		}
+		print "[WARN] AIMS did not do its job for host $host, let's try again...\n";
+		sleep 5;
+	    }
+	}
+        #unlink $todo{$host}{ksfile} unless $debug;
+    }
+    # delete kickstart files
+    map {unlink $todo{$_}{ksfile}} keys %todo unless $debug;
+    return () unless %todo;
+
+    print "[INFO] Verifying that AIMS is properly set up, patience please...\n";
+    return 0 if $dryrun;
+    $rc = 0;
+    my @done = ();
+    for my $host (sort keys %todo){
+	my $cnt = 0;
+	while (1){
+	    #print "\$cnt = $cnt\n";
+	    my $aims = "aims2client showhost $todo{$host}{hostname} --full";
+	    print "[VERB] Running \"$aims\"\n" if $verbose;
+	    open(F,"$aims |") or die "aargh...";
+	    my @output = <F>;
+	    close F;
+	    print "[DEBUG] \@output:\n @output\n" if $debug;
+	    #my $status = join(" ",grep /PXE status:/, @output);
+	    #print "[DEBUG] \$status $status\n" if $debug;
+	    #if ($status !~ /PXE status:\s+ON\s*\n/){
+	    #    print "AARGH! AIMS did not do its job for host $host! Complain && try again...!";
+	    #    $cnt++;
+	    #    last;
+	    #}
+	    my $sync = join(" ",grep /PXE boot synced:/, @output);
+	    print "[DEBUG] \$sync    $sync\n" if $debug;
+	    if ($sync =~ /PXE boot synced:\s+(\S+)\n/){
+		my $status = $1;
+		#print ">>> $status\n";
+		if (grep {$_ eq $status} qw(YYY YYN YNY NYY)){
+		    $cnt = 0;
+		    push(@done,$host);
+		    last;
+		}
+	    }
+	    if ($cnt++ == 20){
+		print "Machine \"$host\" still not properly configured in AIMS, giving up...\n";
+		last;
+	    }
+	    print "[INFO] Sleeping 5 seconds...\n";
+	    sleep 5;
+	}
+	$rc += $cnt;
+    }
+    
+    return @done;
+}
 
 sub ShowConfig($){
     my $href = shift @_;
@@ -499,11 +801,12 @@ sub HandleOptions(){
 
     $action = shift @ARGV;
 
-    my %options = (addhost    => [qw(operatingsystem=s architecture=s hostgroup=s environment=s model=s owner=s comment=s domain=s ptable=s subnet=s)],
-		   updatehost => [qw(operatingsystem=s architecture=s hostgroup=s environment=s model=s owner=s comment=s domain=s ptable=s subnet=s network)],
-		   showhost   => [qw()],
-		   delhost    => [qw()],
-		   showconfig => [qw()],
+    my %options = (addhost     => [qw(operatingsystem=s architecture=s hostgroup=s environment=s model=s owner=s comment=s domain=s ptable=s subnet=s)],
+		   updatehost  => [qw(operatingsystem=s architecture=s hostgroup=s environment=s model=s owner=s comment=s domain=s ptable=s subnet=s network)],
+		   showhost    => [qw(all)],
+		   delhost     => [qw()],
+		   installhost => [qw()],
+		   showconfig  => [qw()],
     );
     HelpMessage() unless exists $options{$action};
 
@@ -514,7 +817,7 @@ sub HandleOptions(){
     my $rc = Getopt::Long::GetOptions(\%opts,
 				      (map {$_ => \$opts{(split(/=/,$_))[0]}} @{$options{$action}}),
 				      "debug","dryrun","verbose",
-				      "cern-user=s"       => \$user_credentials{username},
+				      "cern-user=s" => \$user_credentials{username},
 	);
     HelpMessage() if not $rc;
     map {delete $opts{$_} unless defined $opts{$_}} keys %opts;
@@ -606,6 +909,7 @@ Usage: $script action [options] hostname [hostname]
            * addhost
            * delhost
            * updatehost
+           * installhost
            * showconfig
            * help
 
@@ -634,14 +938,17 @@ Usage: $script action [options] hostname [hostname]
              --subnet <name>
              --network                   : IP and MAC addresses are retrieved from Landb
 
+           * showhost
+             --all                       : display information for all hosts known to Foreman
+
        General options
 
-           --cern-user <username>          : CERN account to be used for LANdb lookups and Foreman access
-                                             default "$user" :)
+           --cern-user <username>        : CERN account to be used for LANdb lookups and Foreman access
+                                           default "$user" :)
 
-           --verbose  : print more output
-           --debug    : print even more output
-           --dryrun   : do not upload to AIMS
+           --verbose                     : print more output
+           --debug                       : print even more output
+           --dryrun                      : do not upload to AIMS
 
 EOH
 
