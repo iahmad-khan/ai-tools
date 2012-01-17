@@ -461,7 +461,7 @@ sub InstallHost(@){
 	    $todo{$host}{hostname} = $host;
 	}
 	
-	$data{HWMODEL} = $todo{$host}{model};
+	my $model = $data{HWMODEL} = $todo{$host}{model};
 
 	# if (uc($data{HWMODEL}) eq "HYPER-V VIRTUAL MACHINE" and $todo{$host}{operatingsystem} =~ /^(SLC|RedHat) 5\./){
 	#     $data{FIRST_DRIVE} = "hda";
@@ -502,7 +502,15 @@ sub InstallHost(@){
 	#print $result if $debug;
 	close F;
     
-	$todo{$host}{console} = uc($todo{$host}{model}) ne "HYPER-V VIRTUAL MACHINE" ? "console=tty0 console=ttyS2,9600n8" : "";
+	# Console options
+	if (uc($model) eq "HYPER-V VIRTUAL MACHINE"){
+	    $todo{$host}{console} = "";
+	}elsif (uc($model) eq "AC_11_30"){
+	    $todo{$host}{console} = "console=tty0";
+	}else{
+	    $todo{$host}{console} = "console=tty0 console=ttyS2,9600n8";
+	}
+
     }
     #print Dumper(\%todo);exit;
 
