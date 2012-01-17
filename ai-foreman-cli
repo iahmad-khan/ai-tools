@@ -1,8 +1,6 @@
 #! /usr/bin/perl -w
 
 # To-do:
-# - cannot generate KS files for freshly added machines?
-
 
 use strict;
 use diagnostics;
@@ -14,6 +12,7 @@ use File::Basename;
 use LWP;
 use JSON;
 use Socket;
+use NetAddr::IP;
 
 $Data::Dumper::Sortkeys = 1;
 
@@ -23,6 +22,7 @@ sub ShowHost($@);
 sub ShowConfig($);
 sub DeleteHost($@);
 sub AddHost($@);
+sub ChkHost(@);
 sub UpdateHost($@);
 sub InstallHost(@);
 sub SetupAims($);
@@ -60,7 +60,7 @@ map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
 my $url         = "https://punch.cern.ch";
 my $netlocation = "punch.cern.ch:443";
 my $realm       = "Application";
-my $browser  = LWP::UserAgent->new;
+my $browser     = LWP::UserAgent->new;
 $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
 
 #
@@ -68,6 +68,9 @@ $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_c
 #
 if ($action eq "delhost"){
     DeleteHost(\%opts,@host);
+    exit 0;
+}elsif ($action eq "chkhost"){
+    ChkHost(@host);
     exit 0;
 }
 
@@ -94,7 +97,7 @@ if ($action eq "showhost"){
 # Do the user options have correct values?
 #
 my @err = ();
-for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable subnet)){
+for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable medium)){
     next if not defined $opts{$attr};
     next if grep {$opts{$attr} eq $_} values %{$fmdata{$attr}};
     push(@err,"[ERROR] Option \"--$attr\" has unknown value \"$opts{$attr}\". Valid values: ".join(", ",map {"\"$_\""} sort values %{$fmdata{$attr}})."\n");
@@ -118,7 +121,7 @@ exit 0;
 sub ShowHost($@){
     my ($href,@host) = @_;
     my %opt = defined $href ? %$href : ();
-    if ($opt{all}){
+    if ($opt{all} or ($opt{hostname} and $opt{regexp})){
 	my $request = HTTP::Request->new("GET","$url/hosts");
 	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
@@ -126,13 +129,25 @@ sub ShowHost($@){
 	    print STDERR "[ERROR] Could not retrieve list of hosts from Foreman...\n";
 	    return -1;
 	}
-	@host = sort @{from_json($response->content)};	
-	map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
+	if ($opt{all}){
+	    @host = sort @{from_json($response->content)};	
+	    map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
+	}elsif ($opt{hostname} and $opt{regexp}){
+	    my %host = ();
+	    my @list = @{from_json($response->content)};
+	    for my $hostname (@{$opt{hostname}}){
+		map {s/.cern.ch//;$host{$_}++ if /$hostname/i} @list;
+	    }
+	    push(@host,keys %host);
+	}
+	#print STDOUT "[INFO] Retrieving information for ".scalar(@host)." machines\n";
+    }elsif ($opt{hostname}){
+	push(@host,map {s/.cern.ch//; $_ = lc} @{$opt{hostname}});
     }
-    #print Dumper(\%opt);
-    #print "@host\n";
+#    print Dumper(\%opt); print "\@host = \"@host\"\n";
     #exit;
-    my $FORMAT = " %-15s %-30s %-15s %20s   %-25s %-10s %s\n";
+
+    my $FORMAT = " %-15s %-30s %-15s %-15s %-6s  %-25s %-10s %s\n";
     #
     # Are the hosts known to Foreman?
     #
@@ -151,29 +166,46 @@ sub ShowHost($@){
 	#printf "%15s %-15s %15s %-15s %15s\n",$host,map {$data{$_} || "oops..."} qw(environment_id owner_id ip managed) if $debug;
 
 	# make "Comment" field fit to print
-	my $comment = $data{comment} || "";
-	$comment =~ s/\n//g;
-	$comment =~ s/\s+/ /g;
+	$data{comment} ||= "";
+	$data{comment} =~ s/\n//g;
+	$data{comment} =~ s/\s+/ /g;
 
-	# combine OS + arch
-	my $os = sprintf "%s - %s",map {$fmdata{$_}{$data{$_."_id"} || -1} || ""} qw(operatingsystem architecture);
+	$data{operatingsystem} = $fmdata{operatingsystem}{ $data{operatingsystem_id} || -1 } || "";
+	$data{architecture}    = $fmdata{architecture}   { $data{architecture_id}    || -1 } || "";
+	$data{hostgroup}       = $fmdata{hostgroup}      { $data{hostgroup_id}       || -1 } || "";
+	$data{environment}     = $fmdata{environment}    { $data{environment_id}     || -1 } || "";
+	$data{owner}           = $fmdata{owner}          { $data{owner_id}           || -1 } || "";
+	$data{model}           = $fmdata{model}          { $data{model_id}           || -1 } || "";
 
-	# other fields
-	my $hostgroup   = $fmdata{hostgroup}  { $data{"hostgroup_id"}   || -1 } || "";
-	my $environment = $fmdata{environment}{ $data{"environment_id"} || -1 } || "";
-	my $owner       = $fmdata{owner}      { $data{"owner_id"}       || -1 } || "";
-	my $model       = $fmdata{model}      { $data{"model_id"}       || -1 } || "";
+	# apply filters
+	my $ok = 1;
+	for my $attribute (grep {exists $opt{$_}} qw(operatingsystem architecture hostgroup environment owner model comment)){
+	    #print "OK $host \$attribute = \"$attribute\" @{$opt{$attribute}}\n";
+	    if ($opt{regexp}){
+		$ok = 0 unless grep {$data{$attribute} =~ /$_/i} @{$opt{$attribute}};
+	    }else{
+		$ok = 0 unless grep {lc($_) eq lc($data{$attribute})} @{$opt{$attribute}};
+	    }
+	    last if not $ok;
+	}
+	next if not $ok;
 
 	#print Dumper(\%fmdata);
 	#
-	push(@out,sprintf $FORMAT, $host, $hostgroup, $environment, $os, $model, $owner, $comment);
+	push(@out,sprintf $FORMAT, $host, map {$data{$_}} qw(hostgroup environment operatingsystem architecture model owner comment));
+	#push(@out,sprintf $FORMAT, $host, $hostgroup, $environment, $os, $model, $owner, $comment);
     }
+
     if (@out){
-	printf $FORMAT,qw(Hostname Hostgroup Environment Operating-system Hardware-model Owner Comment);
-	printf $FORMAT,qw(======== ========= =========== ================ ============== ===== =======);
-	map {print $_} @out;
+	printf STDOUT $FORMAT,qw(Hostname Hostgroup Environment OS Arch Hardware-model Owner Comment);
+	printf STDOUT $FORMAT,qw(======== ========= =========== == ==== ============== ===== =======);
+	map {print STDOUT $_} @out;
+	return 0;
+    }else{
+	print STDERR "[ERROR] No machines found\n";
+	return -1;
     }
-    return 0;
+
 }
 
 sub DeleteHost($@){
@@ -207,10 +239,16 @@ sub AddHost($@){
     #print "@host\n";
 
     #
-    # get Landb data
+    # get network data
     #
     my %landb = LandbHostInfo(@host);
-    #print Dumper(\%landb);exit;
+    print Dumper(\%landb)if $debug;#exit;
+    my %subnet = ();
+    for (@{from_json($browser->get("$url/subnets?format=json")->content)}){
+	my %tmp = %{$$_{subnet}};
+	%{$subnet{$tmp{id}}} = (network => $tmp{network}, mask => $tmp{mask});
+    }
+    #print Dumper(\%subnet);#exit;
 
     #
     #
@@ -226,45 +264,64 @@ sub AddHost($@){
 	}
 	print STDOUT "[VERB] Adding \"$host\"\n" if $verbose;
 
-	my %tmp = ();
+	my %data = ();
 
-	for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable subnet sp_subnet)){
+	for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable medium)){
 	    for (keys %{$fmdata{$attr}}){
 		if (lc(${$fmdata{$attr}}{$_}) eq lc($opt{$attr})){
-		    $tmp{"${attr}_id"} = $_;
+		    $data{"${attr}_id"} = $_;
 		    last;
 		}
 	    }
 	}
 
-	$tmp{comment} = $opt{comment} || undef;
-	$tmp{owner_type} = "User";
+	$data{comment} = $opt{comment} || undef;
+	$data{owner_type} = "User" if exists $data{owner_id}; # to successfully set the owner (Bug http://theforeman.org/issues/1370 )
 	
 	#
 	# Get network info
 	#
 	for my $name (keys %{$landb{$host}{Interfaces}}){
-	    if ($name eq $host){
-		$tmp{name}    = $name;
-		$tmp{mac}     = $landb{$host}{Interfaces}{$name}{HardwareAddress};
-		$tmp{ip}      = $landb{$host}{Interfaces}{$name}{IPAddress};
-	    } elsif ($name eq "${host}-ipmi"){
-		$tmp{sp_name} = $name;
-		$tmp{sp_mac}  = $landb{$host}{Interfaces}{$name}{HardwareAddress};
-		$tmp{sp_ip}   = $landb{$host}{Interfaces}{$name}{IPAddress};
+	    next unless ($name eq $host or $name eq "${host}-ipmi");
+	    my $ipaddr = $landb{$host}{Interfaces}{$name}{IPAddress};
+	    my $subnet_id = undef;
+	    my $ip = NetAddr::IP->new($ipaddr);
+	    for my $id (keys %subnet){
+		if ($ip->within(NetAddr::IP->new($subnet{$id}{network},$subnet{$id}{mask}))){
+		    $subnet_id = $id;
+		    last;
+		}
 	    }
+	    if (not defined $subnet_id){
+		print STDERR "[ERROR] Could not get subnet_id for host $name, exiting!\n";
+		exit 1;
+	    }
+	  
+	    my $prefix = $name eq $host ? "" : "sp_"; # Ordinary interface, or IPMI?
+	    $data{$prefix . "name"}      = $name;
+	    $data{$prefix . "mac"}       = $landb{$host}{Interfaces}{$name}{HardwareAddress};
+	    $data{$prefix . "ip"}        = $ipaddr;
+	    $data{$prefix . "subnet_id"} = $subnet_id;
 	}
 
-	map {delete $tmp{$_} if not defined $tmp{$_}} keys %tmp;
-	print Dumper(\%tmp) if $debug;#exit;
+	map {delete $data{$_} if not defined $data{$_}} keys %data;
+	print Dumper(\%data) if $debug;#exit;
+
+	#
+	# Sanity checks
+	#
+	if (not exists $data{name}){
+	    print STDERR "[ERROR] Incomplete network information for host \"$host\", skipping it...\n";
+	    next;
+	}
 
 	#
 	# Add machine to Foreman
 	#
-	#print  to_json({ host =>\%tmp}) ."\n";#exit;
      	$request = HTTP::Request->new("POST","$url/hosts");
      	$request->header("Content-Type" => "application/json");
-     	$request->content(to_json({host => \%tmp}));
+	print "[DEBUG] JSON: ".to_json({host => \%data})."\n" if $debug;
+     	$request->content(to_json({host => \%data}));
 	
      	$response = $browser->request($request);
 	
@@ -275,35 +332,63 @@ sub AddHost($@){
 
 	print STDOUT "[INFO] Successfully added $host\n";
 
-	# # Update the owner (Bug http://theforeman.org/issues/1370 )
-	# my $found = 0;
-	# my %owner = %{$fmdata{owner}};
-	# while (my ($id,$attr) = each %owner){
-	#     next unless $attr eq lc($opt{owner});
-
-	#     $request = HTTP::Request->new("PUT","$url/hosts/$host.cern.ch");
-	#     $request->header("Content-Type" => "application/json");
-	#     $request->content(to_json({host => {owner_id => $id}}));
-	    
-	#     $response = $browser->request($request);
-	#     $found++;
-	#     last;
-	# }
-
-	# print STDERR "[WARN] Cannot update ownership of host \"$host\"\n" unless $found;
     }
 
     return 0;
 }
 
+sub ChkHost(@){
+    my @host = @_;
+
+    #
+    # Are the hosts known to Foreman?
+    #
+    my @err = my %todo = ();
+    for my $host (@host){
+     	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
+     	$request->header("Content-Type" => "application/json");
+     	my $response = $browser->request($request);
+	if (not $response->is_success){
+     	    print STDERR "[ERROR] No host \"$host\" known to Foreman\n";
+      	    next;
+	}
+	#
+	my @error = ();
+     	my %data = %{${from_json($response->content)}{host}};
+	#print Dumper(\%data);exit;
+	
+	# IP address?
+	my $iaddr = gethostbyname($host);
+	die "aargh..." if not defined $iaddr;
+	$iaddr = inet_ntoa($iaddr);
+	push(@error,"$host: IP address in Foreman is $data{ip}, but DNS says $iaddr") if $data{ip} ne $iaddr;
+	
+	# IPMI ip-address?
+	if (exists $data{sp_ip} and $data{sp_name}){
+	    my $iaddr = gethostbyname($data{sp_name});
+	    die "aargh..." if not defined $iaddr;
+	    $iaddr = inet_ntoa($iaddr);
+	    push(@error,"$data{sp_name}: IP address in Foreman is $data{sp_ip}, but DNS says $iaddr") if $data{sp_ip} ne $iaddr;
+	}
+
+	# print result
+	if (@error){
+	    map {print "[$host] $_\n"} @error;
+	}else{
+	    print "[$host] OK\n";
+	}
+    }
+    return;
+}
 sub InstallHost(@){
     my @host = @_;
 
     #
     # Show the hosts
     #
+    print STDOUT "[INFO] Installation requested for ".scalar(@host)." machines:\n\n";
     ShowHost(undef,@host);
-
+    print STDOUT "\n";
     #
     # Are the hosts known to Foreman?
     #
@@ -378,13 +463,13 @@ sub InstallHost(@){
 	
 	$data{HWMODEL} = $todo{$host}{model};
 
-	if (uc($data{HWMODEL}) eq "HYPER-V VIRTUAL MACHINE" and $todo{$host}{operatingsystem} =~ /^(SLC|RedHat) 5\./){
-	    $data{FIRST_DRIVE} = "hda";
-	} else {
-	    $data{FIRST_DRIVE} = "sda";
-	}
+	# if (uc($data{HWMODEL}) eq "HYPER-V VIRTUAL MACHINE" and $todo{$host}{operatingsystem} =~ /^(SLC|RedHat) 5\./){
+	#     $data{FIRST_DRIVE} = "hda";
+	# } else {
+	#     $data{FIRST_DRIVE} = "sda";
+	# }
 
-	# IP address
+	# Get the KS file from Foreman
 	my $iaddr = gethostbyname($host);
 	die "aargh..." if not defined $iaddr;
 	$iaddr = inet_ntoa($iaddr);
@@ -430,16 +515,13 @@ sub InstallHost(@){
 	exit 1;
     }
 
-    map {print "[INFO] Machine \"$_\" is ready to be reinstalled.\n"} sort @host;
-
     #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
     my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
     my $mess3 = "      ssh lxadm remote-power-control reset ". join(",",@host)."\n";
     #my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
     my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
-    my $mess5 = join("\n",map {"      aims2 pxeoff $_-gigeth"} @host);
-    $mess5 = undef;
-    map {$mess5 .= "      aims2 pxeoff $_-gigeth" if gethostbyname($_ . "-gigeth")} @host;
+    my $mess5 = undef;
+    map {$mess5 .= "      aims2 pxeoff $_-gigeth\n" if gethostbyname($_ . "-gigeth")} @host;
 
     print <<EOMESS;
 
@@ -460,10 +542,9 @@ EOMESS
     if ($mess5){
 	print <<EOMESS;
 
--- IMPORTANT NOTE For "*-gigeth" machines: once the installation is underway, run 
+-- IMPORTANT NOTE FOR "*-GIGETH" MACHINES: once the installation is underway, run 
 
 $mess5
-
     to break out on an install loop
 EOMESS
     }
@@ -478,15 +559,23 @@ sub UpdateHost($@){
     #print "@host\n";
 
     #
-    # get Landb data
+    # get network data
     #
-    my %landb = LandbHostInfo(@host) if $opt{network};
-    #print Dumper(\%landb);exit;
-
+    my %landb = my %subnet = ();
+    if ($opt{network}){
+	%landb = LandbHostInfo(@host);
+	#print Dumper(\%landb);exit;
+	for (@{from_json($browser->get("$url/subnets?format=json")->content)}){
+	    my %tmp = %{$$_{subnet}};
+	    %{$subnet{$tmp{id}}} = (network => $tmp{network}, mask => $tmp{mask});
+	}
+	#print Dumper(\%subnet);#exit;
+    }
+  
     #
     #
     #
-    #print Dumper(\%fmdata);
+    print Dumper(\%fmdata) if $debug;#exit;
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
 	$request->header("Content-Type" => "application/json");
@@ -497,46 +586,67 @@ sub UpdateHost($@){
 	}
 	print STDOUT "[VERB] Updating \"$host\"\n" if $verbose;
 
-	my %tmp = ();
+	my %data = ();
 
 	for my $attr (keys %opt){
 	    for (keys %{$fmdata{$attr}}){
 		if (lc(${$fmdata{$attr}}{$_}) eq lc($opt{$attr})){
-		    $tmp{"${attr}_id"} = $_;
+		    $data{"${attr}_id"} = $_;
 		    last;
 		}
 	    }
 	}
 
-	$tmp{comment} = $opt{comment} if exists $opt{comment};
+	$data{comment} = $opt{comment} if exists $opt{comment};
+	$data{owner_type} = "User" if exists $data{owner_id}; # to successfully set the owner (Bug http://theforeman.org/issues/1370 )
 
 	# Network info
 	if ($opt{network}){
 	    for my $name (keys %{$landb{$host}{Interfaces}}){
-		if ($name eq $host){
-		    $tmp{name} = $name;
-		    $tmp{mac}  = $landb{$host}{Interfaces}{$name}{HardwareAddress};
-		    $tmp{ip}   = $landb{$host}{Interfaces}{$name}{IPAddress};
-		} elsif ($name eq "${host}-ipmi"){
-		    $tmp{sp_name} = $name;
-		    $tmp{sp_mac}  = $landb{$host}{Interfaces}{$name}{HardwareAddress};
-		    $tmp{sp_ip}   = $landb{$host}{Interfaces}{$name}{IPAddress};
+		next unless ($name eq $host or $name eq "${host}-ipmi");
+		my $ipaddr = $landb{$host}{Interfaces}{$name}{IPAddress};
+		my $subnet_id = undef;
+		my $ip = NetAddr::IP->new($ipaddr);
+		for my $id (keys %subnet){
+		    if ($ip->within(NetAddr::IP->new($subnet{$id}{network},$subnet{$id}{mask}))){
+			$subnet_id = $id;
+			last;
+		    }
 		}
+		if (not defined $subnet_id){
+		    print STDERR "[ERROR] Could not get subnet_id for host $name, exiting!\n";
+		    exit 1;
+		}
+
+		my $prefix = $name eq $host ? "" : "sp_"; # Ordinary interface, or IPMI?
+		$data{$prefix . "name"}      = $name;
+		$data{$prefix . "mac"}       = $landb{$host}{Interfaces}{$name}{HardwareAddress};
+		$data{$prefix . "ip"}        = $ipaddr;
+		$data{$prefix . "subnet_id"} = $subnet_id;
 	    }
 	}
 
-	if (not %tmp){
+	if (not %data){
 	    print STDERR "[ERROR] Nothing to update?!\n";
 	    last;
 	}
+	print Dumper(\%data) if $debug;#exit;
 
-	#print Dumper(\%tmp);exit;
+	#
+	# Sanity checks
+	#
+	if ($opt{network} and not exists $data{name}){
+	    print STDERR "[ERROR] Incomplete network information for host \"$host\", skipping it...\n";
+	    next;
+	}
 
+	#
 	# Now apply the update
+	#
      	$request = HTTP::Request->new("PUT","$url/hosts/$host.cern.ch");
      	$request->header("Content-Type" => "application/json");
-	print "[DEBUG] JSON: ".to_json({host => \%tmp})."\n" if $debug;
-     	$request->content(to_json({host => \%tmp}));
+	print "[DEBUG] JSON: ".to_json({host => \%data})."\n" if $debug;
+     	$request->content(to_json({host => \%data}));
 	
      	$response = $browser->request($request);
 	
@@ -587,10 +697,10 @@ sub ForemanConfig($$){
     map {$config{environment}    {$$_{environment}    {id}} = $$_{environment}    {name} } @{from_json($browser->get("$url/environments?format=json")->content)};
     map {$config{owner}          {$$_{user}           {id}} = $$_{user}           {login}} @{from_json($browser->get("$url/users?format=json")->content)};
     map {$config{domain}         {$$_{domain}         {id}} = $$_{domain}         {name} } @{from_json($browser->get("$url/domains?format=json")->content)};
-    map {$config{subnet}         {$$_{subnet}         {id}} = $$_{subnet}         {name} } @{from_json($browser->get("$url/subnets?format=json")->content)};
-    %{$config{sp_subnet}} = %{$config{subnet}};
+    #map {$config{subnet}         {$$_{subnet}         {id}} = $$_{subnet}         {name} } @{from_json($browser->get("$url/subnets?format=json")->content)};
+    #%{$config{sp_subnet}} = %{$config{subnet}};
 
-#    print Dumper(\@{from_json($browser->get("$url/media?format=json")->content)});
+    #print Dumper(\@{from_json($browser->get("$url/subnets?format=json")->content)});exit;
 #    print Dumper(\%config);exit;
     return %config;
 }
@@ -623,7 +733,7 @@ sub LandbHostInfo(@){
 	    print "[WARNING] Device \"$device\" not found in Landb, ignoring it...\n";
 	    next;
 	}
-	#print Dumper($bu);
+	#print Dumper($bu);exit;
 
 	$landb{$device}{Model} = $bu->{Model};
 	for (@{$bu->{Interfaces}}) {
@@ -633,8 +743,7 @@ sub LandbHostInfo(@){
 	    my $IPAddress = $_->{IPAddress};
 	    if (defined $HardwareAddress){
 		$HardwareAddress =~ s/\-/:/g;
-		%{$landb{$device}{Interfaces}{$Name}} = (HardwareAddress => $HardwareAddress,IPAddress => $IPAddress);
-		#push(@{$landb{$device}{Interfaces}},[$Name,$HardwareAddress,$IPAddress]);
+		%{$landb{$device}{Interfaces}{$Name}} = (HardwareAddress => $HardwareAddress, IPAddress => $IPAddress);
 	    }
 	}
 	if (not exists $landb{$device}{Interfaces}){
@@ -645,14 +754,11 @@ sub LandbHostInfo(@){
 		if (defined $HardwareAddress){
 		    $HardwareAddress =~ s/\-/:/g;
 		    ${$landb{$device}{Interfaces}{$Name}}{HardwareAddress} = $HardwareAddress;
-		    #%{$landb{$device}{Interfaces}{$Name}} = (HardwareAddress => $HardwareAddress,IPAddress => $IPAddress);
-		    #push(@{$landb{$device}{Interfaces}},[$Name,$HardwareAddress,$IPAddress]);
 		}
 	    }
 	    for (@{$bu->{Interfaces}}) {
 		if ($Name eq lc($_->{Name})){
 		    ${$landb{$device}{Interfaces}{$Name}}{IPAddress} = $_->{IPAddress};
-		    #push(@{$landb{$device}{Interfaces}},[$Name,$HardwareAddress,$IPAddress]);
 		}
 	    }
 	}
@@ -702,7 +808,7 @@ sub SetupAims($){
 		$rc++;
 	    }
 	    #
-	    $aims = "aims2client showhost $todo{$host}{hostname} --full";
+	    $aims = "/usr/bin/aims2client showhost $todo{$host}{hostname} --full";
 	    print "[VERB] Running \"$aims\"\n" if $verbose;
 	    open(F,"$aims |") or die "aargh...";
 	    my @output = <F>;
@@ -738,7 +844,7 @@ sub SetupAims($){
 	my $cnt = 0;
 	while (1){
 	    #print "\$cnt = $cnt\n";
-	    my $aims = "aims2client showhost $todo{$host}{hostname} --full";
+	    my $aims = "/usr/bin/aims2client showhost $todo{$host}{hostname} --full";
 	    print "[VERB] Running \"$aims\"\n" if $verbose;
 	    open(F,"$aims |") or die "aargh...";
 	    my @output = <F>;
@@ -771,6 +877,15 @@ sub SetupAims($){
 	}
 	$rc += $cnt;
     }
+
+    if (@done){
+	print STDOUT "[INFO] AIMS status for successfully configured hosts:\n[INFO]\n";
+	open(AIMS, "/usr/bin/aims2client showhost ".join(",",map { gethostbyname($_ . "-gigeth") ? $_ . "-gigeth" : $_ } @done)." |");
+	while(<AIMS>){
+	    print STDOUT "[INFO]   $_";
+	}
+	close AIMS;
+    }
     
     return @done;
 }
@@ -801,11 +916,12 @@ sub HandleOptions(){
 
     $action = shift @ARGV;
 
-    my %options = (addhost     => [qw(operatingsystem=s architecture=s hostgroup=s environment=s model=s owner=s comment=s domain=s ptable=s subnet=s)],
-		   updatehost  => [qw(operatingsystem=s architecture=s hostgroup=s environment=s model=s owner=s comment=s domain=s ptable=s subnet=s network)],
-		   showhost    => [qw(all)],
+    my %options = (addhost     => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s)],
+		   updatehost  => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s network)],
+		   showhost    => [qw(operatingsystem=s@ architecture=s@ hostgroup=s@ environment=s@ model=s@ owner=s@ comment=s@ all regexp hostname=s@)],
 		   delhost     => [qw()],
 		   installhost => [qw()],
+		   chkhost     => [qw()],
 		   showconfig  => [qw()],
     );
     HelpMessage() unless exists $options{$action};
@@ -824,7 +940,7 @@ sub HandleOptions(){
 
     if ($action eq "addhost"){
         my @err = ();
-	map {push(@err,$_) unless exists $opts{$_}} qw(operatingsystem architecture hostgroup model owner subnet);
+	map {push(@err,$_) unless exists $opts{$_}} qw(operatingsystem architecture hostgroup model owner);
 	if (@err){
 	    map {print STDERR "[ERROR] Action \"$action\" requires mandatory option \"$_\"\n"} @err;
 	    exit 1;
@@ -832,16 +948,14 @@ sub HandleOptions(){
 	$opts{domain}      ||= "cern.ch";
 	$opts{ptable}      ||= "RedHat default";
 	$opts{environment} ||= "production";
-	$opts{sp_subnet}     = $opts{subnet};
     }elsif ($action eq "updatehost"){
-	$opts{sp_subnet} = $opts{subnet};
-	$opts{medium} = $opts{operatingsystem};
+	#$opts{medium} = $opts{operatingsystem};
 	#print Dumper(\%opts);
 	map {delete $opts{$_} unless defined $opts{$_}} keys %opts;
 	#print Dumper(\%opts);exit;
 
 	my $cnt = 0;
-	my @opt = qw(operatingsystem architecture hostgroup model owner ptable comment subnet network environment);
+	my @opt = qw(operatingsystem architecture hostgroup model owner ptable comment network environment);
 	map {$cnt++ if defined $opts{$_}} @opt;
 	if ($cnt == 0){
 	    print STDERR "[ERROR] Action \"$action\" requires at least one of the options \"--". join("\", \"--",@opt)."\"\n";
@@ -910,12 +1024,14 @@ Usage: $script action [options] hostname [hostname]
            * delhost
            * updatehost
            * installhost
+           * chkhost
            * showconfig
            * help
 
        Options depend on the action:
 
            * addhost
+
              --operatingsystem <name>
              --architecture <name>
              --hostgroup <name>
@@ -924,22 +1040,28 @@ Usage: $script action [options] hostname [hostname]
              --owner <name>
              --comment <comment string>
              --domain <name>             : default: "cern.ch"
-             --subnet <name>
              --ptable <name>             : default: "RedHat default"
 
-	     note: IP and MAC addresses are retrieved from Landb
+	     note: Network information (IP and MAC addresses etc.) is retrieved from Landb
 
            * updatehost
+
              --hostgroup <name>
              --environment <name>
              --model <name>
              --owner <name>
              --comment <comment string>
-             --subnet <name>
              --network                   : IP and MAC addresses are retrieved from Landb
 
            * showhost
+
              --all                       : display information for all hosts known to Foreman
+
+             Filtering options:
+               --hostname <name>
+               --model <name>
+               --owner <name>
+               --regexp                  : interpret filtering options as regular expressions
 
        General options
 
