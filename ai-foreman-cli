@@ -21,7 +21,6 @@ sub LandbHostInfo(@);
 sub ShowHost($@);
 sub ShowConfig($);
 sub DeleteHost($@);
-sub AddHost($@);
 sub ChkHost(@);
 sub UpdateHost($@);
 sub InstallHost(@);
@@ -64,6 +63,26 @@ my $browser     = LWP::UserAgent->new;
 $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
 
 #
+# Does the user have administrator privileges?
+#
+my $request = HTTP::Request->new("GET","$url/users");
+$request->header("Content-Type" => "application/json");
+my $response = $browser->request($request);
+if (not $response->is_success){
+    print STDERR "[ERROR] Could not retrieve list of users from Foreman...\n";
+    exit 1;
+}
+for (grep { ${$$_{user}}{login} eq $user_credentials{username} } @{from_json($response->content)}){
+    my %tmp = %$_;
+    $user_credentials{administrator} = defined ${$tmp{user}}{admin} ? 1 : 0;
+}
+
+if (not $user_credentials{administrator}){
+    print STDERR "[ERROR] This tool currently requires admin privileges on Foreman.\n";
+    exit 1;
+}
+
+#
 # Easy things first.
 #
 if ($action eq "delhost"){
@@ -97,7 +116,7 @@ if ($action eq "showhost"){
 # Do the user options have correct values?
 #
 my @err = ();
-for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable medium)){
+for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable)){
     next if not defined $opts{$attr};
     next if grep {$opts{$attr} eq $_} values %{$fmdata{$attr}};
     push(@err,"[ERROR] Option \"--$attr\" has unknown value \"$opts{$attr}\". Valid values: ".join(", ",map {"\"$_\""} sort values %{$fmdata{$attr}})."\n");
@@ -110,10 +129,13 @@ if (@err){
 #
 # Do the real work
 #
-if ($action eq "addhost"){
-    AddHost(\%opts,@host);
-} elsif ($action eq "updatehost"){
-    UpdateHost(\%opts,@host);
+if ($action eq "addhost" or $action eq "updatehost"){
+    my @done = UpdateHost({%opts,("action" => $action)},@host);
+    if (@done){
+	print STDOUT "\n[INFO] Summary:\n\n";
+	ShowHost(undef,@done);
+	print STDOUT "\n";
+    }
 }
 
 exit 0;
@@ -193,7 +215,6 @@ sub ShowHost($@){
 	#print Dumper(\%fmdata);
 	#
 	push(@out,sprintf $FORMAT, $host, map {$data{$_}} qw(hostgroup environment operatingsystem architecture model owner comment));
-	#push(@out,sprintf $FORMAT, $host, $hostgroup, $environment, $os, $model, $owner, $comment);
     }
 
     if (@out){
@@ -229,111 +250,6 @@ sub DeleteHost($@){
 	print STDERR "[ERROR] Could not delete host(s) \"".join("\" - \"",@err). "\" from Foreman.\n";
 	return 1;
     }
-    return 0;
-}
-
-sub AddHost($@){
-    my ($href,@host) = @_;
-    my %opt = %$href;
-    print Dumper(\%opt) if $debug;
-    #print "@host\n";
-
-    #
-    # get network data
-    #
-    my %landb = LandbHostInfo(@host);
-    print Dumper(\%landb)if $debug;#exit;
-    my %subnet = ();
-    for (@{from_json($browser->get("$url/subnets?format=json")->content)}){
-	my %tmp = %{$$_{subnet}};
-	%{$subnet{$tmp{id}}} = (network => $tmp{network}, mask => $tmp{mask});
-    }
-    #print Dumper(\%subnet);#exit;
-
-    #
-    #
-    #
-    print Dumper(\%fmdata) if $debug;
-    for my $host (sort @host){
-	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
-	$request->header("Content-Type" => "application/json");
-	my $response = $browser->request($request);
-	if ($response->is_success){
-	    print STDERR "[WARN] Ignoring existing host \"$host\".\n";
-	    next;
-	}
-	print STDOUT "[VERB] Adding \"$host\"\n" if $verbose;
-
-	my %data = ();
-
-	for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable medium)){
-	    for (keys %{$fmdata{$attr}}){
-		if (lc(${$fmdata{$attr}}{$_}) eq lc($opt{$attr})){
-		    $data{"${attr}_id"} = $_;
-		    last;
-		}
-	    }
-	}
-
-	$data{comment} = $opt{comment} || undef;
-	$data{owner_type} = "User" if exists $data{owner_id}; # to successfully set the owner (Bug http://theforeman.org/issues/1370 )
-	
-	#
-	# Get network info
-	#
-	for my $name (keys %{$landb{$host}{Interfaces}}){
-	    next unless ($name eq $host or $name eq "${host}-ipmi");
-	    my $ipaddr = $landb{$host}{Interfaces}{$name}{IPAddress};
-	    my $subnet_id = undef;
-	    my $ip = NetAddr::IP->new($ipaddr);
-	    for my $id (keys %subnet){
-		if ($ip->within(NetAddr::IP->new($subnet{$id}{network},$subnet{$id}{mask}))){
-		    $subnet_id = $id;
-		    last;
-		}
-	    }
-	    if (not defined $subnet_id){
-		print STDERR "[ERROR] Could not get subnet_id for host $name, exiting!\n";
-		exit 1;
-	    }
-	  
-	    my $prefix = $name eq $host ? "" : "sp_"; # Ordinary interface, or IPMI?
-	    $data{$prefix . "name"}      = $name;
-	    $data{$prefix . "mac"}       = $landb{$host}{Interfaces}{$name}{HardwareAddress};
-	    $data{$prefix . "ip"}        = $ipaddr;
-	    $data{$prefix . "subnet_id"} = $subnet_id;
-	}
-
-	map {delete $data{$_} if not defined $data{$_}} keys %data;
-	print Dumper(\%data) if $debug;#exit;
-
-	#
-	# Sanity checks
-	#
-	if (not exists $data{name}){
-	    print STDERR "[ERROR] Incomplete network information for host \"$host\", skipping it...\n";
-	    next;
-	}
-
-	#
-	# Add machine to Foreman
-	#
-     	$request = HTTP::Request->new("POST","$url/hosts");
-     	$request->header("Content-Type" => "application/json");
-	print "[DEBUG] JSON: ".to_json({host => \%data})."\n" if $debug;
-     	$request->content(to_json({host => \%data}));
-	
-     	$response = $browser->request($request);
-	
-      	if (not $response->is_success){
-     	    print STDERR "[ERROR] Cannot add \"$host\" to Foreman: " . $response->status_line . " :: " . $response->content ."\n";
-      	    next;
-     	}
-
-	print STDOUT "[INFO] Successfully added $host\n";
-
-    }
-
     return 0;
 }
 
@@ -380,15 +296,17 @@ sub ChkHost(@){
     }
     return;
 }
+
 sub InstallHost(@){
     my @host = @_;
 
     #
     # Show the hosts
     #
-    print STDOUT "[INFO] Installation requested for ".scalar(@host)." machines:\n\n";
+    print STDOUT "[INFO] Installation requested for" . (scalar(@host) == 1 ? "" : " " .scalar(@host) ." machines" ) . ":\n\n";
     ShowHost(undef,@host);
     print STDOUT "\n";
+
     #
     # Are the hosts known to Foreman?
     #
@@ -563,7 +481,15 @@ EOMESS
 sub UpdateHost($@){
     my ($href,@host) = @_;
     my %opt = %$href;
-    #print Dumper(\%opt);exit;
+    print Dumper(\%opt) if $debug;
+
+    my $action = $opt{action};
+    delete $opt{action};
+    if (not grep {$_ eq $action} qw(addhost updatehost)){
+	print STDERR "[ERROR] UpdateHost: unsupported action \"$action\" specified\n";
+	return undef;
+    }
+
     #print "@host\n";
 
     #
@@ -572,47 +498,77 @@ sub UpdateHost($@){
     my %landb = my %subnet = ();
     if ($opt{network}){
 	%landb = LandbHostInfo(@host);
-	#print Dumper(\%landb);exit;
+	print Dumper(\%landb) if $debug;
 	for (@{from_json($browser->get("$url/subnets?format=json")->content)}){
 	    my %tmp = %{$$_{subnet}};
 	    %{$subnet{$tmp{id}}} = (network => $tmp{network}, mask => $tmp{mask});
 	}
 	#print Dumper(\%subnet);#exit;
     }
+
+    #
+    # installation media
+    #
+    if (defined $opt{operatingsystem} and not defined $opt{medium}){
+	if ($opt{operatingsystem} =~ /^SLC/){
+	    $opt{medium} = "SLC";
+	}elsif ($opt{operatingsystem} =~ /^RedHat 6/){
+	    $opt{medium} = "RedHat 6";
+	}else{
+	    # oops.
+	}
+    }
+    print Dumper(\%opt) if $debug;
   
+    #
+    # build the data structure to be sent to Foreman
+    #
+    my %data = my @err = ();
+
+    for my $attr (keys %opt){
+	for (keys %{$fmdata{$attr}}){
+	    if (lc(${$fmdata{$attr}}{$_}) eq lc($opt{$attr})){
+		$data{"${attr}_id"} = $_;
+		last;
+	    }
+	}
+	
+	push(@err,"Could not find Foreman identifier for attribute \"$attr\" with requested value \"$opt{$attr}\"") if not exists $data{"${attr}_id"} and %{$fmdata{$attr}};
+    }
+    if (@err){
+	map {print STDERR "[ERROR] $_\n"} sort @err;
+	return undef;
+    }
+
+    $data{comment} = exists $opt{comment} ? $opt{comment} : undef;
+    $data{owner_type} = "User" if exists $data{owner_id}; # to successfully set the owner (Bug http://theforeman.org/issues/1370 )
+
     #
     #
     #
     print Dumper(\%fmdata) if $debug;#exit;
+    my @done = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
 	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
-	if (not $response->is_success){
+	if ($action eq "addhost" and $response->is_success){
+	    print STDERR "[WARN] Ignoring existing host \"$host\".\n";
+	    next;
+	}elsif ($action eq "updatehost" and not $response->is_success){
 	    print STDERR "[WARN] Ignoring non-existent host \"$host\".\n";
 	    next;
 	}
-	print STDOUT "[VERB] Updating \"$host\"\n" if $verbose;
+	print STDOUT "[VERB] " . ($action eq "addhost" ? "Adding" : "Updating") . " \"$host\"\n" if $verbose;
 
-	my %data = ();
-
-	for my $attr (keys %opt){
-	    for (keys %{$fmdata{$attr}}){
-		if (lc(${$fmdata{$attr}}{$_}) eq lc($opt{$attr})){
-		    $data{"${attr}_id"} = $_;
-		    last;
-		}
-	    }
-	}
-
-	$data{comment} = $opt{comment} if exists $opt{comment};
-	$data{owner_type} = "User" if exists $data{owner_id}; # to successfully set the owner (Bug http://theforeman.org/issues/1370 )
-
+	#
 	# Network info
+	#
 	if ($opt{network}){
-	    for my $name (keys %{$landb{$host}{Interfaces}}){
-		next unless ($name eq $host or $name eq "${host}-ipmi");
-		my $ipaddr = $landb{$host}{Interfaces}{$name}{IPAddress};
+	    my %network = ();
+	    for my $interface (keys %{$landb{$host}{Interfaces}}){
+		next unless ($interface eq $host or $interface eq "${host}-ipmi");
+		my $ipaddr = $landb{$host}{Interfaces}{$interface}{IPAddress};
 		my $subnet_id = undef;
 		my $ip = NetAddr::IP->new($ipaddr);
 		for my $id (keys %subnet){
@@ -622,36 +578,38 @@ sub UpdateHost($@){
 		    }
 		}
 		if (not defined $subnet_id){
-		    print STDERR "[ERROR] Could not get subnet_id for host $name, exiting!\n";
+		    print STDERR "[ERROR] Could not get subnet_id for host $interface, exiting!\n";
 		    exit 1;
 		}
 
-		my $prefix = $name eq $host ? "" : "sp_"; # Ordinary interface, or IPMI?
-		$data{$prefix . "name"}      = $name;
-		$data{$prefix . "mac"}       = $landb{$host}{Interfaces}{$name}{HardwareAddress};
-		$data{$prefix . "ip"}        = $ipaddr;
-		$data{$prefix . "subnet_id"} = $subnet_id;
+		my $prefix = $interface eq $host ? "" : "sp_"; # Ordinary interface, or IPMI?
+		$network{$prefix . "name"}      = $interface;
+		$network{$prefix . "mac"}       = $landb{$host}{Interfaces}{$interface}{HardwareAddress};
+		$network{$prefix . "ip"}        = $ipaddr;
+		$network{$prefix . "subnet_id"} = $subnet_id;
 	    }
+	    %data = (%data, %network);
 	}
 
-	if (not %data){
+	#
+	# Sanity checks
+	#
+        map {delete $data{$_} if not defined $data{$_}} keys %data;
+	if (not %data and $action eq "updatehost"){
 	    print STDERR "[ERROR] Nothing to update?!\n";
 	    last;
 	}
 	print Dumper(\%data) if $debug;#exit;
 
-	#
-	# Sanity checks
-	#
 	if ($opt{network} and not exists $data{name}){
 	    print STDERR "[ERROR] Incomplete network information for host \"$host\", skipping it...\n";
 	    next;
 	}
 
 	#
-	# Now apply the update
+	# Action!
 	#
-     	$request = HTTP::Request->new("PUT","$url/hosts/$host.cern.ch");
+     	$request = HTTP::Request->new($action eq "updatehost" ? ("PUT","$url/hosts/$host.cern.ch") : ("POST","$url/hosts") );
      	$request->header("Content-Type" => "application/json");
 	print "[DEBUG] JSON: ".to_json({host => \%data})."\n" if $debug;
      	$request->content(to_json({host => \%data}));
@@ -659,13 +617,14 @@ sub UpdateHost($@){
      	$response = $browser->request($request);
 	
      	if ($response->is_success){
-	    print STDOUT "[INFO] Successfully updated $host\n";
+	    print STDOUT "[INFO] Successfully " . ( $action eq "addhost" ? "added" : "updated" ) . " $host\n";
+	    push(@done,$host);
 	}else{
-     	    print STDERR "[ERROR] Cannot update \"$host\": " . $response->status_line . " :: " . $response->content ."\n";
+     	    print STDERR "[ERROR] Cannot " . ( $action eq "addhost" ? "add" : "update" ) . " \"$host\": " . $response->status_line . " :: " . $response->content ."\n";
      	}
     }
 
-    return 0;
+    return @done;
 }
 
 sub ForemanConfig($$){
@@ -708,8 +667,8 @@ sub ForemanConfig($$){
     #map {$config{subnet}         {$$_{subnet}         {id}} = $$_{subnet}         {name} } @{from_json($browser->get("$url/subnets?format=json")->content)};
     #%{$config{sp_subnet}} = %{$config{subnet}};
 
-    #print Dumper(\@{from_json($browser->get("$url/subnets?format=json")->content)});exit;
-#    print Dumper(\%config);exit;
+    #print Dumper(\@{from_json($browser->get("$url/operatingsystems?format=json")->content)});exit;
+    #print Dumper(\%config);exit;
     return %config;
 }
 
@@ -782,15 +741,22 @@ sub SetupAims($){
     my %todo = %$href;
     my $rc = 0;
     #print Dumper(\%todo);exit;
+    # Run "aims2 showimg all" to get lsit of all available AIMS images
     my %AimsImg = (
-        "RedHat 6"   => "RHEL6_U2",
+        "SLC 6.2"    => "SLC62_BETA",
+        "SLC 6.1"    => "SLC61_BETA",
+        "SLC 6"      => "SLC6X",
+        "SLC 5.7"    => "SLC5X",
+	#
         "RedHat 6.2" => "RHEL6_U2",
         "RedHat 6.1" => "RHEL6_U1",
-        "SLC 6"      => "SLC6X",
-        "SLC 6.1"    => "SLC61_BETA",
-        "SLC 6.2"    => "SLC62_BETA",
+        "RedHat 6"   => "RHEL6_U2",
         "RedHat 5.7" => "RHES_5_U7",
-        "SLC 5.7"    => "SLC5X",
+	#
+	"Fedora 18"  => "FEDORA18",
+	"Fedora 17"  => "FEDORA17",
+	"Fedora 16"  => "FEDORA16",
+	"Fedora 15"  => "FEDORA15",
         );
 
     for my $host (sort keys %todo){
@@ -944,6 +910,7 @@ sub HandleOptions(){
 				      "cern-user=s" => \$user_credentials{username},
 	);
     HelpMessage() if not $rc;
+    $verbose = 1 if $debug;
     map {delete $opts{$_} unless defined $opts{$_}} keys %opts;
 
     if ($action eq "addhost"){
@@ -956,6 +923,7 @@ sub HandleOptions(){
 	$opts{domain}      ||= "cern.ch";
 	$opts{ptable}      ||= "RedHat default";
 	$opts{environment} ||= "production";
+	$opts{network}       = 1;
     }elsif ($action eq "updatehost"){
 	#$opts{medium} = $opts{operatingsystem};
 	#print Dumper(\%opts);
@@ -973,6 +941,12 @@ sub HandleOptions(){
 				      
     return $action,%opts;
 }
+
+################################################################################################
+#
+# GetUserCredentials(): return username/password combination of the cern-account to be used
+#                       in subsequent calls to Landb etc.
+#
 
 sub GetUserCredentials($){
 
@@ -1015,6 +989,11 @@ sub GetUserCredentials($){
     return ($username,$password);
 }
 
+################################################################################################
+#
+# HelpMessage(): displays user help
+#
+
 sub HelpMessage(){
 
     my $script = basename $0;
@@ -1054,6 +1033,8 @@ Usage: $script action [options] hostname [hostname]
 
            * updatehost
 
+             --operatingsystem <name>
+             --architecture <name>
              --hostgroup <name>
              --environment <name>
              --model <name>
