@@ -69,7 +69,7 @@ my $request = HTTP::Request->new("GET","$url/users");
 $request->header("Content-Type" => "application/json");
 my $response = $browser->request($request);
 if (not $response->is_success){
-    print STDERR "[ERROR] Could not retrieve list of users from Foreman...\n";
+    print STDERR "[ERROR] Could not retrieve list of users from Foreman: \"".$response->status_line."\"\n";
     exit 1;
 }
 for (grep { ${$$_{user}}{login} eq $user_credentials{username} } @{from_json($response->content)}){
@@ -323,6 +323,7 @@ sub InstallHost(@){
 	$todo{$host}{operatingsystem} = $fmdata{operatingsystem}{$data{host}{operatingsystem_id}};
 	$todo{$host}{architecture}    = $fmdata{architecture}   {$data{host}{architecture_id}   };
 	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          };
+	$todo{$host}{hostname}        = $host;
     }
     if (@err){
      	print STDERR "[ERROR] Host(s) \"".join("\" - \"",@err). "\" unknown to Foreman, exiting...\n";
@@ -373,10 +374,10 @@ sub InstallHost(@){
 		}
 	    }
 	    #print $data{NETWORK};exit;
-	    $todo{$host}{hostname} = "${host}-gigeth";
-	}else{
-	    $data{NETWORK} = "network --bootproto=dhcp --device=eth0 --hostname $host.cern.ch";
-	    $todo{$host}{hostname} = $host;
+	    $todo{$host}{hostname} .= "-gigeth";
+	#}else{
+	#    $data{NETWORK} = "network --bootproto=dhcp --device=eth0 --hostname $host.cern.ch";
+	#    $todo{$host}{hostname} = $host;
 	}
 	
 	my $model = $data{HWMODEL} = $todo{$host}{model};
@@ -391,11 +392,14 @@ sub InstallHost(@){
 	my $iaddr = gethostbyname($host);
 	die "aargh..." if not defined $iaddr;
 	$iaddr = inet_ntoa($iaddr);
-	my $request = HTTP::Request->new("GET","$url/unattended/provision?spoof=$iaddr");
+	my $ksfile = "$url/unattended/provision?spoof=$iaddr";
+	my $request = HTTP::Request->new("GET",$ksfile);
 	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
 	if (not $response->is_success){
-	    print STDERR Dumper($response)."AARGH! $url/unattended/provision?spoof=$iaddr\n";
+	    print STDERR "[ERROR] Failed to retrieve a Kickstart file \"$ksfile\":\n";
+	    print STDERR "[ERROR]   ".$response->content."\n";
+	    #print STDERR Dumper($response)."AARGH! $url/unattended/provision?spoof=$iaddr\n";
 	    exit;
 	}
 	my $template = $response->content;
@@ -741,7 +745,7 @@ sub SetupAims($){
     my %todo = %$href;
     my $rc = 0;
     #print Dumper(\%todo);exit;
-    # Run "aims2 showimg all" to get lsit of all available AIMS images
+    # Run "aims2 showimg all" to get list of all available AIMS images
     my %AimsImg = (
         "SLC 6.2"    => "SLC62_BETA",
         "SLC 6.1"    => "SLC61_BETA",
@@ -784,7 +788,7 @@ sub SetupAims($){
 	    #
 	    $aims = "/usr/bin/aims2client showhost $todo{$host}{hostname} --full";
 	    print "[VERB] Running \"$aims\"\n" if $verbose;
-	    open(F,"$aims |") or die "aargh...";
+	    open(F,"$aims |") or die "aagrh...";
 	    my @output = <F>;
 	    close F;
 	    print "[DEBUG] \@output:\n @output\n" if $debug;
@@ -1068,59 +1072,4 @@ exit 0;
 }
 
 __END__
-# {host : {"architecture_id":int,
- # "build":string,
- # "comment":string,
- # "disk":string,
- # "domain_id":int,
- # "enabled":string,
- # "environment":string,
- # "environment_id":int,
- # "hostgroup_id":int,
- # "installed_at":string,
- # "ip":string,
- # "last_compile":string,
- # "last_freshcheck":string,
- # "last_report":string,
- # "mac":string,
- # "medium_id":int,
- # "model_id":int,
- # "name":string,
- # "operatingsystem_id":int,
- # "owner_id":int,
- # "owner_type":string,
- # "ptable_id":int,
- # "puppet_status":string,
- # "puppetmaster":string,
- # "root_pass":string,
- # "serial":string,
- # "source_file_id":int,
- # "sp_ip":string,
- # "sp_mac":string,
- # "sp_name":string,
- # "sp_subnet_id":int,
- # "subnet_id":int}}
 
-
-
-Add "pcie_aspm=off"
-
-
-[root@lxfssm4003 ~]# cat ifconfig.txt 
-eth0      Link encap:Ethernet  HWaddr 00:E0:ED:0E:60:70  
-          inet addr:10.32.21.15  Bcast:10.32.21.127  Mask:255.255.255.128
-          inet6 addr: fe80::2e0:edff:fe0e:6070/64 Scope:Link
-          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
-          RX packets:768 errors:1279900253910 dropped:5119601015640 overruns:0 frame:1279900253910
-          TX packets:754 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:1000 
-          RX bytes:124412 (121.4 KiB)  TX bytes:130424 (127.3 KiB)
-
-lo        Link encap:Local Loopback  
-          inet addr:127.0.0.1  Mask:255.0.0.0
-          inet6 addr: ::1/128 Scope:Host
-          UP LOOPBACK RUNNING  MTU:16436  Metric:1
-          RX packets:56 errors:0 dropped:0 overruns:0 frame:0
-          TX packets:56 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:0 
-          RX bytes:5281 (5.1 KiB)  TX bytes:5281 (5.1 KiB)
