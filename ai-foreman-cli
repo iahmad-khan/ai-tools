@@ -166,7 +166,7 @@ sub ShowHost($@){
     }elsif ($opt{hostname}){
 	push(@host,map {s/.cern.ch//; $_ = lc} @{$opt{hostname}});
     }
-#    print Dumper(\%opt); print "\@host = \"@host\"\n";
+    #print Dumper(\%opt); print "\@host = \"@host\"\n";
     #exit;
 
     my $FORMAT = " %-15s %-30s %-15s %-15s %-6s  %-25s %-10s %s\n";
@@ -175,11 +175,12 @@ sub ShowHost($@){
     #
     my @out = ();
     for my $host (sort @host){
-	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
+	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
 	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
 	if (not $response->is_success){
 	    print STDERR "[ERROR] Host \"$host\" is unknown to Foreman...\n";
+	    #print Dumper($response);
 	    next;
 	}
 	my %data = %{from_json($response->content)};
@@ -342,12 +343,13 @@ sub InstallHost(@){
 	    push(@err,$host);
 	    print "[ERROR] ".$response->status_line."\n" if $debug;
 	}
+	#print Dumper(\$response);exit;
     }
     if (@err){
 	print STDERR "[WARN] Could not revoke certificate for host(s) \"".join("\" - \"",@err). "\" from Puppet Certificate Authority...\n";
 	#exit 1;
     }
-
+    
     #
     # Prepare Kickstart file
     #
@@ -518,8 +520,11 @@ sub UpdateHost($@){
 	    $opt{medium} = "SLC";
 	}elsif ($opt{operatingsystem} =~ /^RedHat 6/){
 	    $opt{medium} = "RedHat 6";
+	}elsif ($opt{operatingsystem} =~ /^Fedora/){
+	    $opt{medium} = "Fedora Mirror";
 	}else{
-	    # oops.
+	    print STDERR "[ERROR] UpdateHost: no medium defined for operating system \"$opt{operatingsystem}\"\n";
+	    return undef;
 	}
     }
     print Dumper(\%opt) if $debug;
