@@ -116,10 +116,18 @@ if ($action eq "showhost"){
 # Do the user options have correct values?
 #
 my @err = ();
-for my $attr (qw(architecture model operatingsystem hostgroup environment owner domain ptable)){
+for my $attr (qw(architecture model operatingsystem hostgroup environment domain ptable)){
     next if not defined $opts{$attr};
     next if grep {$opts{$attr} eq $_} values %{$fmdata{$attr}};
     push(@err,"[ERROR] Option \"--$attr\" has unknown value \"$opts{$attr}\". Valid values: ".join(", ",map {"\"$_\""} sort values %{$fmdata{$attr}})."\n");
+}
+if (defined $opts{owner}){
+    #print "0 > $opts{owner}\n";
+    #print "1 > ".join(" ",values %{$fmdata{user}})."\n";
+    #print "2 > ".join(" ",values %{$fmdata{usergroup}})."\n";
+    if (not grep {$opts{owner} eq $_} (values %{$fmdata{user}}, values %{$fmdata{usergroup}})){
+	push(@err,"[ERROR] Option \"--owner\" has unknown value \"$opts{owner}\". Valid values: ".join(", ",sort map {"\"$_\""} (values %{$fmdata{user}}, values %{$fmdata{usergroup}}) ."\n"));
+    }
 }
 if (@err){
     map {print STDERR $_} @err;
@@ -169,7 +177,7 @@ sub ShowHost($@){
     #print Dumper(\%opt); print "\@host = \"@host\"\n";
     #exit;
 
-    my $FORMAT = " %-15s %-30s %-15s %-15s %-6s  %-25s %-10s %s\n";
+    my $FORMAT = " %-15s %-30s %-15s %-15s %-6s  %-25s %-15s %s\n";
     #
     # Are the hosts known to Foreman?
     #
@@ -183,8 +191,11 @@ sub ShowHost($@){
 	    #print Dumper($response);
 	    next;
 	}
+	print "[DEBUG] JSON: ".$response->content."\n" if $debug;
 	my %data = %{from_json($response->content)};
 	%data = %{$data{host}};
+	my $ownertype = lc($data{owner_type}); # values: "user", "usergroup"
+	#print "\$ownertype = \"$ownertype\" \n".Dumper(\%{$fmdata{$ownertype}});
 	#print Dumper(\%data);exit;
 	#printf "%15s %-15s %15s %-15s %15s\n",$host,map {$data{$_} || "oops..."} qw(environment_id owner_id ip managed) if $debug;
 
@@ -197,7 +208,7 @@ sub ShowHost($@){
 	$data{architecture}    = $fmdata{architecture}   { $data{architecture_id}    || -1 } || "";
 	$data{hostgroup}       = $fmdata{hostgroup}      { $data{hostgroup_id}       || -1 } || "";
 	$data{environment}     = $fmdata{environment}    { $data{environment_id}     || -1 } || "";
-	$data{owner}           = $fmdata{owner}          { $data{owner_id}           || -1 } || "";
+	$data{owner}           = $fmdata{$ownertype}     { $data{owner_id}           || -1 } || "";
 	$data{model}           = $fmdata{model}          { $data{model_id}           || -1 } || "";
 
 	# apply filters
@@ -423,13 +434,17 @@ sub InstallHost(@){
 	    next;
 	}
 	print F $result;
-	#print $result if $debug;
+	print $result if $debug;
 	close F;
     
 	# Console options
-	if (uc($model) eq "HYPER-V VIRTUAL MACHINE"){
+	if (lc($model) eq "hyper-v virtual machine"){
 	    $todo{$host}{console} = "";
-	}elsif (uc($model) eq "AC_11_30"){
+	}elsif (uc($model) eq "ac_11_30"){
+	    $todo{$host}{console} = "console=tty0";
+	}elsif (lc($model) eq "hp_09_10"){
+	    $todo{$host}{console} = "console=tty0";
+	}elsif (lc($model) eq "py_08_10"){
 	    $todo{$host}{console} = "console=tty0";
 	}else{
 	    $todo{$host}{console} = "console=tty0 console=ttyS2,9600n8";
@@ -550,7 +565,18 @@ sub UpdateHost($@){
     }
 
     $data{comment} = exists $opt{comment} ? $opt{comment} : undef;
-    $data{owner_type} = "User" if exists $data{owner_id}; # to successfully set the owner (Bug http://theforeman.org/issues/1370 )
+
+    #print "0 > $opts{owner}\n";
+    #print "1 > ".join(" ",values %{$fmdata{user}})."\n";
+    #print "2 > ".join(" ",values %{$fmdata{usergroup}})."\n";
+    if (grep {$opt{owner} eq $_} values %{$fmdata{user}}){
+	$data{owner_type} = "User";
+    }elsif (grep {$opt{owner} eq $_} values %{$fmdata{usergroup}}){
+	$data{owner_type} = "Usergroup";
+    }
+    #print "0 > $data{owner_type}\n";#exit;
+
+    #$data{owner_type} = "User" if exists $data{owner_id}; # to successfully set the owner (Bug http://theforeman.org/issues/1370 )
 
     #
     #
@@ -671,12 +697,13 @@ sub ForemanConfig($$){
     map {$config{model}          {$$_{model}          {id}} = $$_{model}          {name} } @{from_json($browser->get("$url/models?format=json")->content)};
     map {$config{hostgroup}      {$$_{hostgroup}      {id}} = $$_{hostgroup}      {label}} @{from_json($browser->get("$url/hostgroups?format=json")->content)};
     map {$config{environment}    {$$_{environment}    {id}} = $$_{environment}    {name} } @{from_json($browser->get("$url/environments?format=json")->content)};
-    map {$config{owner}          {$$_{user}           {id}} = $$_{user}           {login}} @{from_json($browser->get("$url/users?format=json")->content)};
+    map {$config{user}           {$$_{user}           {id}} = $$_{user}           {login}} @{from_json($browser->get("$url/users?format=json")->content)};
+    map {$config{usergroup}      {$$_{usergroup}      {id}} = $$_{usergroup}      {name} } @{from_json($browser->get("$url/usergroups?format=json")->content)};
     map {$config{domain}         {$$_{domain}         {id}} = $$_{domain}         {name} } @{from_json($browser->get("$url/domains?format=json")->content)};
     #map {$config{subnet}         {$$_{subnet}         {id}} = $$_{subnet}         {name} } @{from_json($browser->get("$url/subnets?format=json")->content)};
     #%{$config{sp_subnet}} = %{$config{subnet}};
 
-    #print Dumper(\@{from_json($browser->get("$url/operatingsystems?format=json")->content)});exit;
+    #print Dumper(\@{from_json($browser->get("$url/usergroups?format=json")->content)});exit;
     #print Dumper(\%config);exit;
     return %config;
 }
