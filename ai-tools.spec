@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 1.1
+Version: 1.2
 Release: 0%{?dist}
 BuildArch: noarch
 Source: ai-tools-%{version}.tgz
@@ -37,11 +37,15 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
-* Mon Feb 27 2012  Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.1-0.slc6
+* Tue Mar  6 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.2-0
+- new action "createvm": create CVI VM
+- bug fix for ac_11_30 installs
+
+* Mon Feb 27 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.1-0
 - support usergroups
 - add man page
 - additional hardware support
 - minor fixes
 
-* Wed Feb  8 2012  Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.0-0.slc6
+* Wed Feb  8 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.0-0
 - initial build

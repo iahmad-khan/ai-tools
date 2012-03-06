@@ -7,12 +7,16 @@ use diagnostics;
 use POSIX;
 use Getopt::Long;
 use Data::Dumper;
-use SOAP::Lite;# +trace => 'debug';
-use File::Basename;
+#use SOAP::Lite;# +trace => 'debug';
+use SOAP::Lite + maptype => {};
+use SOAP::Transport::HTTP;
 use LWP;
 use JSON;
 use Socket;
 use NetAddr::IP;
+use Date::Manip;
+use Switch;
+#use DateTime;
 
 $Data::Dumper::Sortkeys = 1;
 
@@ -21,15 +25,16 @@ sub LandbHostInfo(@);
 sub ShowHost($@);
 sub ShowConfig($);
 sub DeleteHost($@);
+sub CreateVM($@);
 sub ChkHost(@);
 sub UpdateHost($@);
 sub InstallHost(@);
 sub SetupAims($);
 sub GetUserCredentials($);
-sub HelpMessage();
+sub HelpMessage(;$);
 sub HandleOptions();
 
-HelpMessage() if not @ARGV;
+HelpMessage("No arguments given.") if not @ARGV;
 
 my $debug = my $verbose = my $dryrun = 0;
 my %user_credentials = ();
@@ -40,9 +45,12 @@ my ($action,%opts) = HandleOptions();
 
 #print Dumper(\%opts);#exit;
 
+$verbose = 1 if $debug;
+
+
 my @host = @ARGV;
 if (not @host and not ($action eq "showhost" or $action eq "showconfig")){
-    print STDERR "[ERROR] No hostname(s) given...\n";;
+    print STDERR "[ERROR] No hostname(s) given...\n";
     exit 1;
 }
 
@@ -88,6 +96,9 @@ if (not $user_credentials{administrator}){
 if ($action eq "delhost"){
     DeleteHost(\%opts,@host);
     exit 0;
+}elsif ($action eq "createvm"){
+    CreateVM(\%opts,@host);
+    exit 0;
 }elsif ($action eq "chkhost"){
     ChkHost(@host);
     exit 0;
@@ -99,7 +110,7 @@ if ($action eq "delhost"){
 my %fmdata = ForemanConfig($browser,$url);
 
 #
-# more easy things.
+# More easy things.
 #
 if ($action eq "showhost"){
     ShowHost(\%opts,@host);
@@ -122,9 +133,6 @@ for my $attr (qw(architecture model operatingsystem hostgroup environment domain
     push(@err,"[ERROR] Option \"--$attr\" has unknown value \"$opts{$attr}\". Valid values: ".join(", ",map {"\"$_\""} sort values %{$fmdata{$attr}})."\n");
 }
 if (defined $opts{owner}){
-    #print "0 > $opts{owner}\n";
-    #print "1 > ".join(" ",values %{$fmdata{user}})."\n";
-    #print "2 > ".join(" ",values %{$fmdata{usergroup}})."\n";
     if (not grep {$opts{owner} eq $_} (values %{$fmdata{user}}, values %{$fmdata{usergroup}})){
 	push(@err,"[ERROR] Option \"--owner\" has unknown value \"$opts{owner}\". Valid values: ".join(", ",sort map {"\"$_\""} (values %{$fmdata{user}}, values %{$fmdata{usergroup}}) ."\n"));
     }
@@ -148,6 +156,10 @@ if ($action eq "addhost" or $action eq "updatehost"){
 
 exit 0;
 
+################################################################################################
+#
+# ShowHost(): display host information
+#
 sub ShowHost($@){
     my ($href,@host) = @_;
     my %opt = defined $href ? %$href : ();
@@ -241,6 +253,10 @@ sub ShowHost($@){
 
 }
 
+################################################################################################
+#
+# DeleteHost(): delete host
+#
 sub DeleteHost($@){
     my ($href,@host) = @_;
     my %opt = %$href;
@@ -265,6 +281,10 @@ sub DeleteHost($@){
     return 0;
 }
 
+################################################################################################
+#
+# ChkHost(): perform consistency checks 
+#
 sub ChkHost(@){
     my @host = @_;
 
@@ -309,6 +329,10 @@ sub ChkHost(@){
     return;
 }
 
+################################################################################################
+#
+# InstallHost(): generate kickstart files, call out to AIMS
+#
 sub InstallHost(@){
     my @host = @_;
 
@@ -341,6 +365,7 @@ sub InstallHost(@){
      	print STDERR "[ERROR] Host(s) \"".join("\" - \"",@err). "\" unknown to Foreman, exiting...\n";
      	exit 1;
     }
+    print STDOUT "[VERBOSE] Retrieved host information from Foreman\n" if $verbose;
 
     #
     # Delete certs
@@ -353,6 +378,8 @@ sub InstallHost(@){
 	if (not $response->is_success){
 	    push(@err,$host);
 	    print "[ERROR] ".$response->status_line."\n" if $debug;
+	}else{
+	    print STDOUT "[DEBUG] Deleted certificate for \"$host\" from Puppet CA:".$response->status_line."\n" if $debug;
 	}
 	#print Dumper(\$response);exit;
     }
@@ -360,6 +387,7 @@ sub InstallHost(@){
 	print STDERR "[WARN] Could not revoke certificate for host(s) \"".join("\" - \"",@err). "\" from Puppet Certificate Authority...\n";
 	#exit 1;
     }
+    print STDOUT "[VERBOSE] Deleted certificates from Puppet CA\n" if $verbose;
     
     #
     # Prepare Kickstart file
@@ -393,7 +421,7 @@ sub InstallHost(@){
 	#    $todo{$host}{hostname} = $host;
 	}
 	
-	my $model = $data{HWMODEL} = $todo{$host}{model};
+	# my $model = $data{HWMODEL} = $todo{$host}{model};
 
 	# if (uc($data{HWMODEL}) eq "HYPER-V VIRTUAL MACHINE" and $todo{$host}{operatingsystem} =~ /^(SLC|RedHat) 5\./){
 	#     $data{FIRST_DRIVE} = "hda";
@@ -437,18 +465,14 @@ sub InstallHost(@){
 	print $result if $debug;
 	close F;
     
-	# Console options
-	if (lc($model) eq "hyper-v virtual machine"){
-	    $todo{$host}{console} = "";
-	}elsif (uc($model) eq "ac_11_30"){
-	    $todo{$host}{console} = "console=tty0";
-	}elsif (lc($model) eq "hp_09_10"){
-	    $todo{$host}{console} = "console=tty0";
-	}elsif (lc($model) eq "py_08_10"){
-	    $todo{$host}{console} = "console=tty0";
-	}else{
-	    $todo{$host}{console} = "console=tty0 console=ttyS2,9600n8";
-	}
+	# # Console options
+	# switch (lc($model)) {
+	#     case "hyper-v virtual machine" { $todo{$host}{console} = ""                                  }
+	#     case "ac_11_30"                { $todo{$host}{console} = "console=tty0"                      }
+	#     case "hp_09_10"                { $todo{$host}{console} = "console=tty0"                      }
+	#     case "py_08_10"                { $todo{$host}{console} = "console=tty0"                      }
+	#     else                           { $todo{$host}{console} = "console=tty0 console=ttyS2,9600n8" }
+	# }
 
     }
     #print Dumper(\%todo);exit;
@@ -499,6 +523,10 @@ EOMESS
     return 0;
 }
 
+################################################################################################
+#
+# UpdateHost(): update host information
+#
 sub UpdateHost($@){
     my ($href,@host) = @_;
     my %opt = %$href;
@@ -531,13 +559,12 @@ sub UpdateHost($@){
     # installation media
     #
     if (defined $opt{operatingsystem} and not defined $opt{medium}){
-	if ($opt{operatingsystem} =~ /^SLC/){
-	    $opt{medium} = "SLC";
-	}elsif ($opt{operatingsystem} =~ /^RedHat 6/){
-	    $opt{medium} = "RedHat 6";
-	}elsif ($opt{operatingsystem} =~ /^Fedora/){
-	    $opt{medium} = "Fedora Mirror";
-	}else{
+	switch ($opt{operatingsystem}) {
+	    case /^SLC/      { $opt{medium} = "SLC"           }
+	    case /^RedHat 6/ { $opt{medium} = "RedHat 6"      }
+	    case /^Fedora/   { $opt{medium} = "Fedora Mirror" }
+	}
+	if (not defined $opt{medium}){
 	    print STDERR "[ERROR] UpdateHost: no medium defined for operating system \"$opt{operatingsystem}\"\n";
 	    return undef;
 	}
@@ -567,18 +594,20 @@ sub UpdateHost($@){
     $data{comment} = exists $opt{comment} ? $opt{comment} : undef;
 
     # set the ownership information
-    if (grep {$opt{owner} eq $_} values %{$fmdata{user}}){
-	$data{owner_type} = "User";
-    }elsif (grep {$opt{owner} eq $_} values %{$fmdata{usergroup}}){
-	$data{owner_type} = "Usergroup";
-    }else{
-	print STDERR "[ERROR][BUG] Unsupported ownertype detected, exiting\n";
-	exit 1;
-    }
-    for my $id (keys %{$fmdata{lc($data{owner_type})}}){
-	if (${fmdata{lc($data{owner_type})}}{$id} eq $opts{owner}){
-	    $data{owner_id} = $id;
-	    last;
+    if (exists $opt{owner}){
+	if (grep {$opt{owner} eq $_} values %{$fmdata{user}}){
+	    $data{owner_type} = "User";
+	}elsif (grep {$opt{owner} eq $_} values %{$fmdata{usergroup}}){
+	    $data{owner_type} = "Usergroup";
+	}else{
+	    print STDERR "[ERROR][BUG] Unsupported ownertype detected, exiting\n";
+	    exit 1;
+	}
+	for my $id (keys %{$fmdata{lc($data{owner_type})}}){
+	    if (${fmdata{lc($data{owner_type})}}{$id} eq $opts{owner}){
+		$data{owner_id} = $id;
+		last;
+	    }
 	}
     }
 
@@ -666,6 +695,10 @@ sub UpdateHost($@){
     return @done;
 }
 
+################################################################################################
+#
+# ForemanConfig(): retrieve Foreman configuration information
+#
 sub ForemanConfig($$){
     my ($browser,$url) = @_;
     my %config = ();
@@ -712,6 +745,10 @@ sub ForemanConfig($$){
     return %config;
 }
 
+################################################################################################
+#
+# LandbHostInfo(): retrieve host information from LANdb
+#
 sub LandbHostInfo(@){
     my @device = @_;
 
@@ -776,6 +813,11 @@ sub LandbHostInfo(@){
 
     return %landb;
 }
+
+################################################################################################
+#
+# SetupAims(): upload Kickstart file to AIMS, and configure it
+#
 sub SetupAims($){
     my $href = shift @_;
     my %todo = %$href;
@@ -802,8 +844,18 @@ sub SetupAims($){
     for my $host (sort keys %todo){
 	my $cnt = 0;
 	my $kopts = "text network ks ksdevice=bootif latefcload";
-	$kopts .= " $todo{$host}{console}" if $todo{$host}{console};
-	$kopts .= " pcie_aspm=off" if $todo{$host}{model} eq "e4_09_21";
+	#$kopts .= " $todo{$host}{console}" if $todo{$host}{console};
+	my $model = lc($todo{$host}{model});
+	$kopts .= " pcie_aspm=off" if $model eq "e4_09_21";
+	# Console options
+	use Switch;
+	switch ($model) {
+	    case "hyper-v virtual machine" { $kopts .= ""                                  }
+	    case "ac_11_30"                { $kopts .= "console=tty0"                      }
+	    case "hp_09_10"                { $kopts .= "console=tty0"                      }
+	    case "py_08_10"                { $kopts .= "console=tty0"                      }
+	    else                           { $kopts .= "console=tty0 console=ttyS2,9600n8" }
+	}
 	if (not exists $AimsImg{$todo{$host}{operatingsystem}}){
 	    print STDERR "[ERROR] No suitable AIMS target for Operating System \"$todo{$host}{operatingsystem}\" available. Probably a bug in the script you are running :)\n";
 	    exit 1;
@@ -904,6 +956,105 @@ sub SetupAims($){
     return @done;
 }
 
+################################################################################################
+#
+# CreateVM(): Request new hosts from CVI
+#
+sub CreateVM($@){
+    my ($href,@host) = @_;
+    my %opts = %$href;
+    print Dumper(\%opts) if $debug;
+
+    my $proxy = "https://vmm.cern.ch/vmmgtsvc/service.asmx";
+
+    sub SOAP::Transport::HTTP::Client::get_basic_credentials{
+	return "cern\\$user_credentials{username}" => $user_credentials{password};
+    }
+    my $soapRequest = SOAP::Lite
+	-> uri('https://vmm.cern.ch/vmmgtsvc/')
+	-> on_fault(sub{my ($soap,$res) = @_;
+			print STDERR "[ERROR] Fatal SOAP error: ".(ref $res ? $res->faultstring : $soap->transport->status)."\n";
+			exit 1;
+		    })
+	-> default_ns('VmMgtSvc')
+	-> xmlschema('http://www.w3.org/2001/XMLSchema')
+	-> on_action( sub { sprintf '"VmMgtSvc/%s"', $_[1] } )
+	-> proxy($proxy, timeout => 3600)
+	;
+
+    #
+    # Administrivia
+    #
+    $opts{template}    = "linuxPXE";
+    $opts{hostgroup} ||= "-- Central Service --";
+    $opts{vmservice} ||= "";
+
+    #
+    # Verify hostgroup
+    #
+    my $call = $soapRequest->HostGroupGetAllForUser();#exit;
+    if ($call->fault) {
+	print STDERR "[ERROR] Failure to retrieve \"HostGroupGetAllForUser\" information: " . $call->faultstring . "\n";
+	exit -1;
+    }else{
+	my $result = $call->result;
+	my @hostgroup = @{$result->{"anyType"}};
+	
+	if (not grep {$_ eq $opts{hostgroup}} @hostgroup and not gethostbyname($opts{hostgroup})){
+	    print "Unknown Host or Host Group \"$opts{hostgroup}\" specified. Available Host Groups:\n";
+	    map {print "   *  $_\n"} sort @hostgroup;
+	    exit 1;
+	}
+    }
+
+    print Dumper(\%opts) if $debug;#exit;
+
+    #
+    # Create the VMs
+    #
+    for my $host (@host){
+	
+	if ($dryrun){
+	    print STDOUT "[INFO] Dryrun: request for \"$host\" deliberately not submitted\n";
+	    next;
+	}
+ 
+	$call = $soapRequest->
+	    call('VMCreateRequest',
+		 SOAP::Data->name('VMName'        )->value($host),                          # <VMName>string</VMName>
+		 SOAP::Data->name('Description'   )->value($opts{comment}),                 # <Description>string</Description>
+		 SOAP::Data->name('TemplateName'  )->value($opts{template}),                # <TemplateName>string</TemplateName>
+		 SOAP::Data->name('MainUser'      )->value($opts{owner}),                   # <MainUser>string</MainUser>
+		 SOAP::Data->name('Owner'         )->value($opts{owner}),                   # <Owner>string</Owner>
+		 SOAP::Data->name('VMHostOrGroup' )->value($opts{hostgroup}),               # <VMHost>string</VMHost>
+		 SOAP::Data->name('VMService'     )->value($opts{vmservice}),               # <VMService>string</VMService>
+		 SOAP::Data->name('CPUCount'      )->value($opts{"cpu-count"}),             # <CPUCount>int</CPUCount>
+		 SOAP::Data->name('MemorySizeGB'  )->value($opts{memory})->type('float'),   # <MemorySizeGB>float</MemorySizeGB>
+		 SOAP::Data->name('SysDiskSizeGB' )->value($opts{disksize}),                # <SysDiskSizeGB>int</SysDiskSizeGB>
+		 SOAP::Data->name('ExpirationDate')->value($opts{"expiration-date"})->type('dateTime'), # <ExpirationDate>string</ExpirationDate>
+            );
+	if ($call->fault) {
+	    print STDERR "[ERROR] Failure to execute \"VMCreateRequest\" for VM \"$host\": " . $call->faultstring . "\n";
+	    #exit -1;
+	}else{
+	    my $result = $call->result;
+	    if ($result){
+		print STDERR "[WARN] Creation request for VM \"$host\" failed: $result\n";
+	    }else{
+		print STDOUT "[INFO] Creation request for VM \"$host\" successfully submitted\n";
+	    }
+	}
+	
+    }
+
+
+}
+
+
+################################################################################################
+#
+# ShowConfig(): display configuration information
+#
 sub ShowConfig($){
     my $href = shift @_;
     my %config = %$href;
@@ -926,6 +1077,10 @@ sub ShowConfig($){
     return 0;
 }
 
+################################################################################################
+#
+# HandleOptions(): parse user options
+#
 sub HandleOptions(){
 
     $action = shift @ARGV;
@@ -937,8 +1092,9 @@ sub HandleOptions(){
 		   installhost => [qw()],
 		   chkhost     => [qw()],
 		   showconfig  => [qw()],
+		   createvm    => [qw(expiration-date=s cpu-count=f memory=f disksize=f comment=s owner=s hostgroup=s)],
     );
-    HelpMessage() unless exists $options{$action};
+    HelpMessage("Mandatory parameter [".join("|",sort keys %options)."] missing") unless exists $options{$action};
 
     my %opts = (debug   => \$debug,
 		dryrun  => \$dryrun,
@@ -949,7 +1105,7 @@ sub HandleOptions(){
 				      "debug","dryrun","verbose",
 				      "cern-user=s" => \$user_credentials{username},
 	);
-    HelpMessage() if not $rc;
+    HelpMessage("Could not parse options.") if not $rc;
     $verbose = 1 if $debug;
     map {delete $opts{$_} unless defined $opts{$_}} keys %opts;
 
@@ -977,6 +1133,40 @@ sub HandleOptions(){
 	    print STDERR "[ERROR] Action \"$action\" requires at least one of the options \"--". join("\", \"--",@opt)."\"\n";
 	    exit 1;
 	}
+    }elsif ($action eq "createvm"){
+	my @host = @ARGV;
+	if (not @host){
+	    print STDERR "[ERROR] No hostname(s) given...\n";
+	    exit 1;
+	}
+        my @err = ();
+	map {push(@err,"Host \"$_\" already exists in DNS") if gethostbyname($_)} @host;
+	if (@err){
+	    map {print STDERR "[ERROR] $_\n"} @err;
+	    exit 1;
+	}
+
+        @err = ();
+	map {push(@err,"Action \"$action\" requires mandatory option \"$_\"") unless exists $opts{$_}} qw(expiration-date);
+	if (@err){
+	    map {print STDERR "[ERROR] $_"} @err;
+	    exit 1;
+	}
+	if (not ParseDate($opts{"expiration-date"})){
+	    print STDERR "[ERROR] Cannot parse \"".$opts{"expiration-date"}."\"\n";
+	    exit 1;
+	}
+	my $cmp = Date_Cmp($opts{"expiration-date"},ParseDate("today")) || 0;
+	if ($cmp < 0){
+	    print STDERR "[ERROR] expiration date \"".$opts{"expiration-date"}."\" in the past\n";
+	    exit 1;
+	}
+	$opts{"cpu-count"} ||=  2;
+	$opts{memory}      ||=  2;
+	$opts{disksize}    ||= 40;
+	$opts{comment}     ||= "(no description)";
+	$opts{owner}       ||= $user_credentials{username};
+	
     }
 				      
     return $action,%opts;
@@ -1034,80 +1224,13 @@ sub GetUserCredentials($){
 # HelpMessage(): displays user help
 #
 
-sub HelpMessage(){
-
-    use Pod::Usage;
-    pod2usage(-verbose=> 2);
+sub HelpMessage(;$){
+    map {print STDOUT "$_\n"} @_;
+    use File::Basename;
+    print STDOUT"\nRun \"man ".basename $0."\" for more information.\n";
+    #use Pod::Usage;
+    #pod2usage(-verbose=> 2);
     exit 0;
-
-    my $script = basename $0;
-    my $user = (getpwuid($<))[0];
-
-    print <<EOH;
-
-
-Usage: $script action [options] hostname [hostname]
-
-       "action" should be one of the following
-
-           * showhost     
-           * addhost
-           * delhost
-           * updatehost
-           * installhost
-           * chkhost
-           * showconfig
-           * help
-
-       Options depend on the action:
-
-           * addhost
-
-             --operatingsystem <name>
-             --architecture <name>
-             --hostgroup <name>
-             --environment <name>        : default: "production"
-             --model <name>
-             --owner <name>
-             --comment <comment string>
-             --domain <name>             : default: "cern.ch"
-             --ptable <name>             : default: "RedHat default"
-
-	     note: Network information (IP and MAC addresses etc.) is retrieved from Landb
-
-           * updatehost
-
-             --operatingsystem <name>
-             --architecture <name>
-             --hostgroup <name>
-             --environment <name>
-             --model <name>
-             --owner <name>
-             --comment <comment string>
-             --network                   : IP and MAC addresses are retrieved from Landb
-
-           * showhost
-
-             --all                       : display information for all hosts known to Foreman
-
-             Filtering options:
-               --hostname <name>
-               --model <name>
-               --owner <name>
-               --regexp                  : interpret filtering options as regular expressions
-
-       General options
-
-           --cern-user <username>        : CERN account to be used for LANdb lookups and Foreman access
-                                           default "$user" :)
-
-           --verbose                     : print more output
-           --debug                       : print even more output
-           --dryrun                      : do not upload to AIMS
-
-EOH
-
-exit 0;
 
 }
 
@@ -1121,7 +1244,7 @@ ai-foreman-cli - Utility to update, retrieve, delete information for the Foreman
 
 =head1 DESCRIPTION
 
-ai-foreman-cli is a comman line interface to the Foreman setup of the Agile Infrastructure project.
+ai-foreman-cli is a command line interface to the Foreman setup of the Agile Infrastructure project.
 It should be used to displaying information about hosts, to delete or update that information.
 
 =head1 SYNOPSIS
@@ -1164,6 +1287,10 @@ Generates kickstart files for hosts, and upload them to AIMS
 
 Performs some basic consistency checks on the information about hosts
 
+=item B<createvm> [OPTIONS] HOSTNAME ...
+
+Create Virtual Machines in the CVI service
+
 =item B<showconfig> [OPTIONS]
 
 Show the Foreman configuration details 
@@ -1197,6 +1324,9 @@ default: "production"
 =item B<--model> NAME
 
 =item B<--owner> NAME
+
+Can be CERN account or E-group.
+Default: you.
 
 =item B<--comment> COMMENT
 
@@ -1232,6 +1362,9 @@ default: "RedHat default"
 
 =item B<--owner> NAME
 
+Can be CERN account or E-group.
+Default: you.
+
 =item B<--comment> COMMENT
 
 =item B<--network>
@@ -1261,6 +1394,46 @@ Filtering options:
 =item B<--regexp>
 
 Interpret filtering options as regular expressions
+
+=back
+
+=back
+
+=back
+
+=over 4 
+
+=item B<createvm>
+
+=over 8
+
+=item B<--expiration-date> YYYY-MM-DD
+
+Default: 6 months.
+Can be modified afterwards using CVI interface
+
+=item B<--cpu-count> NUMBER
+
+Default: 2
+
+=item B<--memory> NUMBER
+
+Default: 2 [GB]
+
+=item B<--disksize> NUMBER
+
+Default: 40 [GB]
+
+=item B<--comment> COMMENT
+
+=item B<--owner> NAME
+
+Can be CERN account or E-group.
+Default: you.
+
+=item B<--hostgroup> NAME
+
+CVI hostgroup in which the VM will be created
 
 =back
 
