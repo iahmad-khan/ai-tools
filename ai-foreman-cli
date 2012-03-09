@@ -351,18 +351,30 @@ sub InstallHost(@){
      	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
      	$request->header("Content-Type" => "application/json");
      	my $response = $browser->request($request);
-	push(@err,$host) unless $response->is_success;
+	push(@err,"Host \"$host\" unknown to Foreman") unless $response->is_success;
 	next if @err;
 	#
      	my %data = %{from_json($response->content)};
      	#print Dumper(\%data);exit;
+	
+	my $iaddr = gethostbyname($host);
+	if (not defined $iaddr){
+	    push(@err,"Cannot get IP address from DNS for host \"$host\"");
+	    next;
+	}
+	$iaddr = inet_ntoa($iaddr);
+	if ($data{host}{ip} ne $iaddr){
+	    push(@err,"IP-address differs between Foreman (\"$data{host}{ip}\") and DNS (\"$iaddr\"). Consider running \"ai-foreman-cli updatehost --network $host\"");
+	    next;
+	}
+	# store relevant information
 	$todo{$host}{operatingsystem} = $fmdata{operatingsystem}{$data{host}{operatingsystem_id}};
 	$todo{$host}{architecture}    = $fmdata{architecture}   {$data{host}{architecture_id}   };
 	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          };
 	$todo{$host}{hostname}        = $host;
     }
     if (@err){
-     	print STDERR "[ERROR] Host(s) \"".join("\" - \"",@err). "\" unknown to Foreman, exiting...\n";
+     	map {print STDERR "[ERROR] $_\n"} @err;
      	exit 1;
     }
     print STDOUT "[VERBOSE] Retrieved host information from Foreman\n" if $verbose;
@@ -851,10 +863,10 @@ sub SetupAims($){
 	use Switch;
 	switch ($model) {
 	    case "hyper-v virtual machine" { $kopts .= ""                                  }
-	    case "ac_11_30"                { $kopts .= "console=tty0"                      }
-	    case "hp_09_10"                { $kopts .= "console=tty0"                      }
-	    case "py_08_10"                { $kopts .= "console=tty0"                      }
-	    else                           { $kopts .= "console=tty0 console=ttyS2,9600n8" }
+	    case "ac_11_30"                { $kopts .= " console=tty0"                      }
+	    case "hp_09_10"                { $kopts .= " console=tty0"                      }
+	    case "py_08_10"                { $kopts .= " console=tty0"                      }
+	    else                           { $kopts .= " console=tty0 console=ttyS2,9600n8" }
 	}
 	if (not exists $AimsImg{$todo{$host}{operatingsystem}}){
 	    print STDERR "[ERROR] No suitable AIMS target for Operating System \"$todo{$host}{operatingsystem}\" available. Probably a bug in the script you are running :)\n";
