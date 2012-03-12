@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 1.3
+Version: 1.4
 Release: 0%{?dist}
 BuildArch: noarch
 Source: ai-tools-%{version}.tgz
@@ -38,6 +38,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* XXXXXXXXX 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.4-0
+- [ai-foreman-cli][bug] option handling "createvm" (AI-286)
+
 * Fri Mar 9 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.3-0
 - [ai-foreman-cli][bug] console parameter syntax problem
 - [ai-foreman-cli][bug] verify that Foreman and DNS agree on the IP address when install machines
