@@ -39,8 +39,8 @@ rm -rf ${RPM_BUILD_ROOT}
 
 %changelog
 * Fri Mar 9 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.3-0
-- [ai-foreman-cli][bug] console parameter
-- [ai-foreman-cli][bug] verify that Foreman and DNS agree on the IP address
+- [ai-foreman-cli][bug] console parameter syntax problem
+- [ai-foreman-cli][bug] verify that Foreman and DNS agree on the IP address when install machines
 - [specfile] fix rpmlint warnings
 
 * Tue Mar  6 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.2-0

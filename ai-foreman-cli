@@ -16,7 +16,7 @@ use Socket;
 use NetAddr::IP;
 use Date::Manip;
 use Switch;
-#use DateTime;
+use DateTime;
 
 $Data::Dumper::Sortkeys = 1;
 
@@ -1158,15 +1158,20 @@ sub HandleOptions(){
 	    exit 1;
 	}
 
-        @err = ();
-	map {push(@err,"Action \"$action\" requires mandatory option \"$_\"") unless exists $opts{$_}} qw(expiration-date);
-	if (@err){
-	    map {print STDERR "[ERROR] $_"} @err;
-	    exit 1;
-	}
-	if (not ParseDate($opts{"expiration-date"})){
-	    print STDERR "[ERROR] Cannot parse \"".$opts{"expiration-date"}."\"\n";
-	    exit 1;
+        # @err = ();
+	# map {push(@err,"Action \"$action\" requires mandatory option \"$_\"") unless exists $opts{$_}} qw(expiration-date);
+	# if (@err){
+	#     map {print STDERR "[ERROR] $_\n"} @err;
+	#     exit 1;
+	# }
+	if (not exists $opts{"expiration-date"}){
+	    my $dt = DateTime->now + DateTime::Duration->new(months => 6);
+	    $opts{"expiration-date"} = $dt->ymd("-");
+	}else{
+	    if (not ParseDate($opts{"expiration-date"})){
+		print STDERR "[ERROR] Cannot parse \"".$opts{"expiration-date"}."\"\n";
+		exit 1;
+	    }
 	}
 	my $cmp = Date_Cmp($opts{"expiration-date"},ParseDate("today")) || 0;
 	if ($cmp < 0){
