@@ -391,7 +391,7 @@ sub InstallHost(@){
 	    push(@err,$host);
 	    print "[ERROR] ".$response->status_line."\n" if $debug;
 	}else{
-	    print STDOUT "[DEBUG] Deleted certificate for \"$host\" from Puppet CA:".$response->status_line."\n" if $debug;
+	    print STDOUT "[DEBUG] Deleted certificate for \"$host\" from Puppet CA: ".$response->status_line."\n" if $debug;
 	}
 	#print Dumper(\$response);exit;
     }
@@ -1000,6 +1000,7 @@ sub CreateVM($@){
     $opts{template}    = "linuxPXE";
     $opts{hostgroup} ||= "-- Central Service --";
     $opts{vmservice} ||= "";
+    $opts{owner}     ||= $user_credentials{username};
 
     #
     # Verify hostgroup
@@ -1010,8 +1011,7 @@ sub CreateVM($@){
 	exit -1;
     }else{
 	my $result = $call->result;
-	my @hostgroup = @{$result->{"anyType"}};
-	
+	my @hostgroup = ( ref($result->{"anyType"}) eq "ARRAY" ? @{$result->{"anyType"}} : $result->{"anyType"} );
 	if (not grep {$_ eq $opts{hostgroup}} @hostgroup and not gethostbyname($opts{hostgroup})){
 	    print "Unknown Host or Host Group \"$opts{hostgroup}\" specified. Available Host Groups:\n";
 	    map {print "   *  $_\n"} sort @hostgroup;
@@ -1182,7 +1182,6 @@ sub HandleOptions(){
 	$opts{memory}      ||=  2;
 	$opts{disksize}    ||= 40;
 	$opts{comment}     ||= "(no description)";
-	$opts{owner}       ||= $user_credentials{username};
 	
     }
 				      
