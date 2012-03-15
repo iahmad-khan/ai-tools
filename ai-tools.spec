@@ -38,8 +38,8 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
-* XXXXXXXXX 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.4-0
-- [ai-foreman-cli][bug] option handling "createvm" (AI-286)
+* Thu Mar 15 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.4-0
+- [ai-foreman-cli][bug] fixes for "createvm" mode (AI-286)
 
 * Fri Mar 9 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.3-0
 - [ai-foreman-cli][bug] console parameter syntax problem

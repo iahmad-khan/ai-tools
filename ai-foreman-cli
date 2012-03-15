@@ -998,25 +998,28 @@ sub CreateVM($@){
     # Administrivia
     #
     $opts{template}    = "linuxPXE";
-    $opts{hostgroup} ||= "-- Central Service --";
     $opts{vmservice} ||= "";
     $opts{owner}     ||= $user_credentials{username};
 
     #
     # Verify hostgroup
     #
-    my $call = $soapRequest->HostGroupGetAllForUser();#exit;
-    if ($call->fault) {
-	print STDERR "[ERROR] Failure to retrieve \"HostGroupGetAllForUser\" information: " . $call->faultstring . "\n";
-	exit -1;
-    }else{
-	my $result = $call->result;
-	my @hostgroup = ( ref($result->{"anyType"}) eq "ARRAY" ? @{$result->{"anyType"}} : $result->{"anyType"} );
-	if (not grep {$_ eq $opts{hostgroup}} @hostgroup and not gethostbyname($opts{hostgroup})){
-	    print "Unknown Host or Host Group \"$opts{hostgroup}\" specified. Available Host Groups:\n";
-	    map {print "   *  $_\n"} sort @hostgroup;
-	    exit 1;
+    if (defined $opts{hostgroup}){
+	my $call = $soapRequest->HostGroupGetAllForUser();#exit;
+	if ($call->fault) {
+	    print STDERR "[ERROR] Failure to retrieve \"HostGroupGetAllForUser\" information: " . $call->faultstring . "\n";
+	    exit -1;
+	}else{
+	    my $result = $call->result;
+	    my @hostgroup = ( ref($result->{"anyType"}) eq "ARRAY" ? @{$result->{"anyType"}} : $result->{"anyType"} );
+	    if (not grep {$_ eq $opts{hostgroup}} @hostgroup and not gethostbyname($opts{hostgroup})){
+		print "Unknown Host or Host Group \"$opts{hostgroup}\" specified. Available Host Groups:\n";
+		map {print "   *  $_\n"} sort @hostgroup;
+		exit 1;
+	    }
 	}
+    }else{
+	$opts{hostgroup} = "-- Central Service --";
     }
 
     print Dumper(\%opts) if $debug;#exit;
@@ -1031,7 +1034,7 @@ sub CreateVM($@){
 	    next;
 	}
  
-	$call = $soapRequest->
+	my $call = $soapRequest->
 	    call('VMCreateRequest',
 		 SOAP::Data->name('VMName'        )->value($host),                          # <VMName>string</VMName>
 		 SOAP::Data->name('Description'   )->value($opts{comment}),                 # <Description>string</Description>
