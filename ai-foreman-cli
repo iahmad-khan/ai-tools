@@ -386,6 +386,10 @@ sub InstallHost(@){
     for my $host (keys %todo){
 	my $request = HTTP::Request->new("DELETE","$url/smart_proxies/2-punch-cern-ch/puppetca/$host.cern.ch"); # XXX to-do: replace hardcoded URL by sthg smart :)
 	$request->header("Content-Type" => "application/json");
+	if ($dryrun){
+	    print STDOUT "[INFO] Dryrun: request to delete certificate for \"$host\" deliberately not submitted\n";
+	    next;
+	}
 	my $response = $browser->request($request);
 	if (not $response->is_success){
 	    push(@err,$host);
@@ -396,7 +400,7 @@ sub InstallHost(@){
 	#print Dumper(\$response);exit;
     }
     if (@err){
-	print STDERR "[WARN] Could not revoke certificate for host(s) \"".join("\" - \"",@err). "\" from Puppet Certificate Authority...\n";
+	print STDERR "[WARN] Could not delete certificate for host(s) \"".join("\" - \"",@err). "\" from Puppet Certificate Authority...\n";
 	#exit 1;
     }
     print STDOUT "[VERBOSE] Deleted certificates from Puppet CA\n" if $verbose;
@@ -477,15 +481,6 @@ sub InstallHost(@){
 	print $result if $debug;
 	close F;
     
-	# # Console options
-	# switch (lc($model)) {
-	#     case "hyper-v virtual machine" { $todo{$host}{console} = ""                                  }
-	#     case "ac_11_30"                { $todo{$host}{console} = "console=tty0"                      }
-	#     case "hp_09_10"                { $todo{$host}{console} = "console=tty0"                      }
-	#     case "py_08_10"                { $todo{$host}{console} = "console=tty0"                      }
-	#     else                           { $todo{$host}{console} = "console=tty0 console=ttyS2,9600n8" }
-	# }
-
     }
     #print Dumper(\%todo);exit;
 
@@ -833,18 +828,20 @@ sub LandbHostInfo(@){
 sub SetupAims($){
     my $href = shift @_;
     my %todo = %$href;
-    my $rc = 0;
     #print Dumper(\%todo);exit;
+
     # Run "aims2 showimg all" to get list of all available AIMS images
     my %AimsImg = (
-        "SLC 6.2"    => "SLC62_BETA",
-        "SLC 6.1"    => "SLC61_BETA",
+        "SLC 6.2"    => "SLC62",
+        "SLC 6.1"    => "SLC61",
         "SLC 6"      => "SLC6X",
-        "SLC 5.7"    => "SLC5X",
+        "SLC 5.8"    => "SLC58",
+        "SLC 5.7"    => "SLC57",
 	#
         "RedHat 6.2" => "RHEL6_U2",
         "RedHat 6.1" => "RHEL6_U1",
         "RedHat 6"   => "RHEL6_U2",
+        "RedHat 5.8" => "RHES_5_U8",
         "RedHat 5.7" => "RHES_5_U7",
 	#
 	"Fedora 18"  => "FEDORA18",
@@ -852,7 +849,24 @@ sub SetupAims($){
 	"Fedora 16"  => "FEDORA16",
 	"Fedora 15"  => "FEDORA15",
         );
+    
+    #
+    # Reshuffle input data
+    #
+    #print Dumper(\%todo);
+    for my $oldname (keys %todo){
+	my $newname = $todo{$oldname}{hostname};
+	if ($newname ne $oldname){
+	    %{$todo{$newname}} = %{$todo{$oldname}};
+	    $todo{$newname}{hostname} = $oldname;
+	    delete $todo{$oldname};
+	}
+    }
+    #print Dumper(\%todo);exit;
 
+    #
+    # Upload the kickstart files
+    #
     for my $host (sort keys %todo){
 	my $cnt = 0;
 	my $kopts = "text network ks ksdevice=bootif latefcload";
@@ -872,94 +886,97 @@ sub SetupAims($){
 	    print STDERR "[ERROR] No suitable AIMS target for Operating System \"$todo{$host}{operatingsystem}\" available. Probably a bug in the script you are running :)\n";
 	    exit 1;
 	}
-	my $imgname = $AimsImg{$todo{$host}{operatingsystem}} . "_" . $todo{$host}{architecture};
-	my $aims = "/usr/bin/aims2client addhost --hostname $todo{$host}{hostname} --kickstart $todo{$host}{ksfile} --kopts \"$kopts\" --pxe --name $imgname";
-	while (1){
-	    if ($dryrun){
-		print "[DRYRUN] *Not* uploading Kickstart file for $host to AIMS\n";
-		last;
-	    }
-	    print STDOUT "[INFO] Uploading Kickstart file for $host to AIMS\n";
-	    print STDOUT "[VERB] Running \"$aims\"\n" if $verbose;
-	    if (system("$aims 2>/dev/null 1>/dev/null") != 0){
-		print STDERR "[ERROR] Upload to AIMS failed: $!\n";
-		$rc++;
-	    }
-	    #
-	    $aims = "/usr/bin/aims2client showhost $todo{$host}{hostname} --full";
-	    print "[VERB] Running \"$aims\"\n" if $verbose;
-	    open(F,"$aims |") or die "aagrh...";
-	    my @output = <F>;
-	    close F;
-	    print "[DEBUG] \@output:\n @output\n" if $debug;
-	    my $status = join(" ",grep /PXE status:/, @output);
-	    print "[DEBUG] \$status $status\n" if $debug;
-	    if ($status =~ /PXE status:\s+ON\s*\n/){
-		last;
-	    }else{
-		if (++$cnt == 5){
-		    print STDERR "[ERROR] Machine \"$host\" still not properly configured in AIMS, giving up...\n";
-                    $rc++;
-		    #unlink $todo{$host}{ksfile} unless $debug;
-		    delete $todo{$host};
-		    last;
-		}
-		print "[WARN] AIMS did not do its job for host $host, let's try again...\n";
-		sleep 5;
-	    }
-	}
-        #unlink $todo{$host}{ksfile} unless $debug;
-    }
-    # delete kickstart files
-    map {unlink $todo{$_}{ksfile}} keys %todo unless $debug;
-    return () unless %todo;
+	$todo{$host}{aimstarget} = $AimsImg{$todo{$host}{operatingsystem}} . "_" . $todo{$host}{architecture};
+	$todo{$host}{aimscmd}    = "/usr/bin/aims2client addhost --hostname $host --kickstart $todo{$host}{ksfile} --kopts \"$kopts\" --pxe --name $todo{$host}{aimstarget}";
 
-    print "[INFO] Verifying that AIMS is properly set up, patience please...\n";
-    return 0 if $dryrun;
-    $rc = 0;
-    my @done = ();
-    for my $host (sort keys %todo){
-	my $cnt = 0;
-	while (1){
-	    #print "\$cnt = $cnt\n";
-	    my $aims = "/usr/bin/aims2client showhost $todo{$host}{hostname} --full";
-	    print "[VERB] Running \"$aims\"\n" if $verbose;
-	    open(F,"$aims |") or die "aargh...";
-	    my @output = <F>;
-	    close F;
-	    print "[DEBUG] \@output:\n @output\n" if $debug;
-	    #my $status = join(" ",grep /PXE status:/, @output);
-	    #print "[DEBUG] \$status $status\n" if $debug;
-	    #if ($status !~ /PXE status:\s+ON\s*\n/){
-	    #    print "AARGH! AIMS did not do its job for host $host! Complain && try again...!";
-	    #    $cnt++;
-	    #    last;
-	    #}
-	    my $sync = join(" ",grep /PXE boot synced:/, @output);
-	    print "[DEBUG] \$sync    $sync\n" if $debug;
-	    if ($sync =~ /PXE boot synced:\s+(\S+)\n/){
-		my $status = $1;
-		#print ">>> $status\n";
-		if (grep {$_ eq $status} qw(YYY YYN YNY NYY)){
-		    $cnt = 0;
-		    push(@done,$host);
-		    last;
-		}
-	    }
-	    if ($cnt++ == 20){
-		print "Machine \"$host\" still not properly configured in AIMS, giving up...\n";
-		last;
-	    }
-	    print "[INFO] Sleeping 5 seconds...\n";
-	    sleep 5;
+	if ($dryrun){
+	    print STDOUT "[DRYRUN] Deliberately *not* uploading Kickstart file for $host to AIMS\n";
+	    next;
 	}
-	$rc += $cnt;
+
+	print STDOUT "[INFO] Uploading Kickstart file for $host to AIMS\n";
+	print STDOUT "[VERB] Running \"$todo{$host}{aimscmd}\"\n" if $verbose;
+	if (system("$todo{$host}{aimscmd} 2>/dev/null 1>/dev/null") != 0){
+	    print STDERR "[ERROR] Upload to AIMS failed: $!\n";
+	}
+    }
+
+    if ($dryrun){
+	map {unlink $todo{$_}{ksfile}} keys %todo unless $debug;
+	return (sort keys %todo);
+    }
+
+    #
+    # Verify AIMS status
+    #
+    my $cnt = 0;
+    my @done = ();
+    while (1){
+	#print "\$cnt = $cnt\n";
+	#print Dumper(\%todo);
+	print "[INFO] Verifying that AIMS is properly set up, patience please...\n";
+	sleep 5;
+
+	#
+	# get status information
+	#
+	my $aims = "/usr/bin/aims2client showhost --full " . join(",",sort keys %todo);
+	print "[VERB] Running \"$aims\"\n" if $verbose;
+	open(AIMS,"$aims |") or die "aargh...";
+	my $hostname = undef;
+	my %status = ();
+	while(<AIMS>){
+	    chomp;
+	    if (/^\s*Hostname:\s+(\S+)/){
+		$hostname = lc($1);
+	    }elsif (/^\s*PXE status:\s+(\S+)/){
+		$status{$hostname}{pxestatus} = $1 if defined $hostname;
+	    }elsif (/^\s*PXE boot synced:\s+(\S+)/){
+		$status{$hostname}{syncstatus} = $1 if defined $hostname;
+	    }
+	}
+	close AIMS;
+	if ($debug){
+	    map {printf "[DEBUG] %20s - PXE status = %3s - SYNC status = %3s\n",$_,($status{$_}{pxestatus} || "???"),($status{$_}{syncstatus} || "???")} sort keys %todo;
+	}
+
+	#
+	# check if all is well
+	#
+	for my $hostname (sort keys %todo){
+	    if (not exists $status{$hostname}){
+		print STDOUT "[WARN] AIMS did nothing for host \"$hostname\". Re-uploading with \"$todo{$hostname}{aimscmd}\"\n";
+		system("$todo{$hostname}{aimscmd}");
+	    }elsif ($status{$hostname}{pxestatus} eq "OFF"){
+		print STDOUT "[WARN] PXE status \"OFF\" for host \"$hostname\". Executing \"/usr/bin/aims2client pxeon $hostname $todo{$hostname}{aimstarget}\"\n";
+		system("/usr/bin/aims2client pxeon $hostname $todo{$hostname}{aimstarget} 2>/dev/null 1>/dev/null");
+		$cnt = 0;
+	    }elsif (not grep {$_ eq $status{$hostname}{syncstatus}} qw(YYY YYN YNY NYY)){
+		print STDOUT "[VERB] Sync status \"$status{$hostname}{syncstatus}\" for host \"$hostname\" -> Be patient...\n" if $verbose;
+	    }else{
+		print STDOUT "[INFO] Host \"$hostname\" is properly configured in AIMS\n";
+		unlink $todo{$hostname}{ksfile} unless $debug;
+		push(@done,$todo{$hostname}{hostname});
+		delete $todo{$hostname};
+	    }
+	}
+	#
+	# anything left to do?
+	#
+	last if not %todo; 
+	if (++$cnt == 12){
+	    my @host = sort keys %todo;
+	    my $dum = scalar(@host) == 1 ? "Machine \"@host\"" : "Machines \"".join("\", \"",@host)."\"";
+	    print STDERR "[ERROR] $dum still not properly configured in AIMS, giving up...\n";
+	    last;
+	}
+	print "[DEBUG] Loop again \$cnt = $cnt\n" if $debug;
     }
 
     if (@done){
-	print STDOUT "[INFO] AIMS status for successfully configured hosts:\n[INFO]\n";
+	print STDOUT "\n[INFO] AIMS status for successfully configured hosts:\n[INFO]\n";
 	open(AIMS, "/usr/bin/aims2client showhost ".join(",",map { gethostbyname($_ . "-gigeth") ? $_ . "-gigeth" : $_ } @done)." |");
-	while(<AIMS>){
+	while (<AIMS>){
 	    print STDOUT "[INFO]   $_";
 	}
 	close AIMS;
@@ -995,11 +1012,25 @@ sub CreateVM($@){
 	;
 
     #
-    # Administrivia
+    # Verify template
     #
-    $opts{template}    = "linuxPXE";
-    $opts{vmservice} ||= "";
-    $opts{owner}     ||= $user_credentials{username};
+    if (defined $opts{template}){
+	my $call = $soapRequest->TemplateGetAll();#exit;
+	if ($call->fault) {
+	    print STDERR "[ERROR] Failure to retrieve \"TemplateGetAll\" information: " . $call->faultstring . "\n";
+	    exit -1;
+	}else{
+	    my $result = $call->result;
+	    my @template = map {$$_{Name}} @{$$result{Template}};
+	    if (not grep {$_ eq $opts{template}} @template){
+		print "Unknown template \"$opts{template}\" specified. Available Templates:\n";
+		map {print "   *  $_\n"} sort @template;
+		exit 1;
+	    }
+	}
+    }else{
+	$opts{template} = "linuxPXE";
+    }
 
     #
     # Verify hostgroup
@@ -1021,6 +1052,12 @@ sub CreateVM($@){
     }else{
 	$opts{hostgroup} = "-- Central Service --";
     }
+
+    #
+    # Administrivia
+    #
+    $opts{vmservice} ||= "";
+    $opts{owner}     ||= $user_credentials{username};
 
     print Dumper(\%opts) if $debug;#exit;
 
@@ -1107,7 +1144,7 @@ sub HandleOptions(){
 		   installhost => [qw()],
 		   chkhost     => [qw()],
 		   showconfig  => [qw()],
-		   createvm    => [qw(expiration-date=s cpu-count=f memory=f disksize=f comment=s owner=s hostgroup=s)],
+		   createvm    => [qw(expiration-date=s cpu-count=f memory=f disksize=f comment=s owner=s hostgroup=s template=s)],
     );
     HelpMessage("Mandatory parameter [".join("|",sort keys %options)."] missing") unless exists $options{$action};
 
@@ -1430,6 +1467,10 @@ Interpret filtering options as regular expressions
 
 Default: 6 months.
 Can be modified afterwards using CVI interface
+
+=item B<--template> NAME
+
+Default: linuxPXE
 
 =item B<--cpu-count> NUMBER
 

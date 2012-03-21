@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 1.4
+Version: 1.5
 Release: 0%{?dist}
 BuildArch: noarch
 Source: ai-tools-%{version}.tgz
@@ -38,6 +38,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* Wed Mar 21 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.5-0
+- Support SLC + RedHat 5.8
+- createvm: new option "--template"
+- Improved handling of possible AIMS problems (AI-317)
+
 * Thu Mar 15 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.4-0
 - [ai-foreman-cli][bug] fixes for "createvm" mode (AI-286)
 
