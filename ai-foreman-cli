@@ -1382,7 +1382,6 @@ default: "production"
 =item B<--owner> NAME
 
 Can be CERN account or E-group.
-Default: you.
 
 =item B<--comment> COMMENT
 
@@ -1419,7 +1418,6 @@ default: "RedHat default"
 =item B<--owner> NAME
 
 Can be CERN account or E-group.
-Default: you.
 
 =item B<--comment> COMMENT
 
