@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 1.5
+Version: 1.6
 Release: 0%{?dist}
 BuildArch: noarch
 Source: ai-tools-%{version}.tgz
@@ -38,6 +38,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* XXXXXXXXXX 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.6-0
+- print helpful message when unknown "--owner" is specified (AI-336)
+- on Hyper-V VMs, use image w/ ICs for SLC 6.2
+
 * Wed Mar 21 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.5-0
 - Support SLC + RedHat 5.8
 - createvm: new option "--template"

@@ -890,6 +890,9 @@ sub SetupAims($){
 	    exit 1;
 	}
 	$todo{$host}{aimstarget} = $AimsImg{$todo{$host}{operatingsystem}} . "_" . uc($todo{$host}{architecture});
+	if ($todo{$host}{aimstarget} eq "SLC62_X86_64" and $model eq "hyper-v virtual machine"){
+	    $todo{$host}{aimstarget} = "SLC62_X86_64_MSHVIC";
+	}
 	$todo{$host}{aimscmd}    = "/usr/bin/aims2client addhost --hostname $host --kickstart $todo{$host}{ksfile} --kopts \"$kopts\" --pxe --name $todo{$host}{aimstarget}";
 
 	if ($dryrun){
