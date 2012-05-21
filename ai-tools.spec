@@ -14,6 +14,8 @@ Vendor: CERN
 License: GPL+
 URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
+Requires: aims2-client
+ 
 %description
 A collection of tools used by CERN/IT's Agile Infrastructure project
 
@@ -38,9 +40,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
-* XXXXXXXXXX 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.6-0
+* Mon May 21 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.6-0
 - print helpful message when unknown "--owner" is specified (AI-336)
-- on Hyper-V VMs, use image w/ ICs for SLC 6.2
+- on Hyper-V VMs, use Aims target w/ ICs for SLC 6.2
+- [specfile] add "Requires: aims2-client"
 
 * Wed Mar 21 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.5-0
 - Support SLC + RedHat 5.8

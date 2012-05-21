@@ -166,7 +166,8 @@ exit 0;
 sub ShowHost($@){
     my ($href,@host) = @_;
     my %opt = defined $href ? %$href : ();
-    if ($opt{all} or ($opt{hostname} and $opt{regexp})){
+    print "[DEBUG] ".Dumper(\%opt,\@host) if $debug;
+    if ($opt{all} or $opt{regexp}){
 	my $request = HTTP::Request->new("GET","$url/hosts");
 	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
@@ -185,7 +186,7 @@ sub ShowHost($@){
 	    }
 	    push(@host,keys %host);
 	}
-	#print STDOUT "[INFO] Retrieving information for ".scalar(@host)." machines\n";
+	print STDOUT "[INFO] Parsing information for ".scalar(@host)." machines - this may take a while...\n";
     }elsif ($opt{hostname}){
 	push(@host,map {s/.cern.ch//; $_ = lc} @{$opt{hostname}});
     }
@@ -358,7 +359,6 @@ sub InstallHost(@){
 	next if @err;
 	#
      	my %data = %{from_json($response->content)};
-     	#print Dumper(\%data);exit;
 	
 	my $iaddr = gethostbyname($host);
 	if (not defined $iaddr){
@@ -375,6 +375,16 @@ sub InstallHost(@){
 	$todo{$host}{architecture}    = $fmdata{architecture}   {$data{host}{architecture_id}   };
 	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          };
 	$todo{$host}{hostname}        = $host;
+
+	my ($owner_id,$owner_type) = ($data{host}{owner_id},$data{host}{owner_type});
+	if ($owner_type eq "User"){
+	    $todo{$host}{owner} = $fmdata{user}{$owner_id};
+	}elsif ($owner_type eq "Usergroup"){
+	    $todo{$host}{owner} = $fmdata{usergroup}{$owner_id};
+	}
+	#print Dumper(\%fmdata);
+     	#print Dumper(\%data);
+	#print Dumper(\%todo);exit;
     }
     if (@err){
      	map {print STDERR "[ERROR] $_\n"} @err;
@@ -501,8 +511,8 @@ sub InstallHost(@){
     my $mess3 = "      ssh lxadm remote-power-control reset ". join(",",@host)."\n";
     #my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
     my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
-    my $mess5 = undef;
-    map {$mess5 .= "      aims2 pxeoff $_-gigeth\n" if gethostbyname($_ . "-gigeth")} @host;
+    #my $mess5 = undef;
+    #map {$mess5 .= "      aims2 pxeoff $_-gigeth\n" if gethostbyname($_ . "-gigeth")} @host;
 
     print <<EOMESS;
 
@@ -520,15 +530,15 @@ $mess4
 
 EOMESS
 
-    if ($mess5){
-	print <<EOMESS;
+#     if ($mess5){
+# 	print <<EOMESS;
 
--- IMPORTANT NOTE FOR "*-GIGETH" MACHINES: once the installation is underway, run 
+# -- IMPORTANT NOTE FOR "*-GIGETH" MACHINES: once the installation is underway, run 
 
-$mess5
-    to break out on an install loop
-EOMESS
-    }
+# $mess5
+#     to break out on an install loop
+# EOMESS
+#     }
 
     return 0;
 }
@@ -1145,7 +1155,7 @@ sub HandleOptions(){
 
     my %options = (addhost     => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s)],
 		   updatehost  => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s network)],
-		   showhost    => [qw(operatingsystem=s@ architecture=s@ hostgroup=s@ environment=s@ model=s@ owner=s@ comment=s@ all regexp hostname=s@)],
+		   showhost    => [qw(operatingsystem=s@ architecture=s@ hostgroup=s@ environment=s@ model=s@ owner=s@ comment=s@ all regexp)],
 		   delhost     => [qw()],
 		   installhost => [qw()],
 		   chkhost     => [qw()],
@@ -1189,6 +1199,12 @@ sub HandleOptions(){
 	map {$cnt++ if defined $opts{$_}} @opt;
 	if ($cnt == 0){
 	    print STDERR "[ERROR] Action \"$action\" requires at least one of the options \"--". join("\", \"--",@opt)."\"\n";
+	    exit 1;
+	}
+    }elsif ($action eq "showhost"){
+	$opts{all} = 1 if $opts{regexp} and not @ARGV;
+	if (not @ARGV and not $opts{all}){
+	    print STDERR "[ERROR] Action \"$action\" requires either option \"--all\" or a list of hostnames.\n";
 	    exit 1;
 	}
     }elsif ($action eq "createvm"){
@@ -1445,11 +1461,23 @@ Filtering options:
 
 =over 12
 
-=item B<--hostname> NAME
-
 =item B<--model> NAME
 
 =item B<--owner> NAME
+
+=item B<--operatingsystem> NAME 
+
+=item B<--architecture> NAME 
+
+=item B<--hostgroup> NAME 
+
+=item B<--environment> NAME 
+
+=item B<--model> NAME 
+
+=item B<--owner> NAME 
+
+=item B<--comment> NAME 
 
 =item B<--regexp>
 
