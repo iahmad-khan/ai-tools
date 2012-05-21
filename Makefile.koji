@@ -1,5 +1,5 @@
 PKGNAME=ai-tools-1.6
-TARFILE=$(PKGNAME).tar.gz
+TARFILE=$(PKGNAME).tgz
 
 all:
 	tar cvzf $(TARFILE) --exclude-vcs --transform 's,^,$(PKGNAME)/,' *
