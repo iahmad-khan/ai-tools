@@ -1,4 +1,4 @@
-%{!?dist: %define dist .slc6}                                                   
+%{!?dist: %define dist .ai6}                                                   
 %define debug_package %{nil}
 
 Summary: Tools for Agile Infrastructure project
