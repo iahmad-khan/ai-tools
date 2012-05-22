@@ -2,7 +2,12 @@ PKGNAME=ai-tools-1.6
 TARFILE=$(PKGNAME).tgz
 
 all:
-	tar cvzf $(TARFILE) --exclude-vcs --transform 's,^,$(PKGNAME)/,' *
+	#tar cvzf $(TARFILE) --exclude-vcs --transform 's,^,$(PKGNAME)/,' *
+	rm -rf $(PKGNAME)
+	mkdir $(PKGNAME)
+	cp -rv * $(PKGNAME)/
+	tar --exclude .svn --exclude .git -czf $(TARFILE) $(PKGNAME)
+	rm -rf $(PKGNAME)
 
 clean:
 	rm $(TARFILE)
