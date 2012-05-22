@@ -4,9 +4,9 @@
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
 Version: 1.6
-Release: 0%{?dist}
+Release: 1%{?dist}
 BuildArch: noarch
-Source: ai-tools-%{version}.tgz
+Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Packager: ai-admins@cern.ch
@@ -40,6 +40,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* Tue May 22 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.6-1
+- small updates to build under Koji
+
 * Mon May 21 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.6-0
 - print helpful message when unknown "--owner" is specified (AI-336)
 - on Hyper-V VMs, use Aims target w/ ICs for SLC 6.2

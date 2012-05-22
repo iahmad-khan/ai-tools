@@ -8,9 +8,9 @@ VERSION = $(shell grep -s '^Version' $(SPECFILE) | sed -e 's/Version: *//')
 
 DISTTAG ?= $(shell lsb_release -r  | sed -nr 's/^[^[:space:]]+[[:space:]]+([0-9]+)\.([0-9]+)$$/.slc\1/p' )
 
-ifneq ($(DISTTAG), .slc6)
-ifneq ($(DISTTAG), .slc5)
-$(error Only SLC5/SLC6 builds are supported.)
+ifneq ($(DISTTAG), .ai6)
+ifneq ($(DISTTAG), .ai5)
+$(error Only AI6/AI5 builds are supported.)
 endif
 endif
 
