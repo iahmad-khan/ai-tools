@@ -3,11 +3,13 @@ TARFILE=$(PKGNAME).tgz
 
 all:
 	#tar cvzf $(TARFILE) --exclude-vcs --transform 's,^,$(PKGNAME)/,' *
-	rm -rf $(PKGNAME)
-	mkdir $(PKGNAME)
-	cp -rv * $(PKGNAME)/
-	tar --exclude .svn --exclude .git -czf $(TARFILE) $(PKGNAME)
-	rm -rf $(PKGNAME)
+	rm -rf /tmp/$(PKGNAME)
+	mkdir /tmp/$(PKGNAME)
+	cp -rv * /tmp/$(PKGNAME)/
+	pwd ; ls -l
+	cd /tmp ; tar --exclude .svn --exclude .git -czf $(TARFILE) $(PKGNAME)
+	mv /tmp/$(TARFILE) .
+	rm -rf /tmp/$(PKGNAME)
 
 clean:
 	rm $(TARFILE)
