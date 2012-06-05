@@ -3,8 +3,8 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 1.6
-Release: 1%{?dist}
+Version: 1.7
+Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -40,6 +40,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* Tue Jun  5 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.7-0
+- bug fix for dl_11_20 installs
+
 * Tue May 22 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.6-1
 - small updates to build under Koji
 

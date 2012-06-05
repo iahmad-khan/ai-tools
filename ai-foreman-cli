@@ -889,8 +889,9 @@ sub SetupAims($){
 	# Console options
 	use Switch;
 	switch ($model) {
-	    case "hyper-v virtual machine" { $kopts .= ""                                  }
+	    case "hyper-v virtual machine" { $kopts .= ""                                   }
 	    case "ac_11_30"                { $kopts .= " console=tty0"                      }
+	    case "dl_11_20"                { $kopts .= " console=tty0"                      }
 	    case "hp_09_10"                { $kopts .= " console=tty0"                      }
 	    case "py_08_10"                { $kopts .= " console=tty0"                      }
 	    else                           { $kopts .= " console=tty0 console=ttyS2,9600n8" }
