@@ -1,0 +1,219 @@
+#! /usr/bin/perl -w
+
+use strict;
+use diagnostics;
+use POSIX;
+use Getopt::Long;
+use Data::Dumper;
+use SOAP::Lite;# +trace => 'debug';
+use Net::Netrc;
+use File::Basename;
+
+sub HelpMessage();
+sub GetUserCredentials($);
+
+$Data::Dumper::Sortkeys = 1;
+
+my $debug = my $action = 0;
+my %user_credentials = ();
+my %opts = (debug   => \$debug,
+            action  => \$action);
+
+#
+# Parse the options
+#
+my $rc = Getopt::Long::GetOptions(\%opts,
+				  "debug","action",
+                                  "cern-user=s"   => \$user_credentials{username},
+                                  "help"          => sub { HelpMessage() },
+                                 );
+#print Dumper(\%opts);
+if (not $rc){
+    HelpMessage();
+    exit 1;
+}
+
+my @host = sort @ARGV;
+if (not @host){
+    print STDERR "No hostname(s) given...\n";;
+    exit 1;
+}
+map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
+
+#
+# Get user credentials
+#
+($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
+
+#
+# Get the info
+#
+my $client = SOAP::Lite
+    ->uri('http://network.cern.ch/NetworkService')
+    ->xmlschema('http://www.w3.org/2001/XMLSchema')
+    ->proxy('https://network.cern.ch/sc/soap/soap.fcgi?v=4', keep_alive=>1);
+
+# Get Auth token
+my $call = $client->getAuthToken($user_credentials{username},$user_credentials{password},'NICE');
+my ($auth) = $call->result;
+if ($call->fault){
+    print "[ERROR] failed to authenticate to LANdb: ".$call->faultstring."\n";
+    #print Dumper($call);
+    exit 1;
+}
+
+my $authHeader = SOAP::Header->name('Auth' => { "token" => $auth });
+
+print "[INFO] Processing " .scalar(@host). " devices.\n";
+for my $device (@host){
+    print STDOUT "[INFO] Processing $device\n" if $debug;
+    $call = $client->getDeviceInfo($authHeader,$device);
+    
+    my $bu = $call->result;
+    if ($call->fault) {
+	print "[WARNING] Device \"$device\" not found in Landb, ignoring it...\n";
+	next;
+    }
+    print Dumper($bu) if $debug;
+    #exit;
+    my @Interfaces = @{$bu->{Interfaces}};
+    if (not @Interfaces){
+	printf STDERR "[WARN] Host %15s : no interfaces found\n",$device;
+	next;
+    }
+    my $todo = 0;
+    for my $interface (@Interfaces) {
+	#
+	# Find the interface with the same name as the device...
+	#
+	my $Name = lc($interface->{Name});
+	if (not defined $Name){
+	    printf STDERR "[WARN] Host %15s : interface without name\n",$device;
+	    next;
+	}
+	next unless $Name eq $device;
+
+	#
+	# ... ignore if it is already bound...
+	#
+	next if exists $interface->{BoundInterfaceCard}->{HardwareAddress};
+
+	#
+	# get MAC addresses of all bound interfaces
+	#
+	my @bound_mac = sort grep {$_ if defined $_} map {$_->{BoundInterfaceCard}->{HardwareAddress} if defined $_->{BoundInterfaceCard}} @Interfaces;
+	#print "\@bound_mac = ".Dumper(\@bound_mac);
+
+	#
+	# bind interface to the first MAC address that isn't already bound
+	#
+	for my $mac (sort map {$_->{HardwareAddress}} @{$bu->{NetworkInterfaceCards}}){
+	    next if grep {$mac eq $_} @bound_mac;
+	    $todo = 1;
+	    if ($action){
+		$call = $client->setUnsetBindedInterface($authHeader,$Name,$mac);
+		my $bu = $call->result;
+		if ($call->fault) {
+		    print "[WARNING] $device : failed to bind interface \"$Name\" to MAC \"$mac\": " . $call->faultstring . "\n";
+		}else{
+		    print "[INFO] $device : interface \"$Name\" is now bound to MAC \"$mac\"\n";
+		}
+	    }else{
+		print "[INFO] $device : interface \"$Name\" should be bound to MAC \"$mac\"\n";
+	    }
+	    last;
+	}
+    }
+    if (not $todo){
+	print "[INFO] $device : nothing to do!\n";
+    }
+}
+
+exit 0;
+
+################################################################################################
+#
+# HelpMessage(): print useful help 
+#
+
+sub HelpMessage(){
+
+    my $script = basename $0;
+    my $user = (getpwuid($<))[0];
+
+    print <<EOH;
+
+
+Usage: $script [options] hostname [hostname]
+
+This script interrogates LANdb to identify network interfaces that should be bound to a MAC
+address. The algoritm is:
+
+1/ Identify the interface with the same name as the device
+2/ If this interface is not bound, bind it to the lowest MAC address that is not yet bound
+   to any interface.
+
+Options to the script are:
+
+           --action                 : perform the binding. If not specified, the script only prints what needs to be done
+
+           --cern-user <username>   : username to be used for LANdb lookups. default "$user" :)
+
+           --help                   : print this help
+           --debug                  : print even more output
+
+EOH
+
+    exit 0;
+
+}
+
+################################################################################################
+#
+# GetUserCredentials(): return username/password combination of the cern-account to be used
+#                       in subsequent calls to Landb etc.
+#
+
+sub GetUserCredentials($){
+
+    use Net::Netrc;
+    use Term::ReadKey;
+
+    my $username = shift @_;
+    my $password = undef;
+
+    my $mach = undef;
+    if (defined $username){
+	$mach = Net::Netrc->lookup("network.cern.ch",$username);
+    }
+
+    if ($mach){
+	$password = $mach->password;
+    }else{
+	if (not defined $username){
+	    print STDOUT "Please give the CERN username/password combination to query LANdb: \n";
+	    print STDOUT "   - username : ";
+	    chomp($username = <STDIN>);
+	    if (not defined $username){
+		print STDERR "Failed to read a username, exiting\n";
+		return ();
+	    }
+	}else{
+	    print STDOUT "Please give the password for CERN account \"$username\" to query LANdb: \n";
+	}
+	print STDOUT "   - password : ";
+	ReadMode("noecho",);
+	chomp($password = <STDIN>);
+	ReadMode("normal");
+	print "\n";
+	if (not defined $password){
+	    print STDERR "failed to read a password, exiting\n";
+	    return ();
+	}
+    }
+
+    print STDOUT "[DEBUG] Using credentials for account \"$username\"\n" if $debug;
+    return ($username,$password);
+}
+
+__END__

@@ -10,7 +10,7 @@ DISTTAG ?= $(shell lsb_release -r  | sed -nr 's/^[^[:space:]]+[[:space:]]+([0-9]
 
 ifneq ($(DISTTAG), .ai6)
 ifneq ($(DISTTAG), .ai5)
-$(error Only AI6/AI5 builds are supported.)
+$(error Only ai6/ai5 builds are supported.)
 endif
 endif
 

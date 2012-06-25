@@ -17,6 +17,7 @@ use NetAddr::IP;
 use Date::Manip;
 use Switch;
 use DateTime;
+use Text::TabularDisplay;
 
 $Data::Dumper::Sortkeys = 1;
 
@@ -193,11 +194,11 @@ sub ShowHost($@){
     #print Dumper(\%opt); print "\@host = \"@host\"\n";
     #exit;
 
-    my $FORMAT = " %-15s %-30s %-15s %-15s %-6s  %-25s %-15s %s\n";
     #
     # Are the hosts known to Foreman?
     #
-    my @out = ();
+    my $table = Text::TabularDisplay->new(qw(Hostname Hostgroup Environment OS Arch Hardware-model Owner Comment));
+    #my @out = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
 	$request->header("Content-Type" => "application/json");
@@ -242,17 +243,15 @@ sub ShowHost($@){
 
 	#print Dumper(\%fmdata);
 	#
-	push(@out,sprintf $FORMAT, $host, map {$data{$_}} qw(hostgroup environment operatingsystem architecture model owner comment));
+	$table->add($host, map {$data{$_}} qw(hostgroup environment operatingsystem architecture model owner comment));
     }
 
-    if (@out){
-	printf STDOUT $FORMAT,qw(Hostname Hostgroup Environment OS Arch Hardware-model Owner Comment);
-	printf STDOUT $FORMAT,qw(======== ========= =========== == ==== ============== ===== =======);
-	map {print STDOUT $_} @out;
+    if ($table->items){
+	print $table->render . "\n";
 	return 0;
     }else{
-	print STDERR "[ERROR] No machines found\n";
-	return -1;
+     	print STDERR "[ERROR] No machines found\n";
+     	return -1;
     }
 
 }
@@ -400,7 +399,7 @@ sub InstallHost(@){
 	my $request = HTTP::Request->new("DELETE","$url/smart_proxies/2-punch-cern-ch/puppetca/$host.cern.ch"); # XXX to-do: replace hardcoded URL by sthg smart :)
 	$request->header("Content-Type" => "application/json");
 	if ($dryrun){
-	    print STDOUT "[INFO] Dryrun: request to delete certificate for \"$host\" deliberately not submitted\n";
+	    print STDOUT "[DRYRUN] request to delete certificate for \"$host\" deliberately not submitted\n";
 	    next;
 	}
 	my $response = $browser->request($request);
@@ -428,7 +427,7 @@ sub InstallHost(@){
 	if (gethostbyname("${host}-gigeth")){
 	    print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
 	    my %landb = LandbHostInfo($host);
-	    #print Dumper(\%landb);
+	    #print Dumper(\%landb);exit
 	    if (not %landb){
 		print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
 		next;
@@ -886,6 +885,8 @@ sub SetupAims($){
 	#$kopts .= " $todo{$host}{console}" if $todo{$host}{console};
 	my $model = lc($todo{$host}{model});
 	$kopts .= " pcie_aspm=off" if $model eq "e4_09_21";
+	#$kopts .= " hwprobe=-modules.pata"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
+	#$kopts .= " hda=noprobe"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
 	# Console options
 	use Switch;
 	switch ($model) {
