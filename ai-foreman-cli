@@ -844,12 +844,14 @@ sub SetupAims($){
 
     # Run "aims2 showimg all" to get list of all available AIMS images
     my %AimsImg = (
-        "SLC 6.2"    => "SLC62",
-        "SLC 6.1"    => "SLC61",
+        "SLC 6.3"    => "SLC63",
+	"SLC 6.2"    => "SLC62",
+	"SLC 6.1"    => "SLC61",
         "SLC 6"      => "SLC6X",
         "SLC 5.8"    => "SLC58",
         "SLC 5.7"    => "SLC57",
 	#
+        "RedHat 6.3" => "RHEL6_U3",
         "RedHat 6.2" => "RHEL6_U2",
         "RedHat 6.1" => "RHEL6_U1",
         "RedHat 6"   => "RHEL6_U2",
@@ -882,7 +884,6 @@ sub SetupAims($){
     for my $host (sort keys %todo){
 	my $cnt = 0;
 	my $kopts = "text network ks ksdevice=bootif latefcload";
-	#$kopts .= " $todo{$host}{console}" if $todo{$host}{console};
 	my $model = lc($todo{$host}{model});
 	$kopts .= " pcie_aspm=off" if $model eq "e4_09_21";
 	#$kopts .= " hwprobe=-modules.pata"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
@@ -891,11 +892,8 @@ sub SetupAims($){
 	use Switch;
 	switch ($model) {
 	    case "hyper-v virtual machine" { $kopts .= ""                                   }
-	    case "ac_11_30"                { $kopts .= " console=tty0"                      }
-	    case "dl_11_20"                { $kopts .= " console=tty0"                      }
-	    case "hp_09_10"                { $kopts .= " console=tty0"                      }
-	    case "py_08_10"                { $kopts .= " console=tty0"                      }
-	    else                           { $kopts .= " console=tty0 console=ttyS2,9600n8" }
+	    case "e4_09_21"                { $kopts .= " console=tty0 console=ttyS2,9600n8" }
+	    else                           { $kopts .= " console=tty0" }
 	}
 	if (not exists $AimsImg{$todo{$host}{operatingsystem}}){
 	    print STDERR "[ERROR] No suitable AIMS target for Operating System \"$todo{$host}{operatingsystem}\" available. Probably a bug in the script you are running :)\n";

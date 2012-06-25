@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 1.7
+Version: 1.8
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -27,7 +27,8 @@ pod2man ai-foreman-cli > ai-foreman-cli.1
 
 %install
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
-install -m 755 ai-foreman-cli ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 ai-foreman-cli    ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
@@ -37,9 +38,14 @@ rm -rf ${RPM_BUILD_ROOT}
 %files
 %defattr (-, root, root)
 /usr/bin/ai-foreman-cli
+/usr/bin/ai-landb-bind-mac
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* Mon Jun 25 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.8-0
+- added script "ai-landb-bind-mac"
+- minor fixes
+
 * Tue Jun  5 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.7-0
 - bug fix for dl_11_20 installs
 
