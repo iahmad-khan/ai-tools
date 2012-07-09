@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 1.8
+Version: 1.9
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -42,6 +42,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* Mon Jul  9 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.9-0
+- [ai-foreman-cli] fix issue in case of missing Landb data for IPMI interface
+
 * Mon Jun 25 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.8-0
 - added script "ai-landb-bind-mac"
 - minor fixes

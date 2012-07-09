@@ -197,7 +197,7 @@ sub ShowHost($@){
     #
     # Are the hosts known to Foreman?
     #
-    my $table = Text::TabularDisplay->new(qw(Hostname Hostgroup Environment OS Arch Hardware-model Owner Comment));
+    my $table = Text::TabularDisplay->new(qw(Hostname Hostgroup Environment OS Arch Model Owner Comment));
     #my @out = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
@@ -653,6 +653,7 @@ sub UpdateHost($@){
 	#
 	if ($opt{network}){
 	    my %network = ();
+	    map {delete @data{($_,"sp_$_")}} qw(name mac ip subnet_id); # clean up %data a bit
 	    for my $interface (keys %{$landb{$host}{Interfaces}}){
 		next unless ($interface eq $host or $interface eq "${host}-ipmi");
 		my $ipaddr = $landb{$host}{Interfaces}{$interface}{IPAddress};
