@@ -887,7 +887,7 @@ sub SetupAims($){
 	my $kopts = "text network ks ksdevice=bootif latefcload";
 	my $model = lc($todo{$host}{model});
 	$kopts .= " pcie_aspm=off" if $model eq "e4_09_21";
-	$kopts .= " nomdraid"; # AI 738, SNOW INC147316
+	$kopts .= " nodmraid"; # AI 738, SNOW INC147316
 	#$kopts .= " hwprobe=-modules.pata"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
 	#$kopts .= " hda=noprobe"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
 	# Console options
