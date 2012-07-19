@@ -887,6 +887,7 @@ sub SetupAims($){
 	my $kopts = "text network ks ksdevice=bootif latefcload";
 	my $model = lc($todo{$host}{model});
 	$kopts .= " pcie_aspm=off" if $model eq "e4_09_21";
+	$kopts .= " nomdraid"; # AI 738, SNOW INC147316
 	#$kopts .= " hwprobe=-modules.pata"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
 	#$kopts .= " hda=noprobe"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
 	# Console options
@@ -991,6 +992,7 @@ sub SetupAims($){
     }
 
     if (@done){
+	@done = sort @done;
 	print STDOUT "\n[INFO] AIMS status for successfully configured hosts:\n[INFO]\n";
 	open(AIMS, "/usr/bin/aims2client showhost ".join(",",map { gethostbyname($_ . "-gigeth") ? $_ . "-gigeth" : $_ } @done)." |");
 	while (<AIMS>){
