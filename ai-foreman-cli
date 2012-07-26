@@ -39,6 +39,8 @@ HelpMessage("No arguments given.") if not @ARGV;
 
 my $debug = my $verbose = my $dryrun = 0;
 my %user_credentials = ();
+my %foreman_conn_params = ( "hostname" => "punch.cern.ch",
+                            "port" => 443, );
 
 my ($action,%opts) = HandleOptions();
 
@@ -65,8 +67,8 @@ map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
 #
 # Connect to Foreman
 #
-my $url         = "https://punch.cern.ch";
-my $netlocation = "punch.cern.ch:443";
+my $netlocation = "$foreman_conn_params{hostname}:$foreman_conn_params{port}";
+my $url         = "https://$netlocation";
 my $realm       = "Application";
 my $browser     = LWP::UserAgent->new;
 $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
@@ -1175,6 +1177,8 @@ sub HandleOptions(){
 				      (map {$_ => \$opts{(split(/=/,$_))[0]}} @{$options{$action}}),
 				      "debug","dryrun","verbose",
 				      "cern-user=s" => \$user_credentials{username},
+				      "foreman-host=s" => \$foreman_conn_params{hostname},
+				      "foreman-port=s" => \$foreman_conn_params{port},
 	);
     HelpMessage("Could not parse options.") if not $rc;
     $verbose = 1 if $debug;
@@ -1543,6 +1547,15 @@ General options
 =item B<--cern-user> USERNAME
 
 CERN account to be used for LANdb lookups and Foreman access
+
+=item B<--foreman-host> HOSTNAME
+
+Foreman hostname (defaults to punch.cern.ch).
+
+=item B<--foreman-port> PORT
+
+Foreman port (defaults to 443). Please note that all connections
+will be HTTPS, regardless of the port specified.
 
 =item B<--help>
 
