@@ -77,7 +77,7 @@ $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_c
 # Does the user have administrator privileges?
 #
 my $request = HTTP::Request->new("GET","$url/users");
-$request->header("Accept" => "application/json");
+$request->header("Content-Type" => "application/json");
 my $response = $browser->request($request);
 if (not $response->is_success){
     print STDERR "[ERROR] Could not retrieve list of users from Foreman: \"".$response->status_line."\"\n";
@@ -299,7 +299,7 @@ sub ChkHost(@){
     my @err = my %todo = ();
     for my $host (@host){
      	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
-     	$request->header("Accept" => "application/json");
+     	$request->header("Content-Type" => "application/json");
      	my $response = $browser->request($request);
 	if (not $response->is_success){
      	    print STDERR "[ERROR] No host \"$host\" known to Foreman\n";
@@ -727,7 +727,6 @@ sub ForemanConfig($$){
 
     # record ptable per OS
     my %ptable = my %medium = ();
-    $browser->default_header('Accept' => "application/json");
     for (@{from_json($browser->get("$url/operatingsystems?format=json")->content)}){
 	my %data = %{$$_{operatingsystem}};
 	#print Dumper(\%data);#exit;
