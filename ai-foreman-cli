@@ -73,11 +73,19 @@ my $realm       = "Application";
 my $browser     = LWP::UserAgent->new;
 $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
 
+# There's only one UserAgent shared by all the script, so we can
+# set the headers we need only once.
+#
+# For GET requests, proper Accept
+$browser->default_header('Accept' => "application/json");
+# For POST, PUT and DELETE, proper Content-Type
+$browser->default_header('Content-Type' => "application/json");
+# See commit log for further details
+
 #
 # Does the user have administrator privileges?
 #
 my $request = HTTP::Request->new("GET","$url/users");
-$request->header("Content-Type" => "application/json");
 my $response = $browser->request($request);
 if (not $response->is_success){
     print STDERR "[ERROR] Could not retrieve list of users from Foreman: \"".$response->status_line."\"\n";
@@ -172,7 +180,6 @@ sub ShowHost($@){
     print "[DEBUG] ".Dumper(\%opt,\@host) if $debug;
     if ($opt{all} or $opt{regexp}){
 	my $request = HTTP::Request->new("GET","$url/hosts");
-	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
 	if (not $response->is_success){
 	    print STDERR "[ERROR] Could not retrieve list of hosts from Foreman...\n";
@@ -203,7 +210,6 @@ sub ShowHost($@){
     #my @out = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
-	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
 	if (not $response->is_success){
 	    print STDERR "[ERROR] Host \"$host\" is unknown to Foreman...\n";
@@ -271,7 +277,6 @@ sub DeleteHost($@){
     my @err = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("DELETE","$url/hosts/$host.cern.ch");
-	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
 	if ($response->is_success){
 	    print STDOUT "[INFO] Deleted \"$host\" from Foreman.\n";
@@ -299,7 +304,6 @@ sub ChkHost(@){
     my @err = my %todo = ();
     for my $host (@host){
      	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
-     	$request->header("Content-Type" => "application/json");
      	my $response = $browser->request($request);
 	if (not $response->is_success){
      	    print STDERR "[ERROR] No host \"$host\" known to Foreman\n";
@@ -354,7 +358,6 @@ sub InstallHost(@){
     my @err = my %todo = ();
     for my $host (@host){
      	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
-     	$request->header("Content-Type" => "application/json");
      	my $response = $browser->request($request);
 	push(@err,"Host \"$host\" unknown to Foreman") unless $response->is_success;
 	next if @err;
@@ -399,7 +402,6 @@ sub InstallHost(@){
     @err = ();
     for my $host (keys %todo){
 	my $request = HTTP::Request->new("DELETE","$url/smart_proxies/2-punch-cern-ch/puppetca/$host.cern.ch"); # XXX to-do: replace hardcoded URL by sthg smart :)
-	$request->header("Content-Type" => "application/json");
 	if ($dryrun){
 	    print STDOUT "[DRYRUN] request to delete certificate for \"$host\" deliberately not submitted\n";
 	    next;
@@ -465,7 +467,6 @@ sub InstallHost(@){
 	$iaddr = inet_ntoa($iaddr);
 	my $ksfile = "$url/unattended/provision?spoof=$iaddr";
 	my $request = HTTP::Request->new("GET",$ksfile);
-	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
 	if (not $response->is_success){
 	    print STDERR "[ERROR] Failed to retrieve a Kickstart file \"$ksfile\":\n";
@@ -639,7 +640,6 @@ sub UpdateHost($@){
     my @done = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
-	$request->header("Content-Type" => "application/json");
 	my $response = $browser->request($request);
 	if ($action eq "addhost" and $response->is_success){
 	    print STDERR "[WARN] Ignoring existing host \"$host\".\n";
@@ -700,7 +700,6 @@ sub UpdateHost($@){
 	# Action!
 	#
      	$request = HTTP::Request->new($action eq "updatehost" ? ("PUT","$url/hosts/$host.cern.ch") : ("POST","$url/hosts") );
-     	$request->header("Content-Type" => "application/json");
 	print "[DEBUG] JSON: ".to_json({host => \%data})."\n" if $debug;
      	$request->content(to_json({host => \%data}));
 	
