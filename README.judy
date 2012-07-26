@@ -1,0 +1,29 @@
+Punch -> Judy transition notes
+==============================
+
+How to change Foreman instance
+------------------------------
+
+If you want to talk to Judy rather than Punch, you must
+specify connection parameters using --foreman-host and
+--foreman-port. Example:
+
+ ai-foreman-cli chkhost ibsltestw0 \
+ --foreman-host=judy.cern.ch --foreman-port=9443
+
+Tested operations:
+------------------
+ * chkhost
+ * showconfig
+ * showhost
+
+Not working:
+------------
+  * addhost
+
+Not tested yet:
+---------------
+  * createvm
+  * delhost
+  * installhost
+  * updatehost
