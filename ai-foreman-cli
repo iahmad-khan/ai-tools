@@ -757,7 +757,7 @@ sub ForemanConfig($$){
     map {$config{hostgroup}      {$$_{hostgroup}      {id}} = $$_{hostgroup}      {label}} @{from_json($browser->get("$url/hostgroups?format=json")->content)};
     map {$config{environment}    {$$_{environment}    {id}} = $$_{environment}    {name} } @{from_json($browser->get("$url/environments?format=json")->content)};
     map {$config{user}           {$$_{user}           {id}} = $$_{user}           {login}} @{from_json($browser->get("$url/users?format=json")->content)};
-    map {$config{usergroup}      {$$_{usergroup}      {id}} = $$_{usergroup}      {name} } @{from_json($browser->get("$url/usergroups?format=json")->content)};
+    #map {$config{usergroup}      {$$_{usergroup}      {id}} = $$_{usergroup}      {name} } @{from_json($browser->get("$url/usergroups?format=json")->content)};
     map {$config{domain}         {$$_{domain}         {id}} = $$_{domain}         {name} } @{from_json($browser->get("$url/domains?format=json")->content)};
     #map {$config{subnet}         {$$_{subnet}         {id}} = $$_{subnet}         {name} } @{from_json($browser->get("$url/subnets?format=json")->content)};
     #%{$config{sp_subnet}} = %{$config{subnet}};
