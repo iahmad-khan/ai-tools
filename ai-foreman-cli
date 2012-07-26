@@ -401,6 +401,7 @@ sub InstallHost(@){
     #
     @err = ();
     for my $host (keys %todo){
+  #FIXME this looks like a hardcoded path
 	my $request = HTTP::Request->new("DELETE","$url/smart_proxies/2-punch-cern-ch/puppetca/$host.cern.ch"); # XXX to-do: replace hardcoded URL by sthg smart :)
 	if ($dryrun){
 	    print STDOUT "[DRYRUN] request to delete certificate for \"$host\" deliberately not submitted\n";
