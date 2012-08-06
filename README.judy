@@ -16,18 +16,13 @@ Tested operations:
  * chkhost
  * showconfig
  * showhost
-
-Not working:
-------------
-  * addhost
-  [ERROR] Cannot add "ndnd": 422 Unprocessable Entity :: {"errors":["Failed to
-  initialize the Puppetca proxy: No such file or directory -
-  /usr/share/foreman/.puppet/ssl/certs/foreman.cern.ch.pem"]}
-  (same happens with the UI)
+ * delhost
+ * addhost
 
 Not tested yet:
 ---------------
   * createvm
-  * delhost
   * installhost
   * updatehost
+
+Cookie support is on its way.
