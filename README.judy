@@ -25,6 +25,12 @@ necessary to talk to LanDB. Take into account that requests
 must be issued from the same IP address where cookies were
 requested from.
 
+How to enable certmgr support
+-----------------------------
+
+Just add --certmgr to the command line. The host will be
+staged before Kickstart file is uploaded to AIMS.
+
 Tested operations:
 ------------------
  * chkhost
@@ -33,8 +39,8 @@ Tested operations:
  * delhost (requires patched Foreman, see AI-771)
  * addhost (ditto)
  * updatehost (ditto)
+ * installhost
 
 Not tested yet:
 ---------------
   * createvm
-  * installhost
