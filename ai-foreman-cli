@@ -40,7 +40,8 @@ HelpMessage("No arguments given.") if not @ARGV;
 my $debug = my $verbose = my $dryrun = 0;
 my %user_credentials = ();
 my %foreman_conn_params = ( "hostname" => "punch.cern.ch",
-                            "port" => 443, );
+                            "port" => 443,
+                            "cookiejar" => undef);
 
 my ($action,%opts) = HandleOptions();
 
@@ -60,18 +61,25 @@ if (not @host and not ($action eq "showhost" or $action eq "showconfig")){
 map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
 
 #
-# Get user credentials
-#
-($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
-
-#
 # Connect to Foreman
 #
 my $netlocation = "$foreman_conn_params{hostname}:$foreman_conn_params{port}";
 my $url         = "https://$netlocation";
 my $realm       = "Application";
 my $browser     = LWP::UserAgent->new;
-$browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
+
+#
+# Get user credentials
+#
+if (!defined($foreman_conn_params{cookiejar})) {
+  ($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
+  $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
+} else {
+  use HTTP::Cookies::Netscape;
+  my $cookie_jar = HTTP::Cookies::Netscape->new(
+    file => "$foreman_conn_params{cookiejar}", ignore_discard => 1);
+  $browser->cookie_jar( $cookie_jar );
+}
 
 # There's only one UserAgent shared by all the script, so we can
 # set the headers we need only once.
@@ -774,6 +782,10 @@ sub ForemanConfig($$){
 sub LandbHostInfo(@){
     my @device = @_;
 
+    if( not defined $user_credentials{password} ) {
+      ($user_credentials{username},$user_credentials{password}) = 
+        GetUserCredentials($user_credentials{username});
+    }
     my $client = SOAP::Lite
 	->uri('http://network.cern.ch/NetworkService')
 	->xmlschema('http://www.w3.org/2001/XMLSchema')
@@ -1179,6 +1191,7 @@ sub HandleOptions(){
 				      "cern-user=s" => \$user_credentials{username},
 				      "foreman-host=s" => \$foreman_conn_params{hostname},
 				      "foreman-port=s" => \$foreman_conn_params{port},
+				      "foreman-cookiejar=s" => \$foreman_conn_params{cookiejar},
 	);
     HelpMessage("Could not parse options.") if not $rc;
     $verbose = 1 if $debug;
@@ -1280,7 +1293,7 @@ sub GetUserCredentials($){
 	$password = $mach->password;
     }else{
 	if (not defined $username){
-	    print STDOUT "Please give the CERN username/password combination to query LANdb, talk to Foreman, etc: \n";
+	    print STDOUT "Please give the CERN username/password combination to query LANdb: \n";
 	    print STDOUT "   - username : ";
 	    chomp($username = <STDIN>);
 	    if (not defined $username){
@@ -1288,7 +1301,7 @@ sub GetUserCredentials($){
 		return ();
 	    }
 	}else{
-	    print STDOUT "Please give the password for CERN account \"$username\" to query LANdb, talk to Foreman, etc: \n";
+	    print STDOUT "Please give the password for CERN account \"$username\" to query LANdb: \n";
 	}
 	print STDOUT "   - password : ";
 	ReadMode("noecho",);
@@ -1556,6 +1569,12 @@ Foreman hostname (defaults to punch.cern.ch).
 
 Foreman port (defaults to 443). Please note that all connections
 will be HTTPS, regardless of the port specified.
+
+=item B<--foreman-cookiejar> FILE
+
+If a cookiejar is provided, authentication is performed using
+credentials stored in FILE. Still, in some cases the user may
+be prompted for user and password to talk to LanDB.
 
 =item B<--help>
 
