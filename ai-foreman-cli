@@ -34,6 +34,7 @@ sub SetupAims($);
 sub GetUserCredentials($);
 sub HelpMessage(;$);
 sub HandleOptions();
+sub CheckAPIResponseStatus($);
 
 HelpMessage("No arguments given.") if not @ARGV;
 
@@ -91,25 +92,6 @@ $browser->default_header('Content-Type' => "application/json");
 # See commit log for further details
 
 #
-# Does the user have administrator privileges?
-#
-my $request = HTTP::Request->new("GET","$url/users");
-my $response = $browser->request($request);
-if (not $response->is_success){
-    print STDERR "[ERROR] Could not retrieve list of users from Foreman: \"".$response->status_line."\"\n";
-    exit 1;
-}
-for (grep { ${$$_{user}}{login} eq $user_credentials{username} } @{from_json($response->content)}){
-    my %tmp = %$_;
-    $user_credentials{administrator} = defined ${$tmp{user}}{admin} ? 1 : 0;
-}
-
-if (not $user_credentials{administrator}){
-    print STDERR "[ERROR] This tool currently requires admin privileges on Foreman.\n";
-    exit 1;
-}
-
-#
 # Easy things first.
 #
 if ($action eq "delhost"){
@@ -127,6 +109,11 @@ if ($action eq "delhost"){
 # Resolve Foreman ID's, update host data.
 #
 my %fmdata = ForemanConfig($browser,$url);
+
+if (!keys %fmdata) {
+  print "[ERROR] Foreman's config retrieval failed\n";
+  exit 1;
+}
 
 #
 # More easy things.
@@ -189,10 +176,9 @@ sub ShowHost($@){
     if ($opt{all} or $opt{regexp}){
 	my $request = HTTP::Request->new("GET","$url/hosts");
 	my $response = $browser->request($request);
-	if (not $response->is_success){
-	    print STDERR "[ERROR] Could not retrieve list of hosts from Foreman...\n";
-	    return -1;
-	}
+  if (not CheckAPIResponseStatus($response)) {
+      return -1;
+  }
 	if ($opt{all}){
 	    @host = sort @{from_json($response->content)};	
 	    map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
@@ -219,11 +205,9 @@ sub ShowHost($@){
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
 	my $response = $browser->request($request);
-	if (not $response->is_success){
-	    print STDERR "[ERROR] Host \"$host\" is unknown to Foreman...\n";
-	    #print Dumper($response);
-	    next;
-	}
+  if (not CheckAPIResponseStatus($response)) {
+      next;
+  }
 	print "[DEBUG] JSON: ".$response->content."\n" if $debug;
 	my %data = %{from_json($response->content)};
 	%data = %{$data{host}};
@@ -284,17 +268,14 @@ sub DeleteHost($@){
     #
     my @err = ();
     for my $host (sort @host){
-	my $request = HTTP::Request->new("DELETE","$url/hosts/$host.cern.ch");
-	my $response = $browser->request($request);
-	if ($response->is_success){
-	    print STDOUT "[INFO] Deleted \"$host\" from Foreman.\n";
-	}else{
-	    push(@err,$host);
-	}
-    }
-    if (@err){
-	print STDERR "[ERROR] Could not delete host(s) \"".join("\" - \"",@err). "\" from Foreman.\n";
-	return 1;
+      my $request = HTTP::Request->new("DELETE","$url/hosts/$host.cern.ch");
+      my $response = $browser->request($request);
+      if (not CheckAPIResponseStatus($response)) {
+          print STDERR "[ERROR] Could not delete host '$host' from Foreman.\n";
+          return 1;
+      } else {
+          print STDOUT "Host '$host' deleted successfully.\n";
+      }
     }
     return 0;
 }
@@ -313,10 +294,9 @@ sub ChkHost(@){
     for my $host (@host){
      	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
      	my $response = $browser->request($request);
-	if (not $response->is_success){
-     	    print STDERR "[ERROR] No host \"$host\" known to Foreman\n";
-      	    next;
-	}
+      if (not CheckAPIResponseStatus($response)) {
+          next;
+      }
 	#
 	my @error = ();
      	my %data = %{${from_json($response->content)}{host}};
@@ -735,7 +715,12 @@ sub ForemanConfig($$){
 
     # record ptable per OS
     my %ptable = my %medium = ();
-    for (@{from_json($browser->get("$url/operatingsystems?format=json")->content)}){
+    my $response = $browser->get("$url/operatingsystems?format=json");
+    if (not CheckAPIResponseStatus($response)) {
+      return %config;
+    }
+    # TODO: responses should be checked in all subsequent requests
+    for (@{from_json($response->content)}){
 	my %data = %{$$_{operatingsystem}};
 	#print Dumper(\%data);#exit;
 	for (@{$data{ptables}}){
@@ -1331,6 +1316,33 @@ sub HelpMessage(;$){
     exit 0;
 
 }
+
+################################################################################################
+#
+# CheckAPIResponseStatus(): Check if authentication failed and informs
+# the user about the outcome.
+#
+sub CheckAPIResponseStatus($) {
+  my $response = shift;
+  # Good response codes (2xx)
+  if ($response->is_success) {
+    return 1;
+  }
+  # Redirects? (3xx)
+  # BUG: CERN SSO returns 302 if provided creds are invalid.
+  # Errors (4xx)
+  if ($response->code() == HTTP::Status::HTTP_UNAUTHORIZED ||
+        $response->code() == HTTP::Status::HTTP_FORBIDDEN) {
+    print STDERR "[ERROR] Bad credentials or not enough access level.\n";
+  } elsif ($response->code() == HTTP::Status::HTTP_NOT_FOUND ) {
+    print STDERR "[ERROR] Resource not found (Foreman said 404)\n";
+  } else {
+    my $code = $response->code();
+    print STDERR "[ERROR] Unexpected status code $code.";
+  }
+  return 0;
+}
+
 
 __END__
 
