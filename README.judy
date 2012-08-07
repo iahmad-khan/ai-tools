@@ -30,9 +30,9 @@ Tested operations:
  * chkhost
  * showconfig
  * showhost
- * delhost (SSO fails, 401)
- * addhost (SSO fails, 401)
- * updatehost (SSO fails, 401)
+ * delhost (requires patched Foreman, see AI-771)
+ * addhost (ditto)
+ * updatehost (ditto)
 
 Not tested yet:
 ---------------
