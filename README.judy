@@ -44,3 +44,11 @@ Tested operations:
 Not tested yet:
 ---------------
   * createvm
+
+TODO
+----
+
+* If the cookie is invalid the status code of the response
+  is 302 (think it should be 401) and that's not handled by
+  CheckAPIResponseStatus yet. Because of that, ai-foreman-cli
+  tries to parse HTML as JSON and it crashes.
