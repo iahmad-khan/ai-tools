@@ -93,6 +93,8 @@ $browser->default_header('Accept' => "application/json");
 $browser->default_header('Content-Type' => "application/json");
 # See commit log for further details
 
+$browser->max_redirect(0);
+
 #
 # Easy things first.
 #
