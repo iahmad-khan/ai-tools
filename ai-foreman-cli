@@ -76,12 +76,14 @@ my $browser     = LWP::UserAgent->new;
 if (!defined($foreman_conn_params{cookiejar})) {
   ($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
   $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
+  $browser->max_redirect(1);
 } else {
   use HTTP::Cookies::Netscape;
   my $cookie_jar = HTTP::Cookies::Netscape->new(
     file => "$foreman_conn_params{cookiejar}", ignore_discard => 1);
   print $cookie_jar->as_string() if $debug;
   $browser->cookie_jar( $cookie_jar );
+  $browser->max_redirect(0);
 }
 
 # There's only one UserAgent shared by all the script, so we can
@@ -93,7 +95,6 @@ $browser->default_header('Accept' => "application/json");
 $browser->default_header('Content-Type' => "application/json");
 # See commit log for further details
 
-$browser->max_redirect(0);
 
 #
 # Easy things first.
