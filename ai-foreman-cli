@@ -1343,8 +1343,13 @@ sub CheckAPIResponseStatus($) {
   if ($response->is_success) {
     return 1;
   }
-  # Redirects? (3xx)
-  # BUG: CERN SSO returns 302 if provided creds are invalid.
+  # Redirects (3xx)
+  # BUG?: CERN SSO returns 302 if provided creds are invalid.
+  if ($response->code() == HTTP::Status::HTTP_FOUND &&
+    $response->header('Location') =~ /login\.cern\.ch/ ) {
+    print STDERR "[ERROR] Bad cookie, unable to login.\n";
+    return 0;
+  }
   # Errors (4xx)
   if ($response->code() == HTTP::Status::HTTP_UNAUTHORIZED ||
         $response->code() == HTTP::Status::HTTP_FORBIDDEN) {
