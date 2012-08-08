@@ -80,6 +80,7 @@ if (!defined($foreman_conn_params{cookiejar})) {
   use HTTP::Cookies::Netscape;
   my $cookie_jar = HTTP::Cookies::Netscape->new(
     file => "$foreman_conn_params{cookiejar}", ignore_discard => 1);
+  print $cookie_jar->as_string() if $debug;
   $browser->cookie_jar( $cookie_jar );
 }
 
