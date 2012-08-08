@@ -54,7 +54,8 @@ Tested operations:
  * addhost (ditto)
  * updatehost (ditto)
  * installhost
+ * createvm
 
 Not tested yet:
 ---------------
-  * createvm
+ * Nothing

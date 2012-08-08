@@ -1030,7 +1030,11 @@ sub CreateVM($@){
 
     my $proxy = "https://vmm.cern.ch/vmmgtsvc/service.asmx";
 
-    sub SOAP::Transport::HTTP::Client::get_basic_credentials{
+    if( not defined $user_credentials{password} ) {
+      ($user_credentials{username},$user_credentials{password}) =
+        GetUserCredentials($user_credentials{username});
+    }
+   sub SOAP::Transport::HTTP::Client::get_basic_credentials{
 	return "cern\\$user_credentials{username}" => $user_credentials{password};
     }
     my $soapRequest = SOAP::Lite
@@ -1294,7 +1298,7 @@ sub GetUserCredentials($){
 	$password = $mach->password;
     }else{
 	if (not defined $username){
-	    print STDOUT "Please give the CERN username/password combination to query LANdb: \n";
+	    print STDOUT "Please give the CERN username/password combination: \n";
 	    print STDOUT "   - username : ";
 	    chomp($username = <STDIN>);
 	    if (not defined $username){
@@ -1302,7 +1306,7 @@ sub GetUserCredentials($){
 		return ();
 	    }
 	}else{
-	    print STDOUT "Please give the password for CERN account \"$username\" to query LANdb: \n";
+	    print STDOUT "Please give the password for CERN account \"$username\": \n";
 	}
 	print STDOUT "   - password : ";
 	ReadMode("noecho",);
