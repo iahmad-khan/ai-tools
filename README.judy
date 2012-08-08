@@ -25,6 +25,20 @@ necessary to talk to LanDB. Take into account that requests
 must be issued from the same IP address where cookies were
 requested from.
 
+What cookies does SSOed Foreman want?
+-------------------------------------
+
+To generate a cookie jar, first make sure you've got valid
+Kerberos credentials in place. Then, issue:
+
+cern-get-sso-cookie --krb -u https://judy.cern.ch -o ssocookie-judy.txt
+
+The only cookie that Foreman needs is _shibsession_<hash here>.
+
+Please note that ai-foreman-cli won't handle cookies with zero expiration
+time (session cookies), so if it's your case, edit the file and change
+it manually.
+
 How to enable certmgr support
 -----------------------------
 
