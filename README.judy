@@ -50,7 +50,7 @@ Tested operations:
  * chkhost
  * showconfig
  * showhost
- * delhost (requires patched Foreman, see AI-771)
+ * delhost (SSO requires patched Foreman, see AI-771)
  * addhost (ditto)
  * updatehost (ditto)
  * installhost
