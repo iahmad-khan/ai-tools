@@ -1339,7 +1339,7 @@ sub HelpMessage(;$){
 
 ################################################################################################
 #
-# CheckAPIResponseStatus(): Check if authentication failed and informs
+# CheckAPIResponseStatus(): Checks if authentication failed and informs
 # the user about the outcome.
 #
 sub CheckAPIResponseStatus($) {
