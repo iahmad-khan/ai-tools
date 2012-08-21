@@ -1363,8 +1363,8 @@ sub CheckAPIResponseStatus($) {
   } elsif ($response->code() == HTTP::Status::HTTP_NOT_FOUND ) {
     print STDERR "[ERROR] Resource not found (Foreman said 404)\n";
   } else {
-    my $code = $response->code();
-    print STDERR "[ERROR] Unexpected status code $code.";
+    my $message = $response->message();
+    print STDERR "[ERROR] Request failed ($message)\n";
   }
   return 0;
 }
