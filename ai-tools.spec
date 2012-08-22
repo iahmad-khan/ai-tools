@@ -14,7 +14,7 @@ Vendor: CERN
 License: GPL+
 URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
-Requires: aims2-client
+Requires: aims2-client, certmgr-client
  
 %description
 A collection of tools used by CERN/IT's Agile Infrastructure project
