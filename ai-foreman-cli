@@ -390,33 +390,6 @@ sub InstallHost(@){
     print STDOUT "[VERBOSE] Retrieved host information from Foreman\n" if $verbose;
 
     #
-    # Delete certs
-    #
-    if (not $opts{certmgr}) {
-      @err = ();
-      for my $host (keys %todo){
-    my $request = HTTP::Request->new("DELETE","$url/smart_proxies/2-punch-cern-ch/puppetca/$host.cern.ch"); # XXX to-do: replace hardcoded URL by sthg smart :)
-    if ($dryrun){
-        print STDOUT "[DRYRUN] request to delete certificate for \"$host\" deliberately not submitted\n";
-        next;
-    }
-    my $response = $browser->request($request);
-    if (not $response->is_success){
-        push(@err,$host);
-        print "[ERROR] ".$response->status_line."\n" if $debug;
-    }else{
-        print STDOUT "[DEBUG] Deleted certificate for \"$host\" from Puppet CA: ".$response->status_line."\n" if $debug;
-    }
-    #print Dumper(\$response);exit;
-      }
-      if (@err){
-    print STDERR "[WARN] Could not delete certificate for host(s) \"".join("\" - \"",@err). "\" from Puppet Certificate Authority...\n";
-    #exit 1;
-      }
-      print STDOUT "[VERBOSE] Deleted certificates from Puppet CA\n" if $verbose;
-    }
-
-    #
     # Prepare Kickstart file
     #
     for my $host (sort keys %todo){
@@ -495,12 +468,10 @@ sub InstallHost(@){
     #print Dumper(\%todo);exit;
     #
     for my $host (sort keys %todo){
-      if ($opts{certmgr}) {
-       print STDOUT "Calling certmgr-stage to stage host $host...\n";
-        if (CertMgrStageHostname($host)) {
-          print STDERR "[ERROR] certmgr-stage didn't return zero exit code for host $host...\n";
-          exit 1;
-        }
+     print STDOUT "Calling certmgr-stage to stage host $host...\n";
+      if (CertMgrStageHostname($host)) {
+        print STDERR "[ERROR] certmgr-stage didn't return zero exit code for host $host...\n";
+        exit 1;
       }
     }
 
@@ -1192,7 +1163,7 @@ sub HandleOptions(){
  
     my $rc = Getopt::Long::GetOptions(\%opts,
 				      (map {$_ => \$opts{(split(/=/,$_))[0]}} @{$options{$action}}),
-				      "debug","dryrun","verbose","certmgr",
+				      "debug","dryrun","verbose",
 				      "cern-user=s" => \$user_credentials{username},
 				      "foreman-host=s" => \$foreman_conn_params{hostname},
 				      "foreman-port=s" => \$foreman_conn_params{port},
@@ -1379,7 +1350,6 @@ sub CertMgrStageHostname($) {
   $cmdline = $cmdline . " --debug" if $debug;
   print STDERR "Will execute $cmdline\n" if $debug;
   if (not $dryrun) {
-    # Print output only if debug is enabled
     return system($cmdline);
   } else {
     print STDOUT "[DRYRUN] Host staging cancelled\n";
@@ -1646,10 +1616,6 @@ Print debug output
 =item B<--dryrun>
 
 For the installhost action: do not upload to AIMS
-
-=item B<--certmgr>
-
-Enables host staging before uploading kickstart files to AIMS
 
 =back
 
