@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 1.11
+Version: 2.0
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -37,11 +37,21 @@ rm -rf ${RPM_BUILD_ROOT}
 
 %files
 %defattr (-, root, root)
+%doc README.judy
 /usr/bin/ai-foreman-cli
 /usr/bin/ai-landb-bind-mac
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* Wed Aug 22 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 2.0-0
+- First Judy era release.
+- Judy API support.
+- --foreman-host and --foreman-port options.
+- SSO support (--foreman-cookie).
+- CertMgr support.
+- Drop admin privileges constraint.
+- Better response status code handling.
+
 * Thu Jul 19 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 1.11-0
 - oops...
 
