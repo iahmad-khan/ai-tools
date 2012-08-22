@@ -41,7 +41,7 @@ HelpMessage("No arguments given.") if not @ARGV;
 
 my $debug = my $verbose = my $dryrun = 0;
 my %user_credentials = ();
-my %foreman_conn_params = ( "hostname" => "punch.cern.ch",
+my %foreman_conn_params = ( "hostname" => "judy.cern.ch",
                             "port" => 443,
                             "cookiejar" => undef);
 
@@ -53,6 +53,15 @@ my ($action,%opts) = HandleOptions();
 
 $verbose = 1 if $debug;
 
+if ($foreman_conn_params{hostname} =~ m/judy(\.cern\.ch)?/i and
+     $foreman_conn_params{port} == 443 and
+      !defined($foreman_conn_params{cookiejar})) {
+  print STDERR "[ERROR] Judy only accepts user cookies for authentication on"
+               . " the default port (use --foreman-cookiejar).\n";
+  print STDERR "[INFO] Change the port to 9443 if you want to use your CERN"
+               . " login-passwd pair. See README.judy.\n";
+  exit 1;
+}
 
 my @host = @ARGV;
 if (not @host and not ($action eq "showhost" or $action eq "showconfig")){
@@ -1588,7 +1597,7 @@ CERN account to be used for LANdb lookups and Foreman access
 
 =item B<--foreman-host> HOSTNAME
 
-Foreman hostname (defaults to punch.cern.ch).
+Foreman hostname (defaults to judy.cern.ch).
 
 =item B<--foreman-port> PORT
 
