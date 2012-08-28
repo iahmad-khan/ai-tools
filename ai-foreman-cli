@@ -193,14 +193,13 @@ sub ShowHost($@){
   if (not CheckAPIResponseStatus($response)) {
       return -1;
   }
+  my @hosts_from_api = sort map { $_->{'host'}->{'name'} } @{from_json($response->content)};
 	if ($opt{all}){
-	    @host = sort @{from_json($response->content)};	
-	    map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
+	    @host = map {s/.cern.ch//; $_ = lc} @hosts_from_api;  # strip domain name, change to lower case
 	}elsif ($opt{hostname} and $opt{regexp}){
 	    my %host = ();
-	    my @list = @{from_json($response->content)};
 	    for my $hostname (@{$opt{hostname}}){
-		map {s/.cern.ch//;$host{$_}++ if /$hostname/i} @list;
+		map {s/.cern.ch//;$host{$_}++ if /$hostname/i} @hosts_from_api;
 	    }
 	    push(@host,keys %host);
 	}
