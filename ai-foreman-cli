@@ -190,22 +190,14 @@ sub ShowHost($@){
     if ($opt{all} or $opt{regexp}){
 	my $request = HTTP::Request->new("GET","$url/hosts");
 	my $response = $browser->request($request);
-  if (not CheckAPIResponseStatus($response)) {
-      return -1;
-  }
-  my @hosts_from_api = sort map { $_->{'host'}->{'name'} } @{from_json($response->content)};
+	if (not CheckAPIResponseStatus($response)) {
+	    return -1;
+	}
+	my @hosts_from_api = sort map { $_->{'host'}->{'name'} } @{from_json($response->content)};
 	if ($opt{all}){
 	    @host = map {s/.cern.ch//; $_ = lc} @hosts_from_api;  # strip domain name, change to lower case
-	}elsif ($opt{hostname} and $opt{regexp}){
-	    my %host = ();
-	    for my $hostname (@{$opt{hostname}}){
-		map {s/.cern.ch//;$host{$_}++ if /$hostname/i} @hosts_from_api;
-	    }
-	    push(@host,keys %host);
 	}
 	print STDOUT "[INFO] Parsing information for ".scalar(@host)." machines - this may take a while...\n";
-    }elsif ($opt{hostname}){
-	push(@host,map {s/.cern.ch//; $_ = lc} @{$opt{hostname}});
     }
     #print Dumper(\%opt); print "\@host = \"@host\"\n";
     #exit;
@@ -218,9 +210,9 @@ sub ShowHost($@){
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
 	my $response = $browser->request($request);
-  if (not CheckAPIResponseStatus($response)) {
-      next;
-  }
+	if (not CheckAPIResponseStatus($response)) {
+	    next;
+	}
 	print "[DEBUG] JSON: ".$response->content."\n" if $debug;
 	my %data = %{from_json($response->content)};
 	%data = %{$data{host}};
