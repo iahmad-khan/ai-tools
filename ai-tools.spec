@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 2.0
+Version: 2.1
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -43,6 +43,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* Wed Aug 29 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 2.1-0
+- Showhost: Fix --all
+- Showhost: Replace --regexp by --filter
+
 * Wed Aug 22 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 2.0-0
 - First Judy era release.
 - Judy API support.
