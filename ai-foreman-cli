@@ -10,6 +10,7 @@ use Data::Dumper;
 #use SOAP::Lite;# +trace => 'debug';
 use SOAP::Lite + maptype => {};
 use SOAP::Transport::HTTP;
+use URI::Escape;
 use LWP;
 use JSON;
 use Socket;
@@ -187,17 +188,22 @@ sub ShowHost($@){
     my ($href,@host) = @_;
     my %opt = defined $href ? %$href : ();
     print "[DEBUG] ".Dumper(\%opt,\@host) if $debug;
-    if ($opt{all} or $opt{regexp}){
-	my $request = HTTP::Request->new("GET","$url/hosts");
-	my $response = $browser->request($request);
-	if (not CheckAPIResponseStatus($response)) {
-	    return -1;
-	}
-	my @hosts_from_api = sort map { $_->{'host'}->{'name'} } @{from_json($response->content)};
-	if ($opt{all}){
-	    @host = map {s/.cern.ch//; $_ = lc} @hosts_from_api;  # strip domain name, change to lower case
-	}
-	print STDOUT "[INFO] Parsing information for ".scalar(@host)." machines - this may take a while...\n";
+    if ($opt{all} or $opt{filter}){
+      my $all_hosts_url = "${url}/hosts";
+      if (defined $opt{filter}) {
+        print STDOUT "[INFO] Filter enabled, host list will be ignored.\n" if @host;
+        my $filter = uri_escape($opt{filter});
+        $all_hosts_url = "${all_hosts_url}?search=${filter}";
+        print STDOUT "[DEBUG] Query URI w/ filter applied: ${all_hosts_url}" if $debug;
+      }
+      my $request = HTTP::Request->new("GET", $all_hosts_url);
+      my $response = $browser->request($request);
+      if (not CheckAPIResponseStatus($response)) {
+          return -1;
+      }
+      my @hosts_from_api = sort map { $_->{'host'}->{'name'} } @{from_json($response->content)};
+      @host = map {s/.cern.ch//; $_ = lc} @hosts_from_api;  # strip domain name, change to lower case
+      print STDOUT "[INFO] Parsing information for ".scalar(@host)." machines - this may take a while...\n";
     }
     #print Dumper(\%opt); print "\@host = \"@host\"\n";
     #exit;
@@ -237,11 +243,7 @@ sub ShowHost($@){
 	my $ok = 1;
 	for my $attribute (grep {exists $opt{$_}} qw(operatingsystem architecture hostgroup environment owner model comment)){
 	    #print "OK $host \$attribute = \"$attribute\" @{$opt{$attribute}}\n";
-	    if ($opt{regexp}){
-		$ok = 0 unless grep {$data{$attribute} =~ /$_/i} @{$opt{$attribute}};
-	    }else{
-		$ok = 0 unless grep {lc($_) eq lc($data{$attribute})} @{$opt{$attribute}};
-	    }
+		  $ok = 0 unless grep {lc($_) eq lc($data{$attribute})} @{$opt{$attribute}};
 	    last if not $ok;
 	}
 	next if not $ok;
@@ -1148,7 +1150,8 @@ sub HandleOptions(){
 
     my %options = (addhost     => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s)],
 		   updatehost  => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s network)],
-		   showhost    => [qw(operatingsystem=s@ architecture=s@ hostgroup=s@ environment=s@ model=s@ owner=s@ comment=s@ all regexp)],
+		   showhost    => [qw(operatingsystem=s@ architecture=s@ hostgroup=s@
+       environment=s@ model=s@ owner=s@ comment=s@ all filter=s)],
 		   delhost     => [qw()],
 		   installhost => [qw()],
 		   chkhost     => [qw()],
@@ -1198,11 +1201,14 @@ sub HandleOptions(){
 	    exit 1;
 	}
     }elsif ($action eq "showhost"){
-	$opts{all} = 1 if $opts{regexp} and not @ARGV;
-	if (not @ARGV and not $opts{all}){
-	    print STDERR "[ERROR] Action \"$action\" requires either option \"--all\" or a list of hostnames.\n";
+	if (not @ARGV and not $opts{all} and not $opts{filter}){
+	    print STDERR "[ERROR] Action \"$action\" requires options \"--all\", \"--filter\" or a list of hostnames.\n";
 	    exit 1;
 	}
+  if ($opts{all} and $opts{filter}) {
+    print STDERR "[ERROR] Options \"--all\" and \"--filter\" are mutually exclusive.\n";
+    exit 1;
+  }
     }elsif ($action eq "createvm"){
 	my @host = @ARGV;
 	if (not @host){
@@ -1524,9 +1530,9 @@ Filtering options:
 
 =item B<--comment> NAME 
 
-=item B<--regexp>
+=item B<--filter> FILTER
 
-Interpret filtering options as regular expressions
+Examples: "facts.hostgroup_1 = punch", "os = Fedora"
 
 =back
 
