@@ -55,7 +55,7 @@ $verbose = 1 if $debug;
 
 if ($foreman_conn_params{hostname} =~ m/judy(\.cern\.ch)?/i and
      $foreman_conn_params{port} == 443 and
-      !defined($foreman_conn_params{cookiejar})) {
+      not defined($foreman_conn_params{cookiejar})) {
   print STDERR "[ERROR] Judy only accepts user cookies for authentication on"
                . " the default port (use --foreman-cookiejar).\n";
   print STDERR "[INFO] Change the port to 9443 if you want to use your CERN"
