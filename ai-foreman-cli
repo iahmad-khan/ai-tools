@@ -239,15 +239,6 @@ sub ShowHost($@){
 	$data{owner}           = $fmdata{$ownertype}     { $data{owner_id}           || -1 } || "";
 	$data{model}           = $fmdata{model}          { $data{model_id}           || -1 } || "";
 
-	# apply filters
-	my $ok = 1;
-	for my $attribute (grep {exists $opt{$_}} qw(operatingsystem architecture hostgroup environment owner model comment)){
-	    #print "OK $host \$attribute = \"$attribute\" @{$opt{$attribute}}\n";
-		  $ok = 0 unless grep {lc($_) eq lc($data{$attribute})} @{$opt{$attribute}};
-	    last if not $ok;
-	}
-	next if not $ok;
-
 	#print Dumper(\%fmdata);
 	#
 	$table->add($host, map {$data{$_}} qw(hostgroup environment operatingsystem architecture model owner comment));
@@ -1508,33 +1499,15 @@ IP and MAC addresses are retrieved from Landb
 
 Display information for all hosts known to Foreman
 
-Filtering options:
-
-=over 12
-
-=item B<--model> NAME
-
-=item B<--owner> NAME
-
-=item B<--operatingsystem> NAME 
-
-=item B<--architecture> NAME 
-
-=item B<--hostgroup> NAME 
-
-=item B<--environment> NAME 
-
-=item B<--model> NAME 
-
-=item B<--owner> NAME 
-
-=item B<--comment> NAME 
-
 =item B<--filter> FILTER
 
-Examples: "facts.hostgroup_1 = punch", "os = Fedora"
+Use a Foreman filter to narrow your search.
+
+Examples: "facts.hostgroup_1 = punch", "os = Fedora".
 
 =back
+
+B<Note:> --all and --filter are mutually exclusive.
 
 =back
 
