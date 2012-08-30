@@ -1220,7 +1220,8 @@ sub HandleOptions(){
 	#     exit 1;
 	# }
 	if (not exists $opts{"expiration-date"}){
-	    my $dt = DateTime->now + DateTime::Duration->new(months => 6);
+	    my $dt = DateTime->now + DateTime::Duration->new(months => 6, end_of_month => "limit");
+           printf "VM will expire on %s\n", $dt->ymd if $debug;
 	    $opts{"expiration-date"} = $dt->ymd("-");
 	}else{
 	    if (not ParseDate($opts{"expiration-date"})){
