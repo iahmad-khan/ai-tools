@@ -54,14 +54,10 @@ my ($action,%opts) = HandleOptions();
 
 $verbose = 1 if $debug;
 
-if ($foreman_conn_params{hostname} =~ m/judy(\.cern\.ch)?/i and
-     $foreman_conn_params{port} == 443 and
-      not defined($foreman_conn_params{cookiejar})) {
-  print STDERR "[ERROR] Judy only accepts user cookies for authentication on"
-               . " the default port (use --foreman-cookiejar).\n";
-  print STDERR "[INFO] Change the port to 9443 if you want to use your CERN"
-               . " login-passwd pair. See README.judy.\n";
-  exit 1;
+if ($foreman_conn_params{hostname} =~ m/judy(\.cern\.ch)?/i and $foreman_conn_params{port} == 443 and not defined $foreman_conn_params{cookiejar}) {
+    print STDERR "[ERROR] Judy only accepts user cookies for authentication on the default port (use --foreman-cookiejar).\n";
+    print STDERR "[INFO] Change the port to 9443 if you want to use your CERN login-passwd pair. See README.judy.\n";
+    exit 1;
 }
 
 my @host = @ARGV;
@@ -83,17 +79,17 @@ my $browser     = LWP::UserAgent->new;
 #
 # Get user credentials
 #
-if (!defined($foreman_conn_params{cookiejar})) {
-  ($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
-  $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
-  $browser->max_redirect(1);
+if (not defined$foreman_conn_params{cookiejar}) {
+    ($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
+    $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
+    $browser->max_redirect(1);
 } else {
-  use HTTP::Cookies::Netscape;
-  my $cookie_jar = HTTP::Cookies::Netscape->new(
-    file => "$foreman_conn_params{cookiejar}", ignore_discard => 1);
-  print $cookie_jar->as_string() if $debug;
-  $browser->cookie_jar( $cookie_jar );
-  $browser->max_redirect(0);
+    use HTTP::Cookies::Netscape;
+    my $cookie_jar = HTTP::Cookies::Netscape->new(
+        file => "$foreman_conn_params{cookiejar}", ignore_discard => 1);
+    print $cookie_jar->as_string() if $debug;
+    $browser->cookie_jar( $cookie_jar );
+    $browser->max_redirect(0);
 }
 
 # There's only one UserAgent shared by all the script, so we can
@@ -125,9 +121,9 @@ if ($action eq "delhost"){
 #
 my %fmdata = ForemanConfig($browser,$url);
 
-if (!keys %fmdata) {
-  print "[ERROR] Foreman's config retrieval failed\n";
-  exit 1;
+if (not keys %fmdata) {
+    print "[ERROR] Foreman's config retrieval failed\n";
+    exit 1;
 }
 
 #
@@ -189,21 +185,21 @@ sub ShowHost($@){
     my %opt = defined $href ? %$href : ();
     print "[DEBUG] ".Dumper(\%opt,\@host) if $debug;
     if ($opt{all} or $opt{filter}){
-      my $all_hosts_url = "${url}/hosts";
-      if (defined $opt{filter}) {
-        print STDOUT "[INFO] Filter enabled, host list will be ignored.\n" if @host;
-        my $filter = uri_escape($opt{filter});
-        $all_hosts_url = "${all_hosts_url}?search=${filter}";
-        print STDOUT "[DEBUG] Query URI w/ filter applied: ${all_hosts_url}" if $debug;
-      }
-      my $request = HTTP::Request->new("GET", $all_hosts_url);
-      my $response = $browser->request($request);
-      if (not CheckAPIResponseStatus($response)) {
-          return -1;
-      }
-      my @hosts_from_api = sort map { $_->{'host'}->{'name'} } @{from_json($response->content)};
-      @host = map {s/.cern.ch//; $_ = lc} @hosts_from_api;  # strip domain name, change to lower case
-      print STDOUT "[INFO] Parsing information for ".scalar(@host)." machines - this may take a while...\n";
+	my $all_hosts_url = "${url}/hosts";
+	if (defined $opt{filter}) {
+	    print STDOUT "[INFO] Filter enabled, host list will be ignored.\n" if @host;
+	    my $filter = uri_escape($opt{filter});
+	    $all_hosts_url = "${all_hosts_url}?search=${filter}";
+	    print STDOUT "[DEBUG] Query URI w/ filter applied: ${all_hosts_url}" if $debug;
+	}
+	my $request = HTTP::Request->new("GET", $all_hosts_url);
+	my $response = $browser->request($request);
+	if (not CheckAPIResponseStatus($response)) {
+	    return -1;
+	}
+	my @hosts_from_api = sort map { $_->{'host'}->{'name'} } @{from_json($response->content)};
+	@host = map {s/.cern.ch//; $_ = lc} @hosts_from_api;  # strip domain name, change to lower case
+	print STDOUT "[INFO] Parsing information for ".scalar(@host)." machines - this may take a while...\n";
     }
     #print Dumper(\%opt); print "\@host = \"@host\"\n";
     #exit;
@@ -461,11 +457,11 @@ sub InstallHost(@){
     #print Dumper(\%todo);exit;
     #
     for my $host (sort keys %todo){
-     print STDOUT "Calling certmgr-stage to stage host $host...\n";
-      if (CertMgrStageHostname($host)) {
-        print STDERR "[ERROR] certmgr-stage didn't return zero exit code for host $host...\n";
-        exit 1;
-      }
+	print STDOUT "Calling certmgr-stage to stage host $host...\n";
+	if (CertMgrStageHostname($host)) {
+	    print STDERR "[ERROR] certmgr-stage didn't return zero exit code for host $host...\n";
+	    exit 1;
+	}
     }
 
     #
@@ -776,9 +772,9 @@ sub LandbHostInfo(@){
 	    print "[WARNING] Device \"$device\" not found in Landb, ignoring it...\n";
 	    next;
 	}
-	#print Dumper($bu);exit;
+	print Dumper($bu);#exit;
 
-	$landb{$device}{Model} = $bu->{Model};
+	#$landb{$device}{Model} = $bu->{Model};
 	for (@{$bu->{Interfaces}}) {
 	    #print Dumper(\$_);
 	    my $Name = lc($_->{Name});
@@ -789,8 +785,8 @@ sub LandbHostInfo(@){
 		%{$landb{$device}{Interfaces}{$Name}} = (HardwareAddress => $HardwareAddress, IPAddress => $IPAddress);
 	    }
 	}
-	if (not exists $landb{$device}{Interfaces}){
-	    my $Name = lc($bu->{DeviceName});
+	my $Name = lc($bu->{DeviceName});
+	if (not exists $landb{$device}{Interfaces}{$Name}){
 	    for (@{$bu->{NetworkInterfaceCards}}) {
 		my $HardwareAddress = $_->{HardwareAddress};
 		my $IPAddress = $_->{IPAddress};
@@ -807,8 +803,8 @@ sub LandbHostInfo(@){
 	}
     }
 
-    #print Dumper(\%landb);
-    #exit;
+    print Dumper(\%landb);
+    exit;
 
     return %landb;
 }
@@ -1196,10 +1192,10 @@ sub HandleOptions(){
 	    print STDERR "[ERROR] Action \"$action\" requires options \"--all\", \"--filter\" or a list of hostnames.\n";
 	    exit 1;
 	}
-  if ($opts{all} and $opts{filter}) {
-    print STDERR "[ERROR] Options \"--all\" and \"--filter\" are mutually exclusive.\n";
-    exit 1;
-  }
+	if ($opts{all} and $opts{filter}) {
+	    print STDERR "[ERROR] Options \"--all\" and \"--filter\" are mutually exclusive.\n";
+	    exit 1;
+	}
     }elsif ($action eq "createvm"){
 	my @host = @ARGV;
 	if (not @host){
@@ -1312,30 +1308,30 @@ sub HelpMessage(;$){
 # the user about the outcome.
 #
 sub CheckAPIResponseStatus($) {
-  my $response = shift;
-  # Good response codes (2xx)
-  if ($response->is_success) {
-    return 1;
-  }
-  # Redirects (3xx)
-  # mod_shib returns 302 with location set (login.cern.ch) if
-  # provided creds are invalid.
-  if ($response->code() == HTTP::Status::HTTP_FOUND &&
-    $response->header('Location') =~ /login\.cern\.ch/ ) {
-    print STDERR "[ERROR] Bad cookie, unable to login.\n";
-    return 0;
-  }
-  # Errors (4xx)
-  if ($response->code() == HTTP::Status::HTTP_UNAUTHORIZED ||
+    my $response = shift;
+    # Good response codes (2xx)
+    if ($response->is_success) {
+	return 1;
+    }
+    # Redirects (3xx)
+    # mod_shib returns 302 with location set (login.cern.ch) if
+    # provided creds are invalid.
+    if ($response->code() == HTTP::Status::HTTP_FOUND &&
+	$response->header('Location') =~ /login\.cern\.ch/ ) {
+	print STDERR "[ERROR] Bad cookie, unable to login.\n";
+	return 0;
+    }
+    # Errors (4xx)
+    if ($response->code() == HTTP::Status::HTTP_UNAUTHORIZED ||
         $response->code() == HTTP::Status::HTTP_FORBIDDEN) {
-    print STDERR "[ERROR] Bad credentials or not enough access level.\n";
-  } elsif ($response->code() == HTTP::Status::HTTP_NOT_FOUND ) {
-    print STDERR "[ERROR] Resource not found (Foreman said 404)\n";
-  } else {
-    my $message = $response->message();
-    print STDERR "[ERROR] Request failed ($message)\n";
-  }
-  return 0;
+	print STDERR "[ERROR] Bad credentials or not enough access level.\n";
+    } elsif ($response->code() == HTTP::Status::HTTP_NOT_FOUND ) {
+	print STDERR "[ERROR] Resource not found (Foreman said 404)\n";
+    } else {
+	my $message = $response->message();
+	print STDERR "[ERROR] Request failed ($message)\n";
+    }
+    return 0;
 }
 
 ################################################################################################
@@ -1343,16 +1339,16 @@ sub CheckAPIResponseStatus($) {
 # CertMgrStageHostname(): Stages a given hostname using certmgr-stage
 #
 sub CertMgrStageHostname($) {
-  my $hostname = shift;
-  my $cmdline = "/usr/bin/certmgr-stage --host $hostname.cern.ch";
-  $cmdline = $cmdline . " --debug" if $debug;
-  print STDERR "Will execute $cmdline\n" if $debug;
-  if (not $dryrun) {
-    return system($cmdline);
-  } else {
-    print STDOUT "[DRYRUN] Host staging cancelled\n";
-    return 0;
-  }
+    my $hostname = shift;
+    my $cmdline = "/usr/bin/certmgr-stage --host $hostname.cern.ch";
+    $cmdline = $cmdline . " --debug" if $debug;
+    print STDERR "Will execute $cmdline\n" if $debug;
+    if (not $dryrun) {
+	return system($cmdline);
+    } else {
+	print STDOUT "[DRYRUN] Host staging cancelled\n";
+	return 0;
+    }
 }
 
 __END__
