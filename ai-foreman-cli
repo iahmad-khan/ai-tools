@@ -398,43 +398,38 @@ sub InstallHost(@) {
     # Are the hosts known to Foreman?
     #
     my @err = my %todo = ();
-    for my $host (@host) {
-        my $request = HTTP::Request->new( "GET", "$url/hosts/$host.cern.ch" );
-        my $response = $browser->request($request);
-        push( @err, "Host \"$host\" unknown to Foreman" )
-          unless $response->is_success;
-        next if @err;
-        my %data = %{ from_json( $response->content ) };
 
-        my $iaddr = gethostbyname($host);
-        if ( not defined $iaddr ) {
-            push( @err, "Cannot get IP address from DNS for host \"$host\"" );
-            next;
-        }
-        $iaddr = inet_ntoa($iaddr);
-        if ( $data{host}{ip} ne $iaddr ) {
-            push( @err,
-"IP-address differs between Foreman (\"$data{host}{ip}\") and DNS (\"$iaddr\"). Consider running \"ai-foreman-cli updatehost --network $host\""
-            );
-            next;
-        }
+    for my $host (@host){
+     	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
+     	my $response = $browser->request($request);
+	push(@err,"Host \"$host\" unknown to Foreman") unless $response->is_success;
+	next if @err;
+	#
+     	my %data = %{from_json($response->content)};
+	
+	my $iaddr = gethostbyname($host);
+	if (not defined $iaddr){
+	    push(@err,"Cannot get IP address from DNS for host \"$host\"");
+	    next;
+	}
+	$iaddr = inet_ntoa($iaddr);
+	if ($data{host}{ip} ne $iaddr){
+	    push(@err,"IP-address differs between Foreman (\"$data{host}{ip}\") and DNS (\"$iaddr\"). Consider running \"ai-foreman-cli updatehost --network $host\"");
+	    next;
+	}
+	# store relevant information
+	$todo{$host}{operatingsystem} = $fmdata{operatingsystem}{$data{host}{operatingsystem_id}};
+	$todo{$host}{architecture}    = $fmdata{architecture}   {$data{host}{architecture_id}   };
+	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          };
+	$todo{$host}{hostname}        = $host;
 
-        # store relevant information
-        $todo{$host}{operatingsystem} =
-          $fmdata{operatingsystem}{ $data{host}{operatingsystem_id} };
-        $todo{$host}{architecture} =
-          $fmdata{architecture}{ $data{host}{architecture_id} };
-        $todo{$host}{model}    = $fmdata{model}{ $data{host}{model_id} };
-        $todo{$host}{hostname} = $host;
+	my ($owner_id,$owner_type) = ($data{host}{owner_id},$data{host}{owner_type});
+	if ($owner_type eq "User"){
+	    $todo{$host}{owner} = $fmdata{user}{$owner_id};
+	}elsif ($owner_type eq "Usergroup"){
+	    $todo{$host}{owner} = $fmdata{usergroup}{$owner_id};
+	}
 
-        my ( $owner_id, $owner_type ) =
-          ( $data{host}{owner_id}, $data{host}{owner_type} );
-        if ( $owner_type eq "User" ) {
-            $todo{$host}{owner} = $fmdata{user}{$owner_id};
-        }
-        elsif ( $owner_type eq "Usergroup" ) {
-            $todo{$host}{owner} = $fmdata{usergroup}{$owner_id};
-        }
     }
     if (@err) {
         map { print STDERR "[ERROR] $_\n" } @err;
@@ -446,83 +441,74 @@ sub InstallHost(@) {
     #
     # Prepare Kickstart file
     #
-    for my $host ( sort keys %todo ) {
 
-        my %data = ( USER => $user_credentials{username} );
+    for my $host (sort keys %todo){
 
-        if ( gethostbyname("${host}-gigeth") ) {
-            print
-"[INFO] Getting LANdb info for host \"$host\", patience please...\n";
-            my %landb = LandbHostInfo($host);
-            if ( not %landb ) {
-                print
-"[WARNING] Could not get Landb info for \$host\", skipping it...\n";
-                next;
-            }
-            $data{NETWORK} =
-              "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
-            $data{NETWORK} .=
-"\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
-            for my $name ( keys %{ $landb{$host}{Interfaces} } ) {
-                my $mac = $landb{$host}{Interfaces}{$name}{HardwareAddress};
-                if ( $name eq $host ) {
-                    $data{NETWORK} .=
-"network --bootproto=dhcp --device=$mac --onboot=yes --hostname $host.cern.ch\n";
-                }
-                elsif ( $name eq "${host}-gigeth" ) {
-                    $data{NETWORK} .=
-                      "network --bootproto=dhcp --device=$mac --onboot=no\n";
-                }
-            }
-            $todo{$host}{hostname} .= "-gigeth";
-        }
+	my %data = (USER => $user_credentials{username});
 
-        # Get the KS file from Foreman
-        my $iaddr = gethostbyname($host);
-        die "aargh..." if not defined $iaddr;
-        $iaddr = inet_ntoa($iaddr);
-        my $ksfile   = "$url/unattended/provision?spoof=$iaddr";
-        my $request  = HTTP::Request->new( "GET", $ksfile );
-        my $response = $browser->request($request);
-        if ( not $response->is_success ) {
-            print STDERR
-              "[ERROR] Failed to retrieve a Kickstart file \"$ksfile\":\n";
-            print STDERR "[ERROR]   " . $response->content . "\n";
-            exit;
-        }
-        my $template = $response->content;
+	if (gethostbyname("${host}-gigeth")){
+	    print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
+	    my %landb = LandbHostInfo($host);
+	    if (not %landb){
+		print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
+		next;
+	    }
+	    $data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
+	    $data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
+	    for my $name (keys %{$landb{$host}{Interfaces}}){
+		my $mac = $landb{$host}{Interfaces}{$name}{HardwareAddress};
+		if ($name eq $host){
+		    $data{NETWORK} .= "network --bootproto=dhcp --device=$mac --onboot=yes --hostname $host.cern.ch\n";
+		} elsif ($name eq "${host}-gigeth"){
+		    $data{NETWORK} .= "network --bootproto=dhcp --device=$mac --onboot=no\n";
+		}
+	    }
+	    $todo{$host}{hostname} .= "-gigeth";
 
-        use Text::Template;
-        my $tpl = new Text::Template(
-            TYPE    => "STRING",
-            UNTAINT => 1,
-            SOURCE  => $template
-        ) or die "Couldn't construct template: $Text::Template::ERROR";
+	}
+	
+	# Get the KS file from Foreman
+	my $iaddr = gethostbyname($host);
+	die "aargh..." if not defined $iaddr;
+	$iaddr = inet_ntoa($iaddr);
+	my $ksfile = "$url/unattended/provision?spoof=$iaddr";
+	my $request = HTTP::Request->new("GET",$ksfile);
+	my $response = $browser->request($request);
+	if (not $response->is_success){
+	    print STDERR "[ERROR] Failed to retrieve a Kickstart file \"$ksfile\":\n";
+	    print STDERR "[ERROR]   ".$response->content."\n";
+	    exit;
+	}
+	my $template = $response->content;
 
-        my $result = $tpl->fill_in( HASH => \%data );
-        if ( not defined $result ) {
-            print STDERR "Couldn't fill in template: $Text::Template::ERROR\n";
-            next;
-        }
+	use Text::Template;
+	my $tpl = new Text::Template(TYPE    => "STRING",
+				     UNTAINT => 1,
+				     SOURCE  => $template) or die "Couldn't construct template: $Text::Template::ERROR";
 
-        $todo{$host}{ksfile} = POSIX::tmpnam();
-        if ( not open( F, "> $todo{$host}{ksfile}" ) ) {
-            print STDERR
-"[ERROR] Could not open \"$todo{$host}{ksfile}\" for writing: $!\n";
-            next;
-        }
-        print F $result;
-        print $result if $debug;
-        close F;
-
+	my $result = $tpl->fill_in(HASH => \%data);
+	if (not defined $result) {
+	    print STDERR "Couldn't fill in template: $Text::Template::ERROR\n";
+	    next;
+	}
+    
+	$todo{$host}{ksfile} = POSIX::tmpnam();
+	if (not open(F,"> $todo{$host}{ksfile}")){
+	    print STDERR "[ERROR] Could not open \"$todo{$host}{ksfile}\" for writing: $!\n";
+	    next;
+	}
+	print F $result;
+	print $result if $debug;
+	close F;
+    
     }
-    for my $host ( sort keys %todo ) {
-        print stdout "calling certmgr-stage to stage host $host...\n";
-        if ( certmgrstagehostname($host) ) {
-            print stderr
-"[error] certmgr-stage didn't return zero exit code for host $host...\n";
-            exit 1;
-        }
+    for my $host (sort keys %todo){
+     print STDOUT "Calling certmgr-stage to stage host $host...\n";
+      if (CertMgrStageHostname($host)) {
+        print STDERR "[ERROR] certmgr-stage didn't return zero exit code for host $host...\n";
+        exit 1;
+      }
+>>>>>>> ad57560... Sets host for build after installation.
     }
 
     #
@@ -535,13 +521,10 @@ sub InstallHost(@) {
     }
 
     SetBuild($host)
-     
-    my $mess2 =
-      join( "\n", map { "      ssh root\@$_ shutdown -r now" } @host );
-    my $mess3 =
-      "      ssh lxadm remote-power-control reset " . join( ",", @host ) . "\n";
-    my $mess4 =
-      join( "\n", map { "      ssh lxadm connect2console.sh $_" } @host );
+
+    my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
+    my $mess3 = "      ssh lxadm remote-power-control reset ". join(",",@host)."\n";
+    my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
 
     print <<eomess;
 
@@ -562,6 +545,7 @@ eomess
     return 0;
 }
                                                             
+
 ################################################################################################
 #
 # SetBuild(): sets host for build
@@ -585,9 +569,7 @@ sub SetBuild(@){
     . $response->content . "\n";
   }
 
-}
-                                                       
-
+}                        
 
 ################################################################################################
 #
