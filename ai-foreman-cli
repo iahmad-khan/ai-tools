@@ -7,7 +7,6 @@ use diagnostics;
 use POSIX;
 use Getopt::Long;
 use Data::Dumper;
-
 #use SOAP::Lite;# +trace => 'debug';
 use SOAP::Lite + maptype => {};
 use SOAP::Transport::HTTP;
@@ -42,14 +41,12 @@ sub CertMgrStageHostname($);
 HelpMessage("No arguments given.") if not @ARGV;
 
 my $debug = my $verbose = my $dryrun = 0;
-my %user_credentials    = ();
-my %foreman_conn_params = (
-    "hostname"  => "judy.cern.ch",
-    "port"      => 443,
-    "cookiejar" => undef
-);
+my %user_credentials = ();
+my %foreman_conn_params = ( "hostname" => "judy.cern.ch",
+                            "port" => 443,
+                            "cookiejar" => undef);
 
-my ( $action, %opts ) = HandleOptions();
+my ($action,%opts) = HandleOptions();
 
 #print "\@ARGV @ARGV\n";
 
@@ -64,12 +61,12 @@ if ($foreman_conn_params{hostname} =~ m/judy(\.cern\.ch)?/i and $foreman_conn_pa
 }
 
 my @host = @ARGV;
-if ( not @host and not( $action eq "showhost" or $action eq "showconfig" ) ) {
+if (not @host and not ($action eq "showhost" or $action eq "showconfig")){
     print STDERR "[ERROR] No hostname(s) given...\n";
     exit 1;
 }
 
-map { s/.cern.ch//; $_ = lc } @host;   # strip domain name, change to lower case
+map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
 
 #
 # Connect to Foreman
@@ -99,25 +96,22 @@ if (not defined$foreman_conn_params{cookiejar}) {
 # set the headers we need only once.
 #
 # For GET requests, proper Accept
-$browser->default_header( 'Accept' => "application/json" );
-
+$browser->default_header('Accept' => "application/json");
 # For POST, PUT and DELETE, proper Content-Type
-$browser->default_header( 'Content-Type' => "application/json" );
-
+$browser->default_header('Content-Type' => "application/json");
 # See commit log for further details
+
 
 #
 # Easy things first.
 #
-if ( $action eq "delhost" ) {
-    DeleteHost( \%opts, @host );
+if ($action eq "delhost"){
+    DeleteHost(\%opts,@host);
     exit 0;
-}
-elsif ( $action eq "createvm" ) {
-    CreateVM( \%opts, @host );
+}elsif ($action eq "createvm"){
+    CreateVM(\%opts,@host);
     exit 0;
-}
-elsif ( $action eq "chkhost" ) {
+}elsif ($action eq "chkhost"){
     ChkHost(@host);
     exit 0;
 }
@@ -125,7 +119,7 @@ elsif ( $action eq "chkhost" ) {
 #
 # Resolve Foreman ID's, update host data.
 #
-my %fmdata = ForemanConfig( $browser, $url );
+my %fmdata = ForemanConfig($browser,$url);
 
 if (not keys %fmdata) {
     print "[ERROR] Foreman's config retrieval failed\n";
@@ -135,16 +129,14 @@ if (not keys %fmdata) {
 #
 # More easy things.
 #
-if ( $action eq "showhost" ) {
-    ShowHost( \%opts, @host );
+if ($action eq "showhost"){
+    ShowHost(\%opts,@host);
     exit 0;
-}
-elsif ( $action eq "installhost" ) {
+}elsif ($action eq "installhost"){
     InstallHost(@host);
     exit 0;
-}
-elsif ( $action eq "showconfig" ) {
-    ShowConfig( \%fmdata );
+}elsif ($action eq "showconfig"){
+    ShowConfig(\%fmdata);
     exit 0;
 }
 
@@ -152,42 +144,33 @@ elsif ( $action eq "showconfig" ) {
 # Do the user options have correct values?
 #
 my @err = ();
-for my $attr (
-    qw(architecture model operatingsystem hostgroup environment domain ptable owner)
-  )
-{
+for my $attr (qw(architecture model operatingsystem hostgroup environment domain ptable owner)){
     next if not defined $opts{$attr};
-    my @values = (
-        $attr eq "owner"
-        ? sort values %{ $fmdata{user} },
-        values %{ $fmdata{usergroup} }
-        : sort values %{ $fmdata{$attr} }
-    );
-    next if grep { $opts{$attr} eq $_ } @values;
-    my $msg =
-"[ERROR] Option \"--$attr\" has unknown value \"$opts{$attr}\". Valid values:\n";
-    push( @err, $msg );
-    while ( my @tmp = splice( @values, 0, 5 ) ) {
-        last if not @tmp;
-        my $msg = "[ERROR]          ";
-        map { $msg .= sprintf "%-30s ", /\s/ ? "\"$_\"" : $_ } @tmp;
-        push( @err, "$msg\n" );
+    my @values = ($attr eq "owner" ? sort values %{$fmdata{user}}, values %{$fmdata{usergroup}} : sort values %{$fmdata{$attr}} );
+    next if grep {$opts{$attr} eq $_} @values;
+    my $msg = "[ERROR] Option \"--$attr\" has unknown value \"$opts{$attr}\". Valid values:\n";
+    push(@err,$msg);
+    while (my @tmp = splice(@values,0,5)){
+	last if not @tmp;
+	my $msg = "[ERROR]          ";
+	map {$msg .= sprintf "%-30s ", /\s/ ? "\"$_\"" : $_} @tmp;
+	push(@err,"$msg\n");
     }
 }
-if (@err) {
-    map { print STDERR $_ } @err;
+if (@err){
+    map {print STDERR $_} @err;
     exit 1;
 }
 
 #
 # Do the real work
 #
-if ( $action eq "addhost" or $action eq "updatehost" ) {
-    my @done = UpdateHost( { %opts, ( "action" => $action ) }, @host );
-    if (@done) {
-        print STDOUT "\n[INFO] Summary:\n\n";
-        ShowHost( undef, @done );
-        print STDOUT "\n";
+if ($action eq "addhost" or $action eq "updatehost"){
+    my @done = UpdateHost({%opts,("action" => $action)},@host);
+    if (@done){
+	print STDOUT "\n[INFO] Summary:\n\n";
+	ShowHost(undef,@done);
+	print STDOUT "\n";
     }
 }
 
@@ -197,8 +180,8 @@ exit 0;
 #
 # ShowHost(): display host information
 #
-sub ShowHost($@) {
-    my ( $href, @host ) = @_;
+sub ShowHost($@){
+    my ($href,@host) = @_;
     my %opt = defined $href ? %$href : ();
     print STDOUT "[DEBUG] ".Dumper(\%opt,\@host) if $debug;
     if ($opt{all} or $opt{filter}){
@@ -218,16 +201,13 @@ sub ShowHost($@) {
 	@host = map {s/.cern.ch//; $_ = lc} @hosts_from_api;  # strip domain name, change to lower case
 	print STDOUT "[INFO] Parsing information for ".scalar(@host)." machines - this may take a while...\n";
     }
-
     #print Dumper(\%opt); print "\@host = \"@host\"\n";
     #exit;
 
     #
     # Are the hosts known to Foreman?
     #
-    my $table = Text::TabularDisplay->new(
-        qw(Hostname Hostgroup Environment OS Arch Model Owner Comment));
-
+    my $table = Text::TabularDisplay->new(qw(Hostname Hostgroup Environment OS Arch Model Owner Comment));
     #my @out = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
@@ -255,18 +235,17 @@ sub ShowHost($@) {
 	$data{owner}           = $fmdata{$ownertype}     { $data{owner_id}           || -1 } || "";
 	$data{model}           = $fmdata{model}          { $data{model_id}           || -1 } || "";
 
-	#print Dumper(\%fmdata) ."\n\$ownertype,\$owner_id = ($ownertype,$data{owner_id})\n";
+	#print Dumper(\%fmdata);
 	#
 	$table->add($host, map {$data{$_}} qw(hostgroup environment operatingsystem architecture model owner comment));
     }
 
-    if ( $table->items ) {
-        print $table->render . "\n";
-        return 0;
-    }
-    else {
-        print STDERR "[ERROR] No machines found\n";
-        return -1;
+    if ($table->items){
+	print $table->render . "\n";
+	return 0;
+    }else{
+     	print STDERR "[ERROR] No machines found\n";
+     	return -1;
     }
 
 }
@@ -275,10 +254,9 @@ sub ShowHost($@) {
 #
 # DeleteHost(): delete host
 #
-sub DeleteHost($@) {
-    my ( $href, @host ) = @_;
+sub DeleteHost($@){
+    my ($href,@host) = @_;
     my %opt = %$href;
-
     #
     # Are the hosts known to Foreman?
     #
@@ -298,9 +276,9 @@ sub DeleteHost($@) {
 
 ################################################################################################
 #
-# ChkHost(): perform consistency checks
+# ChkHost(): perform consistency checks 
 #
-sub ChkHost(@) {
+sub ChkHost(@){
     my @host = @_;
 
     #
@@ -346,16 +324,14 @@ sub ChkHost(@) {
 #
 # InstallHost(): generate kickstart files, call out to AIMS
 #
-sub InstallHost(@) {
+sub InstallHost(@){
     my @host = @_;
 
     #
     # Show the hosts
     #
-    print STDOUT "[INFO] Installation requested for"
-      . ( scalar(@host) == 1 ? "" : " " . scalar(@host) . " machines" )
-      . ":\n\n";
-    ShowHost( undef, @host );
+    print STDOUT "[INFO] Installation requested for" . (scalar(@host) == 1 ? "" : " " .scalar(@host) ." machines" ) . ":\n\n";
+    ShowHost(undef,@host);
     print STDOUT "\n";
 
     #
@@ -396,82 +372,88 @@ sub InstallHost(@) {
      	#print Dumper(\%data);
 	#print Dumper(\%todo);exit;
     }
-    if (@err) {
-        map { print STDERR "[ERROR] $_\n" } @err;
-        exit 1;
+    if (@err){
+     	map {print STDERR "[ERROR] $_\n"} @err;
+     	exit 1;
     }
     print STDOUT "[VERBOSE] Retrieved host information from Foreman\n" if $verbose;
 
     #
     # Prepare Kickstart file
     #
-    for my $host ( sort keys %todo ) {
+    for my $host (sort keys %todo){
 
-        my %data = ( USER => $user_credentials{username} );
+	my %data = (USER => $user_credentials{username});
 
-        if ( gethostbyname("${host}-gigeth") ) {
-            print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
-            my %landb = LandbHostInfo($host);
-            if (not %landb) {
-                print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
-                next;
-            }
-            $data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
-            $data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
-            for my $name ( keys %{ $landb{$host}{Interfaces} } ) {
-                my $mac = $landb{$host}{Interfaces}{$name}{HardwareAddress};
-                if ( $name eq $host ) {
-                    $data{NETWORK} .=
-"network --bootproto=dhcp --device=$mac --onboot=yes --hostname $host.cern.ch\n";
-                }
-                elsif ( $name eq "${host}-gigeth" ) {
-                    $data{NETWORK} .=
-                      "network --bootproto=dhcp --device=$mac --onboot=no\n";
-                }
-            }
-            $todo{$host}{hostname} .= "-gigeth";
-        }
+	if (gethostbyname("${host}-gigeth")){
+	    print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
+	    my %landb = LandbHostInfo($host);
+	    #print Dumper(\%landb);exit
+	    if (not %landb){
+		print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
+		next;
+	    }
+	    $data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
+	    $data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
+	    for my $name (keys %{$landb{$host}{Interfaces}}){
+		my $mac = $landb{$host}{Interfaces}{$name}{HardwareAddress};
+		if ($name eq $host){
+		    $data{NETWORK} .= "network --bootproto=dhcp --device=$mac --onboot=yes --hostname $host.cern.ch\n";
+		} elsif ($name eq "${host}-gigeth"){
+		    $data{NETWORK} .= "network --bootproto=dhcp --device=$mac --onboot=no\n";
+		}
+	    }
+	    #print $data{NETWORK};exit;
+	    $todo{$host}{hostname} .= "-gigeth";
+	#}else{
+	#    $data{NETWORK} = "network --bootproto=dhcp --device=eth0 --hostname $host.cern.ch";
+	#    $todo{$host}{hostname} = $host;
+	}
+	
+	# my $model = $data{HWMODEL} = $todo{$host}{model};
 
-        # Get the KS file from Foreman
-        my $iaddr = gethostbyname($host);
-        die "aargh..." if not defined $iaddr;
-        $iaddr = inet_ntoa($iaddr);
-        my $ksfile   = "$url/unattended/provision?spoof=$iaddr";
-        my $request  = HTTP::Request->new( "GET", $ksfile );
-        my $response = $browser->request($request);
-        if ( not $response->is_success ) {
-            print STDERR
-              "[ERROR] Failed to retrieve a Kickstart file \"$ksfile\":\n";
-            print STDERR "[ERROR]   " . $response->content . "\n";
-            exit;
-        }
-        my $template = $response->content;
+	# if (uc($data{HWMODEL}) eq "HYPER-V VIRTUAL MACHINE" and $todo{$host}{operatingsystem} =~ /^(SLC|RedHat) 5\./){
+	#     $data{FIRST_DRIVE} = "hda";
+	# } else {
+	#     $data{FIRST_DRIVE} = "sda";
+	# }
 
-        use Text::Template;
-        my $tpl = new Text::Template(
-            TYPE    => "STRING",
-            UNTAINT => 1,
-            SOURCE  => $template
-        ) or die "Couldn't construct template: $Text::Template::ERROR";
+	# Get the KS file from Foreman
+	my $iaddr = gethostbyname($host);
+	die "aargh..." if not defined $iaddr;
+	$iaddr = inet_ntoa($iaddr);
+	my $ksfile = "$url/unattended/provision?spoof=$iaddr";
+	my $request = HTTP::Request->new("GET",$ksfile);
+	my $response = $browser->request($request);
+	if (not $response->is_success){
+	    print STDERR "[ERROR] Failed to retrieve a Kickstart file \"$ksfile\":\n";
+	    print STDERR "[ERROR]   ".$response->content."\n";
+	    #print STDERR Dumper($response)."AARGH! $url/unattended/provision?spoof=$iaddr\n";
+	    exit;
+	}
+	my $template = $response->content;
 
-        my $result = $tpl->fill_in( HASH => \%data );
-        if ( not defined $result ) {
-            print STDERR "Couldn't fill in template: $Text::Template::ERROR\n";
-            next;
-        }
+	use Text::Template;
+	my $tpl = new Text::Template(TYPE    => "STRING",
+				     UNTAINT => 1,
+				     SOURCE  => $template) or die "Couldn't construct template: $Text::Template::ERROR";
 
-        $todo{$host}{ksfile} = POSIX::tmpnam();
-        if ( not open( F, "> $todo{$host}{ksfile}" ) ) {
-            print STDERR
-"[ERROR] Could not open \"$todo{$host}{ksfile}\" for writing: $!\n";
-            next;
-        }
-        print F $result;
-        print $result if $debug;
-        close F;
-
+	my $result = $tpl->fill_in(HASH => \%data);
+	if (not defined $result) {
+	    print STDERR "Couldn't fill in template: $Text::Template::ERROR\n";
+	    next;
+	}
+    
+	$todo{$host}{ksfile} = POSIX::tmpnam();
+	if (not open(F,"> $todo{$host}{ksfile}")){
+	    print STDERR "[ERROR] Could not open \"$todo{$host}{ksfile}\" for writing: $!\n";
+	    next;
+	}
+	print F $result;
+	print $result if $debug;
+	close F;
+    
     }
-<<<<<<< HEAD
     #print Dumper(\%todo);exit;
     #
     for my $host (sort keys %todo){
@@ -480,96 +462,68 @@ sub InstallHost(@) {
 	    print STDERR "[ERROR] certmgr-stage didn't return zero exit code for host $host...\n";
 	    exit 1;
 	}
-=======
-    for my $host ( sort keys %todo ) {
-        print stdout "calling certmgr-stage to stage host $host...\n";
-        if ( certmgrstagehostname($host) ) {
-            print stderr
-"[error] certmgr-stage didn't return zero exit code for host $host...\n";
-            exit 1;
-        }
->>>>>>> db4c8362d9fe1b3708a88b184d02b6ba9118d760
     }
 
     #
-    # Upload to aims
+    # Upload to AIMS
     #
-    @host = setupaims( \%todo );
-    if ( not @host ) {
-        print stderr "[error] upload to aims failed, exiting...\n";
-        exit 1;
+    @host = SetupAims(\%todo);
+    if (not @host){
+	print STDERR "[ERROR] Upload to AIMS failed, exiting...\n";
+	exit 1;
     }
 
-    SetBuild($host)
-     
-    my $mess2 =
-      join( "\n", map { "      ssh root\@$_ shutdown -r now" } @host );
-    my $mess3 =
-      "      ssh lxadm remote-power-control reset " . join( ",", @host ) . "\n";
-    my $mess4 =
-      join( "\n", map { "      ssh lxadm connect2console.sh $_" } @host );
+    #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
+    my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
+    my $mess3 = "      ssh lxadm remote-power-control reset ". join(",",@host)."\n";
+    #my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
+    my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
+    #my $mess5 = undef;
+    #map {$mess5 .= "      aims2 pxeoff $_-gigeth\n" if gethostbyname($_ . "-gigeth")} @host;
 
-    print <<eomess;
+    print <<EOMESS;
 
--- reboot the host to start the installation:
+-- Reboot the host to start the installation:
 
 $mess2
 
    or
 
- $mess3
+$mess3
 
--- to see installation in progress:
+-- To see installation in progress:
 
 $mess4
 
-eomess
+EOMESS
+
+#     if ($mess5){
+# 	print <<EOMESS;
+
+# -- IMPORTANT NOTE FOR "*-GIGETH" MACHINES: once the installation is underway, run 
+
+# $mess5
+#     to break out on an install loop
+# EOMESS
+#     }
 
     return 0;
 }
-                                                            
-################################################################################################
-#
-# SetBuild(): sets host for build
-#
-
-sub SetBuild(@){
-  my @host = @_;
-  $request = HTTP::Request->new( "GET", "$url/hosts/@host.cern.ch" );
-
-  print "[DEBUG] JSON: " . to_json( { host => { "build" => 1 } } ) . "\n" if $debug;
-  $request->content( to_json( { host => { "build" => 1 } } ) );
-
-  $response = $browser->request($request);
-
-  if ( $response->is_success ) {
-    print STDOUT "[INFO] Successfully built $host\n";
-  }
-  else {
-    print STDERR "[ERROR] Cannot build \"$host\": "
-    . $response->status_line . " :: "
-    . $response->content . "\n";
-  }
-
-}
-                                                       
-
 
 ################################################################################################
 #
 # UpdateHost(): update host information
 #
-sub UpdateHost($@) {
-    my ( $href, @host ) = @_;
+sub UpdateHost($@){
+    my ($href,@host) = @_;
     my %opt = %$href;
-    print Dumper( \%opt ) if $debug;
+    print Dumper(\%opt) if $debug;
 
     my $action = $opt{action};
     delete $opt{action};
-    if ( not grep { $_ eq $action } qw(addhost updatehost) ) {
-        print STDERR
-          "[ERROR] UpdateHost: unsupported action \"$action\" specified\n";
-        return undef;
+    if (not grep {$_ eq $action} qw(addhost updatehost)){
+	print STDERR "[ERROR] UpdateHost: unsupported action \"$action\" specified\n";
+	return undef;
     }
 
     #print "@host\n";
@@ -578,64 +532,55 @@ sub UpdateHost($@) {
     # get network data
     #
     my %landb = my %subnet = ();
-    if ( $opt{network} ) {
-        %landb = LandbHostInfo(@host);
-        print Dumper( \%landb ) if $debug;
-        for (
-            @{ from_json( $browser->get("$url/subnets?format=json")->content ) }
-          )
-        {
-            my %tmp = %{ $$_{subnet} };
-            %{ $subnet{ $tmp{id} } } =
-              ( network => $tmp{network}, mask => $tmp{mask} );
-        }
-
-        #print Dumper(\%subnet);#exit;
+    if ($opt{network}){
+	%landb = LandbHostInfo(@host);
+	print Dumper(\%landb) if $debug;
+	for (@{from_json($browser->get("$url/subnets?format=json")->content)}){
+	    my %tmp = %{$$_{subnet}};
+	    %{$subnet{$tmp{id}}} = (network => $tmp{network}, mask => $tmp{mask});
+	}
+	#print Dumper(\%subnet);#exit;
     }
 
     #
     # installation media
     #
-    if ( defined $opt{operatingsystem} and not defined $opt{medium} ) {
-        switch ( $opt{operatingsystem} ) {
-            case /^SLC/      { $opt{medium} = "SLC" }
-            case /^RedHat 6/ { $opt{medium} = "RedHat 6" }
-            case /^Fedora/   { $opt{medium} = "Fedora Mirror" }
-        }
-        if ( not defined $opt{medium} ) {
-            print STDERR
-"[ERROR] UpdateHost: no medium defined for operating system \"$opt{operatingsystem}\"\n";
-            return undef;
-        }
+    if (defined $opt{operatingsystem} and not defined $opt{medium}){
+	switch ($opt{operatingsystem}) {
+	    case /^SLC/      { $opt{medium} = "SLC"           }
+	    case /^RedHat 6/ { $opt{medium} = "RedHat 6"      }
+	    case /^Fedora/   { $opt{medium} = "Fedora Mirror" }
+	}
+	if (not defined $opt{medium}){
+	    print STDERR "[ERROR] UpdateHost: no medium defined for operating system \"$opt{operatingsystem}\"\n";
+	    return undef;
+	}
     }
-    print Dumper( \%opt ) if $debug;
-
+    print Dumper(\%opt) if $debug;
+  
     #
     # build the data structure to be sent to Foreman
     #
     my %data = my @err = ();
 
-    for my $attr ( keys %opt ) {
-        for ( keys %{ $fmdata{$attr} } ) {
-            if ( lc( ${ $fmdata{$attr} }{$_} ) eq lc( $opt{$attr} ) ) {
-                $data{"${attr}_id"} = $_;
-                last;
-            }
-        }
-        push( @err,
-"Could not find Foreman identifier for attribute \"$attr\" with requested value \"$opt{$attr}\""
-        ) if not exists $data{"${attr}_id"} and %{ $fmdata{$attr} };
+    for my $attr (keys %opt){
+	for (keys %{$fmdata{$attr}}){
+	    if (lc(${$fmdata{$attr}}{$_}) eq lc($opt{$attr})){
+		$data{"${attr}_id"} = $_;
+		last;
+	    }
+	}
+	push(@err,"Could not find Foreman identifier for attribute \"$attr\" with requested value \"$opt{$attr}\"") if not exists $data{"${attr}_id"} and %{$fmdata{$attr}};
     }
-    if (@err) {
-        map { print STDERR "[ERROR] $_\n" } sort @err;
-        return undef;
+    if (@err){
+	map {print STDERR "[ERROR] $_\n"} sort @err;
+	return undef;
     }
-
+    
     # comment (if any)
     $data{comment} = exists $opt{comment} ? $opt{comment} : undef;
 
     # set the ownership information
-<<<<<<< HEAD
     if (exists $opt{owner}){
 	if (grep {$opt{owner} eq $_} values %{$fmdata{user}}){
 	    $data{owner_type} = "user";
@@ -651,138 +596,86 @@ sub UpdateHost($@) {
 		last;
 	    }
 	}
-=======
-    if ( exists $opt{owner} ) {
-        if ( grep { $opt{owner} eq $_ } values %{ $fmdata{user} } ) {
-            $data{owner_type} = "User";
-        }
-        elsif ( grep { $opt{owner} eq $_ } values %{ $fmdata{usergroup} } ) {
-            $data{owner_type} = "Usergroup";
-        }
-        else {
-            print STDERR
-              "[ERROR][BUG] Unsupported ownertype detected, exiting\n";
-            exit 1;
-        }
-        for my $id ( keys %{ $fmdata{ lc( $data{owner_type} ) } } ) {
-            if ( ${ fmdata { lc( $data{owner_type} ) } }{$id} eq $opts{owner} )
-            {
-                $data{owner_id} = $id;
-                last;
-            }
-        }
->>>>>>> db4c8362d9fe1b3708a88b184d02b6ba9118d760
     }
 
     #
     #
     #
-    print Dumper( \%fmdata ) if $debug;    #exit;
+    print Dumper(\%fmdata) if $debug;#exit;
     my @done = ();
-    for my $host ( sort @host ) {
-        my $request = HTTP::Request->new( "GET", "$url/hosts/$host.cern.ch" );
-        my $response = $browser->request($request);
-        if ( $action eq "addhost" and $response->is_success ) {
-            print STDERR "[WARN] Ignoring existing host \"$host\".\n";
-            next;
-        }
-        elsif ( $action eq "updatehost" and not $response->is_success ) {
-            print STDERR "[WARN] Ignoring non-existent host \"$host\".\n";
-            next;
-        }
-        print STDOUT "[VERB] "
-          . ( $action eq "addhost" ? "Adding" : "Updating" )
-          . " \"$host\"\n"
-          if $verbose;
+    for my $host (sort @host){
+	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
+	my $response = $browser->request($request);
+	if ($action eq "addhost" and $response->is_success){
+	    print STDERR "[WARN] Ignoring existing host \"$host\".\n";
+	    next;
+	}elsif ($action eq "updatehost" and not $response->is_success){
+	    print STDERR "[WARN] Ignoring non-existent host \"$host\".\n";
+	    next;
+	}
+	print STDOUT "[VERB] " . ($action eq "addhost" ? "Adding" : "Updating") . " \"$host\"\n" if $verbose;
 
-        #
-        # Network info
-        #
-        if ( $opt{network} ) {
-            my %network = ();
-            map { delete @data{ ( $_, "sp_$_" ) } }
-              qw(name mac ip subnet_id);    # clean up %data a bit
-            for my $interface ( keys %{ $landb{$host}{Interfaces} } ) {
-                next
-                  unless ( $interface eq $host
-                    or $interface eq "${host}-ipmi" );
-                my $ipaddr = $landb{$host}{Interfaces}{$interface}{IPAddress};
-                my $subnet_id = undef;
-                my $ip        = NetAddr::IP->new($ipaddr);
-                for my $id ( keys %subnet ) {
-                    if (
-                        $ip->within(
-                            NetAddr::IP->new(
-                                $subnet{$id}{network},
-                                $subnet{$id}{mask}
-                            )
-                        )
-                      )
-                    {
-                        $subnet_id = $id;
-                        last;
-                    }
-                }
-                if ( not defined $subnet_id ) {
-                    print STDERR
-"[ERROR] Could not get subnet_id for host $interface, exiting!\n";
-                    exit 1;
-                }
+	#
+	# Network info
+	#
+	if ($opt{network}){
+	    my %network = ();
+	    map {delete @data{($_,"sp_$_")}} qw(name mac ip subnet_id); # clean up %data a bit
+	    for my $interface (keys %{$landb{$host}{Interfaces}}){
+		next unless ($interface eq $host or $interface eq "${host}-ipmi");
+		my $ipaddr = $landb{$host}{Interfaces}{$interface}{IPAddress};
+		my $subnet_id = undef;
+		my $ip = NetAddr::IP->new($ipaddr);
+		for my $id (keys %subnet){
+		    if ($ip->within(NetAddr::IP->new($subnet{$id}{network},$subnet{$id}{mask}))){
+			$subnet_id = $id;
+			last;
+		    }
+		}
+		if (not defined $subnet_id){
+		    print STDERR "[ERROR] Could not get subnet_id for host $interface, exiting!\n";
+		    exit 1;
+		}
 
-                my $prefix =
-                  $interface eq $host
-                  ? ""
-                  : "sp_";    # Ordinary interface, or IPMI?
-                $network{ $prefix . "name" } = $interface;
-                $network{ $prefix . "mac" } =
-                  $landb{$host}{Interfaces}{$interface}{HardwareAddress};
-                $network{ $prefix . "ip" }        = $ipaddr;
-                $network{ $prefix . "subnet_id" } = $subnet_id;
-            }
-            %data = ( %data, %network );
-        }
+		my $prefix = $interface eq $host ? "" : "sp_"; # Ordinary interface, or IPMI?
+		$network{$prefix . "name"}      = $interface;
+		$network{$prefix . "mac"}       = $landb{$host}{Interfaces}{$interface}{HardwareAddress};
+		$network{$prefix . "ip"}        = $ipaddr;
+		$network{$prefix . "subnet_id"} = $subnet_id;
+	    }
+	    %data = (%data, %network);
+	}
 
-        #
-        # Sanity checks
-        #
-        map { delete $data{$_} if not defined $data{$_} } keys %data;
-        if ( not %data and $action eq "updatehost" ) {
-            print STDERR "[ERROR] Nothing to update?!\n";
-            last;
-        }
-        print Dumper( \%data ) if $debug;    #exit;
+	#
+	# Sanity checks
+	#
+        map {delete $data{$_} if not defined $data{$_}} keys %data;
+	if (not %data and $action eq "updatehost"){
+	    print STDERR "[ERROR] Nothing to update?!\n";
+	    last;
+	}
+	print Dumper(\%data) if $debug;#exit;
 
-        if ( $opt{network} and not exists $data{name} ) {
-            print STDERR
-"[ERROR] Incomplete network information for host \"$host\", skipping it...\n";
-            next;
-        }
+	if ($opt{network} and not exists $data{name}){
+	    print STDERR "[ERROR] Incomplete network information for host \"$host\", skipping it...\n";
+	    next;
+	}
 
-        #
-        # Action!
-        #
-        $request =
-          HTTP::Request->new( $action eq "updatehost"
-            ? ( "PUT", "$url/hosts/$host.cern.ch" )
-            : ( "POST", "$url/hosts" ) );
-        print "[DEBUG] JSON: " . to_json( { host => \%data } ) . "\n" if $debug;
-        $request->content( to_json( { host => \%data } ) );
-
-        $response = $browser->request($request);
-
-        if ( $response->is_success ) {
-            print STDOUT "[INFO] Successfully "
-              . ( $action eq "addhost" ? "added" : "updated" )
-              . " $host\n";
-            push( @done, $host );
-        }
-        else {
-            print STDERR "[ERROR] Cannot "
-              . ( $action eq "addhost" ? "add" : "update" )
-              . " \"$host\": "
-              . $response->status_line . " :: "
-              . $response->content . "\n";
-        }
+	#
+	# Action!
+	#
+     	$request = HTTP::Request->new($action eq "updatehost" ? ("PUT","$url/hosts/$host.cern.ch") : ("POST","$url/hosts") );
+	print "[DEBUG] JSON: ".to_json({host => \%data})."\n" if $debug;
+     	$request->content(to_json({host => \%data}));
+	
+     	$response = $browser->request($request);
+	
+     	if ($response->is_success){
+	    print STDOUT "[INFO] Successfully " . ( $action eq "addhost" ? "added" : "updated" ) . " $host\n";
+	    push(@done,$host);
+	}else{
+     	    print STDERR "[ERROR] Cannot " . ( $action eq "addhost" ? "add" : "update" ) . " \"$host\": " . $response->status_line . " :: " . $response->content ."\n";
+     	}
     }
 
     return @done;
@@ -792,47 +685,38 @@ sub UpdateHost($@) {
 #
 # ForemanConfig(): retrieve Foreman configuration information
 #
-sub ForemanConfig($$) {
-    my ( $browser, $url ) = @_;
+sub ForemanConfig($$){
+    my ($browser,$url) = @_;
     my %config = ();
 
     # record ptable per OS
     my %ptable = my %medium = ();
     my $response = $browser->get("$url/operatingsystems?format=json");
-    if ( not CheckAPIResponseStatus($response) ) {
+    if (not CheckAPIResponseStatus($response)) {
         return %config;
     }
-
     # TODO: responses should be checked in all subsequent requests
-    for ( @{ from_json( $response->content ) } ) {
-        my %data = %{ $$_{operatingsystem} };
-
-        #print Dumper(\%data);#exit;
-        for ( @{ $data{ptables} } ) {
-            my %pt   = %{ $$_{ptable} };
-            my $name = $pt{name};
-            $ptable{$name}++;
-        }
-        for ( @{ $data{media} } ) {
-            my %med  = %{ $$_{medium} };
-            my $name = $med{name};
-            $medium{$name}++;
-        }
+    for (@{from_json($response->content)}){
+	my %data = %{$$_{operatingsystem}};
+	#print Dumper(\%data);#exit;
+	for (@{$data{ptables}}){
+	    my %pt = %{$$_{ptable}};
+	    my $name = $pt{name};
+	    $ptable{$name}++;
+	}
+	for (@{$data{media}}){
+	    my %med = %{$$_{medium}};
+	    my $name = $med{name};
+	    $medium{$name}++;
+	}
     }
-
     #print Dumper(\%medium);exit;
 
     # partition tables
-    map { $config{ptable}{ $$_{ptable}{id} } = $$_{ptable}{name} }
-      @{ from_json( $browser->get("$url/ptables?format=json")->content ) };
-    map {
-        delete $config{ptable}{$_}
-          unless exists $ptable{ $config{ptable}{$_} }
-      } keys %{ $config{ptable}
-      };    # remove ptables that are supported for unsupported OS-es :)
+    map {$config{ptable}         {$$_{ptable}         {id}} = $$_{ptable}         {name} } @{from_json($browser->get("$url/ptables?format=json")->content)};
+    map {delete $config{ptable}{$_} unless exists $ptable{$config{ptable}{$_}}} keys %{$config{ptable}}; # remove ptables that are supported for unsupported OS-es :)
 
     # installation media
-<<<<<<< HEAD
     map {$config{medium}         {$$_{medium}         {id}} = $$_{medium}         {name} } @{from_json($browser->get("$url/media?format=json")->content)};
     map {delete $config{medium}{$_} unless exists $medium{$config{medium}{$_}}} keys %{$config{medium}}; # remove media that are supported for unsupported OS-es :)
 
@@ -847,53 +731,8 @@ sub ForemanConfig($$) {
     #map {$config{subnet}         {$$_{subnet}         {id}} = $$_{subnet}         {name} } @{from_json($browser->get("$url/subnets?format=json")->content)};
     #%{$config{sp_subnet}} = %{$config{subnet}};
 
-    #print Dumper(\@{from_json($browser->get("$url/users?format=json")->content)});
     #print Dumper(\@{from_json($browser->get("$url/usergroups?format=json")->content)});exit;
     #print Dumper(\%config);exit;
-=======
-    map { $config{medium}{ $$_{medium}{id} } = $$_{medium}{name} }
-      @{ from_json( $browser->get("$url/media?format=json")->content ) };
-    map {
-        delete $config{medium}{$_}
-          unless exists $medium{ $config{medium}{$_} }
-      } keys %{ $config{medium}
-      };    # remove media that are supported for unsupported OS-es :)
-
-    map {
-        $config{operatingsystem}{ $$_{operatingsystem}{id} } =
-          $$_{operatingsystem}{name}
-      } @{
-        from_json(
-            $browser->get("$url/operatingsystems?format=json")->content
-        )
-      };
-    map {
-        $config{architecture}{ $$_{architecture}{id} } =
-          $$_{architecture}{name}
-      } @{ from_json( $browser->get("$url/architectures?format=json")->content )
-      };
-    map { $config{model}{ $$_{model}{id} } = $$_{model}{name} }
-      @{ from_json( $browser->get("$url/models?format=json")->content ) };
-    map { $config{hostgroup}{ $$_{hostgroup}{id} } = $$_{hostgroup}{label} }
-      @{ from_json( $browser->get("$url/hostgroups?format=json")->content ) };
-    map {
-        $config{environment}{ $$_{environment}{id} } =
-          $$_{environment}{name}
-      } @{ from_json( $browser->get("$url/environments?format=json")->content )
-      };
-    map { $config{user}{ $$_{user}{id} } = $$_{user}{login} }
-      @{ from_json( $browser->get("$url/users?format=json")->content ) };
-
-#map {$config{usergroup}      {$$_{usergroup}      {id}} = $$_{usergroup}      {name} } @{from_json($browser->get("$url/usergroups?format=json")->content)};
-    map { $config{domain}{ $$_{domain}{id} } = $$_{domain}{name} }
-      @{ from_json( $browser->get("$url/domains?format=json")->content ) };
-
-#map {$config{subnet}         {$$_{subnet}         {id}} = $$_{subnet}         {name} } @{from_json($browser->get("$url/subnets?format=json")->content)};
-#%{$config{sp_subnet}} = %{$config{subnet}};
-
-#print Dumper(\@{from_json($browser->get("$url/usergroups?format=json")->content)});exit;
-#print Dumper(\%config);exit;
->>>>>>> db4c8362d9fe1b3708a88b184d02b6ba9118d760
     return %config;
 }
 
@@ -901,33 +740,30 @@ sub ForemanConfig($$) {
 #
 # LandbHostInfo(): retrieve {mac,ip} information for each interface from LANdb
 #
-sub LandbHostInfo(@) {
+sub LandbHostInfo(@){
     my @device = @_;
 
-    if ( not defined $user_credentials{password} ) {
-        ( $user_credentials{username}, $user_credentials{password} ) =
-          GetUserCredentials( $user_credentials{username} );
+    if( not defined $user_credentials{password} ) {
+      ($user_credentials{username},$user_credentials{password}) = 
+        GetUserCredentials($user_credentials{username});
     }
-    my $client =
-      SOAP::Lite->uri('http://network.cern.ch/NetworkService')
-      ->xmlschema('http://www.w3.org/2001/XMLSchema')
-      ->proxy( 'https://network.cern.ch/sc/soap/soap.fcgi?v=4',
-        keep_alive => 1 );
+    my $client = SOAP::Lite
+	->uri('http://network.cern.ch/NetworkService')
+	->xmlschema('http://www.w3.org/2001/XMLSchema')
+	->proxy('https://network.cern.ch/sc/soap/soap.fcgi?v=4', keep_alive=>1);
 
     # Get Auth token
-    my $call = $client->getAuthToken( $user_credentials{username},
-        $user_credentials{password}, 'NICE' );
-
+    my $call = $client->getAuthToken($user_credentials{username},$user_credentials{password},'NICE');
+    
     my ($auth) = $call->result;
-    if ( $call->fault ) {
+    if ($call->fault){
         print "ERROR: failed to authenticate to LANdb.\n";
         exit 1;
     }
 
-    my $authHeader = SOAP::Header->name( 'Auth' => { "token" => $auth } );
+    my $authHeader = SOAP::Header->name('Auth' => { "token" => $auth });
 
     my %landb = ();
-<<<<<<< HEAD
     for my $device (@device){
 	$call = $client->getDeviceInfo($authHeader,$device);
 	
@@ -972,53 +808,6 @@ sub LandbHostInfo(@) {
 		}
 	    }
 	}
-=======
-    for my $device (@device) {
-        $call = $client->getDeviceInfo( $authHeader, $device );
-
-        my $bu = $call->result;
-        if ( $call->fault ) {
-            print
-"[WARNING] Device \"$device\" not found in Landb, ignoring it...\n";
-            next;
-        }
-
-        #print Dumper($bu);exit;
-
-        $landb{$device}{Model} = $bu->{Model};
-        for ( @{ $bu->{Interfaces} } ) {
-
-            #print Dumper(\$_);
-            my $Name            = lc( $_->{Name} );
-            my $HardwareAddress = $_->{BoundInterfaceCard}->{HardwareAddress};
-            my $IPAddress       = $_->{IPAddress};
-            if ( defined $HardwareAddress ) {
-                $HardwareAddress =~ s/\-/:/g;
-                %{ $landb{$device}{Interfaces}{$Name} } = (
-                    HardwareAddress => $HardwareAddress,
-                    IPAddress       => $IPAddress
-                );
-            }
-        }
-        if ( not exists $landb{$device}{Interfaces} ) {
-            my $Name = lc( $bu->{DeviceName} );
-            for ( @{ $bu->{NetworkInterfaceCards} } ) {
-                my $HardwareAddress = $_->{HardwareAddress};
-                my $IPAddress       = $_->{IPAddress};
-                if ( defined $HardwareAddress ) {
-                    $HardwareAddress =~ s/\-/:/g;
-                    ${ $landb{$device}{Interfaces}{$Name} }{HardwareAddress} =
-                      $HardwareAddress;
-                }
-            }
-            for ( @{ $bu->{Interfaces} } ) {
-                if ( $Name eq lc( $_->{Name} ) ) {
-                    ${ $landb{$device}{Interfaces}{$Name} }{IPAddress} =
-                      $_->{IPAddress};
-                }
-            }
-        }
->>>>>>> db4c8362d9fe1b3708a88b184d02b6ba9118d760
     }
 
     #print Dumper(\%landb);
@@ -1031,10 +820,9 @@ sub LandbHostInfo(@) {
 #
 # SetupAims(): upload Kickstart file to AIMS, and configure it
 #
-sub SetupAims($) {
+sub SetupAims($){
     my $href = shift @_;
     my %todo = %$href;
-
     #print Dumper(\%todo);exit;
 
     # Run "aims2 showimg all" to get list of all available AIMS images
@@ -1044,7 +832,6 @@ sub SetupAims($) {
 	"SLC 6.2"    => "SLC62",
 	"SLC 6.1"    => "SLC61",
         #"SLC 6"      => "SLC6X",
-        "SLC 5.9"    => "SLC59",
         "SLC 5.8"    => "SLC58",
         "SLC 5.7"    => "SLC57",
 	#
@@ -1052,42 +839,38 @@ sub SetupAims($) {
         "RedHat 6.3" => "RHEL6_U3",
         "RedHat 6.2" => "RHEL6_U2",
         "RedHat 6.1" => "RHEL6_U1",
-        "RedHat 6"   => "RHEL6_U2",
-        "RedHat 5.9" => "RHES_5_U9",
+        #"RedHat 6"   => "RHEL6_U2",
         "RedHat 5.8" => "RHES_5_U8",
         "RedHat 5.7" => "RHES_5_U7",
-
-        #
-        "Fedora 18" => "FEDORA18",
-        "Fedora 17" => "FEDORA17",
-        "Fedora 16" => "FEDORA16",
-        "Fedora 15" => "FEDORA15",
-    );
-
+	#
+	"Fedora 18"  => "FEDORA18",
+	"Fedora 17"  => "FEDORA17",
+	"Fedora 16"  => "FEDORA16",
+	"Fedora 15"  => "FEDORA15",
+        );
+    
     #
     # Reshuffle input data
     #
     #print Dumper(\%todo);
-    for my $oldname ( keys %todo ) {
-        my $newname = $todo{$oldname}{hostname};
-        if ( $newname ne $oldname ) {
-            %{ $todo{$newname} } = %{ $todo{$oldname} };
-            $todo{$newname}{hostname} = $oldname;
-            delete $todo{$oldname};
-        }
+    for my $oldname (keys %todo){
+	my $newname = $todo{$oldname}{hostname};
+	if ($newname ne $oldname){
+	    %{$todo{$newname}} = %{$todo{$oldname}};
+	    $todo{$newname}{hostname} = $oldname;
+	    delete $todo{$oldname};
+	}
     }
-
     #print Dumper(\%todo);exit;
 
     #
     # Upload the kickstart files
     #
-<<<<<<< HEAD
     for my $host (sort keys %todo){
 	my $cnt = 0;
 	my $kopts = "text network ks ksdevice=bootif latefcload";
 	my $model = lc($todo{$host}{model});
-	$kopts .= " pcie_aspm=off" if $model eq "X8DT6";
+	#$kopts .= " pcie_aspm=off" if $model eq "X8DT6";
 	$kopts .= " nodmraid"; # AI 738, SNOW INC147316
 	#$kopts .= " hwprobe=-modules.pata"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
 	#$kopts .= " hda=noprobe"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
@@ -1115,167 +898,90 @@ sub SetupAims($) {
 	if (system("$todo{$host}{aimscmd} 2>/dev/null 1>/dev/null") != 0){
 	    print STDERR "[ERROR] Upload to AIMS failed: $!\n";
 	}
-=======
-    for my $host ( sort keys %todo ) {
-        my $cnt   = 0;
-        my $kopts = "text network ks ksdevice=bootif latefcload";
-        my $model = lc( $todo{$host}{model} );
-        $kopts .= " pcie_aspm=off" if $model eq "e4_09_21";
-        $kopts .= " nodmraid";    # AI 738, SNOW INC147316
-          #$kopts .= " hwprobe=-modules.pata"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
-          #$kopts .= " hda=noprobe"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
-          # Console options
-        use Switch;
-        switch ($model) {
-            case "hyper-v virtual machine" { $kopts .= "" }
-            case "e4_09_21" { $kopts .= " console=tty0 console=ttyS2,9600n8" }
-            else            { $kopts .= " console=tty0" }
-        }
-        if ( not exists $AimsImg{ $todo{$host}{operatingsystem} } ) {
-            print STDERR
-"[ERROR] No suitable AIMS target for Operating System \"$todo{$host}{operatingsystem}\" available. Probably a bug in the script you are running :)\n";
-            exit 1;
-        }
-        $todo{$host}{aimstarget} =
-          $AimsImg{ $todo{$host}{operatingsystem} } . "_"
-          . uc( $todo{$host}{architecture} );
-        if (    $todo{$host}{aimstarget} eq "SLC62_X86_64"
-            and $model eq "hyper-v virtual machine" )
-        {
-            $todo{$host}{aimstarget} = "SLC62_X86_64_MSHVIC";
-        }
-        $todo{$host}{aimscmd} =
-"/usr/bin/aims2client addhost --hostname $host --kickstart $todo{$host}{ksfile} --kopts \"$kopts\" --pxe --name $todo{$host}{aimstarget}";
-
-        if ($dryrun) {
-            print STDOUT
-"[DRYRUN] Deliberately *not* uploading Kickstart file for $host to AIMS\n";
-            next;
-        }
-
-        print STDOUT "[INFO] Uploading Kickstart file for $host to AIMS\n";
-        print STDOUT "[VERB] Running \"$todo{$host}{aimscmd}\"\n" if $verbose;
-        if ( system("$todo{$host}{aimscmd} 2>/dev/null 1>/dev/null") != 0 ) {
-            print STDERR "[ERROR] Upload to AIMS failed: $!\n";
-        }
->>>>>>> db4c8362d9fe1b3708a88b184d02b6ba9118d760
     }
 
-    if ($dryrun) {
-        map { unlink $todo{$_}{ksfile} } keys %todo unless $debug;
-        return ( sort keys %todo );
+    if ($dryrun){
+	map {unlink $todo{$_}{ksfile}} keys %todo unless $debug;
+	return (sort keys %todo);
     }
 
     #
     # Verify AIMS status
     #
-    my $cnt  = 0;
+    my $cnt = 0;
     my @done = ();
-    while (1) {
+    while (1){
+	#print "\$cnt = $cnt\n";
+	#print Dumper(\%todo);
+	print "[INFO] Verifying that AIMS is properly set up, patience please...\n";
+	sleep 5;
 
-        #print "\$cnt = $cnt\n";
-        #print Dumper(\%todo);
-        print
-          "[INFO] Verifying that AIMS is properly set up, patience please...\n";
-        sleep 5;
+	#
+	# get status information
+	#
+	my $aims = "/usr/bin/aims2client showhost --full " . join(",",sort keys %todo);
+	print "[VERB] Running \"$aims\"\n" if $verbose;
+	open(AIMS,"$aims |") or die "aargh...";
+	my $hostname = undef;
+	my %status = ();
+	while(<AIMS>){
+	    chomp;
+	    if (/^\s*Hostname:\s+(\S+)/){
+		$hostname = lc($1);
+	    }elsif (/^\s*PXE status:\s+(\S+)/){
+		$status{$hostname}{pxestatus} = $1 if defined $hostname;
+	    }elsif (/^\s*PXE boot synced:\s+(\S+)/){
+		$status{$hostname}{syncstatus} = $1 if defined $hostname;
+	    }
+	}
+	close AIMS;
+	if ($debug){
+	    map {printf "[DEBUG] %20s - PXE status = %3s - SYNC status = %3s\n",$_,($status{$_}{pxestatus} || "???"),($status{$_}{syncstatus} || "???")} sort keys %todo;
+	}
 
-        #
-        # get status information
-        #
-        my $aims = "/usr/bin/aims2client showhost --full "
-          . join( ",", sort keys %todo );
-        print "[VERB] Running \"$aims\"\n" if $verbose;
-        open( AIMS, "$aims |" ) or die "aargh...";
-        my $hostname = undef;
-        my %status   = ();
-        while (<AIMS>) {
-            chomp;
-            if (/^\s*Hostname:\s+(\S+)/) {
-                $hostname = lc($1);
-            }
-            elsif (/^\s*PXE status:\s+(\S+)/) {
-                $status{$hostname}{pxestatus} = $1 if defined $hostname;
-            }
-            elsif (/^\s*PXE boot synced:\s+(\S+)/) {
-                $status{$hostname}{syncstatus} = $1 if defined $hostname;
-            }
-        }
-        close AIMS;
-        if ($debug) {
-            map {
-                printf "[DEBUG] %20s - PXE status = %3s - SYNC status = %3s\n",
-                  $_, ( $status{$_}{pxestatus} || "???" ),
-                  ( $status{$_}{syncstatus} || "???" )
-            } sort keys %todo;
-        }
-
-        #
-        # check if all is well
-        #
-        for my $hostname ( sort keys %todo ) {
-            if ( not exists $status{$hostname} ) {
-                print STDOUT
-"[WARN] AIMS did nothing for host \"$hostname\". Re-uploading with \"$todo{$hostname}{aimscmd}\"\n";
-                system("$todo{$hostname}{aimscmd}");
-            }
-            elsif ( $status{$hostname}{pxestatus} eq "OFF" ) {
-                print STDOUT
-"[WARN] PXE status \"OFF\" for host \"$hostname\". Executing \"/usr/bin/aims2client pxeon $hostname $todo{$hostname}{aimstarget}\"\n";
-                system(
-"/usr/bin/aims2client pxeon $hostname $todo{$hostname}{aimstarget} 2>/dev/null 1>/dev/null"
-                );
-                $cnt = 0;
-            }
-            elsif ( not grep { $_ eq $status{$hostname}{syncstatus} }
-                qw(YYY YYN YNY NYY) )
-            {
-                print STDOUT
-"[VERB] Sync status \"$status{$hostname}{syncstatus}\" for host \"$hostname\" -> Be patient...\n"
-                  if $verbose;
-            }
-            else {
-                print STDOUT
-                  "[INFO] Host \"$hostname\" is properly configured in AIMS\n";
-                unlink $todo{$hostname}{ksfile} unless $debug;
-                push( @done, $todo{$hostname}{hostname} );
-                delete $todo{$hostname};
-            }
-        }
-
-        #
-        # anything left to do?
-        #
-        last if not %todo;
-        if ( ++$cnt == 12 ) {
-            my @host = sort keys %todo;
-            my $dum =
-              scalar(@host) == 1
-              ? "Machine \"@host\""
-              : "Machines \"" . join( "\", \"", @host ) . "\"";
-            print STDERR
-"[ERROR] $dum still not properly configured in AIMS, giving up...\n";
-            last;
-        }
-        print "[DEBUG] Loop again \$cnt = $cnt\n" if $debug;
+	#
+	# check if all is well
+	#
+	for my $hostname (sort keys %todo){
+	    if (not exists $status{$hostname}){
+		print STDOUT "[WARN] AIMS did nothing for host \"$hostname\". Re-uploading with \"$todo{$hostname}{aimscmd}\"\n";
+		system("$todo{$hostname}{aimscmd}");
+	    }elsif ($status{$hostname}{pxestatus} eq "OFF"){
+		print STDOUT "[WARN] PXE status \"OFF\" for host \"$hostname\". Executing \"/usr/bin/aims2client pxeon $hostname $todo{$hostname}{aimstarget}\"\n";
+		system("/usr/bin/aims2client pxeon $hostname $todo{$hostname}{aimstarget} 2>/dev/null 1>/dev/null");
+		$cnt = 0;
+	    }elsif (not grep {$_ eq $status{$hostname}{syncstatus}} qw(YYY YYN YNY NYY)){
+		print STDOUT "[VERB] Sync status \"$status{$hostname}{syncstatus}\" for host \"$hostname\" -> Be patient...\n" if $verbose;
+	    }else{
+		print STDOUT "[INFO] Host \"$hostname\" is properly configured in AIMS\n";
+		unlink $todo{$hostname}{ksfile} unless $debug;
+		push(@done,$todo{$hostname}{hostname});
+		delete $todo{$hostname};
+	    }
+	}
+	#
+	# anything left to do?
+	#
+	last if not %todo; 
+	if (++$cnt == 12){
+	    my @host = sort keys %todo;
+	    my $dum = scalar(@host) == 1 ? "Machine \"@host\"" : "Machines \"".join("\", \"",@host)."\"";
+	    print STDERR "[ERROR] $dum still not properly configured in AIMS, giving up...\n";
+	    last;
+	}
+	print "[DEBUG] Loop again \$cnt = $cnt\n" if $debug;
     }
 
-    if (@done) {
-        @done = sort @done;
-        print STDOUT
-          "\n[INFO] AIMS status for successfully configured hosts:\n[INFO]\n";
-        open( AIMS,
-            "/usr/bin/aims2client showhost "
-              . join( ",",
-                map { gethostbyname( $_ . "-gigeth" ) ? $_ . "-gigeth" : $_ }
-                  @done )
-              . " |"
-        );
-        while (<AIMS>) {
-            print STDOUT "[INFO]   $_";
-        }
-        close AIMS;
+    if (@done){
+	@done = sort @done;
+	print STDOUT "\n[INFO] AIMS status for successfully configured hosts:\n[INFO]\n";
+	open(AIMS, "/usr/bin/aims2client showhost ".join(",",map { gethostbyname($_ . "-gigeth") ? $_ . "-gigeth" : $_ } @done)." |");
+	while (<AIMS>){
+	    print STDOUT "[INFO]   $_";
+	}
+	close AIMS;
     }
-
+    
     return @done;
 }
 
@@ -1283,183 +989,145 @@ sub SetupAims($) {
 #
 # CreateVM(): Request new hosts from CVI
 #
-sub CreateVM($@) {
-    my ( $href, @host ) = @_;
+sub CreateVM($@){
+    my ($href,@host) = @_;
     my %opts = %$href;
-    print Dumper( \%opts ) if $debug;
+    print Dumper(\%opts) if $debug;
 
     my $proxy = "https://vmm.cern.ch/vmmgtsvc/service.asmx";
 
-    if ( not defined $user_credentials{password} ) {
-        ( $user_credentials{username}, $user_credentials{password} ) =
-          GetUserCredentials( $user_credentials{username} );
+    if( not defined $user_credentials{password} ) {
+      ($user_credentials{username},$user_credentials{password}) =
+        GetUserCredentials($user_credentials{username});
     }
-
-    sub SOAP::Transport::HTTP::Client::get_basic_credentials {
-        return "cern\\$user_credentials{username}" =>
-          $user_credentials{password};
+   sub SOAP::Transport::HTTP::Client::get_basic_credentials{
+	return "cern\\$user_credentials{username}" => $user_credentials{password};
     }
-    my $soapRequest =
-      SOAP::Lite->uri('https://vmm.cern.ch/vmmgtsvc/')->on_fault(
-        sub {
-            my ( $soap, $res ) = @_;
-            print STDERR "[ERROR] Fatal SOAP error: "
-              . ( ref $res ? $res->faultstring : $soap->transport->status )
-              . "\n";
-            exit 1;
-        }
-      )->default_ns('VmMgtSvc')->xmlschema('http://www.w3.org/2001/XMLSchema')
-      ->on_action( sub { sprintf '"VmMgtSvc/%s"', $_[1] } )
-      ->proxy( $proxy, timeout => 3600 );
+    my $soapRequest = SOAP::Lite
+	-> uri('https://vmm.cern.ch/vmmgtsvc/')
+	-> on_fault(sub{my ($soap,$res) = @_;
+			print STDERR "[ERROR] Fatal SOAP error: ".(ref $res ? $res->faultstring : $soap->transport->status)."\n";
+			exit 1;
+		    })
+	-> default_ns('VmMgtSvc')
+	-> xmlschema('http://www.w3.org/2001/XMLSchema')
+	-> on_action( sub { sprintf '"VmMgtSvc/%s"', $_[1] } )
+	-> proxy($proxy, timeout => 3600)
+	;
 
     #
     # Verify template
     #
-    if ( defined $opts{template} ) {
-        my $call = $soapRequest->TemplateGetAll();    #exit;
-        if ( $call->fault ) {
-            print STDERR
-              "[ERROR] Failure to retrieve \"TemplateGetAll\" information: "
-              . $call->faultstring . "\n";
-            exit -1;
-        }
-        else {
-            my $result = $call->result;
-            my @template = map { $$_{Name} } @{ $$result{Template} };
-            if ( not grep { $_ eq $opts{template} } @template ) {
-                print
-"Unknown template \"$opts{template}\" specified. Available Templates:\n";
-                map { print "   *  $_\n" } sort @template;
-                exit 1;
-            }
-        }
-    }
-    else {
-        $opts{template} = "linuxPXE";
+    if (defined $opts{template}){
+	my $call = $soapRequest->TemplateGetAll();#exit;
+	if ($call->fault) {
+	    print STDERR "[ERROR] Failure to retrieve \"TemplateGetAll\" information: " . $call->faultstring . "\n";
+	    exit -1;
+	}else{
+	    my $result = $call->result;
+	    my @template = map {$$_{Name}} @{$$result{Template}};
+	    if (not grep {$_ eq $opts{template}} @template){
+		print "Unknown template \"$opts{template}\" specified. Available Templates:\n";
+		map {print "   *  $_\n"} sort @template;
+		exit 1;
+	    }
+	}
+    }else{
+	$opts{template} = "linuxPXE";
     }
 
     #
     # Verify hostgroup
     #
-    if ( defined $opts{hostgroup} ) {
-        my $call = $soapRequest->HostGroupGetAllForUser();    #exit;
-        if ( $call->fault ) {
-            print STDERR
-"[ERROR] Failure to retrieve \"HostGroupGetAllForUser\" information: "
-              . $call->faultstring . "\n";
-            exit -1;
-        }
-        else {
-            my $result    = $call->result;
-            my @hostgroup = (
-                ref( $result->{"anyType"} ) eq "ARRAY"
-                ? @{ $result->{"anyType"} }
-                : $result->{"anyType"} );
-            if (    not grep { $_ eq $opts{hostgroup} } @hostgroup
-                and not gethostbyname( $opts{hostgroup} ) )
-            {
-                print
-"Unknown Host or Host Group \"$opts{hostgroup}\" specified. Available Host Groups:\n";
-                map { print "   *  $_\n" } sort @hostgroup;
-                exit 1;
-            }
-        }
-    }
-    else {
-        $opts{hostgroup} = "-- Central Service --";
+    if (defined $opts{hostgroup}){
+	my $call = $soapRequest->HostGroupGetAllForUser();#exit;
+	if ($call->fault) {
+	    print STDERR "[ERROR] Failure to retrieve \"HostGroupGetAllForUser\" information: " . $call->faultstring . "\n";
+	    exit -1;
+	}else{
+	    my $result = $call->result;
+	    my @hostgroup = ( ref($result->{"anyType"}) eq "ARRAY" ? @{$result->{"anyType"}} : $result->{"anyType"} );
+	    if (not grep {$_ eq $opts{hostgroup}} @hostgroup and not gethostbyname($opts{hostgroup})){
+		print "Unknown Host or Host Group \"$opts{hostgroup}\" specified. Available Host Groups:\n";
+		map {print "   *  $_\n"} sort @hostgroup;
+		exit 1;
+	    }
+	}
+    }else{
+	$opts{hostgroup} = "-- Central Service --";
     }
 
     #
     # Administrivia
     #
     $opts{vmservice} ||= "";
-    $opts{owner} ||= $user_credentials{username};
+    $opts{owner}     ||= $user_credentials{username};
 
-    print Dumper( \%opts ) if $debug;    #exit;
+    print Dumper(\%opts) if $debug;#exit;
 
     #
     # Create the VMs
     #
-    for my $host (@host) {
-
-        if ($dryrun) {
-            print STDOUT
-"[INFO] Dryrun: request for \"$host\" deliberately not submitted\n";
-            next;
-        }
-
-        my $call = $soapRequest->call(
-            'VMCreateRequest',
-            SOAP::Data->name('VMName')->value($host),  # <VMName>string</VMName>
-            SOAP::Data->name('Description')->value( $opts{comment} )
-            ,    # <Description>string</Description>
-            SOAP::Data->name('TemplateName')->value( $opts{template} )
-            ,    # <TemplateName>string</TemplateName>
-            SOAP::Data->name('MainUser')->value( $opts{owner} )
-            ,    # <MainUser>string</MainUser>
-            SOAP::Data->name('Owner')->value( $opts{owner} )
-            ,    # <Owner>string</Owner>
-            SOAP::Data->name('VMHostOrGroup')->value( $opts{hostgroup} )
-            ,    # <VMHost>string</VMHost>
-            SOAP::Data->name('VMService')->value( $opts{vmservice} )
-            ,    # <VMService>string</VMService>
-            SOAP::Data->name('CPUCount')->value( $opts{"cpu-count"} )
-            ,    # <CPUCount>int</CPUCount>
-            SOAP::Data->name('MemorySizeGB')->value( $opts{memory} )
-              ->type('float'),    # <MemorySizeGB>float</MemorySizeGB>
-            SOAP::Data->name('SysDiskSizeGB')->value( $opts{disksize} )
-            ,                     # <SysDiskSizeGB>int</SysDiskSizeGB>
-            SOAP::Data->name('ExpirationDate')
-              ->value( $opts{"expiration-date"} )->type('dateTime')
-            ,                     # <ExpirationDate>string</ExpirationDate>
-        );
-        if ( $call->fault ) {
-            print STDERR
-"[ERROR] Failure to execute \"VMCreateRequest\" for VM \"$host\": "
-              . $call->faultstring . "\n";
-
-            #exit -1;
-        }
-        else {
-            my $result = $call->result;
-            if ($result) {
-                print STDERR
-                  "[WARN] Creation request for VM \"$host\" failed: $result\n";
-            }
-            else {
-                print STDOUT
-"[INFO] Creation request for VM \"$host\" successfully submitted\n";
-            }
-        }
-
+    for my $host (@host){
+	
+	if ($dryrun){
+	    print STDOUT "[INFO] Dryrun: request for \"$host\" deliberately not submitted\n";
+	    next;
+	}
+ 
+	my $call = $soapRequest->
+	    call('VMCreateRequest',
+		 SOAP::Data->name('VMName'        )->value($host),                          # <VMName>string</VMName>
+		 SOAP::Data->name('Description'   )->value($opts{comment}),                 # <Description>string</Description>
+		 SOAP::Data->name('TemplateName'  )->value($opts{template}),                # <TemplateName>string</TemplateName>
+		 SOAP::Data->name('MainUser'      )->value($opts{owner}),                   # <MainUser>string</MainUser>
+		 SOAP::Data->name('Owner'         )->value($opts{owner}),                   # <Owner>string</Owner>
+		 SOAP::Data->name('VMHostOrGroup' )->value($opts{hostgroup}),               # <VMHost>string</VMHost>
+		 SOAP::Data->name('VMService'     )->value($opts{vmservice}),               # <VMService>string</VMService>
+		 SOAP::Data->name('CPUCount'      )->value($opts{"cpu-count"}),             # <CPUCount>int</CPUCount>
+		 SOAP::Data->name('MemorySizeGB'  )->value($opts{memory})->type('float'),   # <MemorySizeGB>float</MemorySizeGB>
+		 SOAP::Data->name('SysDiskSizeGB' )->value($opts{disksize}),                # <SysDiskSizeGB>int</SysDiskSizeGB>
+		 SOAP::Data->name('ExpirationDate')->value($opts{"expiration-date"})->type('dateTime'), # <ExpirationDate>string</ExpirationDate>
+            );
+	if ($call->fault) {
+	    print STDERR "[ERROR] Failure to execute \"VMCreateRequest\" for VM \"$host\": " . $call->faultstring . "\n";
+	    #exit -1;
+	}else{
+	    my $result = $call->result;
+	    if ($result){
+		print STDERR "[WARN] Creation request for VM \"$host\" failed: $result\n";
+	    }else{
+		print STDOUT "[INFO] Creation request for VM \"$host\" successfully submitted\n";
+	    }
+	}
+	
     }
 
+
 }
+
 
 ################################################################################################
 #
 # ShowConfig(): display configuration information
 #
-sub ShowConfig($) {
-    my $href   = shift @_;
+sub ShowConfig($){
+    my $href = shift @_;
     my %config = %$href;
 
-    #print Dumper(\%config);
-    for my $attr ( sort keys %config ) {
-        printf STDOUT "* %15s : ", $attr;
-        my @values = sort values %{ $config{$attr} };
-        my $cnt    = 0;
-        while ( my @tmp = splice( @values, 0, 5 ) ) {
-            last if not @tmp;
-            print STDOUT " " x 20 if $cnt > 0;
-            map { printf "%-30s ", /\s/ ? "\"$_\"" : $_ } @tmp;
-            print "\n";
-            $cnt++;
-        }
-        print "\n";
+    my $table = Text::TabularDisplay->new();
 
-   #print STDOUT "Allowed values : " . join(", ",map {"\"$_\""} @values)."\n\n";
+    for my $attr (sort keys %config){
+	my @values = sort values %{$config{$attr}};
+	$table->add(uc($attr));
+	while (my @tmp = splice(@values,0,5)){
+	    last if not @tmp;
+	    $tmp[0] = "  $tmp[0]";
+	    $table->add(@tmp);
+	}
     }
+    print $table->render . "\n";
+
     return 0;
 }
 
@@ -1467,34 +1135,19 @@ sub ShowConfig($) {
 #
 # HandleOptions(): parse user options
 #
-sub HandleOptions() {
+sub HandleOptions(){
 
     $action = shift @ARGV;
 
-    my %options = (
-        addhost => [
-            qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s)
-        ],
-        updatehost => [
-            qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s network)
-        ],
-        showhost => [
-            qw(operatingsystem=s@ architecture=s@ hostgroup=s@
-              environment=s@ model=s@ owner=s@ comment=s@ all filter=s)
-        ],
-        delhost     => [qw()],
-        installhost => [qw()],
-        chkhost     => [qw()],
-        showconfig  => [qw()],
-        createvm    => [
-            qw(expiration-date=s cpu-count=f memory=f disksize=f comment=s owner=s hostgroup=s template=s)
-        ],
+    my %options = (addhost     => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s)],
+		   updatehost  => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s network)],
+		   showhost    => [qw(operatingsystem=s@ architecture=s@ hostgroup=s@ environment=s@ model=s@ owner=s@ comment=s@ all filter=s)],
+		   delhost     => [qw()],
+		   installhost => [qw()],
+		   chkhost     => [qw()],
+		   showconfig  => [qw()],
+		   createvm    => [qw(expiration-date=s cpu-count=f memory=f disksize=f comment=s owner=s hostgroup=s template=s)],
     );
-    HelpMessage( "Mandatory parameter ["
-          . join( "|", sort keys %options )
-          . "] missing" )
-      unless exists $options{$action};
-
     HelpMessage("Mandatory parameter [".join("|",sort keys %options)."] missing") unless exists $options{$action};
 
     my %opts = (debug   => \$debug,
@@ -1509,14 +1162,13 @@ sub HandleOptions() {
 				      "foreman-port=s"      => \$foreman_conn_params{port},
 				      "foreman-cookiejar=s" => \$foreman_conn_params{cookiejar},
 	);
-
     HelpMessage("Could not parse options.") if not $rc;
     $verbose = 1 if $debug;
-    map { delete $opts{$_} unless defined $opts{$_} } keys %opts;
+    map {delete $opts{$_} unless defined $opts{$_}} keys %opts;
 
-    if ( $action eq "addhost" ) {
+    if ($action eq "addhost"){
         my @err = ();
-	map {push(@err,$_) unless exists $opts{$_}} qw(operatingsystem architecture hostgroup owner model);
+	map {push(@err,$_) unless exists $opts{$_}} qw(operatingsystem architecture hostgroup owner);
 	if (@err){
 	    map {print STDERR "[ERROR] Action \"$action\" requires mandatory option \"$_\"\n"} @err;
 	    exit 1;
@@ -1587,8 +1239,8 @@ sub HandleOptions() {
 	$opts{comment}     ||= "(no description)";
 	
     }
-
-    return $action, %opts;
+				      
+    return $action,%opts;
 }
 
 ################################################################################################
@@ -1597,7 +1249,7 @@ sub HandleOptions() {
 #                       in subsequent calls to Landb etc.
 #
 
-sub GetUserCredentials($) {
+sub GetUserCredentials($){
 
     use Net::Netrc;
     use Term::ReadKey;
@@ -1606,40 +1258,36 @@ sub GetUserCredentials($) {
     my $password = undef;
 
     my $mach = undef;
-    if ( defined $username ) {
-        $mach = Net::Netrc->lookup( "network.cern.ch", $username );
+    if (defined $username){
+	$mach = Net::Netrc->lookup("network.cern.ch",$username);
     }
 
-    if ($mach) {
-        $password = $mach->password;
-    }
-    else {
-        if ( not defined $username ) {
-            print STDOUT
-              "Please give the CERN username/password combination: \n";
-            print STDOUT "   - username : ";
-            chomp( $username = <STDIN> );
-            if ( not defined $username ) {
-                print STDERR "Failed to read a username, exiting\n";
-                return ();
-            }
-        }
-        else {
-            print STDOUT
-              "Please give the password for CERN account \"$username\": \n";
-        }
-        print STDOUT "   - password : ";
-        ReadMode( "noecho", );
-        chomp( $password = <STDIN> );
-        ReadMode("normal");
-        print "\n";
-        if ( not defined $password ) {
-            print STDERR "failed to read a password, exiting\n";
-            return ();
-        }
+    if ($mach){
+	$password = $mach->password;
+    }else{
+	if (not defined $username){
+	    print STDOUT "Please give the CERN username/password combination: \n";
+	    print STDOUT "   - username : ";
+	    chomp($username = <STDIN>);
+	    if (not defined $username){
+		print STDERR "Failed to read a username, exiting\n";
+		return ();
+	    }
+	}else{
+	    print STDOUT "Please give the password for CERN account \"$username\": \n";
+	}
+	print STDOUT "   - password : ";
+	ReadMode("noecho",);
+	chomp($password = <STDIN>);
+	ReadMode("normal");
+	print "\n";
+	if (not defined $password){
+	    print STDERR "failed to read a password, exiting\n";
+	    return ();
+	}
     }
 
-    return ( $username, $password );
+    return ($username,$password);
 }
 
 ################################################################################################
@@ -1647,11 +1295,10 @@ sub GetUserCredentials($) {
 # HelpMessage(): displays user help
 #
 
-sub HelpMessage(;$) {
-    map { print STDOUT "$_\n" } @_;
+sub HelpMessage(;$){
+    map {print STDOUT "$_\n"} @_;
     use File::Basename;
-    print STDOUT"\nRun \"man " . basename $0. "\" for more information.\n";
-
+    print STDOUT"\nRun \"man ".basename $0."\" for more information.\n";
     #use Pod::Usage;
     #pod2usage(-verbose=> 2);
     exit 0;
@@ -1665,34 +1312,27 @@ sub HelpMessage(;$) {
 #
 sub CheckAPIResponseStatus($) {
     my $response = shift;
-
     # Good response codes (2xx)
-    if ( $response->is_success ) {
-        return 1;
+    if ($response->is_success) {
+	return 1;
     }
-
     # Redirects (3xx)
     # mod_shib returns 302 with location set (login.cern.ch) if
     # provided creds are invalid.
-    if (   $response->code() == HTTP::Status::HTTP_FOUND
-        && $response->header('Location') =~ /login\.cern\.ch/ )
-    {
-        print STDERR "[ERROR] Bad cookie, unable to login.\n";
-        return 0;
+    if ($response->code() == HTTP::Status::HTTP_FOUND &&
+	$response->header('Location') =~ /login\.cern\.ch/ ) {
+	print STDERR "[ERROR] Bad cookie, unable to login.\n";
+	return 0;
     }
-
     # Errors (4xx)
-    if (   $response->code() == HTTP::Status::HTTP_UNAUTHORIZED
-        || $response->code() == HTTP::Status::HTTP_FORBIDDEN )
-    {
-        print STDERR "[ERROR] Bad credentials or not enough access level.\n";
-    }
-    elsif ( $response->code() == HTTP::Status::HTTP_NOT_FOUND ) {
-        print STDERR "[ERROR] Resource not found (Foreman said 404)\n";
-    }
-    else {
-        my $message = $response->message();
-        print STDERR "[ERROR] Request failed ($message)\n";
+    if ($response->code() == HTTP::Status::HTTP_UNAUTHORIZED ||
+        $response->code() == HTTP::Status::HTTP_FORBIDDEN) {
+	print STDERR "[ERROR] Bad credentials or not enough access level.\n";
+    } elsif ($response->code() == HTTP::Status::HTTP_NOT_FOUND ) {
+	print STDERR "[ERROR] Resource not found (Foreman said 404)\n";
+    } else {
+	my $message = $response->message();
+	print STDERR "[ERROR] Request failed ($message)\n";
     }
     return 0;
 }
@@ -1703,15 +1343,14 @@ sub CheckAPIResponseStatus($) {
 #
 sub CertMgrStageHostname($) {
     my $hostname = shift;
-    my $cmdline  = "/usr/bin/certmgr-stage --host $hostname.cern.ch";
+    my $cmdline = "/usr/bin/certmgr-stage --host $hostname.cern.ch";
     $cmdline .= " --debug" if $debug;
     print STDERR "Will execute $cmdline\n" if $debug;
     if (not $dryrun) {
-        return system($cmdline);
-    }
-    else {
-        print STDOUT "[DRYRUN] Host staging cancelled\n";
-        return 0;
+	return system($cmdline);
+    } else {
+	print STDOUT "[DRYRUN] Host staging cancelled\n";
+	return 0;
     }
 }
 
@@ -1979,4 +1618,4 @@ Jan van Eldik <Jan.van.Eldik@cern.ch>
 
 =head1 KNOWN BUGS
 
-=cut  
+=cut
