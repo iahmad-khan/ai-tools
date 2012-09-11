@@ -338,6 +338,7 @@ sub InstallHost(@){
     # Are the hosts known to Foreman?
     #
     my @err = my %todo = ();
+
     for my $host (@host){
      	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
      	my $response = $browser->request($request);
@@ -389,6 +390,7 @@ sub InstallHost(@){
 	    print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
 	    my %landb = LandbHostInfo($host);
 	    #print Dumper(\%landb);exit
+
 	    if (not %landb){
 		print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
 		next;
@@ -473,13 +475,13 @@ sub InstallHost(@){
 	exit 1;
     }
 
+    SetBuild($host)
+
     #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
     my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
     my $mess3 = "      ssh lxadm remote-power-control reset ". join(",",@host)."\n";
     #my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
     my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
-    #my $mess5 = undef;
-    #map {$mess5 .= "      aims2 pxeoff $_-gigeth\n" if gethostbyname($_ . "-gigeth")} @host;
 
     print <<EOMESS;
 
@@ -497,18 +499,25 @@ $mess4
 
 EOMESS
 
-#     if ($mess5){
-# 	print <<EOMESS;
+    return 0;
+}
+                                                            
 
-# -- IMPORTANT NOTE FOR "*-GIGETH" MACHINES: once the installation is underway, run 
+################################################################################################
+#
+# SetBuild(): sets host for build
+#
 
-# $mess5
-#     to break out on an install loop
-# EOMESS
-#     }
+sub SetBuild(@){
+    my @host = @_;
+    $request = HTTP::Request->new( "GET", "$url/hosts/@host.cern.ch" );
+
+    print "[DEBUG] JSON: " . to_json( { host => { "build" => 1 } } ) . "\n" if $debug;
+    $request->content( to_json( { host => { "build" => 1 } } ) );
 
     return 0;
 }
+
 
 ################################################################################################
 #
