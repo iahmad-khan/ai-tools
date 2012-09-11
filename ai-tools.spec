@@ -43,6 +43,12 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_mandir}/man1/ai-foreman-cli.1*
 
 %changelog
+* Tue Sep 11 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 2.2-0
+- Addhost: determine ("guess") MAC address in case the main interface is not bound in Landb
+- remove references to CDB-style hardware models
+- Showhost: Display owner if it's a group [AI-924]
+- minor fixes
+
 * Wed Aug 29 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 2.1-0
 - Showhost: Fix --all
 - Showhost: Replace --regexp by --filter
