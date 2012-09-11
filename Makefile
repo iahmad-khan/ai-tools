@@ -1,5 +1,5 @@
 SPECFILE = ai-tools.spec
-FILES = ai-foreman-cli ai-landb-bind-mac
+FILES = ai-foreman-cli ai-landb-bind-mac README.judy
 rpmtopdir := $(shell rpm --eval %_topdir)
 rpmbuild  := $(shell [ -x /usr/bin/rpmbuild ] && echo rpmbuild || echo rpm)
 
