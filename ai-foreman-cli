@@ -508,7 +508,6 @@ sub InstallHost(@) {
         print STDERR "[ERROR] certmgr-stage didn't return zero exit code for host $host...\n";
         exit 1;
       }
->>>>>>> ad57560... Sets host for build after installation.
     }
 
     #
