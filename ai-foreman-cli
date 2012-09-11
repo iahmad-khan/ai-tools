@@ -37,6 +37,7 @@ sub HelpMessage(;$);
 sub HandleOptions();
 sub CheckAPIResponseStatus($);
 sub CertMgrStageHostname($);
+sub SetBuild(@);
 
 HelpMessage("No arguments given.") if not @ARGV;
 
@@ -475,7 +476,7 @@ sub InstallHost(@){
 	exit 1;
     }
 
-    SetBuild($host)
+    SetBuild(@host);
 
     #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
     my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
@@ -510,10 +511,12 @@ EOMESS
 
 sub SetBuild(@){
     my @host = @_;
-    $request = HTTP::Request->new( "GET", "$url/hosts/@host.cern.ch" );
+    for my $host (@host){
+	my $request = HTTP::Request->new( "GET", "$url/hosts/$host.cern.ch" );
 
-    print "[DEBUG] JSON: " . to_json( { host => { "build" => 1 } } ) . "\n" if $debug;
-    $request->content( to_json( { host => { "build" => 1 } } ) );
+	print "[DEBUG] JSON: " . to_json( { host => { "build" => 1 } } ) . "\n" if $debug;
+	$request->content( to_json( { host => { "build" => 1 } } ) );
+    }
 
     return 0;
 }
