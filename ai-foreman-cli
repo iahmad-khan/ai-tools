@@ -475,8 +475,14 @@ sub InstallHost(@){
 	print STDERR "[ERROR] Upload to AIMS failed, exiting...\n";
 	exit 1;
     }
-
-    SetBuild(@host);
+     	
+    if ($dryrun){
+	print STDOUT "[INFO] Dryrun: build request for \"$host\" deliberately not submitted\n";
+	next;
+	  } else {
+  SetBuild(@host);
+    }
+ 
 
     #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
     my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
@@ -512,10 +518,20 @@ EOMESS
 sub SetBuild(@){
     my @host = @_;
     for my $host (@host){
-	my $request = HTTP::Request->new( "GET", "$url/hosts/$host.cern.ch" );
-
+	my $request = HTTP::Request->new( "PUT", "$url/hosts/$host.cern.ch" );
 	print "[DEBUG] JSON: " . to_json( { host => { "build" => 1 } } ) . "\n" if $debug;
+
 	$request->content( to_json( { host => { "build" => 1 } } ) );
+  $response = $browser->request($request);
+
+  if ( $response->is_success ) {
+    print STDOUT "[INFO] Successfully built $host\n";
+  }
+  else {
+    print STDERR "[ERROR] Cannot build \"$host\": "
+    . $response->status_line . " :: "
+    . $response->content . "\n";
+  }
     }
 
     return 0;
