@@ -477,7 +477,7 @@ sub InstallHost(@){
     }
      	
     if ($dryrun){
-	print STDOUT "[INFO] Dryrun: build request for \"$host\" deliberately not submitted\n";
+	print STDOUT "[INFO] Dryrun: build request for \"@host\" deliberately not submitted\n";
 	next;
 	  } else {
   SetBuild(@host);
@@ -522,7 +522,7 @@ sub SetBuild(@){
 	print "[DEBUG] JSON: " . to_json( { host => { "build" => 1 } } ) . "\n" if $debug;
 
 	$request->content( to_json( { host => { "build" => 1 } } ) );
-  $response = $browser->request($request);
+ 	my $response = $browser->request($request);    
 
   if ( $response->is_success ) {
     print STDOUT "[INFO] Successfully built $host\n";
