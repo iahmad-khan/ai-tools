@@ -611,9 +611,9 @@ sub UpdateHost($@){
     # set the ownership information
     if (exists $opt{owner}){
 	if (grep {$opt{owner} eq $_} values %{$fmdata{user}}){
-	    $data{owner_type} = "user";
+	    $data{owner_type} = "User";
 	}elsif (grep {$opt{owner} eq $_} values %{$fmdata{usergroup}}){
-	    $data{owner_type} = "usergroup";
+	    $data{owner_type} = "Usergroup";
 	}else{
 	    print STDERR "[ERROR][BUG] Unsupported ownertype detected, exiting\n";
 	    exit 1;
