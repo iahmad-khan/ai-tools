@@ -827,6 +827,7 @@ sub LandbHostInfo(@){
 	    #print "\@bound_mac = ".Dumper(\@bound_mac);
 	    for my $mac (sort map {$_->{HardwareAddress}} @{$bu->{NetworkInterfaceCards}}) {
 		next if grep {$mac eq $_} @bound_mac; # ignore if already bound (for example, to IPMI interface)
+		$mac =~ s/\-/:/g;
 		${$landb{$device}{Interfaces}{$Name}}{HardwareAddress} = $mac;
 		last;
 	    }
