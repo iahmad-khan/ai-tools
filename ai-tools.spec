@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 2.4
+Version: 3.0
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -14,7 +14,7 @@ Vendor: CERN
 License: GPL+
 URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
-Requires: aims2-client, certmgr-client
+Requires: aims2-client, certmgr-client, python-novaclient
  
 %description
 A collection of tools used by CERN/IT's Agile Infrastructure project
@@ -29,6 +29,8 @@ pod2man ai-foreman-cli > ai-foreman-cli.1
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-foreman-cli    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 ai-bs-pet ${RPM_BUILD_ROOT}/usr/bin
+install -Dm 755 userdata/pet ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/pet
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
@@ -40,9 +42,14 @@ rm -rf ${RPM_BUILD_ROOT}
 %doc README.judy
 /usr/bin/ai-foreman-cli
 /usr/bin/ai-landb-bind-mac
+/usr/bin/ai-bs-pet
 %{_mandir}/man1/ai-foreman-cli.1*
+/usr/share/ai-tools/userdata/pet
 
 %changelog
+* Fri Oct 05 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.0-0
+- Add script ai-bs-pet and userdata for pet usecase
+
 * Mon Sep 17 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 2.4-0
 - Ensure MAC-addresses use ":" as a separator
 
