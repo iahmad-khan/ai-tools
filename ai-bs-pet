@@ -92,7 +92,7 @@ echo "Registering it with Foreman (using cookie $AIBS_COOKIEJAR_PATH)..."
 payload=`mktemp`
 echo "{'host': {'name': '$AIBS_HOSTNAME', 'hostgroup_id': $AIBS_HOSTGROUP_ID, 'managed':
 false, 'model_id': $AIBS_MODEL_ID, 'operatingsystem_id': $AIBS_OS_ID, 'build': 0}}" > $payload
-status=`curl -v -k -H "Accept: application/json" -H "Content-Type: application/json" \
+status=`curl -s -k -H "Accept: application/json" -H "Content-Type: application/json" \
   -X POST --cookie $AIBS_COOKIEJAR_PATH -d @$payload -w "%{http_code}" -o /dev/null\
   https://judy.cern.ch/hosts`
 rm $payload
