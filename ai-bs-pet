@@ -1,0 +1,137 @@
+#!/bin/bash
+# This script helps to bootstrap a puppet-managed
+# Foreman-enabled pet Hamster VM
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
+# Exit codes:
+#  0 success
+#  1 user input failed
+#  10 Foreman registration failed
+#  20 Host staging failed
+#  30 VM creation failed 
+#  50 Other errors
+
+# Notes:
+# certmgr-stage will fail if you're not member of ai-admins egroup
+
+if [ -z $AIBS_HOSTGROUP_ID ]; then
+  echo "Hostgroup ID must be specified via AIBS_HOSTGROUP_ID. Exiting"
+  exit 1
+fi
+
+if [ -z $AIBS_SSHKEY_NAME ]; then
+  echo "SSH key name must be specified via AIBS_SSHKEY_NAME. Exiting"
+  exit 1
+fi
+
+AIBS_HOSTNAME=$1
+
+echo $AIBS_HOSTNAME | egrep -q "\.cern\.ch$"
+if [[ $# -ne 1 || $? -ne 0 ]]; then
+  echo "A CERN-friendly FQDN must be provided as desired hostname"
+  echo "Example: 'higgsbox.cern.ch'. Exiting."
+  exit 1
+fi
+
+if [ -z $OS_USERNAME ]; then
+  echo "No OpenStack credentials found. Please source openrc.sh"
+  exit 1
+fi
+
+AIBS_VMNAME=$(echo $AIBS_HOSTNAME | sed -e 's/.cern.ch//g')
+
+# Host model
+# (default: 2 -- "Virtual Machine"
+AIBS_MODELID=${AIBS_MODELID:-2}
+
+# OS ID
+# (default: 21 -- "SLC 6.3"
+AIBS_OSID=${AIBS_OSID:-21}
+
+# VM flavor
+# (default: 'm1.tiny')
+AIBS_VMFLAVOR=${AIBS_VMFLAVOR:-"m1.tiny"}
+
+# VM Image
+# (default: "[AI] SLC6 Server"
+AIBS_VMIMAGE_ID=${AIBS_VMIMAGE_ID:-"ddabe63e-974c-4d29-9b7d-d83f58ed5ee8"}
+
+# VM userdata
+AIBS_VMUSERDATA_PATH=${AIBS_VMUSERDATA_PATH:-"/usr/share/ai-tools/userdata/pet"}
+
+# Judy's cookie jar
+AIBS_COOKIEJAR_PATH=${AIBS_COOKIEJAR_PATH:-"$HOME/ssocookie-judy.txt"}
+
+function dieiffail {
+  if [ $1 -ne 0 ]; then
+    echo "$2";
+    exit $3;
+  fi
+}
+
+echo "Trying to bootstrap $AIBS_HOSTNAME..."
+echo "Will feed userdata located in $AIBS_VMUSERDATA_PATH"
+
+#TODO: Check KRB creds?
+
+#
+# Cookie jar
+#
+
+if [ ! -r $AIBS_COOKIEJAR_PATH ]; then
+  echo "Cookiejar not found or not readable. Getting it..."
+  cern-get-sso-cookie --krb -u https://judy.cern.ch -o $AIBS_COOKIEJAR_PATH -r
+fi
+
+#
+# Foreman registration
+#
+
+echo "Registering it with Foreman (using cookie $AIBS_COOKIEJAR_PATH)..."
+payload=`mktemp`
+echo "{'host': {'name': '$AIBS_HOSTNAME', 'hostgroup_id': $AIBS_HOSTGROUP_ID, 'managed':
+false, 'model_id': $AIBS_MODELID, 'operatingsystem_id': $AIBS_OSID, 'build': 0}}" > $payload
+status=`curl -v -k -H "Accept: application/json" -H "Content-Type: application/json" \
+  -X POST --cookie $AIBS_COOKIEJAR_PATH -d @$payload -w "%{http_code}" -o /dev/null\
+  https://judy.cern.ch/hosts`
+rm $payload
+
+if [ $? -ne 0 -o "$status" != "201" ]; then 
+  echo "Registration on Foreman failed (bad cookie? host already exists?). VM not created."; 
+  exit 10;
+fi
+
+#
+# Host staging
+#
+
+echo "Staging host on certmgr..."
+certmgr-stage --host $AIBS_HOSTNAME
+
+dieiffail $? "Failed to stage host. Exiting" 20; 
+
+
+#
+# VM spawning
+#
+
+echo "Foreman is happy and host staged. Spawning VM..."
+#  --meta "landb_create_vm=true"
+nova boot --flavor $AIBS_VMFLAVOR --image $AIBS_VMIMAGE_ID \
+  --key_name $AIBS_SSHKEY_NAME \
+  --user_data $AIBS_VMUSERDATA_PATH $AIBS_VMNAME
+
+if [ $? -ne 0 ]; then
+  echo "Failed to create VM. Deleting it from Foreman...";
+  ai-foreman-cli delhost $AIBS_HOSTNAME --foreman-cookiejar $AIBS_COOKIEJAR_PATH;
+  dieiffail $? "Deregistration on Foreman failed." 50
+  echo "Failed to create VM. Unstaging host...";
+  certmgr-stage --unstage --host $AIBS_HOSTNAME
+  dieiffail $? "Unstage process failed." 50
+  exit 30
+fi
+
+echo "VM booting. Nothing else to do."
+
+exit 0
