@@ -1,0 +1,18 @@
+.TH AI-BS-PET "1" "October 2012" "ai-bs-pet" "User Commands"
+.SH NAME
+ai-bs-pet \- Command-line tool to generate pets
+.SH SYNOPSIS
+ENVIRONMENT
+.B "ai-bs-pet"
+<hostname>
+.SH DESCRIPTION
+ai-bs-pet is a shell script that helps to create Puppet-managed Foreman-enabled pet OpenStack VMs.
+.PP
+.SH COMMAND OVERVIEW
+.TP
+See
+https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/PuppetizeInstancesOnOpenstack
+.SH EXAMPLES
+.TP
+AIBS_HOSTGROUP_ID=500 AIBS_SSHKEY_NAME="my-key" ai-bs-pet higgsbox.cern.ch
+.PP
