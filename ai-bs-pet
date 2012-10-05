@@ -16,12 +16,14 @@
 # certmgr-stage will fail if you're not member of ai-admins egroup
 
 if [ -z $AIBS_HOSTGROUP_ID ]; then
-  echo "Hostgroup ID must be specified via AIBS_HOSTGROUP_ID. Exiting"
+  echo "Hostgroup ID must be specified via AIBS_HOSTGROUP_ID environment variable."
+  echo "More info: 'man $0'. Exiting..."
   exit 1
 fi
 
 if [ -z $AIBS_SSHKEY_NAME ]; then
-  echo "SSH key name must be specified via AIBS_SSHKEY_NAME. Exiting"
+  echo "SSH key name must be specified via AIBS_SSHKEY_NAME environment variable."
+  echo "More info: 'man $0'. Exiting..."
   exit 1
 fi
 
@@ -35,7 +37,8 @@ if [[ $# -ne 1 || $? -ne 0 ]]; then
 fi
 
 if [ -z $OS_USERNAME ]; then
-  echo "No OpenStack credentials found. Please source openrc.sh"
+  echo "No OpenStack credentials found. Please source openrc.sh."
+  echo "More info: 'man $0'. Exiting..."
   exit 1
 fi
 
