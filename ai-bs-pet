@@ -41,13 +41,9 @@ fi
 
 AIBS_VMNAME=$(echo $AIBS_HOSTNAME | sed -e 's/.cern.ch//g')
 
-# Host model
-# (default: 2 -- "Virtual Machine"
-AIBS_MODEL_ID=${AIBS_MODEL_ID:-2}
-
-# OS ID
-# (default: 21 -- "SLC 6.3"
-AIBS_OS_ID=${AIBS_OS_ID:-21}
+# Puppet environment
+# (default: 6 -- "devel"
+AIBS_ENVIRONMENT_ID=${AIBS_ENVIRONMENT_ID:-6}
 
 # VM flavor
 # (default: 'm1.tiny')
@@ -91,7 +87,7 @@ fi
 echo "Registering it with Foreman (using cookie $AIBS_COOKIEJAR_PATH)..."
 payload=`mktemp`
 echo "{'host': {'name': '$AIBS_HOSTNAME', 'hostgroup_id': $AIBS_HOSTGROUP_ID, 'managed':
-false, 'model_id': $AIBS_MODEL_ID, 'operatingsystem_id': $AIBS_OS_ID, 'build': 0}}" > $payload
+false, 'environment_id': $AIBS_ENVIRONMENT_ID, 'build': 0}}" > $payload
 status=`curl -s -k -H "Accept: application/json" -H "Content-Type: application/json" \
   -X POST --cookie $AIBS_COOKIEJAR_PATH -d @$payload -w "%{http_code}" -o /dev/null\
   https://judy.cern.ch/hosts`
