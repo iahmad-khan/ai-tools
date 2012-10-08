@@ -30,10 +30,12 @@ mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-foreman-cli    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-pet ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 ai-kill-pet ${RPM_BUILD_ROOT}/usr/bin
 install -Dm 755 userdata/pet ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/pet
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-bs-pet.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 ai-kill-pet.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
@@ -44,8 +46,10 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/bin/ai-foreman-cli
 /usr/bin/ai-landb-bind-mac
 /usr/bin/ai-bs-pet
+/usr/bin/ai-kill-pet
 %{_mandir}/man1/ai-foreman-cli.1*
 %{_mandir}/man1/ai-bs-pet.1*
+%{_mandir}/man1/ai-kill-pet.1*
 /usr/share/ai-tools/userdata/pet
 
 %changelog
