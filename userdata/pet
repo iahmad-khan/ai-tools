@@ -1,7 +1,7 @@
-Content-Type: multipart/mixed; boundary="===============7781186962325445356=="
+Content-Type: multipart/mixed; boundary="===============5676505898489851932=="
 MIME-Version: 1.0
 
---===============7781186962325445356==
+--===============5676505898489851932==
 Content-Type: text/cloud-boothook; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -41,7 +41,7 @@ function unrecoverable_error {
 }
 
 LOCKFILE=/var/lib/cloud/boothock_lock
-LOGFILE=/tmp/boothook.log
+LOGFILE=/var/log/boothook.log
 
 [ -e "$LOCKFILE" ] && exit 0
 touch $LOCKFILE
@@ -153,4 +153,4 @@ echo "Done"
 exec 1>&3
 echo "Done. Puppet is ready to run for the first time."
 
---===============7781186962325445356==--
+--===============5676505898489851932==--
