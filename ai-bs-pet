@@ -89,17 +89,23 @@ fi
 
 echo "Registering it with Foreman (using cookie $AIBS_COOKIEJAR_PATH)..."
 payload=`mktemp`
+foremanoutput=`mktemp`
 echo "{'host': {'name': '$AIBS_HOSTNAME', 'hostgroup_id': $AIBS_HOSTGROUP_ID, 'managed':
 false, 'environment_id': $AIBS_ENVIRONMENT_ID, 'build': 0}}" > $payload
 status=`curl -s -k -H "Accept: application/json" -H "Content-Type: application/json" \
-  -X POST --cookie $AIBS_COOKIEJAR_PATH -d @$payload -w "%{http_code}" -o /dev/null\
+  -X POST --cookie $AIBS_COOKIEJAR_PATH -d @$payload -w "%{http_code}" \
+  -o $foremanoutput \
   https://judy.cern.ch/hosts`
 rm $payload
 
 if [ $? -ne 0 -o "$status" != "201" ]; then 
-  echo "Registration on Foreman failed (bad cookie? host already exists?). VM not created."; 
+  echo "Registration on Foreman failed. VM not created. Server said:";
+  cat $foremanoutput; echo ""
+  rm $foremanoutput
   exit 10;
 fi
+
+rm $foremanoutput
 
 #
 # Host staging
