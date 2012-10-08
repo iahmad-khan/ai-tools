@@ -1,0 +1,75 @@
+#!/bin/bash
+# This script helps to kill a puppet-managed
+# Foreman-enabled pet Openstack VM
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
+# Exit codes:
+#  0 success
+#  1 user input failed
+#  10 VM deletion failed
+#  20 Foreman deregistration failed
+#  50 Other errors
+
+# Known bugs:
+# ai-foreman-cli returns zero if auth fails :/
+
+AIBS_HOSTNAME=$1
+
+echo $AIBS_HOSTNAME | egrep -q "\.cern\.ch$"
+if [[ $# -ne 1 || $? -ne 0 ]]; then
+  echo "A CERN-friendly FQDN must be provided as target hostname"
+  echo "Example: 'higgsbox.cern.ch'. Exiting."
+  exit 1
+fi
+
+if [ -z $OS_USERNAME ]; then
+  echo "No OpenStack credentials found. Please source openrc.sh."
+  echo "More info: 'man $0'. Exiting..."
+  exit 1
+fi
+
+AIBS_VMNAME=$(echo $AIBS_HOSTNAME | sed -e 's/.cern.ch//g')
+
+# Judy's cookie jar
+AIBS_COOKIEJAR_PATH=${AIBS_COOKIEJAR_PATH:-"$HOME/ssocookie-judy.txt"}
+
+function dieiffail {
+  if [ $1 -ne 0 ]; then
+    echo "$2";
+    exit $3;
+  fi
+}
+
+echo "Trying to terminate $AIBS_HOSTNAME..."
+
+#TODO: Check KRB creds
+
+#
+# VM termination
+#
+
+echo "Deleting VM..."
+nova delete $AIBS_VMNAME
+dieiffail $? "Failed to terminate VM. Exiting..." 10; 
+
+#
+# Cookie jar
+#
+
+if [ ! -r $AIBS_COOKIEJAR_PATH ]; then
+  echo "Cookiejar not found or not readable. Getting it..."
+  cern-get-sso-cookie --krb -u https://judy.cern.ch -o $AIBS_COOKIEJAR_PATH -r
+fi
+
+
+#
+# Foreman cleanup
+#
+
+echo "VM deleted. Removing from Foreman..."
+ai-foreman-cli delhost $AIBS_HOSTNAME --foreman-cookiejar $AIBS_COOKIEJAR_PATH;
+dieiffail $? "Failed to remove host from Foreman. Manual action required. Exiting" 20
+
+echo "Done :)"
+exit 0
