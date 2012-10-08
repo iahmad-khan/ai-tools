@@ -57,6 +57,7 @@ rm -rf ${RPM_BUILD_ROOT}
 - Add script ai-kill-pet
 - Improve DNS logic in default userdata for pets
 - Change boothook's default path
+- Print out Foreman response if the registration fails
 
 * Fri Oct 05 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.0-0
 - Add script ai-bs-pet and userdata for pet usecase
