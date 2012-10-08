@@ -9,6 +9,7 @@
 #  1 user input failed
 #  10 VM deletion failed
 #  20 Foreman deregistration failed
+#  30 Cookie generation failed
 #  50 Other errors
 
 # Known bugs:
@@ -60,6 +61,7 @@ dieiffail $? "Failed to terminate VM. Exiting..." 10;
 if [ ! -r $AIBS_COOKIEJAR_PATH ]; then
   echo "Cookiejar not found or not readable. Getting it..."
   cern-get-sso-cookie --krb -u https://judy.cern.ch -o $AIBS_COOKIEJAR_PATH -r
+  dieiffail $? "Failed to get SSO cookie. Exiting" 30;
 fi
 
 

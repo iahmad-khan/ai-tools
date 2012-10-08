@@ -10,6 +10,7 @@
 #  10 Foreman registration failed
 #  20 Host staging failed
 #  30 VM creation failed 
+#  40 Cookie generation failed
 #  50 Other errors
 
 # Notes:
@@ -81,6 +82,7 @@ echo "Will feed userdata located in $AIBS_VMUSERDATA_PATH"
 if [ ! -r $AIBS_COOKIEJAR_PATH ]; then
   echo "Cookiejar not found or not readable. Getting it..."
   cern-get-sso-cookie --krb -u https://judy.cern.ch -o $AIBS_COOKIEJAR_PATH -r
+  dieiffail $? "Failed to get SSO cookie. Exiting" 40;
 fi
 
 #
