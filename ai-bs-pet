@@ -99,8 +99,13 @@ status=`curl -s -k -H "Accept: application/json" -H "Content-Type: application/j
 rm $payload
 
 if [ $? -ne 0 -o "$status" != "201" ]; then 
-  echo "Registration on Foreman failed. VM not created. Server said:";
-  cat $foremanoutput; echo ""
+  echo "Registration on Foreman failed. VM not created.";
+  grep -q "The document has moved" $foremanoutput
+  if [ $? -eq 0 ]; then
+    echo "Cookie refused. Delete it and let $0 generate one for you."
+  else
+    echo "Server said: $(cat $foremanoutput)"
+  fi
   rm $foremanoutput
   exit 10;
 fi
