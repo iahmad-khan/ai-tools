@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.1
+Version: 3.2
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -53,6 +53,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/pet
 
 %changelog
+* Wed Oct 10 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.2-0
+- Add option AIBS_VMAVAILZONE_NAME to ai-bs-pet
+
 * Mon Oct 08 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.1-0
 - Add script ai-kill-pet
 - Improve DNS logic in default userdata for pets
