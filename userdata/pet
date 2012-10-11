@@ -148,6 +148,9 @@ execute_shell_block call_installack 10 15 || unrecoverable_error "installack"
 # And start it manually as the VM won't reboot
 service puppet start
 
+# Restart syslog to make sure it logs with new hostname
+service rsyslog restart
+
 date
 echo "Done"
 
