@@ -55,7 +55,7 @@ AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.tiny"}
 
 # VM Image
 # (default: "[AI] SLC6 Server"
-AIBS_VMIMAGE_ID=${AIBS_VMIMAGE_ID:-"ddabe63e-974c-4d29-9b7d-d83f58ed5ee8"}
+AIBS_VMIMAGE_NAME=${AIBS_VMIMAGE_NAME:-"[AI] SLC6 Server"}
 
 # VM userdata
 AIBS_VMUSERDATA_PATH=${AIBS_VMUSERDATA_PATH:-"/usr/share/ai-tools/userdata/pet"}
@@ -130,7 +130,7 @@ dieiffail $? "Failed to stage host. Exiting" 20;
 
 echo "Foreman is happy and host staged. Spawning VM..."
 #  --meta "landb_create_vm=true"
-nova boot --flavor $AIBS_VMFLAVOR_NAME --image $AIBS_VMIMAGE_ID \
+nova boot --flavor $AIBS_VMFLAVOR_NAME --image "$AIBS_VMIMAGE_NAME" \
   --key_name $AIBS_SSHKEY_NAME \
   $([[ ! -z $AIBS_VMAVAILZONE_NAME ]] &&
     echo "--availability_zone $AIBS_VMAVAILZONE_NAME") \
