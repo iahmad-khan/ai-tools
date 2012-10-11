@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.2
+Version: 3.3
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -53,6 +53,12 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/pet
 
 %changelog
+* Thu Oct 11 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.3-0
+- Restart syslog
+- Wait for DNS before packages are installed
+- Change default image to [AI] SLC6 Server
+- Rename env var: AIBS_VMIMAGE_ID -> AIBS_VMIMAGE_NAME
+
 * Wed Oct 10 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.2-0
 - Add option AIBS_VMAVAILZONE_NAME to ai-bs-pet
 
