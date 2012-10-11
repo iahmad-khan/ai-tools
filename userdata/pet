@@ -83,6 +83,20 @@ EOF
 /sbin/clock --systohc || :
 /bin/date || :
 
+# Set the hostname. Wait for the reverse to be set to make sure
+# LANDB is in sync
+IPADDR=`ip -o -4 addr ls dev eth0 | awk '{split($4,a,"/"); print a[1]}'`
+FINALHOSTNAME=`curl http://169.254.169.254/1.0/meta-data/hostname -s -o - | cut -f 1 -d "."`
+function check_reverse {
+  echo "Waiting for the correct PTR. Current hostname: $HOSTNAME. Goal: $FINALHOSTNAME"
+  eval $(/bin/ipcalc --silent --hostname ${IPADDR})
+  echo $HOSTNAME | /bin/grep -q $FINALHOSTNAME
+}
+execute_shell_block check_reverse 120 15 || unrecoverable_error "reverse"
+
+echo "DNS updated. Setting hostname to ${HOSTNAME}"
+hostname $HOSTNAME
+
 # Sometimes linuxsoft06 spits 404 because it's regenerating
 # the repositories. Working around it...
 function install_dependencies {
@@ -112,20 +126,6 @@ install -m 0771 -o puppet -d /var/lib/puppet/ssl
 install -m 0755 -o puppet -d /var/lib/puppet/ssl/certs
 
 cp -p /etc/pki/tls/certs/CERN-bundle.pem /var/lib/puppet/ssl/certs/ca.pem
-
-# Set the hostname. Wait for the reverse to be set to make sure
-# LANDB is in sync
-IPADDR=`ip -o -4 addr ls dev eth0 | awk '{split($4,a,"/"); print a[1]}'`
-FINALHOSTNAME=`curl http://169.254.169.254/1.0/meta-data/hostname -s -o - | cut -f 1 -d "."`
-function check_reverse {
-  echo "Waiting for the correct PTR. Current hostname: $HOSTNAME. Goal: $FINALHOSTNAME"
-  eval $(/bin/ipcalc --silent --hostname ${IPADDR})
-  echo $HOSTNAME | /bin/grep -q $FINALHOSTNAME
-}
-execute_shell_block check_reverse 120 15 || unrecoverable_error "reverse"
-
-echo "DNS updated. Setting hostname to ${HOSTNAME}"
-hostname $HOSTNAME
 
 # Generate kerberos keytab.
 function generate_keytab {
