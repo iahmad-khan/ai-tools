@@ -53,11 +53,71 @@ exec 3>&1
 exec 1> $LOGFILE
 exec 2> $LOGFILE
 
+OS_MAJOR_VERSION=`lsb_release -r | awk '{split($2,a,"."); print a[1]}'`
+
+#
+# Set the correct time
+#
+/usr/sbin/ntpdate -sub ip-time-1.cern.ch ip-time-2.cern.ch || :
+/sbin/clock --systohc || :
+/bin/date || :
+
+# Set the hostname. Wait for the reverse to be set to make sure
+# LANDB is in sync
+IPADDR=`/sbin/ip -o -4 addr ls dev eth0 | awk '{split($4,a,"/"); print a[1]}'`
+FINALHOSTNAME=`curl http://169.254.169.254/1.0/meta-data/hostname -s -o - | cut -f 1 -d "."`
+function check_reverse {
+  echo "Waiting for the correct PTR. Current hostname: $HOSTNAME. Goal: $FINALHOSTNAME"
+  eval $(/bin/ipcalc --silent --hostname ${IPADDR})
+  echo $HOSTNAME | /bin/grep -q $FINALHOSTNAME
+}
+execute_shell_block check_reverse 120 15 || unrecoverable_error "reverse"
+
+echo "DNS updated. Setting hostname to ${HOSTNAME}"
+hostname $HOSTNAME
+
+#
+# Install bootstrapping-time dependencies
+#
+function set_repositories {
+  echo "Setting AI repository..."
+  curl http://linuxsoft.cern.ch/koji/ai$OS_MAJOR_VERSION.repo > \
+    /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
+  test -f /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
+}
+execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
+
+DEPS="yum-priorities cern-config-keytab certmgr-client"
+
+case $OS_MAJOR_VERSION in
+  "6" )
+    DEPS="$DEPS CERN-CA-certs"
+    ;;
+  "5" )
+    DEPS="$DEPS openssl-CERN-CA-certs"
+    ;;
+esac
+
+function install_dependencies {
+  echo "Trying to install dependencies..."
+  yum install -y $DEPS
+  rpm -ql $DEPS > /dev/null
+}
+execute_shell_block install_dependencies 60 15 || unrecoverable_error "dependencies"
+
+function install_puppet {
+  echo "Trying to install puppet..."
+  yum remove -y puppet
+  yum install -y puppet
+  rpm -ql puppet > /dev/null
+}
+execute_shell_block install_puppet 60 15 || unrecoverable_error "puppet"
+
 # Fill puppet.conf
 cat << EOF > /etc/puppet/puppet.conf
 # puppet.conf
 [main]
-server = apachelb01.cern.ch
+server = lxbsp2702.cern.ch
 ca_server = baby01.cern.ch
 pluginsync = true
 vardir = /var/lib/puppet
@@ -77,57 +137,24 @@ certificate_revocation = false
 EOF
 
 #
-# Set the correct time
+# Generate kerberos keytab.
 #
-/usr/sbin/ntpdate -sub ip-time-1.cern.ch ip-time-2.cern.ch || :
-/sbin/clock --systohc || :
-/bin/date || :
-
-# Set the hostname. Wait for the reverse to be set to make sure
-# LANDB is in sync
-IPADDR=`ip -o -4 addr ls dev eth0 | awk '{split($4,a,"/"); print a[1]}'`
-FINALHOSTNAME=`curl http://169.254.169.254/1.0/meta-data/hostname -s -o - | cut -f 1 -d "."`
-function check_reverse {
-  echo "Waiting for the correct PTR. Current hostname: $HOSTNAME. Goal: $FINALHOSTNAME"
-  eval $(/bin/ipcalc --silent --hostname ${IPADDR})
-  echo $HOSTNAME | /bin/grep -q $FINALHOSTNAME
-}
-execute_shell_block check_reverse 120 15 || unrecoverable_error "reverse"
-
-echo "DNS updated. Setting hostname to ${HOSTNAME}"
-hostname $HOSTNAME
-
-# Sometimes linuxsoft06 spits 404 because it's regenerating
-# the repositories. Working around it...
-function install_dependencies {
-  echo "Trying to install dependencies..."
-  yum install -y m2crypto python-kerberos python-simplejson krb5-workstation
-  rpm -ql m2crypto python-kerberos python-simplejson krb5-workstation > /dev/null
-}
-execute_shell_block install_dependencies 60 15 || unrecoverable_error "dependencies"
-
 curl  http://straylen.web.cern.ch/straylen/krb5.conf > /etc/krb5.conf
-
-# End of hostcert kickstart snippet.
-ARC="http://linuxsoft.cern.ch/cern/slc6X/x86_64/yum/os/Packages/arc-44-40.slc6.cern.x86_64.rpm"
-KT="http://linuxsoft.cern.ch/cern/slc6X/x86_64/yum/os/Packages/cern-config-keytab-1-50.cern.noarch.rpm"
-CM="http://lxsoft06.cern.ch/mash/ai6/x86_64/os/Packages/certmgr-client-0.1.5-4.ai6.noarch.rpm"
-CERN=http://linuxsoft.cern.ch/cern/slc6X/x86_64/yum/updates/CERN-CA-certs-20120322-7.slc6.noarch.rpm
-PP="http://lxsoft06.cern.ch/mash/ai6/x86_64/os/Packages/puppet-2.7.18-1.0cern1.ai6.noarch.rpm"
-
-rpm -Uvh --oldpackage $PP || :
-# arc and cern-config-keytab depend on one another so 
-# install in the same transaction.
-rpm -q arc > /dev/null 2>&1 || rpm -Uvh  $ARC $KT || :
-rpm -q certmgr-client > /dev/null 2>&1 || rpm -Uvh $CM  || :
-rpm -q CERN-CA-certs >  /dev/null 2>&1 || rpm -Uvh $CERN || :
 
 install -m 0771 -o puppet -d /var/lib/puppet/ssl
 install -m 0755 -o puppet -d /var/lib/puppet/ssl/certs
 
-cp -p /etc/pki/tls/certs/CERN-bundle.pem /var/lib/puppet/ssl/certs/ca.pem
+CERN_CA_BUNDLE_PATH=/var/lib/puppet/ssl/certs/ca.pem
+case $OS_MAJOR_VERSION in
+  "6" )
+    cp -p /etc/pki/tls/certs/CERN-bundle.pem $CERN_CA_BUNDLE_PATH
+    ;;
+  "5" )
+    cat /etc/pki/tls/certs/CERN*.pem > $CERN_CA_BUNDLE_PATH
+    ;;
+esac
 
-# Generate kerberos keytab.
+
 function generate_keytab {
   echo "Calling cern-config-keytab..."
   cern-config-keytab -f
@@ -135,7 +162,9 @@ function generate_keytab {
 }
 execute_shell_block generate_keytab 120 15 || unrecoverable_error "keytab"
 
+#
 # And generate a host certificate
+#
 function call_installack {
   echo "Calling certmgr-installack..."
   /usr/bin/certmgr-installack --debug --url https://baby01.cern.ch:8008/krb/certmgr/host/ || :
