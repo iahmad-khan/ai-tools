@@ -55,7 +55,7 @@ AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.tiny"}
 
 # VM Image
 # (default: "[AI] SLC6 Server"
-AIBS_VMIMAGE_NAME=${AIBS_VMIMAGE_NAME:-"[AI] SLC6 Server"}
+AIBS_VMIMAGE_NAME=${AIBS_VMIMAGE_NAME:-"SLC6 Server"}
 
 # VM userdata
 AIBS_VMUSERDATA_PATH=${AIBS_VMUSERDATA_PATH:-"/usr/share/ai-tools/userdata/pet"}
