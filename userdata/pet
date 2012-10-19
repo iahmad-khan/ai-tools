@@ -40,7 +40,7 @@ function unrecoverable_error {
   exit 1
 }
 
-LOCKFILE=/var/lib/cloud/boothock_lock
+LOCKFILE=/var/lib/cloud/boothook_lock
 LOGFILE=/var/log/boothook.log
 
 [ -e "$LOCKFILE" ] && exit 0
