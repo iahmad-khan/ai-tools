@@ -55,13 +55,6 @@ exec 2> $LOGFILE
 
 OS_MAJOR_VERSION=`lsb_release -r | awk '{split($2,a,"."); print a[1]}'`
 
-#
-# Set the correct time
-#
-/usr/sbin/ntpdate -sub ip-time-1.cern.ch ip-time-2.cern.ch || :
-/sbin/clock --systohc || :
-/bin/date || :
-
 # Set the hostname. Wait for the reverse to be set to make sure
 # LANDB is in sync
 IPADDR=`/sbin/ip -o -4 addr ls dev eth0 | awk '{split($4,a,"/"); print a[1]}'`
@@ -167,7 +160,7 @@ execute_shell_block generate_keytab 120 15 || unrecoverable_error "keytab"
 #
 function call_installack {
   echo "Calling certmgr-installack..."
-  /usr/bin/certmgr-installack --debug --url https://baby01.cern.ch:8008/krb/certmgr/host/ || :
+  /usr/bin/certmgr-installack --debug --url https://baby01.cern.ch:8008/krb/certmgr/host/
 }
 execute_shell_block call_installack 10 15 || unrecoverable_error "installack"
 
