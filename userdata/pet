@@ -93,7 +93,7 @@ esac
 
 function install_dependencies {
   echo "Trying to install dependencies..."
-  yum install -y $DEPS
+  yum install -y --enablerepo=ai$OS_MAJOR_VERSION $DEPS
   rpm -ql $DEPS > /dev/null
 }
 execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependencies"
@@ -101,7 +101,7 @@ execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependenci
 function install_puppet {
   echo "Trying to install puppet..."
   yum remove -y puppet
-  yum install -y puppet
+  yum install -y --enablerepo=ai$OS_MAJOR_VERSION puppet
   rpm -ql puppet > /dev/null
 }
 execute_shell_block install_puppet 60 5 || unrecoverable_error "puppet"
