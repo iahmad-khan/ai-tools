@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.3
+Version: 3.4
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -53,6 +53,11 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/pet
 
 %changelog
+* Mon Oct 22 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.4-0
+- Userdata support for SLC5
+- Support for generic SLC images
+- Change default image to "SLC6 Server"
+
 * Thu Oct 11 2012 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.3-0
 - Restart syslog
 - Wait for DNS before packages are installed
