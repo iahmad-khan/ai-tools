@@ -96,7 +96,7 @@ function install_dependencies {
   yum install -y $DEPS
   rpm -ql $DEPS > /dev/null
 }
-execute_shell_block install_dependencies 60 15 || unrecoverable_error "dependencies"
+execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependencies"
 
 function install_puppet {
   echo "Trying to install puppet..."
@@ -104,7 +104,7 @@ function install_puppet {
   yum install -y puppet
   rpm -ql puppet > /dev/null
 }
-execute_shell_block install_puppet 60 15 || unrecoverable_error "puppet"
+execute_shell_block install_puppet 60 5 || unrecoverable_error "puppet"
 
 # Fill puppet.conf
 cat << EOF > /etc/puppet/puppet.conf
