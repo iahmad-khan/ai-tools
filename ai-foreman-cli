@@ -421,6 +421,8 @@ sub InstallHost(@){
 	#     $data{FIRST_DRIVE} = "sda";
 	# }
 
+	next if $todo{$host}{operatingsystem} =~ /^windows/i;
+
 	# Get the KS file from Foreman
 	my $iaddr = gethostbyname($host);
 	die "aargh..." if not defined $iaddr;
@@ -861,6 +863,7 @@ sub SetupAims($){
 	"SLC 6.2"    => "SLC62",
 	"SLC 6.1"    => "SLC61",
         #"SLC 6"      => "SLC6X",
+        "SLC 5.9"    => "SLC59",
         "SLC 5.8"    => "SLC58",
         "SLC 5.7"    => "SLC57",
 	#
@@ -869,6 +872,7 @@ sub SetupAims($){
         "RedHat 6.2" => "RHEL6_U2",
         "RedHat 6.1" => "RHEL6_U1",
         #"RedHat 6"   => "RHEL6_U2",
+        "RedHat 5.9" => "RHES_5_U9",
         "RedHat 5.8" => "RHES_5_U8",
         "RedHat 5.7" => "RHES_5_U7",
 	#
@@ -876,6 +880,10 @@ sub SetupAims($){
 	"Fedora 17"  => "FEDORA17",
 	"Fedora 16"  => "FEDORA16",
 	"Fedora 15"  => "FEDORA15",
+	# Windows
+	"windows 6.2" => "DIANE",
+	#"DIANE_X86",
+	
         );
     
     #
@@ -915,17 +923,21 @@ sub SetupAims($){
 	    exit 1;
 	}
 	$todo{$host}{aimstarget} = $AimsImg{$todo{$host}{operatingsystem}} . "_" . uc($todo{$host}{architecture});
-	$todo{$host}{aimscmd}    = "/usr/bin/aims2client addhost --hostname $host --kickstart $todo{$host}{ksfile} --kopts \"$kopts\" --pxe --name $todo{$host}{aimstarget}";
+	if ($todo{$host}{operatingsystem} !~ /^windows/i){
+	    $todo{$host}{aimscmd}    = "/usr/bin/aims2client addhost --hostname $host --pxe --name $todo{$host}{aimstarget} --kickstart $todo{$host}{ksfile} --kopts \"$kopts\" ";
+	}else{
+	    $todo{$host}{aimscmd}    = "/usr/bin/aims2client addhost --hostname $host --pxe --name $todo{$host}{aimstarget}";
+	}
 
 	if ($dryrun){
-	    print STDOUT "[DRYRUN] Deliberately *not* uploading Kickstart file for $host to AIMS\n";
+	    print STDOUT "[DRYRUN] Deliberately *not* configuring AIMS for $host\n";
 	    next;
 	}
 
-	print STDOUT "[INFO] Uploading Kickstart file for $host to AIMS\n";
+	print STDOUT "[INFO] Configuring AIMS for $host\n";
 	print STDOUT "[VERB] Running \"$todo{$host}{aimscmd}\"\n" if $verbose;
 	if (system("$todo{$host}{aimscmd} 2>/dev/null 1>/dev/null") != 0){
-	    print STDERR "[ERROR] Upload to AIMS failed: $!\n";
+	    print STDERR "[ERROR] AIMS configuration failed: $!\n";
 	}
     }
 
@@ -983,7 +995,7 @@ sub SetupAims($){
 		print STDOUT "[VERB] Sync status \"$status{$hostname}{syncstatus}\" for host \"$hostname\" -> Be patient...\n" if $verbose;
 	    }else{
 		print STDOUT "[INFO] Host \"$hostname\" is properly configured in AIMS\n";
-		unlink $todo{$hostname}{ksfile} unless $debug;
+		unlink $todo{$hostname}{ksfile} if (not $debug and defined $todo{$hostname}{ksfile});
 		push(@done,$todo{$hostname}{hostname});
 		delete $todo{$hostname};
 	    }
