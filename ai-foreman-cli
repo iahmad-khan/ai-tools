@@ -462,7 +462,7 @@ sub InstallHost(@){
     #print Dumper(\%todo);exit;
     #
     for my $host (sort keys %todo){
-	print STDOUT "Calling certmgr-stage to stage host $host...\n";
+	print STDOUT "[INFO] Calling certmgr-stage to stage host $host...\n";
 	if (CertMgrStageHostname($host)) {
 	    print STDERR "[ERROR] certmgr-stage didn't return zero exit code for host $host...\n";
 	    exit 1;
@@ -773,9 +773,8 @@ sub ForemanConfig($$){
 sub LandbHostInfo(@){
     my @device = @_;
 
-    if( not defined $user_credentials{password} ) {
-      ($user_credentials{username},$user_credentials{password}) = 
-        GetUserCredentials($user_credentials{username});
+    if (not defined $user_credentials{password}) {
+      ($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
     }
     my $client = SOAP::Lite
 	->uri('http://network.cern.ch/NetworkService')
@@ -1200,7 +1199,7 @@ sub HandleOptions(){
 				      "debug","dryrun","verbose",
 				      "cern-user=s"         => \$user_credentials{username},
 				      "foreman-host=s"      => \$foreman_conn_params{hostname},
-				      "foreman-port=s"      => \$foreman_conn_params{port},
+				      "foreman-port=i"      => \$foreman_conn_params{port},
 				      "foreman-cookiejar=s" => \$foreman_conn_params{cookiejar},
 	);
     HelpMessage("Could not parse options.") if not $rc;
@@ -1386,13 +1385,13 @@ sub CertMgrStageHostname($) {
     my $hostname = shift;
     my $cmdline = "/usr/bin/certmgr-stage --host $hostname.cern.ch";
     $cmdline .= " --debug" if $debug;
-    print STDERR "Will execute $cmdline\n" if $debug;
-    if (not $dryrun) {
-	return system($cmdline);
-    } else {
-	print STDOUT "[DRYRUN] Host staging cancelled\n";
+    print STDOUT "[DEBUG] Will execute \"$cmdline\"\n" if $debug;
+    if ($dryrun){
+	print STDOUT "[DRYRUN] Host staging deliberately not executed\n";
 	return 0;
     }
+
+    return system($cmdline);
 }
 
 __END__
