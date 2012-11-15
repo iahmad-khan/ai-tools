@@ -398,7 +398,7 @@ sub InstallHost(@){
 	    }
 	    $data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
 	    $data{NETWORK} .= "\n# - onboot=no  for the  1GB interface, do *not* specify a hostname!\n#\n\n";
-	    for my $name (keys %{$landb{$host}{Interfaces}}){
+	    for my $name (sort keys %{$landb{$host}{Interfaces}}){
 		my $mac = $landb{$host}{Interfaces}{$name}{HardwareAddress};
 		if ($name eq $host){
 		    $data{NETWORK} .= "network --bootproto=dhcp --device=$mac --onboot=yes --hostname $host.cern.ch\n";
@@ -480,9 +480,8 @@ sub InstallHost(@){
      	
     if ($dryrun){
 	print STDOUT "[INFO] Dryrun: build request for \"@host\" deliberately not submitted\n";
-	next;
-	  } else {
-  SetBuild(@host);
+    } else {
+	SetBuild(@host);
     }
  
 
@@ -857,32 +856,31 @@ sub SetupAims($){
 
     # Run "aims2 showimg all" to get list of all available AIMS images
     my %AimsImg = (
-        "SLC 6.4"    => "SLC64",
-        "SLC 6.3"    => "SLC63",
-	"SLC 6.2"    => "SLC62",
-	"SLC 6.1"    => "SLC61",
-        #"SLC 6"      => "SLC6X",
-        "SLC 5.9"    => "SLC59",
-        "SLC 5.8"    => "SLC58",
-        "SLC 5.7"    => "SLC57",
-	#
-        "RedHat 6.4" => "RHEL6_U4",
-        "RedHat 6.3" => "RHEL6_U3",
-        "RedHat 6.2" => "RHEL6_U2",
-        "RedHat 6.1" => "RHEL6_U1",
-        #"RedHat 6"   => "RHEL6_U2",
-        "RedHat 5.9" => "RHES_5_U9",
-        "RedHat 5.8" => "RHES_5_U8",
-        "RedHat 5.7" => "RHES_5_U7",
-	#
-	"Fedora 18"  => "FEDORA18",
-	"Fedora 17"  => "FEDORA17",
-	"Fedora 16"  => "FEDORA16",
-	"Fedora 15"  => "FEDORA15",
+	# SLC
+        "SLC 6.4"     => "SLC64",
+        "SLC 6.3"     => "SLC63",
+	"SLC 6.2"     => "SLC62",
+	"SLC 6.1"     => "SLC61",
+        #"SLC 6"       => "SLC6X",
+        "SLC 5.9"     => "SLC59",
+        "SLC 5.8"     => "SLC58",
+        "SLC 5.7"     => "SLC57",
+	# RedHat
+        "RedHat 6.4"  => "RHEL6_U4",
+        "RedHat 6.3"  => "RHEL6_U3",
+        "RedHat 6.2"  => "RHEL6_U2",
+        "RedHat 6.1"  => "RHEL6_U1",
+        #"RedHat 6"    => "RHEL6_U2",
+        "RedHat 5.9"  => "RHES_5_U9",
+        "RedHat 5.8"  => "RHES_5_U8",
+        "RedHat 5.7"  => "RHES_5_U7",
+	# Fedora
+	"Fedora 18"   => "FEDORA18",
+	"Fedora 17"   => "FEDORA17",
+	"Fedora 16"   => "FEDORA16",
+	"Fedora 15"   => "FEDORA15",
 	# Windows
 	"windows 6.2" => "DIANE",
-	#"DIANE_X86",
-	
         );
     
     #
