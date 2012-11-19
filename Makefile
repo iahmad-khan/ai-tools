@@ -1,5 +1,5 @@
 SPECFILE = ai-tools.spec
-FILES = ai-foreman-cli ai-landb-bind-mac README.judy
+FILES = ai-foreman-cli ai-landb-bind-mac README.judy ai-{bs,kill}-pet{,.1} userdata/pet
 rpmtopdir := $(shell rpm --eval %_topdir)
 rpmbuild  := $(shell [ -x /usr/bin/rpmbuild ] && echo rpmbuild || echo rpm)
 
@@ -18,7 +18,7 @@ rpm: $(SPECFILE)
 	mkdir -p $(rpmtopdir)/{SOURCES,SPECS,BUILD,SRPMS,RPMS}
 	rm -rf $(PACKAGE)-$(VERSION)
 	mkdir $(PACKAGE)-$(VERSION)
-	cp -rv $(FILES) $(PACKAGE)-$(VERSION)/
+	cp -rv --parents $(FILES) $(PACKAGE)-$(VERSION)/
 	tar cvfz $(rpmtopdir)/SOURCES/$(PACKAGE)-$(VERSION).tgz $(PACKAGE)-$(VERSION)
 	rm -rf $(PACKAGE)-$(VERSION)
 	cp -f $(SPECFILE) $(rpmtopdir)/SPECS/$(SPECFILE)

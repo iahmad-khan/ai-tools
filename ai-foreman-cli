@@ -80,7 +80,7 @@ my $browser     = LWP::UserAgent->new;
 #
 # Get user credentials
 #
-if (not defined$foreman_conn_params{cookiejar}) {
+if (not defined $foreman_conn_params{cookiejar}) {
     ($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
     $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
     $browser->max_redirect(1);
