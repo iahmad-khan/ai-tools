@@ -144,24 +144,24 @@ if ($action eq "showhost"){
 #
 # Do the user options have correct values?
 #
-my @err = ();
+
+my $err = 0;
 for my $attr (qw(architecture model operatingsystem hostgroup environment domain ptable owner)){
     next if not defined $opts{$attr};
     my @values = ($attr eq "owner" ? sort values %{$fmdata{user}}, values %{$fmdata{usergroup}} : sort values %{$fmdata{$attr}} );
     next if grep {$opts{$attr} eq $_} @values;
-    my $msg = "[ERROR] Option \"--$attr\" has unknown value \"$opts{$attr}\". Valid values:\n";
-    push(@err,$msg);
-    while (my @tmp = splice(@values,0,5)){
-	last if not @tmp;
-	my $msg = "[ERROR]          ";
-	map {$msg .= sprintf "%-30s ", /\s/ ? "\"$_\"" : $_} @tmp;
-	push(@err,"$msg\n");
+    my $table = Text::TabularDisplay->new();
+    my $max = ($attr eq "hostgroup" ? 4 : 5);
+    while (my @tmp = splice(@values,0,$max)){
+        last if not @tmp;
+	$tmp[0] = "  $tmp[0]";
+	$table->add(@tmp);
     }
+    my @txt = ("","Option \"--$attr\" has unknown value \"$opts{$attr}\". Valid values:","",split(/\n/,$table->render));
+    map {print STDERR "[ERROR] $_\n"} @txt;
+    $err++;
 }
-if (@err){
-    map {print STDERR $_} @err;
-    exit 1;
-}
+exit 1 if $err;
 
 #
 # Do the real work
@@ -1179,8 +1179,9 @@ sub HandleOptions(){
 
     my %options = (addhost     => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s)],
 		   updatehost  => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s network)],
-		   showhost    => [qw(operatingsystem=s@ architecture=s@ hostgroup=s@ environment=s@ model=s@ owner=s@ comment=s@ all filter=s)],
+		   showhost    => [qw(all filter=s)],
 		   delhost     => [qw()],
+		   disownhost  => [qw()],
 		   installhost => [qw()],
 		   chkhost     => [qw()],
 		   showconfig  => [qw()],
@@ -1211,6 +1212,7 @@ sub HandleOptions(){
 	    map {print STDERR "[ERROR] Action \"$action\" requires mandatory option \"$_\"\n"} @err;
 	    exit 1;
 	}
+	$opts{model}       ||= "undefined";
 	$opts{domain}      ||= "cern.ch";
 	$opts{ptable}      ||= "RedHat default";
 	$opts{environment} ||= "production";
@@ -1228,6 +1230,18 @@ sub HandleOptions(){
 	    print STDERR "[ERROR] Action \"$action\" requires at least one of the options \"--". join("\", \"--",@opt)."\"\n";
 	    exit 1;
 	}
+    }elsif ($action eq "disownhost"){  # "disownhost" is a special case of "updatehost"
+	$action = "updatehost";
+	$opts{operatingsystem} ||= "SLC 6.3";
+	$opts{architecture}    ||= "x86_64";
+	$opts{hostgroup}       ||= "base/disowned";
+	#$opts{model}           ||= "";
+	$opts{owner}           ||= "IT-CF Sysadmins";
+	$opts{ptable}          ||= "RedHat default";
+	$opts{comment}         ||= "disowned by $user_credentials{username} ".strftime("(%b %d, %Y)",localtime(time));
+	$opts{domain}          ||= "cern.ch";
+	$opts{environment}     ||= "production";
+	$opts{network}           = 1;
     }elsif ($action eq "showhost"){
 	if (not @ARGV and not $opts{all} and not $opts{filter}){
 	    print STDERR "[ERROR] Action \"$action\" requires options \"--all\", \"--filter\" or a list of hostnames.\n";
@@ -1444,6 +1458,10 @@ Generates kickstart files for hosts, and upload them to AIMS
 =item B<chkhost> [OPTIONS] HOSTNAME ...
 
 Performs some basic consistency checks on the information about hosts
+
+=item B<disownhost> [OPTIONS] HOSTNAME ...
+
+Move the machine to the "base/disowned" hostgroup, assign ownership to SysAdmins. 
 
 =item B<createvm> [OPTIONS] HOSTNAME ...
 

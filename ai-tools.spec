@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.5
+Version: 3.6
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -53,6 +53,11 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/pet
 
 %changelog
+* Tue Nov 20 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 3.6-0
+- [ai-foreman-cli] add action "disownhost"
+- [ai-foreman-cli] addhost: introduce default h/w model "undefined"
+- Minor updates
+
 * Mon Nov 19 2012 Jan van Eldik <Jan.van.Eldik@cern.ch> - 3.5-0
 - [ai-foreman-cli] prepare installation of Windows hosts
 - Minor updates
