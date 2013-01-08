@@ -31,7 +31,7 @@ sub CreateVM($@);
 sub ChkHost(@);
 sub UpdateHost($@);
 sub InstallHost(@);
-sub SetupAims($);
+sub SetupAims($$);
 sub GetUserCredentials($);
 sub HelpMessage(;$);
 sub HandleOptions();
@@ -134,7 +134,7 @@ if ($action eq "showhost"){
     ShowHost(\%opts,@host);
     exit 0;
 }elsif ($action eq "installhost"){
-    InstallHost(@host);
+    InstallHost(\%opts,@host);
     exit 0;
 }elsif ($action eq "showconfig"){
     ShowConfig(\%fmdata);
@@ -326,13 +326,16 @@ sub ChkHost(@){
 # InstallHost(): generate kickstart files, call out to AIMS
 #
 sub InstallHost(@){
-    my @host = @_;
+    my ($href,@host) = @_;
+    my %opt = defined $href ? %$href : ();
+    print STDOUT "[DEBUG] ".Dumper(\%opt,\@host) if $debug;
+
 
     #
     # Show the hosts
     #
     print STDOUT "[INFO] Installation requested for" . (scalar(@host) == 1 ? "" : " " .scalar(@host) ." machines" ) . ":\n\n";
-    ShowHost(undef,@host);
+    ShowHost($href,@host);
     print STDOUT "\n";
 
     #
@@ -472,7 +475,7 @@ sub InstallHost(@){
     #
     # Upload to AIMS
     #
-    @host = SetupAims(\%todo);
+    @host = SetupAims(\%todo,$href);
     if (not @host){
 	print STDERR "[ERROR] Upload to AIMS failed, exiting...\n";
 	exit 1;
@@ -849,10 +852,16 @@ sub LandbHostInfo(@){
 #
 # SetupAims(): upload Kickstart file to AIMS, and configure it
 #
-sub SetupAims($){
+sub SetupAims($$){
     my $href = shift @_;
     my %todo = %$href;
+    $href = shift @_;
+    my %opts = %$href;
     #print Dumper(\%todo);exit;
+    my $ksopts = '';
+    if($opts{ksopts}) {
+      $ksopts = $opts{ksopts};
+    }
 
     # Run "aims2 showimg all" to get list of all available AIMS images
     my %AimsImg = (
@@ -902,7 +911,7 @@ sub SetupAims($){
     #
     for my $host (sort keys %todo){
 	my $cnt = 0;
-	my $kopts = "text network ks ksdevice=bootif latefcload";
+	my $kopts = "text network ks ksdevice=bootif latefcload $ksopts";
 	my $model = lc($todo{$host}{model});
 	#$kopts .= " pcie_aspm=off" if $model eq "X8DT6";
 	$kopts .= " nodmraid"; # AI 738, SNOW INC147316
@@ -1182,7 +1191,7 @@ sub HandleOptions(){
 		   showhost    => [qw(all filter=s)],
 		   delhost     => [qw()],
 		   disownhost  => [qw()],
-		   installhost => [qw()],
+		   installhost => [qw(ksopts=s)],
 		   chkhost     => [qw()],
 		   showconfig  => [qw()],
 		   createvm    => [qw(expiration-date=s cpu-count=f memory=f disksize=f comment=s owner=s hostgroup=s template=s)],
@@ -1421,13 +1430,9 @@ It should be used to displaying information about hosts, to delete or update tha
 
 =head1 SYNOPSIS
 
-=over 4
+B<ai-foreman-cli> [--help]
 
-ai-foreman-cli [--help]
-
-ai-foreman-cli ACTION [OPTIONS] [HOSTNAME]
-
-=back
+B<ai-foreman-cli> I<ACTION> I<[OPTIONS]> I<[HOSTNAME]>
 
 =head1 ACTIONS
 
@@ -1567,6 +1572,18 @@ B<Note:> --all and --filter are mutually exclusive.
 
 =back
 
+=over 4
+
+=item B<installhost>
+
+=over 8
+
+=item B<--ksopts> STRING
+
+Optional arguments that will be passed to Kickstart/Anaconda, in addition to those picked by this tool.
+
+=back
+
 =back
 
 =over 4 
@@ -1656,8 +1673,6 @@ All options can be abbreviated to shortest distinctive length. Single minus prec
 
 =head1 EXAMPLES
 
-=over 4
-
 ai-foreman-cli showhost janvm01
 
 ai-foreman-cli delhost janvm01
@@ -1665,8 +1680,6 @@ ai-foreman-cli delhost janvm01
 ai-foreman-cli addhost janvm01 --cern-account heuer --oper "SLC 6" --model X8DT6 --arch x86_64 --hostgroup base --owner jveldik
 
 ai-foreman-cli updatehost janvm01 --comment "no comment"
-
-=back
 
 =head1 AUTHOR
 
