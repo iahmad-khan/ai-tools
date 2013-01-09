@@ -106,7 +106,8 @@ if [ $? -ne 0 -o "$status" != "201" ]; then
   if [ $? -eq 0 ]; then
     echo "Cookie refused. Delete it and let $0 generate one for you."
   else
-    echo "Server said: $(cat $foremanoutput)"
+    echo "Returned HTTP status code: $status"
+    echo "HTTP response body: $(cat $foremanoutput)"
   fi
   rm $foremanoutput
   exit 10;
