@@ -53,7 +53,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/pet
 
 %changelog
-* Tue Jan 08 2013 Jan Iven <jan.iven@cern.ch> - 3.7-0-NOTYETRELEASED
+* Tue Jan 08 2013 Jan Iven <jan.iven@cern.ch> - 3.7-0
 - [ai-foreman-cli] add "ksopts" argument for "installhost"; clean up man page
 - [ai-bs-pet] Print out HTTP status code in case of failure [NB]
 - [ai-bs-pet] Rename openssl-CERN-CA-certs on SLC5 (patch by TK) [NB]
