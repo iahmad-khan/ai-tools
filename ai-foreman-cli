@@ -191,7 +191,7 @@ sub ShowHost($@){
 	    print STDOUT "[INFO] Filter enabled, host list will be ignored.\n" if @host;
 	    my $filter = uri_escape($opt{filter});
 	    $all_hosts_url = "${all_hosts_url}?search=${filter}";
-	    print STDOUT "[DEBUG] Query URI w/ filter applied: ${all_hosts_url}" if $debug;
+	    print STDOUT "[DEBUG] Query URI w/ filter applied: \"${all_hosts_url}\"\n" if $debug;
 	}
 	my $request = HTTP::Request->new("GET", $all_hosts_url);
 	my $response = $browser->request($request);
@@ -213,9 +213,7 @@ sub ShowHost($@){
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
 	my $response = $browser->request($request);
-	if (not CheckAPIResponseStatus($response)) {
-	    next;
-	}
+	next unless CheckAPIResponseStatus($response);
 	print "[DEBUG] JSON: ".$response->content."\n" if $debug;
 	my %data = %{from_json($response->content)};
 	%data = %{$data{host}};
@@ -289,9 +287,7 @@ sub ChkHost(@){
     for my $host (@host){
      	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
      	my $response = $browser->request($request);
-	if (not CheckAPIResponseStatus($response)) {
-	    next;
-	}
+	next unless CheckAPIResponseStatus($response);
 	#
 	my @error = ();
      	my %data = %{${from_json($response->content)}{host}};
@@ -721,9 +717,7 @@ sub ForemanConfig($$){
     # record ptable per OS
     my %ptable = my %medium = ();
     my $response = $browser->get("$url/operatingsystems?format=json");
-    if (not CheckAPIResponseStatus($response)) {
-        return %config;
-    }
+    return %config unless CheckAPIResponseStatus($response);
     # TODO: responses should be checked in all subsequent requests
     for (@{from_json($response->content)}){
 	my %data = %{$$_{operatingsystem}};
