@@ -634,9 +634,18 @@ sub UpdateHost($@){
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
 	my $response = $browser->request($request);
-	if ($action eq "addhost" and $response->is_success){
-	    print STDERR "[WARN] Ignoring existing host \"$host\".\n";
-	    next;
+	if ($action eq "addhost" and CheckAPIResponseStatus($response)){
+	    if ($opt{reset}){
+		$request = HTTP::Request->new("DELETE","$url/hosts/$host.cern.ch");
+		$response = $browser->request($request);
+		if (not CheckAPIResponseStatus($response)) {
+		    print STDERR "[ERROR] Could not delete host \"$host\" from Foreman.\n";
+		    next;
+		}
+	    }else{
+		print STDERR "[WARN] Ignoring existing host \"$host\".\n";
+		next;
+	    }
 	}elsif ($action eq "updatehost" and not $response->is_success){
 	    print STDERR "[WARN] Ignoring non-existent host \"$host\".\n";
 	    next;
@@ -1180,7 +1189,7 @@ sub HandleOptions(){
 
     $action = shift @ARGV;
 
-    my %options = (addhost     => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s)],
+    my %options = (addhost     => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s reset)],
 		   updatehost  => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s network)],
 		   showhost    => [qw(all filter=s)],
 		   delhost     => [qw()],
@@ -1368,9 +1377,8 @@ sub HelpMessage(;$){
 sub CheckAPIResponseStatus($) {
     my $response = shift;
     # Good response codes (2xx)
-    if ($response->is_success) {
-	return 1;
-    }
+    return 1 if $response->is_success;
+
     # Redirects (3xx)
     # mod_shib returns 302 with location set (login.cern.ch) if
     # provided creds are invalid.
@@ -1513,6 +1521,10 @@ default: "cern.ch"
 =item B<--ptable> NAME
 
 default: "RedHat default"
+
+=item B<--reset> NAME
+
+delete existing entry before re-adding the host
 
 =back
 

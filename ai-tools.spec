@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.7
+Version: 3.8
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -53,6 +53,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/pet
 
 %changelog
+* Thu Jan 17 2013 Jan van Eldik <Jan.van.Eldik@cern.ch> - 3.8-0
+- [ai-foreman-cli] add "--reset" option for the addhost case (AI-1475)
+
 * Tue Jan 08 2013 Jan Iven <jan.iven@cern.ch> - 3.7-0
 - [ai-foreman-cli] add "ksopts" argument for "installhost"; clean up man page
 - [ai-bs-pet] Print out HTTP status code in case of failure [NB]
