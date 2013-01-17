@@ -80,16 +80,10 @@ function set_repositories {
 }
 execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
 
-DEPS="cern-config-keytab certmgr-client"
+DEPS="cern-config-keytab certmgr-client CERN-CA-certs"
 
-case $OS_MAJOR_VERSION in
-  "6" )
-    DEPS="$DEPS yum-plugin-priorities CERN-CA-certs"
-    ;;
-  "5" )
-    DEPS="$DEPS yum-priorities openssl-CERN-CA-certs"
-    ;;
-esac
+[ "$OS_MAJOR_VERSION" == "6" ] && DEPS="$DEPS yum-plugin-priorities"
+[ "$OS_MAJOR_VERSION" == "5" ] && DEPS="$DEPS yum-priorities"
 
 function install_dependencies {
   echo "Trying to install dependencies..."
