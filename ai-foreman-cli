@@ -659,7 +659,7 @@ sub UpdateHost($@){
 	    my %network = ();
 	    map {delete @data{($_,"sp_$_")}} qw(name mac ip subnet_id); # clean up %data a bit
 	    for my $interface (keys %{$landb{$host}{Interfaces}}){
-		next unless ($interface eq $host or $interface eq "${host}-ipmi");
+		next unless ($interface eq $host);
 		my $ipaddr = $landb{$host}{Interfaces}{$interface}{IPAddress};
 		my $subnet_id = undef;
 		my $ip = NetAddr::IP->new($ipaddr);
