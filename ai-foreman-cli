@@ -392,7 +392,7 @@ sub InstallHost(@){
 	    #print Dumper(\%landb);exit
 
 	    if (not %landb){
-		print "[WARNING] Could not get Landb info for \$host\", skipping it...\n";
+		print STDOUT "[WARN] Could not get Landb info for \$host\", skipping it...\n";
 		next;
 	    }
 	    $data{NETWORK}  = "\n#\n# - onboot=yes for the 10GB interface, specify hostname";
@@ -576,7 +576,7 @@ sub UpdateHost($@){
     if (defined $opt{operatingsystem} and not defined $opt{medium}){
 	switch ($opt{operatingsystem}) {
 	    case /^SLC/      { $opt{medium} = "SLC"           }
-	    case /^RedHat 6/ { $opt{medium} = "RedHat 6"      }
+	    case /^RedHat 6/ { $opt{medium} = "RedHat"        }
 	    case /^Fedora/   { $opt{medium} = "Fedora Mirror" }
 	}
 	if (not defined $opt{medium}){
@@ -643,11 +643,11 @@ sub UpdateHost($@){
 		    next;
 		}
 	    }else{
-		print STDERR "[WARN] Ignoring existing host \"$host\".\n";
+		print STDOUT "[WARN] Ignoring existing host \"$host\".\n";
 		next;
 	    }
 	}elsif ($action eq "updatehost" and not $response->is_success){
-	    print STDERR "[WARN] Ignoring non-existent host \"$host\".\n";
+	    print STDOUT "[WARN] Ignoring non-existent host \"$host\".\n";
 	    next;
 	}
 	print STDOUT "[VERB] " . ($action eq "addhost" ? "Adding" : "Updating") . " \"$host\"\n" if $verbose;
@@ -791,7 +791,7 @@ sub LandbHostInfo(@){
     
     my ($auth) = $call->result;
     if ($call->fault){
-        print "ERROR: failed to authenticate to LANdb.\n";
+        print STDERR "ERROR: failed to authenticate to LANdb.\n";
         exit 1;
     }
 
@@ -803,7 +803,7 @@ sub LandbHostInfo(@){
 	
 	my $bu = $call->result;
 	if ($call->fault) {
-	    print "[WARNING] Device \"$device\" not found in Landb, ignoring it...\n";
+	    print STDOUT "[WARN] Device \"$device\" not found in Landb, ignoring it...\n";
 	    next;
 	}
 	#print Dumper($bu);#exit;
@@ -1145,7 +1145,7 @@ sub CreateVM($@){
 	}else{
 	    my $result = $call->result;
 	    if ($result){
-		print STDERR "[WARN] Creation request for VM \"$host\" failed: $result\n";
+		print STDOUT "[WARN] Creation request for VM \"$host\" failed: $result\n";
 	    }else{
 		print STDOUT "[INFO] Creation request for VM \"$host\" successfully submitted\n";
 	    }
@@ -1153,9 +1153,7 @@ sub CreateVM($@){
 	
     }
 
-
 }
-
 
 ################################################################################################
 #
