@@ -56,6 +56,11 @@ fi
 
 AIBS_VMNAME=$(echo $AIBS_HOSTNAME | sed -e 's/.cern.ch//g')
 
+
+# Foreman Owner
+# (default: "$USER"
+AIBS_FOREMAN_OWNER=${AIBS_FOREMAN_OWNER:-"$USER"}
+
 # VM flavor
 # (default: 'm1.tiny')
 AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.tiny"}
@@ -76,8 +81,8 @@ rm $AIBS_VMUSERDATA_PATH
 cp /usr/share/ai-tools/userdata/common $AIBS_VMUSERDATA_PATH
 sed -i -e "s/%FOREMAN_HOSTGROUP%/$AIBS_HOSTGROUP_NAME/g" $AIBS_VMUSERDATA_PATH
 sed -i -e "s/%FOREMAN_ENVIRONMENT%/$AIBS_ENVIRONMENT_NAME/g" $AIBS_VMUSERDATA_PATH
-sed -i -e "s/%FOREMAN_OWNER%/$USER/g" $AIBS_VMUSERDATA_PATH
-echo "Done (requested VM owner is '$USER')"
+sed -i -e "s/%FOREMAN_OWNER%/$AIBS_FOREMAN_OWNER/g" $AIBS_VMUSERDATA_PATH
+echo "Done (requested VM owner is '$AIBS_FOREMAN_OWNER')"
 
 #
 # Host staging
