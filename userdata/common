@@ -197,7 +197,7 @@ function foreman_registration {
     -s -L -o /dev/null --write-out "%{http_code}"\
     $SUSIE_URL)
 
-  if [ $SUSIE_HTTP_CODE == "200" ]; then
+  if [ $SUSIE_HTTP_CODE == "201" ]; then
       echo "Host registered in Foreman via Susie :-)"
       return 0
   else
