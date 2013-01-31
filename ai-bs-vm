@@ -69,6 +69,9 @@ AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.tiny"}
 # (default: "[AI] SLC6 Server"
 AIBS_VMIMAGE_NAME=${AIBS_VMIMAGE_NAME:-"SLC6 Server"}
 
+# VM base userdata
+AIBS_VMBASEUSERDATA_PATH=${AIBS_VMBASEUSERDATA_PATH:-"/usr/share/ai-tools/userdata/common"}
+
 echo "Trying to bootstrap $AIBS_HOSTNAME..."
 
 #
@@ -76,9 +79,10 @@ echo "Trying to bootstrap $AIBS_HOSTNAME..."
 #
 
 echo "Preparing dynamic user data..."
+echo "Using $AIBS_VMBASEUSERDATA_PATH as template"
 AIBS_VMUSERDATA_PATH=$(mktemp)
 rm $AIBS_VMUSERDATA_PATH
-cp /usr/share/ai-tools/userdata/common $AIBS_VMUSERDATA_PATH
+cp $AIBS_VMBASEUSERDATA_PATH $AIBS_VMUSERDATA_PATH
 sed -i -e "s/%FOREMAN_HOSTGROUP%/$AIBS_HOSTGROUP_NAME/g" $AIBS_VMUSERDATA_PATH
 sed -i -e "s/%FOREMAN_ENVIRONMENT%/$AIBS_ENVIRONMENT_NAME/g" $AIBS_VMUSERDATA_PATH
 sed -i -e "s/%FOREMAN_OWNER%/$AIBS_FOREMAN_OWNER/g" $AIBS_VMUSERDATA_PATH
