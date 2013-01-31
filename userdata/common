@@ -151,12 +151,20 @@ execute_shell_block generate_keytab 120 15 || unrecoverable_error "keytab"
 #
 # Download the host certificate
 #
-HOSTCERT="/var/lib/puppet/ssl/certs/$HOSTNAME.pem"
-HOSTCERTKEY="/var/lib/puppet/ssl/private_keys/$HOSTNAME.pem"
+HOSTCERTDIR=`puppet config print certdir`
+HOSTKEYDIR=`puppet config print privatekeydir`
+mkdir -p $HOSTCERTDIR $HOSTKEYDIR
+chown puppet:root $HOSTCERTDIR $HOSTKEYDIR
+HOSTKEY=`puppet config print hostprivkey`
+HOSTCERT=`puppet config print hostcert`
 CACERT="/etc/pki/tls/certs/CERN-bundle.pem"
 function get_host_certificate {
   echo "Getting host certificate..."
-  certmgr-getcert --debug -s baby01.cern.ch -p 8008 > $HOSTCERT
+  certmgr-getcert -s baby01.cern.ch -p 8008 -w $HOSTKEYDIR > $HOSTCERT
+  if [ -e "$HOSTKEYDIR/$HOSTNAME.key.pem" ]; then
+    mv "$HOSTKEYDIR/$HOSTNAME.key.pem" $HOSTKEY
+  fi
+  chown puppet:root $HOSTKEY $HOSTCERT
 }
 execute_shell_block get_host_certificate 10 15 || unrecoverable_error "getcert"
 
@@ -184,7 +192,7 @@ function foreman_registration {
   echo "Request body: $SUSIE_BODY"
   SUSIE_HTTP_CODE=$(curl -H "Content-Type: application/json" \
     -d "$SUSIE_BODY" \
-    --cert $HOSTCERT --key $HOSTCERTKEY \
+    --cert $HOSTCERT --key $HOSTKEY \
     --cacert $CACERT \
     -s -L -o /dev/null --write-out "%{http_code}"\
     $SUSIE_URL)
