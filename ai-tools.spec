@@ -32,14 +32,15 @@ install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-pet ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-vm ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin
-ln -s ${RPM_BUILD_ROOT}/usr/bin/ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin/ai-kill-pet
+ln -s /usr/bin/ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin/ai-kill-pet
 install -Dm 755 userdata/pet ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/pet
+install -Dm 755 userdata/common ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/common
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-bs-pet.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
-ln -s $RPM_BUILD_ROOT/%{_mandir}/man1/ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/ai-kill-pet.1
+ln -s %{_mandir}/man1/ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/ai-kill-pet.1
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
@@ -55,8 +56,10 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/bin/ai-kill-pet
 %{_mandir}/man1/ai-foreman-cli.1*
 %{_mandir}/man1/ai-bs-pet.1*
+%{_mandir}/man1/ai-bs-vm.1*
 %{_mandir}/man1/ai-kill-pet.1*
-/usr/share/ai-tools/userdata/pet
+%{_mandir}/man1/ai-kill-vm.1*
+/usr/share/ai-tools/userdata/*
 
 %changelog
 * Thu Jan 31 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.10-0
