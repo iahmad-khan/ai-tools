@@ -141,22 +141,12 @@ case $OS_MAJOR_VERSION in
     ;;
 esac
 
-
 function generate_keytab {
   echo "Calling cern-config-keytab..."
   cern-config-keytab -f
   test -f /etc/krb5.keytab
 }
 execute_shell_block generate_keytab 120 15 || unrecoverable_error "keytab"
-
-#
-# Generate a host certificate
-#
-function call_installack {
-  echo "Calling certmgr-installack..."
-  /usr/bin/certmgr-installack --debug --url https://baby01.cern.ch:8008/krb/certmgr/host/
-}
-execute_shell_block call_installack 10 15 || unrecoverable_error "installack"
 
 #
 # Download the host certificate
