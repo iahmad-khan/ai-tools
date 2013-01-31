@@ -102,7 +102,7 @@ dieiffail $? "Failed to stage host. Exiting" 20;
 # VM spawning
 #
 
-echo "Foreman is happy and host staged. Spawning VM..."
+echo "Host staged. Spawning VM..."
 #  --meta "landb_create_vm=true"
 nova boot --flavor $AIBS_VMFLAVOR_NAME --image "$AIBS_VMIMAGE_NAME" \
   --key_name $AIBS_SSHKEY_NAME \
@@ -110,17 +110,15 @@ nova boot --flavor $AIBS_VMFLAVOR_NAME --image "$AIBS_VMIMAGE_NAME" \
     echo "--availability_zone $AIBS_VMAVAILZONE_NAME") \
   --user_data $AIBS_VMUSERDATA_PATH $AIBS_VMNAME
 
+rm -f $AIBS_VMUSERDATA_PATH
+
 if [ $? -ne 0 ]; then
-  echo "Failed to create VM. Deleting it from Foreman...";
-  ai-foreman-cli delhost $AIBS_HOSTNAME --foreman-cookiejar $AIBS_COOKIEJAR_PATH;
-  dieiffail $? "Deregistration on Foreman failed." 50
   echo "Failed to create VM. Unstaging host...";
   certmgr-stage --unstage --host $AIBS_HOSTNAME
   dieiffail $? "Unstage process failed." 50
   exit 30
 fi
 
-rm -f $AIBS_VMUSERDATA_PATH
 echo "VM booting. Nothing else to do."
 
 exit 0
