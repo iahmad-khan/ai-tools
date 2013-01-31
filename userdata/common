@@ -183,7 +183,7 @@ if [ ! -z $FOREMAN_ENVIRONMENT ]; then
   SUSIE_BODY="$SUSIE_BODY \"environment\": \"$FOREMAN_ENVIRONMENT\","
 fi
 if [ ! -z $FOREMAN_OWNER ]; then
-  SUSIE_BODY="$SUSIE_BODY \"environment\": \"$FOREMAN_OWNER\""
+  SUSIE_BODY="$SUSIE_BODY \"owner\": \"$FOREMAN_OWNER\""
 fi
 SUSIE_BODY="$SUSIE_BODY }"
 
