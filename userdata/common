@@ -189,8 +189,9 @@ if [ ! -z $FOREMAN_OWNER ]; then
 fi
 SUSIE_BODY="$SUSIE_BODY }"
 
-
 function foreman_registration {
+  echo "Registering VM in Foreman..."
+  echo "Request body: $SUSIE_BODY"
   SUSIE_HTTP_CODE=$(curl -H "Content-Type: application/json" \
     -d "$SUSIE_BODY" \
     --cert $HOSTCERT --key $HOSTCERTKEY \
