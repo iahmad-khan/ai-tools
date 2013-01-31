@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.8
+Version: 3.9
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -53,6 +53,10 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/pet
 
 %changelog
+* Thu Jan 31 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.9-0
+- [ai-foreman-cli] Stop sending sp_* when creating a host (AI-1566)
+- Review changes by commits de6288c and 965dd33
+
 * Thu Jan 17 2013 Jan van Eldik <Jan.van.Eldik@cern.ch> - 3.8-0
 - [ai-foreman-cli] add "--reset" option for the addhost case (AI-1475)
 
