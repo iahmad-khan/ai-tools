@@ -8,6 +8,11 @@ pet|cattle [vmname]
 .PP
 ai-bs-vm is a shell script that helps to create Puppet-managed Foreman-enabled OpenStack VMs.
 .PP
+Foreman registration is performed by the VM itself when it
+boots for the first time. It should show up in the selected
+hostgroup after some minutes. An email is sent to the final
+owner of the box after a successful registration.
+.PP
 If you're creating a pet the name of the VM is mandatory.
 .PP
 .SH OPERATIONAL NOTES
