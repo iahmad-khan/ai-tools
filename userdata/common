@@ -153,9 +153,11 @@ execute_shell_block generate_keytab 120 15 || unrecoverable_error "keytab"
 #
 HOSTCERTDIR=`puppet config print certdir`
 HOSTKEYDIR=`puppet config print privatekeydir`
-mkdir -p $HOSTCERTDIR $HOSTKEYDIR
-chown puppet:root $HOSTCERTDIR $HOSTKEYDIR
+HOSTPUBKEYDIR=`puppet config print publickeydir`
+mkdir -p $HOSTCERTDIR $HOSTKEYDIR $HOSTPUBKEYDIR
+chown puppet:root $HOSTCERTDIR $HOSTKEYDIR $HOSTPUBKEYDIR
 HOSTKEY=`puppet config print hostprivkey`
+HOSTPUBKEY=`puppet config print hostpubkey`
 HOSTCERT=`puppet config print hostcert`
 CACERT="/etc/pki/tls/certs/CERN-bundle.pem"
 function get_host_certificate {
@@ -164,7 +166,8 @@ function get_host_certificate {
   if [ -e "$HOSTKEYDIR/$HOSTNAME.key.pem" ]; then
     mv "$HOSTKEYDIR/$HOSTNAME.key.pem" $HOSTKEY
   fi
-  chown puppet:root $HOSTKEY $HOSTCERT
+  openssl rsa -in $HOSTKEY -pubout 2> /dev/null > $HOSTPUBKEY
+  chown puppet:root $HOSTKEY $HOSTCERT $HOSTPUBKEY
 }
 execute_shell_block get_host_certificate 10 15 || unrecoverable_error "getcert"
 
