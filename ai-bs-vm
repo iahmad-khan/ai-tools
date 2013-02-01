@@ -95,6 +95,7 @@ echo "VM flavor: $AIBS_VMFLAVOR_NAME"
 echo "VM image: $AIBS_VMIMAGE_NAME"
 echo "Foreman owner: $AIBS_FOREMAN_OWNER"
 echo "Foreman environment: $AIBS_ENVIRONMENT_NAME"
+echo "Foreman hostgroup: $AIBS_HOSTGROUP_NAME"
 
 #
 # User data generation
