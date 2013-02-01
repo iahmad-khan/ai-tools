@@ -1,20 +1,77 @@
-.TH AI-BS-VM "1" "October 2012" "ai-bs-vm" "User Commands"
+.TH AI-BS-VM "1" "January 2013" "ai-bs-vm" "User Commands"
 .SH NAME
 ai-bs-vm \- Command-line tool to generate Puppetized OpenStack VMs
 .SH SYNOPSIS
-ENVIRONMENT
 .B "ai-bs-vm"
-<hostname>
+pet|cattle [vmname]
 .SH DESCRIPTION
+.PP
 ai-bs-vm is a shell script that helps to create Puppet-managed Foreman-enabled OpenStack VMs.
 .PP
-.SH COMMAND OVERVIEW
+If you're creating a pet the name of the VM is mandatory.
+.PP
+.SH OPERATIONAL NOTES
+Please note that cattle mode
+.B is not available
+at the moment.
+.SH ENVIRONMENT
+The behaviour of the tool can be customized by the following
+environment variables:
+.LP
+.I Mandatory variables:
 .TP
-See
-https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/PupvmizeInstancesOnOpenstack
+.B AIBS_HOSTGROUP_NAME
+Name of the Foreman hostgroup where you want your new virtual
+machine to land. It \fBmust have spare as tip\fP (e.g. "spare",
+"lxbatch/spare", "mycoolhostgroup/spare") [string]
+.TP
+.B AIBS_SSHKEY_NAME
+Name of the SSH key to login as root into the machine in case of
+disaster. Use Horizon or nova keypair-add to generate a new keypair
+[string]
+.LP
+.I Optional variables:
+.TP
+.B AIBS_ENVIRONMENT_NAME
+Name of the Foreman environment you want your new virtual
+machine to join
+[string] (defaults to "production")
+.LP
+.TP
+.B AIBS_VMFLAVOR_NAME
+OpenStack flavor name of the virtual machine
+[string] (defaults to "m1.tiny")
+.TP
+.B AIBS_VMIMAGE_NAME
+OpenStack image name of the virtual machine
+[string] (defaults to "SLC6 Server")
+.TP
+.B AIBS_VMBASEUSERDATA_PATH
+Path to the template to generate the user data
+of the virtual machine. Only for debugging and
+advanced users.
+[string] (defaults to "/usr/share/ai-tools/userdata/common")
+.TP
+.B AIBS_VMAVAILZONE_NAME
+The desired availability zone for the VM
+[string] (there is no default)
 .SH EXAMPLES
 .TP
-AIBS_HOSTGROUP_NAME="foo/spare" AIBS_SSHKEY_NAME="my-key" ai-bs-vm higgsbox
+.B Create a pet VM with default VM parameters and register it in hostgroup "foo/spare":
+.PP
+AIBS_HOSTGROUP_NAME="foo/spare" AIBS_SSHKEY_NAME="my-key" ai-bs-vm pet higgsbox
+.LP
+.B Same but with custom environment:
+.PP
+AIBS_HOSTGROUP_NAME="foo/spare" AIBS_SSHKEY_NAME="my-key"
+AIBS_ENVIRONMENT_NAME="devel" ai-bs-vm pet higgsbox
+.SH BUGS
+.B Reporting bugs
+.TP
+.PP
+Any problem? Open a support call on Jira (https://its.cern.ch/jira/)
+project "Agile Infrastructure" and assign it to Nacho Barrientos Arias
+<nacho.barrientos@cern.ch>.
 .SH SEE ALSO
 .TP
 ai-kill-vm (1)
