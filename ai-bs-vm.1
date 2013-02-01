@@ -1,16 +1,17 @@
 .TH AI-BS-VM "1" "January 2013" "ai-bs-vm" "User Commands"
 .SH NAME
-ai-bs-vm \- Command-line tool to generate Puppetized OpenStack VMs
+ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 .SH SYNOPSIS
 .B "ai-bs-vm"
-pet|cattle [vmname]
+.B pet|cattle
+[\fIvmname\fR]
 .SH DESCRIPTION
 .PP
 ai-bs-vm is a shell script that helps to create Puppet-managed Foreman-enabled OpenStack VMs.
 .PP
 Foreman registration is performed by the VM itself when it
-boots for the first time. It should show up in the selected
-hostgroup after some minutes. An email is sent to the final
+boots for the first time. Therefore it will show up in the selected
+hostgroup \fBafter\fR the first boot. An email will be sent to the
 owner of the box after a successful registration.
 .PP
 If you're creating a pet the name of the VM is mandatory.
