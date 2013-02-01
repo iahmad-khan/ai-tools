@@ -75,7 +75,7 @@ AIBS_FOREMAN_OWNER=${AIBS_FOREMAN_OWNER:-"$USER"}
 
 # Puppet environment
 # (default: 6 -- "devel"
-AIBS_ENVIRONMENT_NAME=${AIBS_ENVIRONMENT_ID:-"production"}
+AIBS_ENVIRONMENT_NAME=${AIBS_ENVIRONMENT_NAME:-"production"}
 
 # VM flavor
 # (default: 'm1.tiny')
