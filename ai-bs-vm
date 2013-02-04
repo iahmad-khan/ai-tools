@@ -144,6 +144,10 @@ if [ $? -ne 0 ]; then
   fi
 fi
 
-echo "VM booting. Nothing else to do."
+echo "Your machine is booting and the network is being configured right now."
+echo "It will show up in Foreman after a successful boot process and Puppet"
+echo "will run immediately."
+echo "In case of problems, log in using the SSH key and take a look at"
+echo "/var/log/boothook.log"
 
 exit 0

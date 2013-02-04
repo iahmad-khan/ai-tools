@@ -31,7 +31,8 @@ environment variables:
 .B AIBS_HOSTGROUP_NAME
 Name of the Foreman hostgroup where you want your new virtual
 machine to land. It \fBmust have spare as tip\fP (e.g. "spare",
-"lxbatch/spare", "mycoolhostgroup/spare") [string]
+"lxbatch/spare", "mycoolhostgroup/spare"). \fBMake sure the hostgroup
+exists before creating your virtual machine\fP [string]
 .TP
 .B AIBS_SSHKEY_NAME
 Name of the SSH key to login as root into the machine in case of
