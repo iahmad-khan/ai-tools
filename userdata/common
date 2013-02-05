@@ -209,7 +209,7 @@ function foreman_registration {
       return 10
   fi
 }
-execute_shell_block foreman_registration 10 5 || unrecoverable_error "foreman"
+execute_shell_block foreman_registration 10 2 || unrecoverable_error "foreman"
 
 # Turn puppet on for next reboot.
 /sbin/chkconfig puppet on
