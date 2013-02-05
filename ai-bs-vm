@@ -133,8 +133,6 @@ nova boot --flavor $AIBS_VMFLAVOR_NAME --image "$AIBS_VMIMAGE_NAME" \
     echo "--availability_zone $AIBS_VMAVAILZONE_NAME") \
   --user_data $AIBS_VMUSERDATA_PATH $AIBS_VMNAME
 
-rm -f $AIBS_VMUSERDATA_PATH
-
 if [ $? -ne 0 ]; then
   if [ $VMTYPE == "vmtype_pet" ]; then
     echo "Failed to create VM. Unstaging host...";
@@ -143,6 +141,8 @@ if [ $? -ne 0 ]; then
     exit 30
   fi
 fi
+
+rm -f $AIBS_VMUSERDATA_PATH
 
 echo "Your machine is booting and the network is being configured right now."
 echo "It will show up in Foreman after a successful boot process and Puppet"
