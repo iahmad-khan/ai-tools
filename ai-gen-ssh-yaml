@@ -1,0 +1,79 @@
+#!/usr/bin/ruby
+
+# Generates keys pairs suitable for ssh and
+# dumps then into a YAML file suitable for
+# encryption and upload to hiera.
+#
+# Steve Traylen <steve.traylen@cern.ch, 6th Feb 2013.
+
+require 'optparse'
+require 'tmpdir'
+require 'yaml'
+
+keygen = '/usr/bin/ssh-keygen'
+
+types = { 'rsa1' => 'ssh_host_key',
+          'rsa'  => 'ssh_host_rsa_key',
+          'dsa'  => 'ssh_host_dsa_key' 
+        }
+
+options = {}
+
+optparse = OptionParser.new do|opts|
+ opts.banner = "Usage: ai-gen-ssh-yaml [-v] name1 name2 name3 "
+
+ options[:verbose] = false
+ opts.on('-v','--verbose', 'Output more information' ) do
+   options[:verbose] = true
+ end
+
+ opts.on('-h','--help',"Script generates yaml files in tmp directory suitable for encryption and addition to hiera.") do
+   puts opts
+   exit
+ end
+end
+
+optparse.parse!
+
+raise OptionParser::MissingArgument if ARGV.length == 0
+
+puts "Being verbose" if options[:verbose]
+
+tmpdir = Dir.mktmpdir
+puts "Created temporary directory #{tmpdir}" if options[:verbose]
+
+
+ARGV.each do |n|
+  public = Hash.new
+  private = Hash.new
+  types.each do |type,file|
+    puts "Generating #{type}  ssh keys for #{n} ..."  if options[:verbose]
+    Dir.mktmpdir{|ktmpdir|
+      output = "#{ktmpdir}/#{n}_#{file}"
+      cmd = "#{keygen} -q -t #{type} -f #{output} -C '' -N ''"
+      puts "Running command #{cmd}" if options[:verbose]
+      %x[#{cmd}]
+      puts "Key #{type} for #{n} saved at #{output}" if options[:verbose]
+      public["#{file}_pub"]  = File.read("#{output}.pub")
+      private[file] = File.read("#{output}")
+   }
+  end
+  pubyaml = "#{tmpdir}/#{n}.yaml"
+  privyaml = "#{tmpdir}/#{n}.yaml.unc"
+  puts "Writing public keys for #{n} to #{pubyaml}" if options[:verbose]
+  File.open("#{pubyaml}","w") do |f|
+    f.write(public.to_yaml)
+  end
+  puts "Writing private keys for #{n} to #{privyaml}" if options[:verbose]
+  File.open("#{privyaml}","w",0600) do |f|
+    f.write(private.to_yaml)
+  end
+  puts " public and private ssh keys for #{n}:"
+  puts "#{pubyaml}"
+  puts "#{privyaml}"
+  puts
+end
+
+
+
+

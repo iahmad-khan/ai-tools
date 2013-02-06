@@ -1,0 +1,30 @@
+.TH AI-GEN-SSH-YAML "6" "February 2013" "ai-gen-ssh-yaml" "User Commands"
+.SH NAME
+ai-gen-ssh-yaml \- Command-line tool to generate ssh hosts keys and store in a yaml file suitable for hiera.
+.SH SYNOPSIS
+.B "ai-gen-ssh-yaml"
+[-v] <entityA> <entityB> | -h
+.SH OPTIONS
+.IP -h
+Provide help
+.IP -v
+Be verbose
+.SH DESCRIPTION
+ai-gen-ssh-yaml is a script that generates ssh hosts keys for import to yaml and hiera.
+Two files will be generated per entity. <entity>.yaml will contain public keys. 
+<entity>.yaml.unc contains the private keys which should be encrypted before upload
+to hiera. An entity is typically a hostname or a hostgroup name.
+.PP
+.SH COMMAND OVERVIEW
+.TP
+ai-gen-ssh-yaml <Entity1> <Entity2>
+
+.SH EXAMPLES
+.TP
+ai-gen-ssh-yaml aiadm lxplus432.cern.ch
+.TP
+This will generate files in tmpdir called aiadm.yaml, aiadm.yaml.unc , lxplus432.cern.ch.yaml and lxplus432.cern.ch.yaml.unc
+.TP
+These files can be merged with any existing yaml hiera data for hostgroup or node. The private keys should of course be encrypted to a .gpg file.
+
+.PP

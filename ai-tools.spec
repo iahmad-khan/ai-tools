@@ -28,6 +28,7 @@ pod2man ai-foreman-cli > ai-foreman-cli.1
 %install
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-foreman-cli    ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 ai-gen-ssh-yaml    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-pet ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-vm ${RPM_BUILD_ROOT}/usr/bin
@@ -37,6 +38,7 @@ install -Dm 755 userdata/pet ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/pet
 install -Dm 755 userdata/common ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/common
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 ai-gen-ssh-yaml.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-bs-pet.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
@@ -54,15 +56,18 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/bin/ai-bs-vm
 /usr/bin/ai-kill-vm
 /usr/bin/ai-kill-pet
+/usr/bin/ai-gen-ssh-yaml
 %{_mandir}/man1/ai-foreman-cli.1*
 %{_mandir}/man1/ai-bs-pet.1*
 %{_mandir}/man1/ai-bs-vm.1*
 %{_mandir}/man1/ai-kill-pet.1*
 %{_mandir}/man1/ai-kill-vm.1*
+%{_mandir}/man1/ai-gen-ssh-yaml.1*
 /usr/share/ai-tools/userdata/*
 
 %changelog
 * Wed Feb 06 2013 Steve Traylen <steve.traylen@cern.ch> - 3.12-0
+- [ai-gen-ssh-yaml] Addition of new script.
 
 * Wed Feb 06 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.11-0
 - [ai-bs-vm] Retry VM registration only once

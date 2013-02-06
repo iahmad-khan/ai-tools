@@ -1,5 +1,5 @@
 SPECFILE = ai-tools.spec
-FILES = ai-foreman-cli ai-landb-bind-mac README.judy ai-{bs,kill}-pet{,.1} userdata/pet
+FILES = ai-foreman-cli ai-landb-bind-mac README.judy ai-{bs,kill}-pet{,.1} userdata/pet ai-gen-ssh-yaml{,.1}
 rpmtopdir := $(shell rpm --eval %_topdir)
 rpmbuild  := $(shell [ -x /usr/bin/rpmbuild ] && echo rpmbuild || echo rpm)
 
