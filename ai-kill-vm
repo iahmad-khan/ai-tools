@@ -9,7 +9,7 @@
 #  1 user input failed
 #  10 VM deletion failed
 #  20 Foreman deregistration failed
-#  30 Cookie generation failed
+#  30 Cookie generation failed or invalid cookie
 #  50 Other errors
 
 # Known bugs:
@@ -42,18 +42,6 @@ function dieiffail {
   fi
 }
 
-echo "Trying to terminate $AIBS_HOSTNAME..."
-
-#TODO: Check KRB creds
-
-#
-# VM termination
-#
-
-echo "Deleting VM..."
-nova delete $AIBS_VMNAME
-dieiffail $? "Failed to terminate VM. Exiting..." 10; 
-
 #
 # Cookie jar
 #
@@ -64,6 +52,23 @@ if [ ! -r $AIBS_COOKIEJAR_PATH ]; then
   dieiffail $? "Failed to get SSO cookie. Exiting" 30;
 fi
 
+#
+# Cookie validation
+#
+
+FOREMANCLIOUT=$(ai-foreman-cli chkhost $AIBS_HOSTNAME --foreman-cookiejar $AIBS_COOKIEJAR_PATH 2>&1)
+echo $FOREMANCLIOUT | egrep -q ".+Bad cookie.+"
+[[ $? -eq 0 ]] && dieiffail 1 "Cookie refused. Delete it and let $0 generate one for you." 30;
+
+echo "Trying to terminate $AIBS_HOSTNAME..."
+
+#
+# VM termination
+#
+
+echo "Deleting VM..."
+nova delete $AIBS_VMNAME
+dieiffail $? "Failed to terminate VM. Exiting..." 10;
 
 #
 # Foreman cleanup
