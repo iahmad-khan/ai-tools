@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.11
+Version: 3.12
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -62,6 +62,8 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Wed Feb 06 2013 Steve Traylen <steve.traylen@cern.ch> - 3.12-0
+
 * Wed Feb 06 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 3.11-0
 - [ai-bs-vm] Retry VM registration only once
 - [ai-bs-vm] Fix nova exit code evaluation (AI-1618)
