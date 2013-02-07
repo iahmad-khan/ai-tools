@@ -80,7 +80,7 @@ function set_repositories {
 }
 execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
 
-DEPS="cern-config-keytab certmgr-client CERN-CA-certs"
+DEPS="cern-get-keytab certmgr-client CERN-CA-certs"
 
 [ "$OS_MAJOR_VERSION" == "6" ] && DEPS="$DEPS yum-plugin-priorities"
 [ "$OS_MAJOR_VERSION" == "5" ] && DEPS="$DEPS yum-priorities"
@@ -142,8 +142,8 @@ case $OS_MAJOR_VERSION in
 esac
 
 function generate_keytab {
-  echo "Calling cern-config-keytab..."
-  cern-config-keytab -f
+  echo "Calling cern-get-keytab..."
+  cern-get-keytab
   test -f /etc/krb5.keytab
 }
 execute_shell_block generate_keytab 120 15 || unrecoverable_error "keytab"
