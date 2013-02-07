@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.12
+Version: 3.13
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Thu Feb 07 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.13-0-UNRELEASED
+* [ai-bs-vm] Use cern-get-keytab instead of cern-config-keytab
+
 * Wed Feb 06 2013 Steve Traylen <steve.traylen@cern.ch> - 3.12-0
 - [ai-gen-ssh-yaml] Addition of new script.
 
