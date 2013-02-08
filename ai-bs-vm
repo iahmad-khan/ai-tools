@@ -93,6 +93,7 @@ AIBS_VMBASEUSERDATA_PATH=${AIBS_VMBASEUSERDATA_PATH:-"/usr/share/ai-tools/userda
 echo "Trying to bootstrap '$AIBS_VMNAME'..."
 echo "VM flavor: $AIBS_VMFLAVOR_NAME"
 echo "VM image: $AIBS_VMIMAGE_NAME"
+echo "VM tenant: $OS_TENANT_NAME"
 echo "Foreman owner: $AIBS_FOREMAN_OWNER"
 echo "Foreman environment: $AIBS_ENVIRONMENT_NAME"
 echo "Foreman hostgroup: $AIBS_HOSTGROUP_NAME"
