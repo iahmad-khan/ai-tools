@@ -4,7 +4,7 @@ ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 .SH SYNOPSIS
 .B "ai-bs-vm"
 .B pet|cattle
-[\fIvmname\fR]
+\fIvmname\fR
 .SH DESCRIPTION
 .PP
 ai-bs-vm is a shell script that helps to create Puppet-managed Foreman-enabled OpenStack VMs.
@@ -14,10 +14,23 @@ boots for the first time. Therefore it will show up in the selected
 hostgroup \fBafter\fR the first boot. An email will be sent to the
 owner of the box after a successful registration.
 .PP
-If you're creating a pet the name of the VM is mandatory.
-.PP
 Current officially supported images are: SLC6 Server and SLC5 Server.
 .PP
+.I Prerequisites:
+.TP
+.B Foreman username
+You must have logged into Foreman at least once \fBbefore\fR creating
+your first virtual machine with the same username you're executing
+this script (shell user)
+.TP
+.B Openstack credentials
+Your Openstack credentials are in place (get an \fBopenrc.sh\fR from
+Openstack Horizon and source it)
+.TP
+.B Group membership
+You are member of \fBai-admins\fR e-group (otherwise the host staging will
+fail, the box won't get a host certificate and therefore Puppet won't
+run)
 .SH OPERATIONAL NOTES
 Please note that cattle mode
 .B is not available
