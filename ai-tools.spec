@@ -69,6 +69,7 @@ rm -rf ${RPM_BUILD_ROOT}
 * Thu Feb 07 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.13-0-UNRELEASED
 * [ai-bs-vm] Use cern-get-keytab instead of cern-config-keytab
 * [ai-bs-vm] Show tenant name
+* [ai-bs-vm] Add prerequisites to manpage
 
 * Wed Feb 06 2013 Steve Traylen <steve.traylen@cern.ch> - 3.12-0
 - [ai-gen-ssh-yaml] Addition of new script.
