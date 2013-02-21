@@ -29,7 +29,7 @@ function dieiffail {
 
 function usage {
   echo "Usage: $0 <pet|cattle> vmname"
-  echo "Only 'pet' VM type is supported at the moment"
+  echo "Note: Only 'pet' VM type is supported at the moment"
   exit 1
 }
 
@@ -54,13 +54,7 @@ if [ -z $OS_USERNAME ]; then
   exit 1
 fi
 
-# VM name (must to follow RFC 1123 rules)
-# Not a FQDN because it won't match the VM hostname in
-# the cattle usecase
-AIBS_VMNAME=$(echo $2 | sed -e 's/\.cern\.ch$//g')
-echo $AIBS_VMNAME | egrep -q "^[a-zA-Z0-9][a-zA-Z0-9\-]*$"
-dieiffail $? "Invalid hostname. See RFC 1123"
-
+## Cmdline validation
 # VM type
 VMTYPE="vmtype_$1"
 ALLOWED_VMTYPES="vmtype_pet"
@@ -68,8 +62,11 @@ ALLOWED_VMTYPES="vmtype_pet"
 echo $ALLOWED_VMTYPES | grep -q $VMTYPE
 [[ $? == 0 ]] || usage
 
-# Cmdline validation
-[[ -z $AIBS_VMNAME ]] && usage
+# VM name (must to follow RFC 1123 rules)
+[[ -z $2 ]] && usage
+AIBS_VMNAME=$(echo $2 | sed -e 's/\.cern\.ch$//g')
+echo $AIBS_VMNAME | egrep -q "^[a-zA-Z0-9][a-zA-Z0-9\-]*$"
+dieiffail $? "Invalid hostname. See RFC 1123"
 
 # Foreman Owner
 # (default: "$USER")
