@@ -94,8 +94,8 @@ fi
 echo "Registering it with Foreman (using cookie $AIBS_COOKIEJAR_PATH)..."
 payload=`mktemp`
 foremanoutput=`mktemp`
-echo "{'host': {'name': '$AIBS_HOSTNAME', 'hostgroup_id': $AIBS_HOSTGROUP_ID, 'managed':
-false, 'environment_id': $AIBS_ENVIRONMENT_ID, 'build': 0}}" > $payload
+echo "{\"host\": {\"name\": \"$AIBS_HOSTNAME\", \"hostgroup_id\": $AIBS_HOSTGROUP_ID, \"managed\":
+false, \"environment_id\": $AIBS_ENVIRONMENT_ID, \"build\": 0}}" > $payload
 status=`curl -s -k -H "Accept: application/json" -H "Content-Type: application/json" \
   -X POST --cookie $AIBS_COOKIEJAR_PATH -d @$payload -w "%{http_code}" \
   -o $foremanoutput \
