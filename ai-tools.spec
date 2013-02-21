@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.13
+Version: 3.14
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,10 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Thu Feb 21 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.14-0
+- [ai-bs-pet] Fix JSON payload when creating a host
+- [ai-bs-vm] More friendly output in case of cmdline errors
+
 * Mon Feb 11 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.13-0
 - [ai-bs-vm] Use cern-get-keytab instead of cern-config-keytab
 - [ai-bs-vm] Show tenant name
