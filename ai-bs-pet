@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script helps to bootstrap a puppet-managed
-# Foreman-enabled pet Hamster VM
+# Foreman-enabled pet OpenStack VM
 # Authors:
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
 
