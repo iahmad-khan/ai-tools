@@ -138,10 +138,10 @@ dieiffail $? "Failed to stage host. Exiting" 20;
 echo "Foreman is happy and host staged. Spawning VM..."
 #  --meta "landb_create_vm=true"
 nova boot --flavor $AIBS_VMFLAVOR_NAME --image "$AIBS_VMIMAGE_NAME" \
-  --key_name $AIBS_SSHKEY_NAME \
+  --key-name $AIBS_SSHKEY_NAME \
   $([[ ! -z $AIBS_VMAVAILZONE_NAME ]] &&
-    echo "--availability_zone $AIBS_VMAVAILZONE_NAME") \
-  --user_data $AIBS_VMUSERDATA_PATH $AIBS_VMNAME
+    echo "--availability-zone $AIBS_VMAVAILZONE_NAME") \
+  --user-data $AIBS_VMUSERDATA_PATH $AIBS_VMNAME
 
 if [ $? -ne 0 ]; then
   echo "Failed to create VM. Deleting it from Foreman...";
