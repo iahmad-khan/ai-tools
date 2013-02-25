@@ -81,8 +81,8 @@ AIBS_ENVIRONMENT_NAME=${AIBS_ENVIRONMENT_NAME:-"production"}
 AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.tiny"}
 
 # VM Image
-# (default: "[AI] SLC6 Server"
-AIBS_VMIMAGE_NAME=${AIBS_VMIMAGE_NAME:-"SLC6 Server"}
+# (default: "SLC6 Server - x86_64"
+AIBS_VMIMAGE_NAME=${AIBS_VMIMAGE_NAME:-"SLC6 Server - x86_64"}
 
 # VM base userdata
 AIBS_VMBASEUSERDATA_PATH=${AIBS_VMBASEUSERDATA_PATH:-"/usr/share/ai-tools/userdata/common"}
