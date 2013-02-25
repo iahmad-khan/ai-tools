@@ -16,7 +16,7 @@
 # Notes:
 # certmgr-stage will fail if you're not member of ai-admins egroup
 
-echo "DEPRECATION WARNING: ai-bs-pet will be soon superseded by ai-bs-vm"
+echo "DEPRECATION WARNING: ai-bs-pet will be VERY soon superseded by ai-bs-vm"
 
 if [ -z $AIBS_HOSTGROUP_ID ]; then
   echo "Hostgroup ID must be specified via AIBS_HOSTGROUP_ID environment variable."
