@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.14
+Version: 3.15
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Tue Feb 26 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.15-0
+- [ai-bs-*] Make them Ibex's-Nova-client-friendly
+
 * Thu Feb 21 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.14-0
 - [ai-bs-pet] Fix JSON payload when creating a host
 - [ai-bs-vm] More friendly output in case of cmdline errors
