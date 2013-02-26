@@ -34,7 +34,8 @@ function usage {
 }
 
 if [ -z $AIBS_HOSTGROUP_NAME ]; then
-  echo "Hostgroup ID must be specified via AIBS_HOSTGROUP_NAME environment variable."
+  echo "Hostgroup name must be specified via AIBS_HOSTGROUP_NAME environment variable."
+  echo "Examples: 'spare', 'myhostgroup/spare', 'lxbatch/workers/spare'"
   echo "More info: 'man $0'. Exiting..."
   exit 1
 fi
