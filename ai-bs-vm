@@ -40,8 +40,8 @@ if [ -z $AIBS_HOSTGROUP_NAME ]; then
   exit 1
 fi
 
-echo $AIBS_HOSTGROUP_NAME | egrep -q "([A-Za-z0-9/]+/spare|spare)$"
-dieiffail $? "Hostgroup's tip must be 'spare'. Exiting" 1;
+echo $AIBS_HOSTGROUP_NAME | egrep -q "^([A-Za-z0-9]+(/[A-Za-z0-9])*/spare|spare)$"
+dieiffail $? "Invalid hostgroup (examples: 'spare', 'a/spare', 'a/b/spare'). Exiting" 1;
 
 if [ -z $AIBS_SSHKEY_NAME ]; then
   echo "SSH key name must be specified via AIBS_SSHKEY_NAME environment variable."
