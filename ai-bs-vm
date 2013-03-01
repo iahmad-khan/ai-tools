@@ -85,12 +85,18 @@ AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.tiny"}
 # (default: "SLC6 Server - x86_64"
 AIBS_VMIMAGE_NAME=${AIBS_VMIMAGE_NAME:-"SLC6 Server - x86_64"}
 
+# VM security groups
+# (default: "default")
+# Comma-separed list of security groups
+AIBS_SECURITYGROUPS_LIST=${AIBS_SECURITYGROUPS_LIST:-"default"}
+
 # VM base userdata
 AIBS_VMBASEUSERDATA_PATH=${AIBS_VMBASEUSERDATA_PATH:-"/usr/share/ai-tools/userdata/common"}
 
 echo "Trying to bootstrap '$AIBS_VMNAME'..."
 echo "VM flavor: $AIBS_VMFLAVOR_NAME"
 echo "VM image: $AIBS_VMIMAGE_NAME"
+echo "VM security groups: $AIBS_SECURITYGROUPS_LIST"
 echo "VM tenant: $OS_TENANT_NAME"
 echo "Foreman owner: $AIBS_FOREMAN_OWNER"
 echo "Foreman environment: $AIBS_ENVIRONMENT_NAME"
@@ -125,12 +131,12 @@ fi
 #
 
 echo "Host staged. Spawning VM..."
-#  --meta "landb_create_vm=true"
 nova boot --flavor $AIBS_VMFLAVOR_NAME --image "$AIBS_VMIMAGE_NAME" \
   --key-name $AIBS_SSHKEY_NAME \
   $([[ ! -z $AIBS_VMAVAILZONE_NAME ]] &&
     echo "--availability-zone $AIBS_VMAVAILZONE_NAME") \
-  --user-data $AIBS_VMUSERDATA_PATH $AIBS_VMNAME
+  --user-data $AIBS_VMUSERDATA_PATH \
+  --security-groups $AIBS_SECURITYGROUPS_LIST $AIBS_VMNAME
 
 if [ $? -ne 0 ]; then
   if [ $VMTYPE == "vmtype_pet" ]; then

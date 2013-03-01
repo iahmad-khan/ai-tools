@@ -68,6 +68,11 @@ OpenStack flavor name of the virtual machine
 OpenStack image name of the virtual machine
 [string] (defaults to "SLC6 Server")
 .TP
+.B AIBS_SECURITYGROUPS_LIST
+List of security groups your VM will belong to
+[comma-separed list of strings] (defaults to "default")
+Example: default,my-security-group
+.TP
 .B AIBS_VMBASEUSERDATA_PATH
 Path to the template to generate the user data
 of the virtual machine. Only for debugging and
