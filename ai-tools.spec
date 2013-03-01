@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.15
+Version: 3.16
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Fri Mar 01 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.16-0-UNRELEASED
+- [ai-bs-vm] Add option AIBS_SECURITYGROUPS_LIST
+
 * Tue Feb 26 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.15-0
 - [ai-bs-*] Make them Ibex's-Nova-client-friendly
 
