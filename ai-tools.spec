@@ -68,6 +68,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %changelog
 * Fri Mar 01 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.16-0-UNRELEASED
 - [ai-bs-vm] Add option AIBS_SECURITYGROUPS_LIST
+- [ai-bs-*] Change default VM flavor to m1.small
 
 * Tue Feb 26 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.15-0
 - [ai-bs-*] Make them Ibex's-Nova-client-friendly

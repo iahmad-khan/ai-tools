@@ -78,8 +78,8 @@ AIBS_FOREMAN_OWNER=${AIBS_FOREMAN_OWNER:-"$USER"}
 AIBS_ENVIRONMENT_NAME=${AIBS_ENVIRONMENT_NAME:-"production"}
 
 # VM flavor
-# (default: 'm1.tiny')
-AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.tiny"}
+# (default: 'm1.small')
+AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.small"}
 
 # VM Image
 # (default: "SLC6 Server - x86_64"

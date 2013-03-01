@@ -52,8 +52,8 @@ AIBS_VMNAME=$(echo $AIBS_HOSTNAME | sed -e 's/.cern.ch//g')
 AIBS_ENVIRONMENT_ID=${AIBS_ENVIRONMENT_ID:-6}
 
 # VM flavor
-# (default: 'm1.tiny')
-AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.tiny"}
+# (default: 'm1.small')
+AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.small"}
 
 # VM Image
 # (default: "SLC6 Server - x86_64"
