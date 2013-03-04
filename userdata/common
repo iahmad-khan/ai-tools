@@ -174,7 +174,8 @@ execute_shell_block get_host_certificate 10 15 || unrecoverable_error "getcert"
 #
 # Register the VM in Foreman
 #
-SUSIE_URL="https://aisusie.cern.ch/api/vm/registration"
+SUSIE_HOSTPORT=%SUSIE_HOST%:%SUSIE_PORT%
+SUSIE_URL="https://$SUSIE_HOSTPORT/api/vm/registration"
 FOREMAN_HOSTGROUP=%FOREMAN_HOSTGROUP%
 FOREMAN_ENVIRONMENT=%FOREMAN_ENVIRONMENT%
 FOREMAN_OWNER=%FOREMAN_OWNER%
