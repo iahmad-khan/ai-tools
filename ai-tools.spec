@@ -15,7 +15,8 @@ License: GPL+
 URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
 Requires: aims2-client, certmgr-client, python-novaclient
- 
+Requires: perl-YAML-Syck
+
 %description
 A collection of tools used by CERN/IT's Agile Infrastructure project
 
@@ -70,6 +71,7 @@ rm -rf ${RPM_BUILD_ROOT}
 - [ai-bs-vm] Add option AIBS_SECURITYGROUPS_LIST
 - [ai-bs-*] Change default VM flavor to m1.small
 - [ai-bs-vm] Customizable Susie URL via AIBS_SUSIE_{HOSTNAME,PORT}
+- [ai-foreman-cli] add handling of "alarmed" parameter (AI-1789)
 
 * Tue Feb 26 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.15-0
 - [ai-bs-*] Make them Ibex's-Nova-client-friendly

@@ -19,6 +19,7 @@ use Date::Manip;
 use Switch;
 use DateTime;
 use Text::TabularDisplay;
+use YAML::Syck;
 
 $Data::Dumper::Sortkeys = 1;
 
@@ -208,7 +209,7 @@ sub ShowHost($@){
     #
     # Are the hosts known to Foreman?
     #
-    my $table = Text::TabularDisplay->new(qw(Hostname Hostgroup Environment OS Arch Model Owner Comment));
+    my $table = Text::TabularDisplay->new(qw(Hostname LAS Hostgroup Environment OS Arch Model Owner Comment));
     #my @out = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
@@ -234,9 +235,18 @@ sub ShowHost($@){
 	$data{owner}           = $fmdata{$ownertype}     { $data{owner_id}           || -1 } || "";
 	$data{model}           = $fmdata{model}          { $data{model_id}           || -1 } || "";
 
-	#print Dumper(\%fmdata);
+	# get information from the Node Classifier as well
+	$request = HTTP::Request->new("GET","$url/node/$host.cern.ch?format=yml");
+	$response = $browser->request($request);
+	if (CheckAPIResponseStatus($response)){
+	    print "[DEBUG] \"$url/node/$host?format=yml\": ".$response->content."\n" if $debug;
+	    my $yaml = Load($response->content);
+	    $data{alarmed} = $yaml->{parameters}->{alarmed};
+	}else{
+	    $data{alarmed} = "unkn";
+	}
 	#
-	$table->add($host, map {$data{$_}} qw(hostgroup environment operatingsystem architecture model owner comment));
+	$table->add($host, map {$data{$_}} qw(alarmed hostgroup environment operatingsystem architecture model owner comment));
     }
 
     if ($table->items){
@@ -483,12 +493,27 @@ sub InstallHost(@){
 	SetBuild(@host);
     }
  
+    # Are machines enabled in LAS?
+    my @alarmed = ();
+    for my $host (@host){
+	my $request = HTTP::Request->new("GET","$url/node/$host.cern.ch?format=yml");
+	my $response = $browser->request($request);
+	next unless CheckAPIResponseStatus($response);
+	use YAML::Syck;
+	my $yaml = Load($response->content);
+	push(@alarmed,$host) if lc($yaml->{parameters}->{alarmed}) eq "true";
+    }
 
     #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
     my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
     my $mess3 = "      ssh lxadm remote-power-control reset ". join(",",@host)."\n";
     #my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
     my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
+    my $mess5 = "";
+    if (@alarmed){
+	map {$mess5 .= "[WARN] $_\n"} ("Alarms are active on:",(map {"    $_"} @host),"A reinstallation would trigger operator alarms");
+    }
+
 
     print <<EOMESS;
 
@@ -504,6 +529,7 @@ $mess3
 
 $mess4
 
+$mess5
 EOMESS
 
     return 0;
