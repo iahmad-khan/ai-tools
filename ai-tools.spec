@@ -67,7 +67,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
-* Fri Mar 01 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.16-0-UNRELEASED
+* Fri Mar 01 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.16-0
 - [ai-bs-vm] Add option AIBS_SECURITYGROUPS_LIST
 - [ai-bs-*] Change default VM flavor to m1.small
 - [ai-bs-vm] Customizable Susie URL via AIBS_SUSIE_{HOSTNAME,PORT}
