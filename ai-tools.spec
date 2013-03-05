@@ -67,7 +67,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
-* Tue Mar 05 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.17-0
+* Tue Mar 05 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.17-0
 - [ai-bs-vm] Allow dashes and underscores in the hostgroup name
 
 * Fri Mar 01 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.16-0
