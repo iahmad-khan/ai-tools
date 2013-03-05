@@ -40,7 +40,7 @@ if [ -z $AIBS_HOSTGROUP_NAME ]; then
   exit 1
 fi
 
-echo $AIBS_HOSTGROUP_NAME | egrep -q "^([A-Za-z0-9]+(/[A-Za-z0-9])*/spare|spare)$"
+echo $AIBS_HOSTGROUP_NAME | egrep -q "^([-A-Za-z0-9_]+(/[-A-Za-z0-9_]+)*/spare|spare)$"
 dieiffail $? "Invalid hostgroup (examples: 'spare', 'a/spare', 'a/b/spare'). Exiting" 1;
 
 if [ -z $AIBS_SSHKEY_NAME ]; then
