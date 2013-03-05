@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.16
+Version: 3.17
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -67,6 +67,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Tue Mar 05 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.17-0
+- [ai-bs-vm] Allow dashes and underscores in the hostgroup name
+
 * Fri Mar 01 2013 Nacho Barrientos <nacho.barrientos@cern.H> 3.16-0
 - [ai-bs-vm] Add option AIBS_SECURITYGROUPS_LIST
 - [ai-bs-*] Change default VM flavor to m1.small
