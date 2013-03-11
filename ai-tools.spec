@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.17
+Version: 3.18
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -67,6 +67,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Mon Mar 11 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.18-0-UNRELEASED
+- [ai-bs-vm] Add option AIBS_METAPARAMETERS_LIST. Patch by Tom K.
+
 * Tue Mar 05 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.17-0
 - [ai-bs-vm] Allow dashes and underscores in the hostgroup name
 
