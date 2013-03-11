@@ -91,6 +91,16 @@ AIBS_VMIMAGE_NAME=${AIBS_VMIMAGE_NAME:-"SLC6 Server - x86_64"}
 # Comma-separed list of security groups
 AIBS_SECURITYGROUPS_LIST=${AIBS_SECURITYGROUPS_LIST:-"default"}
 
+# VM metaparameters
+METAPARAMS=""
+if [ -n "${AIBS_METAPARAMETERS_LIST}" ]; then
+  for METAPARAM in ${AIBS_METAPARAMETERS_LIST}; do
+    [[ $METAPARAM =~ ^[[:alnum:]_-]+=[[:alnum:]_-]+$ ]]
+    dieiffail $? "Wrong metaparam: $METAPARAM; it must be in form key=value" 1
+    METAPARAMS="${METAPARAMS} --meta $METAPARAM"
+  done
+fi
+
 # Susie host
 # (default: "aisusie.cern.ch")
 AIBS_SUSIE_HOSTNAME=${AIBS_SUSIE_HOSTNAME:-"aisusie.cern.ch"}
@@ -102,27 +112,16 @@ AIBS_SUSIE_PORT=${AIBS_SUSIE_PORT:-"443"}
 # VM base userdata
 AIBS_VMBASEUSERDATA_PATH=${AIBS_VMBASEUSERDATA_PATH:-"/usr/share/ai-tools/userdata/common"}
 
-# metaparameters for nova boot must be exported in AIBS_METAPARAMS separated by
-# space, e.g.
-# export AIBS_METAPARAMS="cern-services=false othervalue=somethingelse"
-METAPARAMS=""
-if [ -n "${AIBS_METAPARAMS}" ]; then
-  for MP in ${AIBS_METAPARAMS}; do
-    [[ $MP =~ ^[[:alnum:]_-]+=[[:alnum:]_-]+$ ]]
-    dieiffail $? "Wrong metaparam: $MP; it must be in form key=value" 1
-    METAPARAMS="${METAPARAMS} --meta $MP"
-  done
-fi
 
 echo "Trying to bootstrap '$AIBS_VMNAME'..."
 echo "VM flavor: $AIBS_VMFLAVOR_NAME"
 echo "VM image: $AIBS_VMIMAGE_NAME"
 echo "VM security groups: $AIBS_SECURITYGROUPS_LIST"
 echo "VM tenant: $OS_TENANT_NAME"
+echo "VM metaparameters: $AIBS_METAPARAMETERS_LIST"
 echo "Foreman owner: $AIBS_FOREMAN_OWNER"
 echo "Foreman environment: $AIBS_ENVIRONMENT_NAME"
 echo "Foreman hostgroup: $AIBS_HOSTGROUP_NAME"
-echo "Metaparameters: $METAPARAMS"
 
 #
 # User data generation
