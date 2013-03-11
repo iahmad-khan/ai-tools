@@ -95,6 +95,11 @@ Host name of the Susie service (Foreman proxy)
 .B AIBS_SUSIE_PORT
 Port where Susie is listening to
 [string] (defaults to "443")
+.TP
+.B AIBS_METAPARAMS
+Space separated list of key=value pairs of metaparameters for nova boot (e.g
+"key1=value1 key2=value2").
+[string] (there is no default)
 .SH EXAMPLES
 .TP
 .B Create a pet VM with default VM parameters and register it in hostgroup "foo/spare":
