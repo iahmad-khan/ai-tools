@@ -144,7 +144,8 @@ esac
 function generate_keytab {
   echo "Calling cern-get-keytab..."
   cern-get-keytab
-  test -f /etc/krb5.keytab
+  [[ $? -ne 0 ]] && echo "cern-get-keytab didn't return 0" && return 1
+  test -s /etc/krb5.keytab
 }
 execute_shell_block generate_keytab 120 15 || unrecoverable_error "keytab"
 
