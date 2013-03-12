@@ -43,7 +43,7 @@ function unrecoverable_error {
 LOCKFILE=/var/lib/cloud/boothook_lock
 LOGFILE=/var/log/boothook.log
 
-[ -e "$LOCKFILE" ] && exit 0
+[ -e "$LOCKFILE" ] && echo "This script has already run" && exit 0
 touch $LOCKFILE
 
 echo "Setting up keytab, certificates and Puppet. Please wait..."
@@ -51,7 +51,7 @@ echo "In case of problems a logfile is available in $LOGFILE"
 
 exec 3>&1
 exec 1> $LOGFILE
-exec 2> $LOGFILE
+exec 2>&1
 
 OS_MAJOR_VERSION=`lsb_release -r | awk '{split($2,a,"."); print a[1]}'`
 
@@ -216,6 +216,7 @@ function foreman_registration {
   else
       echo "Host registration failed"
       echo "HTTP status code: $SUSIE_HTTP_CODE"
+      echo "More info: http://aisusie.cern.ch"
       return 11
   fi
 }
