@@ -163,11 +163,15 @@ CACERT="/etc/pki/tls/certs/CERN-bundle.pem"
 function get_host_certificate {
   echo "Getting host certificate..."
   certmgr-getcert -s baby01.cern.ch -p 8008 -w $HOSTKEYDIR > $HOSTCERT
+  [[ $? -ne 0 ]] && echo "certmgr-getcert didn't return 0" && return 1
   if [ -e "$HOSTKEYDIR/$HOSTNAME.key.pem" ]; then
     mv "$HOSTKEYDIR/$HOSTNAME.key.pem" $HOSTKEY
   fi
+  [[ ! -s $HOSTKEY ]] && echo "Host key not created" && return 1
+  [[ ! -s $HOSTCERT ]] && echo "Host cert not created" && return 1
   openssl rsa -in $HOSTKEY -pubout 2> /dev/null > $HOSTPUBKEY
   chown puppet:root $HOSTKEY $HOSTCERT $HOSTPUBKEY
+  test -s $HOSTPUBKEY
 }
 execute_shell_block get_host_certificate 10 15 || unrecoverable_error "getcert"
 
