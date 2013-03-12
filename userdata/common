@@ -209,10 +209,14 @@ function foreman_registration {
   if [ $SUSIE_HTTP_CODE == "201" ]; then
       echo "Host registered in Foreman via Susie :-)"
       return 0
+  elif [ $SUSIE_HTTP_CODE == "000" ]; then
+      echo "Host registration failed"
+      echo "Susie call failed (no network, bad certificates...)"
+      return 10
   else
       echo "Host registration failed"
       echo "HTTP status code: $SUSIE_HTTP_CODE"
-      return 10
+      return 11
   fi
 }
 execute_shell_block foreman_registration 10 2 || unrecoverable_error "foreman"
