@@ -58,7 +58,7 @@ fi
 
 FOREMANCLIOUT=$(ai-foreman-cli chkhost $AIBS_HOSTNAME --foreman-cookiejar $AIBS_COOKIEJAR_PATH 2>&1)
 echo $FOREMANCLIOUT | egrep -q ".+Bad cookie.+"
-[[ $? -eq 0 ]] && dieiffail 1 "Cookie refused. Delete it and let $0 generate one for you." 30;
+[[ $? -eq 0 ]] && dieiffail 1 "Cookie $AIBS_COOKIEJAR_PATH refused. Delete it and let $0 generate one for you." 30;
 
 echo "Trying to terminate $AIBS_HOSTNAME..."
 
