@@ -70,6 +70,7 @@ rm -rf ${RPM_BUILD_ROOT}
 * Mon Mar 11 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.18-0-UNRELEASED
 - [ai-bs-vm] More defensive userdata.
 - [ai-bs-vm] Add option AIBS_METAPARAMETERS_LIST. Patch by Tom K.
+- [ai-bs-vm] Manpage reformatting.
 - [ai-bs-pet] Deprecated.
 
 * Tue Mar 05 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.17-0
