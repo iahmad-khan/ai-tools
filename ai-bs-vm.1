@@ -1,21 +1,22 @@
-.TH AI-BS-VM "1" "January 2013" "ai-bs-vm" "User Commands"
+.TH AI-BS-VM "1" "March 2013" "ai-bs-vm" "User Commands"
 .SH NAME
 ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
+
 .SH SYNOPSIS
 .B "ai-bs-vm"
 .B pet|cattle
 \fIvmname\fR
+
 .SH DESCRIPTION
-.PP
 ai-bs-vm is a shell script that helps to create Puppet-managed Foreman-enabled OpenStack VMs.
-.PP
+.LP
 Foreman registration is performed by the VM itself when it
 boots for the first time. Therefore it will show up in the selected
 hostgroup \fBafter\fR the first boot. An email will be sent to the
 owner of the box after a successful registration.
-.PP
+.LP
 Current officially supported images are: SLC6 Server and SLC5 Server.
-.PP
+.LP
 .I Prerequisites:
 .TP
 .B Foreman username
@@ -23,18 +24,20 @@ You must have logged into Foreman at least once \fBbefore\fR creating
 your first virtual machine with the same username you're executing
 this script (shell user)
 .TP
-.B Openstack credentials
-Your Openstack credentials are in place (get an \fBopenrc.sh\fR from
-Openstack Horizon and source it)
+.B OpenStack credentials
+Your OpenStack credentials are in place (get an \fBopenrc.sh\fR from
+OpenStack Horizon and source it). By doing this you will set the OpenStack
+instance you want to use and the tenant for your VM. More info:
+http://cern.ch/go/V7T7
 .TP
 .B Group membership
 You are member of \fBai-admins\fR e-group (otherwise the host staging will
 fail, the box won't get a host certificate and therefore Puppet won't
 run)
+
 .SH OPERATIONAL NOTES
-Please note that cattle mode
-.B is not available
-at the moment.
+Please note that cattle mode \fBis not available\fR at the moment.
+
 .SH ENVIRONMENT
 The behaviour of the tool can be customized by the following
 environment variables:
@@ -100,24 +103,27 @@ Port where Susie is listening to
 Space separated list of key=value pairs of metaparameters for nova boot (e.g
 "key1=value1 key2=value2").
 [string] (there is no default)
+
 .SH EXAMPLES
 .TP
 .B Create a pet VM with default VM parameters and register it in hostgroup "foo/spare":
-.PP
 AIBS_HOSTGROUP_NAME="foo/spare" AIBS_SSHKEY_NAME="my-key" ai-bs-vm pet higgsbox
-.LP
+
+.TP
 .B Same but with custom environment:
-.PP
 AIBS_HOSTGROUP_NAME="foo/spare" AIBS_SSHKEY_NAME="my-key"
 AIBS_ENVIRONMENT_NAME="devel" ai-bs-vm pet higgsbox
+
+.TP
+.B Now with custom security groups and different VM flavor:
+AIBS_SECURITYGROUPS_LIST="default,my-sec-group" AIBS_HOSTGROUP_NAME="foo/spare"
+AIBS_SSHKEY_NAME="my-key" AIBS_ENVIRONMENT_NAME="devel"
+AIBS_VMFLAVOR_NAME="m1.large" ai-bs-vm pet higgsbox
+
 .SH BUGS
-.B Reporting bugs
-.TP
-.PP
-Any problem? Open a support call on Jira (https://its.cern.ch/jira/)
-project "Agile Infrastructure" and assign it to Nacho Barrientos Arias
-<nacho.barrientos@cern.ch>.
+Any problem? Open a support call on Jira
+(https://its.cern.ch/jira/) project "Agile Infrastructure" and assign it
+to Nacho Barrientos Arias <nacho.barrientos@cern.ch>.
+
 .SH SEE ALSO
-.TP
 ai-kill-vm (1)
-.PP
