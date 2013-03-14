@@ -35,7 +35,6 @@ install -m 755 ai-bs-pet ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-vm ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin
 ln -s /usr/bin/ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin/ai-kill-pet
-install -Dm 755 userdata/pet ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/pet
 install -Dm 755 userdata/common ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/common
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
