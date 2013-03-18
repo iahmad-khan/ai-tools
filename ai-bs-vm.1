@@ -48,23 +48,19 @@ environment variables:
 Name of the Foreman hostgroup where you want your new virtual
 machine to land. It \fBmust have spare as tip\fP (e.g. "spare",
 "lxbatch/spare", "mycoolhostgroup/spare"). \fBMake sure the hostgroup
-exists before creating your virtual machine\fP [string]
+exists before creating your virtual machine\fP. If it doesn't, just
+create it. [string]
 .LP
 .I Optional variables:
-.TP
-.B AIBS_SSHKEY_NAME
-Name of the SSH key to login into the machine as root in case of
-disaster. Use Horizon or nova keypair-add to generate a new keypair
-[string]. Because of the security implications this option has, it's
-strongly recommended to avoid it. Your new VM will have the Kerberos
-module enabled by default, use it to configure who has root access
-to the box. See http://cern.ch/go/7qW6
 .TP
 .B AIBS_ENVIRONMENT_NAME
 Name of the Foreman environment you want your new virtual
 machine to join
 [string] (defaults to "production")
-.LP
+.TP
+.B AIBS_VMAVAILZONE_NAME
+The desired availability zone for the VM
+[string] (there is no default)
 .TP
 .B AIBS_VMFLAVOR_NAME
 OpenStack flavor name of the virtual machine
@@ -79,9 +75,13 @@ List of security groups your VM will belong to
 [comma-separed list of strings] (defaults to "default")
 Example: default,my-security-group
 .TP
-.B AIBS_VMAVAILZONE_NAME
-The desired availability zone for the VM
-[string] (there is no default)
+.B AIBS_SSHKEY_NAME
+Name of the SSH key to login into the machine as root in case of
+disaster. Use Horizon or nova keypair-add to generate a new keypair
+[string]. Because of the security implications this option has, it's
+strongly recommended to avoid it. Your new VM will have the Kerberos
+module enabled by default, use it to configure who has root access
+to the box. See http://cern.ch/go/7qW6
 .LP
 .I Other optional variables:
 .TP
@@ -89,10 +89,10 @@ The following parameters are for advanced users and debugging.
 .TP
 Probably you won't ever have to use any of them.
 .TP
-.B AIBS_VMBASEUSERDATA_PATH
-Path to the template to generate the user data
-of the virtual machine.
-[string] (defaults to "/usr/share/ai-tools/userdata/common")
+.B AIBS_METAPARAMETERS_LIST
+Space separated list of key=value pairs of metaparameters for nova boot (e.g
+"key1=value1 key2=value2").
+[string] (there is no default)
 .TP
 .B AIBS_SUSIE_HOSTNAME
 Host name of the Susie service (Foreman proxy)
@@ -102,10 +102,10 @@ Host name of the Susie service (Foreman proxy)
 Port where Susie is listening to
 [string] (defaults to "443")
 .TP
-.B AIBS_METAPARAMETERS_LIST
-Space separated list of key=value pairs of metaparameters for nova boot (e.g
-"key1=value1 key2=value2").
-[string] (there is no default)
+.B AIBS_VMBASEUSERDATA_PATH
+Path to the template to generate the user data
+of the virtual machine.
+[string] (defaults to "/usr/share/ai-tools/userdata/common")
 
 .SH EXAMPLES
 .TP
