@@ -44,12 +44,6 @@ fi
 echo $AIBS_HOSTGROUP_NAME | egrep -q "^([-A-Za-z0-9_]+(/[-A-Za-z0-9_]+)*/spare|spare)$"
 dieiffail $? "Invalid hostgroup (examples: 'spare', 'a/spare', 'a/b/spare'). Exiting" 1;
 
-if [ -z $AIBS_SSHKEY_NAME ]; then
-  echo "SSH key name must be specified via AIBS_SSHKEY_NAME environment variable."
-  echo "More info: 'man $0'. Exiting..."
-  exit 1
-fi
-
 if [ -z $OS_USERNAME ]; then
   echo "No OpenStack credentials found. Please source openrc.sh."
   echo "More info: 'man $0'. Exiting..."
@@ -155,9 +149,10 @@ fi
 
 echo "Host staged. Spawning VM..."
 nova boot --flavor $AIBS_VMFLAVOR_NAME --image "$AIBS_VMIMAGE_NAME" \
-  --key-name $AIBS_SSHKEY_NAME \
   $([[ ! -z $AIBS_VMAVAILZONE_NAME ]] &&
     echo "--availability-zone $AIBS_VMAVAILZONE_NAME") \
+  $([[ ! -z $AIBS_SSHKEY_NAME ]] &&
+    echo "--key-name $AIBS_SSHKEY_NAME") \
   --user-data $AIBS_VMUSERDATA_PATH \
   --security-groups $AIBS_SECURITYGROUPS_LIST \
   $METAPARAMS $AIBS_VMNAME

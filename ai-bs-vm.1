@@ -49,13 +49,16 @@ Name of the Foreman hostgroup where you want your new virtual
 machine to land. It \fBmust have spare as tip\fP (e.g. "spare",
 "lxbatch/spare", "mycoolhostgroup/spare"). \fBMake sure the hostgroup
 exists before creating your virtual machine\fP [string]
-.TP
-.B AIBS_SSHKEY_NAME
-Name of the SSH key to login as root into the machine in case of
-disaster. Use Horizon or nova keypair-add to generate a new keypair
-[string]
 .LP
 .I Optional variables:
+.TP
+.B AIBS_SSHKEY_NAME
+Name of the SSH key to login into the machine as root in case of
+disaster. Use Horizon or nova keypair-add to generate a new keypair
+[string]. Because of the security implications this option has, it's
+strongly recommended to avoid it. Your new VM will have the Kerberos
+module enabled by default, use it to configure who has root access
+to the box. See http://cern.ch/go/7qW6
 .TP
 .B AIBS_ENVIRONMENT_NAME
 Name of the Foreman environment you want your new virtual
@@ -107,15 +110,15 @@ Space separated list of key=value pairs of metaparameters for nova boot (e.g
 .SH EXAMPLES
 .TP
 .B Create a pet VM with default VM parameters and register it in hostgroup "foo/spare":
-AIBS_HOSTGROUP_NAME="foo/spare" AIBS_SSHKEY_NAME="my-key" ai-bs-vm pet higgsbox
+AIBS_HOSTGROUP_NAME="foo/spare" ai-bs-vm pet higgsbox
 
 .TP
 .B Same but with custom environment:
-AIBS_HOSTGROUP_NAME="foo/spare" AIBS_SSHKEY_NAME="my-key"
+AIBS_HOSTGROUP_NAME="foo/spare"
 AIBS_ENVIRONMENT_NAME="devel" ai-bs-vm pet higgsbox
 
 .TP
-.B Now with personalized security groups and different VM flavor:
+.B Now with personalized security groups, different VM flavor and SSH key:
 AIBS_SECURITYGROUPS_LIST="default,my-sec-group" AIBS_HOSTGROUP_NAME="foo/spare"
 AIBS_SSHKEY_NAME="my-key" AIBS_ENVIRONMENT_NAME="devel"
 AIBS_VMFLAVOR_NAME="m1.large" ai-bs-vm pet higgsbox
