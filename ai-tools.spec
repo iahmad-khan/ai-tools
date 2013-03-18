@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.18
+Version: 3.19
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Mon Mar 18 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.19-0-UNRELEASED
+- [ai-bs-vm] Make AIBS_SSHKEY_NAME optional
+
 * Mon Mar 11 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.18-0
 - [ai-bs-vm] More defensive userdata.
 - [ai-bs-vm] Add option AIBS_METAPARAMETERS_LIST. Patch by Tom K.
