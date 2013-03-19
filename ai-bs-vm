@@ -173,7 +173,7 @@ rm -f $AIBS_VMUSERDATA_PATH
 echo "Your machine is booting and the network is being configured right now."
 echo "It will show up in Foreman after a successful boot process and Puppet"
 echo "will run immediately."
-echo "In case of problems, if you provided an SSH key when creating the VM"
+echo "In case of problems, if you provided a SSH key when creating the VM"
 echo "use it to log into the box and take a look at /var/log/boothook.log"
 
 exit 0
