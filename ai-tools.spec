@@ -68,6 +68,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %changelog
 * Mon Mar 18 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.19-0-UNRELEASED
 - [ai-bs-vm] Make AIBS_SSHKEY_NAME optional
+- [ai-bs-vm] Minor changes to the documentation
 
 * Mon Mar 11 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.18-0
 - [ai-bs-vm] More defensive userdata.
