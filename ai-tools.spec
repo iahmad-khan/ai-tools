@@ -66,7 +66,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
-* Mon Mar 18 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.19-0-UNRELEASED
+* Mon Mar 18 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.19-0
 - [ai-bs-vm] Make AIBS_SSHKEY_NAME optional
 - [ai-bs-vm] Minor changes to the documentation
 
