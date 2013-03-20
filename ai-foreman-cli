@@ -209,7 +209,7 @@ sub ShowHost($@){
     #
     # Are the hosts known to Foreman?
     #
-    my $table = Text::TabularDisplay->new(qw(Hostname LAS Hostgroup Environment OS Arch Model Owner Comment));
+    my $table = Text::TabularDisplay->new(qw(Hostname LAS Hostgroup Environment OS Arch Model Ptable Owner Comment));
     #my @out = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
@@ -234,6 +234,7 @@ sub ShowHost($@){
 	$data{environment}     = $fmdata{environment}    { $data{environment_id}     || -1 } || "";
 	$data{owner}           = $fmdata{$ownertype}     { $data{owner_id}           || -1 } || "";
 	$data{model}           = $fmdata{model}          { $data{model_id}           || -1 } || "";
+	$data{ptable}          = $fmdata{ptable}         { $data{ptable_id}          || -1 } || "";
 
 	# get information from the Node Classifier as well
 	$request = HTTP::Request->new("GET","$url/node/$host.cern.ch?format=yml");
@@ -246,7 +247,7 @@ sub ShowHost($@){
 	    $data{alarmed} = "unkn";
 	}
 	#
-	$table->add($host, map {$data{$_}} qw(alarmed hostgroup environment operatingsystem architecture model owner comment));
+	$table->add($host, map {$data{$_}} qw(alarmed hostgroup environment operatingsystem architecture model ptable owner comment));
     }
 
     if ($table->items){
@@ -1243,14 +1244,13 @@ sub HandleOptions(){
 
     if ($action eq "addhost"){
         my @err = ();
-	map {push(@err,$_) unless exists $opts{$_}} qw(operatingsystem architecture hostgroup owner);
+	map {push(@err,$_) unless exists $opts{$_}} qw(operatingsystem architecture hostgroup ptable owner);
 	if (@err){
 	    map {print STDERR "[ERROR] Action \"$action\" requires mandatory option \"$_\"\n"} @err;
 	    exit 1;
 	}
 	$opts{model}       ||= "undefined";
 	$opts{domain}      ||= "cern.ch";
-	$opts{ptable}      ||= "RedHat default";
 	$opts{environment} ||= "production";
 	$opts{network}       = 1;
     }elsif ($action eq "updatehost"){
@@ -1544,7 +1544,7 @@ default: "cern.ch"
 
 =item B<--ptable> NAME
 
-default: "RedHat default"
+Partition table to be used at installation time
 
 =item B<--reset> NAME
 

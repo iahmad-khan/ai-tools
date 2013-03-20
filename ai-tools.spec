@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.19
+Version: 3.20
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Wed Mar 20 2013 Jan van Eldik <Jan.van.Eldik@cern.ch> 3.20-0
+- [ai-foreman-cli] make "--ptable" option mandatory for "addhost" action (AI-1984)
+
 * Mon Mar 18 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.19-0
 - [ai-bs-vm] Make AIBS_SSHKEY_NAME optional
 - [ai-bs-vm] Minor changes to the documentation
