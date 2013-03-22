@@ -661,7 +661,7 @@ sub UpdateHost($@){
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
 	my $response = $browser->request($request);
-	if ($action eq "addhost" and CheckAPIResponseStatus($response)){
+	if ($action eq "addhost" and $response->is_success){ # adding a host that already exists?
 	    if ($opt{reset}){
 		$request = HTTP::Request->new("DELETE","$url/hosts/$host.cern.ch");
 		$response = $browser->request($request);
@@ -1027,7 +1027,7 @@ sub SetupAims($$){
 		print STDOUT "[WARN] PXE status \"OFF\" for host \"$hostname\". Executing \"/usr/bin/aims2client pxeon $hostname $todo{$hostname}{aimstarget}\"\n";
 		system("/usr/bin/aims2client pxeon $hostname $todo{$hostname}{aimstarget} 2>/dev/null 1>/dev/null");
 		$cnt = 0;
-	    }elsif (not grep {$_ eq $status{$hostname}{syncstatus}} qw(YYY YYN YNY NYY)){
+	    }elsif ($status{$hostname}{syncstatus} ne "Y"){
 		print STDOUT "[VERB] Sync status \"$status{$hostname}{syncstatus}\" for host \"$hostname\" -> Be patient...\n" if $verbose;
 	    }else{
 		print STDOUT "[INFO] Host \"$hostname\" is properly configured in AIMS\n";

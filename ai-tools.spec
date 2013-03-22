@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.20
+Version: 3.21
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,10 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Fri Mar 22 2013 Jan van Eldik <Jan.van.Eldik@cern.ch> 3.21-0
+- [ai-foreman-cli] Aims sync status now simply "Y" when successfull (AI-2014)
+- [ai-foreman-cli] Don't print misleading error messages when adding a new host (AI-1574)
+
 * Wed Mar 20 2013 Jan van Eldik <Jan.van.Eldik@cern.ch> 3.20-0
 - [ai-foreman-cli] make "--ptable" option mandatory for "addhost" action (AI-1984)
 
