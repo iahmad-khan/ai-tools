@@ -162,7 +162,7 @@ nova boot --flavor $AIBS_VMFLAVOR_NAME --image "$AIBS_VMIMAGE_NAME" \
 if [ $? -ne 0 ]; then
   if [ $VMTYPE == "vmtype_pet" ]; then
     echo "Failed to create VM. Unstaging host...";
-    certmgr-stage --unstage --host $AIBS_VMNAME
+    certmgr-stage --unstage --host $AIBS_VMNAME.cern.ch
     dieiffail $? "Unstage process failed." 50
     exit 30
   fi
