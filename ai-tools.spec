@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.21
+Version: 3.22
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,10 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Mon Mar 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.22-0-UNRELEASED
+- [ai-bs-vm] Use full FQDN when unstaging a host
+- [ai-bs-vm] Flush /etc/yum.repos.d/
+
 * Fri Mar 22 2013 Jan van Eldik <Jan.van.Eldik@cern.ch> 3.21-0
 - [ai-foreman-cli] Aims sync status now simply "Y" when successfull (AI-2014)
 - [ai-foreman-cli] Don't print misleading error messages when adding a new host (AI-1574)
