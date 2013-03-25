@@ -105,8 +105,8 @@ execute_shell_block install_puppet 60 5 || unrecoverable_error "puppet"
 cat << EOF > /etc/puppet/puppet.conf
 # puppet.conf
 [main]
-server = lxbsp2702.cern.ch
-ca_server = baby01.cern.ch
+server = %PUPPETMASTER_HOSTNAME%
+ca_server = %CASERVER_HOSTNAME%
 pluginsync = true
 vardir = /var/lib/puppet
 logdir = /var/log/puppet
@@ -117,11 +117,8 @@ runinterval = 60
 [agent]
 report = true
 ignoreschedules = true
-environment = devel
-server = apachelb01.cern.ch
 certificate_revocation = false
-# END of puppet configuration from foreman template puppet.conf
-
+dynamicfacts = memorysize,memoryfree,swapsize,swapfree,uptime_seconds,uptime_hours
 EOF
 
 #
@@ -164,7 +161,7 @@ HOSTCERT=`puppet config print hostcert`
 CACERT="/etc/pki/tls/certs/CERN-bundle.pem"
 function get_host_certificate {
   echo "Getting host certificate..."
-  certmgr-getcert -s baby01.cern.ch -p 8008 -w $HOSTKEYDIR > $HOSTCERT
+  certmgr-getcert -s %CASERVER_HOSTNAME% -p 8008 -w $HOSTKEYDIR > $HOSTCERT
   [[ $? -ne 0 ]] && echo "certmgr-getcert didn't return 0" && return 1
   if [ -e "$HOSTKEYDIR/$HOSTNAME.key.pem" ]; then
     mv "$HOSTKEYDIR/$HOSTNAME.key.pem" $HOSTKEY

@@ -102,6 +102,14 @@ Host name of the Susie service (Foreman proxy)
 Port where Susie is listening to
 [string] (defaults to "443")
 .TP
+.B AIBS_PUPPETMASTER_HOSTNAME
+Hostname of the Puppet master the virtual machine will request its
+configuration from [string] (defaults to "lxbsp2702.cern.ch")
+.TP
+.B AIBS_CASERVER_HOSTNAME
+Hostname of the CA server the virtual machine will request a certificate
+from [string] (defaults to "baby01.cern.ch")
+.TP
 .B AIBS_VMBASEUSERDATA_PATH
 Path to the template to generate the user data
 of the virtual machine.

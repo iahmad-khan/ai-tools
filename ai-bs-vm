@@ -106,6 +106,11 @@ AIBS_SUSIE_PORT=${AIBS_SUSIE_PORT:-"443"}
 # VM base userdata
 AIBS_VMBASEUSERDATA_PATH=${AIBS_VMBASEUSERDATA_PATH:-"/usr/share/ai-tools/userdata/common"}
 
+# Puppet master hostname
+AIBS_PUPPETMASTER_HOSTNAME=${AIBS_PUPPETMASTER_HOSTNAME:-"lxbsp2702.cern.ch"}
+
+# CA server hostname
+AIBS_CASERVER_HOSTNAME=${AIBS_CASERVER_HOSTNAME:-"baby01.cern.ch"}
 
 echo "Trying to bootstrap '$AIBS_VMNAME'..."
 echo "VM flavor: $AIBS_VMFLAVOR_NAME"
@@ -118,6 +123,8 @@ echo "VM tenant: $OS_TENANT_NAME"
 echo "Foreman owner: $AIBS_FOREMAN_OWNER"
 echo "Foreman environment: $AIBS_ENVIRONMENT_NAME"
 echo "Foreman hostgroup: $AIBS_HOSTGROUP_NAME"
+echo "Puppet master: $AIBS_PUPPETMASTER_HOSTNAME"
+echo "CA server: $AIBS_CASERVER_HOSTNAME"
 
 #
 # User data generation
@@ -133,6 +140,8 @@ sed -i -e "s/%FOREMAN_ENVIRONMENT%/$AIBS_ENVIRONMENT_NAME/g" $AIBS_VMUSERDATA_PA
 sed -i -e "s/%FOREMAN_OWNER%/$AIBS_FOREMAN_OWNER/g" $AIBS_VMUSERDATA_PATH
 sed -i -e "s/%SUSIE_HOST%/$AIBS_SUSIE_HOSTNAME/g" $AIBS_VMUSERDATA_PATH
 sed -i -e "s/%SUSIE_PORT%/$AIBS_SUSIE_PORT/g" $AIBS_VMUSERDATA_PATH
+sed -i -e "s/%PUPPETMASTER_HOSTNAME%/$AIBS_PUPPETMASTER_HOSTNAME/g" $AIBS_VMUSERDATA_PATH
+sed -i -e "s/%CASERVER_HOSTNAME%/$AIBS_CASERVER_HOSTNAME/g" $AIBS_VMUSERDATA_PATH
 echo "Done"
 
 #
