@@ -69,6 +69,7 @@ rm -rf ${RPM_BUILD_ROOT}
 * Mon Mar 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.22-0-UNRELEASED
 - [ai-bs-vm] Use FQDN when unstaging a host
 - [ai-bs-vm] Add options AIBS_{PUPPETMASTER, CASERVER}_HOSTNAME
+- [ai-bs-vm] Flush /etc/yum.repos.d/
 
 * Fri Mar 22 2013 Jan van Eldik <Jan.van.Eldik@cern.ch> 3.21-0
 - [ai-foreman-cli] Aims sync status now simply "Y" when successfull (AI-2014)
