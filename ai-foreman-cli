@@ -1546,7 +1546,7 @@ default: "cern.ch"
 
 Partition table to be used at installation time
 
-=item B<--reset> NAME
+=item B<--reset>
 
 delete existing entry before re-adding the host
 
