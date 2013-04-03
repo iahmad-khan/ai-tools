@@ -66,7 +66,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
-* Mon Mar 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.22-0-UNRELEASED
+* Wed Apr 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.22-0
 - [ai-bs-vm] Use FQDN when unstaging a host
 - [ai-bs-vm] Add options AIBS_{PUPPETMASTER, CASERVER}_HOSTNAME
 - [ai-bs-vm] Flush /etc/yum.repos.d/
