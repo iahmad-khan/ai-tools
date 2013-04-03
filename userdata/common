@@ -220,6 +220,10 @@ function foreman_registration {
 }
 execute_shell_block foreman_registration 10 2 || unrecoverable_error "foreman"
 
+# Clean up /etc/yum.repos.d/, no longer necessary.
+# Puppet will recreate all of them.
+/bin/rm -rf /etc/yum.repos.d/*.repo
+
 # Turn puppet on for next reboot.
 /sbin/chkconfig puppet on
 
