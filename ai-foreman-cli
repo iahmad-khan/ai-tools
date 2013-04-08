@@ -356,8 +356,10 @@ sub InstallHost(@){
 	push(@err,"Host \"$host\" unknown to Foreman") unless $response->is_success;
 	next if @err;
 	#
+	# Sanity check: is the host known in DNS?
+	#
      	my %data = %{from_json($response->content)};
-	
+	#print Dumper(\%data);exit;
 	my $iaddr = gethostbyname($host);
 	if (not defined $iaddr){
 	    push(@err,"Cannot get IP address from DNS for host \"$host\"");
@@ -368,7 +370,16 @@ sub InstallHost(@){
 	    push(@err,"IP-address differs between Foreman (\"$data{host}{ip}\") and DNS (\"$iaddr\"). Consider running \"ai-foreman-cli updatehost --network $host\"");
 	    next;
 	}
-	# store relevant information
+	#
+	# Sanity check: is the host registered as a "Managed Host" in Foreman?
+	#
+ 	if (not $data{host}->{managed}){
+	    push(@err,"Host \"$host\" is registered as \"unmanaged\" in Foreman");
+	    next;
+	}
+	#
+	# All's well, so let's store relevant information
+	#
 	$todo{$host}{operatingsystem} = $fmdata{operatingsystem}{$data{host}{operatingsystem_id}};
 	$todo{$host}{architecture}    = $fmdata{architecture}   {$data{host}{architecture_id}   };
 	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          };
@@ -1268,11 +1279,11 @@ sub HandleOptions(){
 	}
     }elsif ($action eq "disownhost"){  # "disownhost" is a special case of "updatehost"
 	$action = "updatehost";
-	$opts{operatingsystem} ||= "SLC 6.3";
+	$opts{operatingsystem} ||= "SLC 6.4";
 	$opts{architecture}    ||= "x86_64";
 	$opts{hostgroup}       ||= "disowned";
 	#$opts{model}           ||= "";
-	$opts{owner}           ||= "IT-CF Sysadmins";
+	$opts{owner}           ||= "CC-Sysadmins";
 	$opts{ptable}          ||= "RedHat default";
 	$opts{comment}         ||= "disowned by $user_credentials{username} ".strftime("(%b %d, %Y)",localtime(time));
 	$opts{domain}          ||= "cern.ch";

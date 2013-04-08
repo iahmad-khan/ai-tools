@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.22
+Version: 3.23
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,10 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* XXXXXXXXXXXXXXX 2013 YYYYYY 3.23-0
+- [ai-foreman-cli] Sanity check: do not try to configure AIMS for hosts that are registered as "unmanaged" in Foreman (AI-2142)
+- [ai-foreman-cli] Minor updates to the values of the default parameters of the "disownhost" action
+
 * Wed Apr 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.22-0
 - [ai-bs-vm] Use FQDN when unstaging a host
 - [ai-bs-vm] Add options AIBS_{PUPPETMASTER, CASERVER}_HOSTNAME
