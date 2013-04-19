@@ -125,6 +125,7 @@ echo "Foreman environment: $AIBS_ENVIRONMENT_NAME"
 echo "Foreman hostgroup: $AIBS_HOSTGROUP_NAME"
 echo "Puppet master: $AIBS_PUPPETMASTER_HOSTNAME"
 echo "CA server: $AIBS_CASERVER_HOSTNAME"
+echo "Susie instance: $AIBS_SUSIE_HOSTNAME"
 
 #
 # User data generation
