@@ -59,8 +59,11 @@ echo $ALLOWED_VMTYPES | grep -q $VMTYPE
 [[ $? == 0 ]] || usage
 
 # VM name (must to follow RFC 1123 rules)
-[[ -z $2 ]] && usage
-AIBS_VMNAME=$(echo $2 | sed -e 's/\.cern\.ch$//g')
+if [ -z $2 ]; then
+  AIBS_VMNAME="$AIBS_VMNAME_PREFIX$(date +%s | sha1sum | cut -c -8)"
+else
+  AIBS_VMNAME=$(echo $2 | sed -e 's/\.cern\.ch$//g')
+fi
 echo $AIBS_VMNAME | egrep -q "^[a-zA-Z0-9][a-zA-Z0-9\-]*$"
 dieiffail $? "Invalid hostname. See RFC 1123"
 
