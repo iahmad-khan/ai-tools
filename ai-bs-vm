@@ -51,18 +51,15 @@ if [ -z $OS_USERNAME ]; then
 fi
 
 ## Cmdline validation
-# VM type
-VMTYPE="vmtype_$1"
-ALLOWED_VMTYPES="vmtype_pet"
 
-echo $ALLOWED_VMTYPES | grep -q $VMTYPE
-[[ $? == 0 ]] || usage
+# Legacy checks for backwards compatibily (to be removed in the future)
+echo $1 | egrep -q "^pet|cattle$" && shift
 
 # VM name (must to follow RFC 1123 rules)
-if [ -z $2 ]; then
+if [ -z $1 ]; then
   AIBS_VMNAME="$AIBS_VMNAME_PREFIX$(date +%s | sha1sum | cut -c -8)"
 else
-  AIBS_VMNAME=$(echo $2 | sed -e 's/\.cern\.ch$//g')
+  AIBS_VMNAME=$(echo $1 | sed -e 's/\.cern\.ch$//g')
 fi
 echo $AIBS_VMNAME | egrep -q "^[a-zA-Z0-9][a-zA-Z0-9\-]*$"
 dieiffail $? "Invalid hostname. See RFC 1123"

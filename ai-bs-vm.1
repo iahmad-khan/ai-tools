@@ -1,10 +1,9 @@
-.TH AI-BS-VM "1" "March 2013" "ai-bs-vm" "User Commands"
+.TH AI-BS-VM "1" "April 2013" "ai-bs-vm" "User Commands"
 .SH NAME
 ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 
 .SH SYNOPSIS
 .B "ai-bs-vm"
-.B pet|cattle
 [vmname]
 
 .SH DESCRIPTION
@@ -39,9 +38,6 @@ http://cern.ch/go/V7T7
 You are member of \fBai-admins\fR e-group (otherwise the host staging will
 fail, the box won't get a host certificate and therefore Puppet won't
 run)
-
-.SH OPERATIONAL NOTES
-Please note that cattle mode \fBis not available\fR at the moment.
 
 .SH ENVIRONMENT
 The behaviour of the tool can be customized by the following
@@ -126,19 +122,23 @@ of the virtual machine.
 
 .SH EXAMPLES
 .TP
-.B Create a pet VM with default VM parameters and register it in hostgroup "foo/spare":
-AIBS_HOSTGROUP_NAME="foo/spare" ai-bs-vm pet higgsbox
+.B Create a named VM with default VM parameters and register it in hostgroup "foo/spare":
+AIBS_HOSTGROUP_NAME="foo/spare" ai-bs-vm higgsbox
 
 .TP
 .B Same but with custom environment:
 AIBS_HOSTGROUP_NAME="foo/spare"
-AIBS_ENVIRONMENT_NAME="devel" ai-bs-vm pet higgsbox
+AIBS_ENVIRONMENT_NAME="devel" ai-bs-vm higgsbox
 
 .TP
 .B Now with personalized security groups, different VM flavor and SSH key:
 AIBS_SECURITYGROUPS_LIST="default,my-sec-group" AIBS_HOSTGROUP_NAME="foo/spare"
 AIBS_SSHKEY_NAME="my-key" AIBS_ENVIRONMENT_NAME="devel"
-AIBS_VMFLAVOR_NAME="m1.large" ai-bs-vm pet higgsbox
+AIBS_VMFLAVOR_NAME="m1.large" ai-bs-vm higgsbox
+
+.TP
+.B Create a VM with random hostname prefixed by "foo":
+AIBS_VMNAME_PREFIX="foo" AIBS_HOSTGROUP_NAME="foo/spare" ai-bs-vm higgsbox
 
 .SH BUGS
 Any problem? Open a support call on Jira
