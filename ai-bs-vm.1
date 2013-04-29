@@ -61,6 +61,19 @@ Name of the Foreman environment you want your new virtual
 machine to join
 [string] (defaults to "production")
 .TP
+.B AIBS_SECURITYGROUPS_LIST
+List of security groups your VM will belong to
+[comma-separed list of strings] (defaults to "default")
+Example: default,my-security-group
+.TP
+.B AIBS_SSHKEY_NAME
+Name of the SSH key to login into the machine as root in case of
+disaster. Use Horizon or nova keypair-add to generate a new keypair
+[string]. Because of the security implications this option has, it's
+strongly recommended to avoid it. Your new VM will have the Kerberos
+module enabled by default, use it to configure who has root access
+to the box. See http://cern.ch/go/7qW6
+.TP
 .B AIBS_VMAVAILZONE_NAME
 The desired availability zone for the VM
 [string] (there is no default)
@@ -76,19 +89,6 @@ OpenStack image name of the virtual machine
 .B AIBS_VMNAME_PREFIX
 Prefix to prepend to the randomly generated hostname
 [string] (defaults to "")
-.TP
-.B AIBS_SECURITYGROUPS_LIST
-List of security groups your VM will belong to
-[comma-separed list of strings] (defaults to "default")
-Example: default,my-security-group
-.TP
-.B AIBS_SSHKEY_NAME
-Name of the SSH key to login into the machine as root in case of
-disaster. Use Horizon or nova keypair-add to generate a new keypair
-[string]. Because of the security implications this option has, it's
-strongly recommended to avoid it. Your new VM will have the Kerberos
-module enabled by default, use it to configure who has root access
-to the box. See http://cern.ch/go/7qW6
 .LP
 .I Other optional variables:
 .TP
@@ -96,10 +96,18 @@ The following parameters are for advanced users and debugging.
 .TP
 Probably you won't ever have to use any of them.
 .TP
+.B AIBS_CASERVER_HOSTNAME
+Hostname of the CA server the virtual machine will request a certificate
+from [string] (defaults to "baby01.cern.ch")
+.TP
 .B AIBS_METAPARAMETERS_LIST
 Space separated list of key=value pairs of metaparameters for nova boot (e.g
 "key1=value1 key2=value2").
 [string] (there is no default)
+.TP
+.B AIBS_PUPPETMASTER_HOSTNAME
+Hostname of the Puppet master the virtual machine will request its
+configuration from [string] (defaults to "lxbsp2702.cern.ch")
 .TP
 .B AIBS_SUSIE_HOSTNAME
 Host name of the Susie service (Foreman proxy)
@@ -108,14 +116,6 @@ Host name of the Susie service (Foreman proxy)
 .B AIBS_SUSIE_PORT
 Port where Susie is listening to
 [string] (defaults to "443")
-.TP
-.B AIBS_PUPPETMASTER_HOSTNAME
-Hostname of the Puppet master the virtual machine will request its
-configuration from [string] (defaults to "lxbsp2702.cern.ch")
-.TP
-.B AIBS_CASERVER_HOSTNAME
-Hostname of the CA server the virtual machine will request a certificate
-from [string] (defaults to "baby01.cern.ch")
 .TP
 .B AIBS_VMBASEUSERDATA_PATH
 Path to the template to generate the user data
