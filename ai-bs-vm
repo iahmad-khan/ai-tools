@@ -14,6 +14,9 @@
 # Notes:
 # certmgr-stage will fail if you're not member of ai-admins egroup
 
+__AIBS_HASHLEN=10
+__AIBS_HOSTNAMELEN=60
+
 function dieiffail {
   if [ $1 -ne 0 ]; then
     if [ ! -z $AIBS_VMUSERDATA_PATH -a -e $AIBS_VMUSERDATA_PATH ]; then
@@ -53,8 +56,8 @@ else
 fi
 echo $AIBS_VMNAME | egrep -q "^[a-zA-Z0-9][a-zA-Z0-9\-]*$"
 dieiffail $? "Invalid hostname. See RFC 1123"
-[[ $(echo -n $AIBS_VMNAME | wc -c) -lt 61 ]]
-dieiffail $? "Hostname \"$AIBS_VMNAME.cern.ch\" is too long (limit: 60 characters)"
+[[ $(echo -n $AIBS_VMNAME | wc -c) -le $__AIBS_HOSTNAMELEN ]]
+dieiffail $? "\"$AIBS_VMNAME.cern.ch\" is too long (limit: $__AIBS_HOSTNAMELEN characters)"
 
 # Puppet environment
 # (default: "production"
