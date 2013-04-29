@@ -23,16 +23,16 @@ Current officially supported images are: SLC6 Server and SLC5 Server.
 .LP
 .I Prerequisites:
 .TP
-.B Foreman username
-You must have logged into Foreman at least once \fBbefore\fR creating
-your first virtual machine with the same username you're executing
-this script (shell user)
-.TP
 .B OpenStack credentials
 Your OpenStack credentials are in place (get an \fBopenrc.sh\fR from
 OpenStack Horizon and source it). By doing this you will set the OpenStack
 instance you want to use and the tenant for your VM. More info:
 http://cern.ch/go/V7T7
+.TP
+.B Foreman username
+You must have logged into Foreman at least once \fBbefore\fR creating
+your first virtual machine with the same username you used to log into
+OpenStack to get your credentials.
 .TP
 .B Group membership
 You are member of \fBai-admins\fR e-group (otherwise the host staging will
@@ -138,7 +138,7 @@ AIBS_VMFLAVOR_NAME="m1.large" ai-bs-vm higgsbox
 
 .TP
 .B Create a VM with random hostname prefixed by "foo":
-AIBS_VMNAME_PREFIX="foo" AIBS_HOSTGROUP_NAME="foo/spare" ai-bs-vm higgsbox
+AIBS_VMNAME_PREFIX="foo" AIBS_HOSTGROUP_NAME="foo/spare" ai-bs-vm
 
 .SH BUGS
 Any problem? Open a support call on Jira
