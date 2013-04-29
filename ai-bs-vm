@@ -1,11 +1,8 @@
 #!/bin/bash
-# This script helps to bootstrap a puppet-managed
+# This script helps to bootstrap a Puppet-managed
 # Foreman-enabled Openstack VM
 # Authors:
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
-# Notes:
-#  - This script is meant to be wrapped by ai-bs-pet
-#    and ai-bs-cattle in the near future.
 
 # Exit codes:
 #  0 success
