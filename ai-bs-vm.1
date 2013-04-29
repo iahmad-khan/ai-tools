@@ -11,7 +11,9 @@ ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 ai-bs-vm is a shell script that helps to create Puppet-managed Foreman-enabled OpenStack VMs.
 .LP
 If no VM name is specified a random hostname will be generated
-based on a trimmed SHA1 hashed UNIX timestamp.
+based on a trimmed SHA1 hashed UNIX timestamp. The length is
+limited to 60 characters (prefix included).
+
 .LP
 Foreman registration is performed by the VM itself when it
 boots for the first time. Therefore it will show up in the selected

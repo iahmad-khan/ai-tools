@@ -66,6 +66,8 @@ else
 fi
 echo $AIBS_VMNAME | egrep -q "^[a-zA-Z0-9][a-zA-Z0-9\-]*$"
 dieiffail $? "Invalid hostname. See RFC 1123"
+[[ $(echo -n $AIBS_VMNAME | wc -c) -lt 61 ]]
+dieiffail $? "Hostname \"$AIBS_VMNAME.cern.ch\" is too long (limit: 60 characters)"
 
 # Puppet environment
 # (default: 6 -- "devel"
