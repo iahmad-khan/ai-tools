@@ -69,6 +69,8 @@ rm -rf ${RPM_BUILD_ROOT}
 * XXXXXXXXXXXXXXX 2013 YYYYYY 3.23-0
 - [ai-foreman-cli] Sanity check: do not try to configure AIMS for hosts that are registered as "unmanaged" in Foreman (AI-2142)
 - [ai-foreman-cli] Minor updates to the values of the default parameters of the "disownhost" action
+- [ai-bs-vm] Generate random hostname if none is specified in the command line
+- [ai-bs-vm] Add parameter AIBS_VMNAME_PREFIX
 
 * Wed Apr 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.22-0
 - [ai-bs-vm] Use FQDN when unstaging a host
