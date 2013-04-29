@@ -64,7 +64,7 @@ dieiffail $? "Invalid hostname. See RFC 1123"
 dieiffail $? "Hostname \"$AIBS_VMNAME.cern.ch\" is too long (limit: 60 characters)"
 
 # Puppet environment
-# (default: 6 -- "devel"
+# (default: "production"
 AIBS_ENVIRONMENT_NAME=${AIBS_ENVIRONMENT_NAME:-"production"}
 
 # VM flavor
