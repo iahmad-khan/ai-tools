@@ -69,6 +69,7 @@ rm -rf ${RPM_BUILD_ROOT}
 - [ai-bs-vm] Add parameter AIBS_VMNAME_PREFIX
 - [ai-bs-vm] Limit hostname length to 60 characters
 - [ai-bs-vm] Drop pet and cattle distinction
+- [ai-bs-pet] Totally removed
 
 * Wed Apr 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.22-0
 - [ai-bs-vm] Use FQDN when unstaging a host
