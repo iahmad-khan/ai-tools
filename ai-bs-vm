@@ -50,7 +50,7 @@ echo $1 | egrep -q "^pet|cattle$" && shift
 
 # VM name (must to follow RFC 1123 rules)
 if [ -z $1 ]; then
-  AIBS_VMNAME="$AIBS_VMNAME_PREFIX$(date +%s | sha1sum | cut -c -8)"
+  AIBS_VMNAME="$AIBS_VMNAME_PREFIX$(date +%s.%N | sha1sum | cut -c -$__AIBS_HASHLEN)"
 else
   AIBS_VMNAME=$(echo $1 | sed -e 's/\.cern\.ch$//g')
 fi
