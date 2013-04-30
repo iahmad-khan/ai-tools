@@ -43,9 +43,12 @@ environment variables:
 .B AIBS_HOSTGROUP_NAME
 Name of the Foreman hostgroup where you want your new virtual
 machine to land. It \fBmust have spare as tip\fP (e.g. "spare",
-"lxbatch/spare", "mycoolhostgroup/spare"). \fBMake sure the hostgroup
-exists before creating your virtual machine\fP. If it doesn't, just
-create it. [string]
+"lxbatch/spare", "mycoolhostgroup/spare"). Reusing the common
+"spare" is fine if you don't need to apply any special configuration
+right after the machine shows up. If you want to use your own spare
+please \fBmake sure that the hostgroup exists before creating your
+virtual machine\fP. If it doesn't, just create it. [string]
+
 .LP
 .I Optional variables:
 .TP
