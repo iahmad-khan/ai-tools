@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.23
+Version: 3.24
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -62,6 +62,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Fri May 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.24-0-UNRELEASED
+- [ai-foreman-cli] Drop createvm subcommand
+
 * Tue Apr 30 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.23-0
 - [ai-foreman-cli] Sanity check: do not try to configure AIMS for hosts that are registered as "unmanaged" in Foreman (AI-2142)
 - [ai-foreman-cli] Minor updates to the values of the default parameters of the "disownhost" action
