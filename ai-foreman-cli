@@ -28,7 +28,6 @@ sub LandbHostInfo(@);
 sub ShowHost($@);
 sub ShowConfig($);
 sub DeleteHost($@);
-sub CreateVM($@);
 sub ChkHost(@);
 sub UpdateHost($@);
 sub InstallHost(@);
@@ -109,9 +108,6 @@ $browser->default_header('Content-Type' => "application/json");
 #
 if ($action eq "delhost"){
     DeleteHost(\%opts,@host);
-    exit 0;
-}elsif ($action eq "createvm"){
-    CreateVM(\%opts,@host);
     exit 0;
 }elsif ($action eq "chkhost"){
     ChkHost(@host);
@@ -1075,126 +1071,6 @@ sub SetupAims($$){
 
 ################################################################################################
 #
-# CreateVM(): Request new hosts from CVI
-#
-sub CreateVM($@){
-    my ($href,@host) = @_;
-    my %opts = %$href;
-    print Dumper(\%opts) if $debug;
-
-    my $proxy = "https://vmm.cern.ch/vmmgtsvc/service.asmx";
-
-    if( not defined $user_credentials{password} ) {
-      ($user_credentials{username},$user_credentials{password}) =
-        GetUserCredentials($user_credentials{username});
-    }
-   sub SOAP::Transport::HTTP::Client::get_basic_credentials{
-	return "cern\\$user_credentials{username}" => $user_credentials{password};
-    }
-    my $soapRequest = SOAP::Lite
-	-> uri('https://vmm.cern.ch/vmmgtsvc/')
-	-> on_fault(sub{my ($soap,$res) = @_;
-			print STDERR "[ERROR] Fatal SOAP error: ".(ref $res ? $res->faultstring : $soap->transport->status)."\n";
-			exit 1;
-		    })
-	-> default_ns('VmMgtSvc')
-	-> xmlschema('http://www.w3.org/2001/XMLSchema')
-	-> on_action( sub { sprintf '"VmMgtSvc/%s"', $_[1] } )
-	-> proxy($proxy, timeout => 3600)
-	;
-
-    #
-    # Verify template
-    #
-    if (defined $opts{template}){
-	my $call = $soapRequest->TemplateGetAll();#exit;
-	if ($call->fault) {
-	    print STDERR "[ERROR] Failure to retrieve \"TemplateGetAll\" information: " . $call->faultstring . "\n";
-	    exit -1;
-	}else{
-	    my $result = $call->result;
-	    my @template = map {$$_{Name}} @{$$result{Template}};
-	    if (not grep {$_ eq $opts{template}} @template){
-		print "Unknown template \"$opts{template}\" specified. Available Templates:\n";
-		map {print "   *  $_\n"} sort @template;
-		exit 1;
-	    }
-	}
-    }else{
-	$opts{template} = "linuxPXE";
-    }
-
-    #
-    # Verify hostgroup
-    #
-    if (defined $opts{hostgroup}){
-	my $call = $soapRequest->HostGroupGetAllForUser();#exit;
-	if ($call->fault) {
-	    print STDERR "[ERROR] Failure to retrieve \"HostGroupGetAllForUser\" information: " . $call->faultstring . "\n";
-	    exit -1;
-	}else{
-	    my $result = $call->result;
-	    my @hostgroup = ( ref($result->{"anyType"}) eq "ARRAY" ? @{$result->{"anyType"}} : $result->{"anyType"} );
-	    if (not grep {$_ eq $opts{hostgroup}} @hostgroup and not gethostbyname($opts{hostgroup})){
-		print "Unknown Host or Host Group \"$opts{hostgroup}\" specified. Available Host Groups:\n";
-		map {print "   *  $_\n"} sort @hostgroup;
-		exit 1;
-	    }
-	}
-    }else{
-	$opts{hostgroup} = "-- Central Service --";
-    }
-
-    #
-    # Administrivia
-    #
-    $opts{vmservice} ||= "";
-    $opts{owner}     ||= $user_credentials{username};
-
-    print Dumper(\%opts) if $debug;#exit;
-
-    #
-    # Create the VMs
-    #
-    for my $host (@host){
-	
-	if ($dryrun){
-	    print STDOUT "[INFO] Dryrun: request for \"$host\" deliberately not submitted\n";
-	    next;
-	}
- 
-	my $call = $soapRequest->
-	    call('VMCreateRequest',
-		 SOAP::Data->name('VMName'        )->value($host),                          # <VMName>string</VMName>
-		 SOAP::Data->name('Description'   )->value($opts{comment}),                 # <Description>string</Description>
-		 SOAP::Data->name('TemplateName'  )->value($opts{template}),                # <TemplateName>string</TemplateName>
-		 SOAP::Data->name('MainUser'      )->value($opts{owner}),                   # <MainUser>string</MainUser>
-		 SOAP::Data->name('Owner'         )->value($opts{owner}),                   # <Owner>string</Owner>
-		 SOAP::Data->name('VMHostOrGroup' )->value($opts{hostgroup}),               # <VMHost>string</VMHost>
-		 SOAP::Data->name('VMService'     )->value($opts{vmservice}),               # <VMService>string</VMService>
-		 SOAP::Data->name('CPUCount'      )->value($opts{"cpu-count"}),             # <CPUCount>int</CPUCount>
-		 SOAP::Data->name('MemorySizeGB'  )->value($opts{memory})->type('float'),   # <MemorySizeGB>float</MemorySizeGB>
-		 SOAP::Data->name('SysDiskSizeGB' )->value($opts{disksize}),                # <SysDiskSizeGB>int</SysDiskSizeGB>
-		 SOAP::Data->name('ExpirationDate')->value($opts{"expiration-date"})->type('dateTime'), # <ExpirationDate>string</ExpirationDate>
-            );
-	if ($call->fault) {
-	    print STDERR "[ERROR] Failure to execute \"VMCreateRequest\" for VM \"$host\": " . $call->faultstring . "\n";
-	    #exit -1;
-	}else{
-	    my $result = $call->result;
-	    if ($result){
-		print STDOUT "[WARN] Creation request for VM \"$host\" failed: $result\n";
-	    }else{
-		print STDOUT "[INFO] Creation request for VM \"$host\" successfully submitted\n";
-	    }
-	}
-	
-    }
-
-}
-
-################################################################################################
-#
 # ShowConfig(): display configuration information
 #
 sub ShowConfig($){
@@ -1233,7 +1109,6 @@ sub HandleOptions(){
 		   installhost => [qw(ksopts=s)],
 		   chkhost     => [qw()],
 		   showconfig  => [qw()],
-		   createvm    => [qw(expiration-date=s cpu-count=f memory=f disksize=f comment=s owner=s hostgroup=s template=s)],
     );
     HelpMessage("Mandatory parameter [".join("|",sort keys %options)."] missing") unless exists $options{$action};
 
@@ -1298,45 +1173,6 @@ sub HandleOptions(){
 	    print STDERR "[ERROR] Options \"--all\" and \"--filter\" are mutually exclusive.\n";
 	    exit 1;
 	}
-    }elsif ($action eq "createvm"){
-	my @host = @ARGV;
-	if (not @host){
-	    print STDERR "[ERROR] No hostname(s) given...\n";
-	    exit 1;
-	}
-        my @err = ();
-	map {push(@err,"Host \"$_\" already exists in DNS") if gethostbyname($_)} @host;
-	if (@err){
-	    map {print STDERR "[ERROR] $_\n"} @err;
-	    exit 1;
-	}
-
-        # @err = ();
-	# map {push(@err,"Action \"$action\" requires mandatory option \"$_\"") unless exists $opts{$_}} qw(expiration-date);
-	# if (@err){
-	#     map {print STDERR "[ERROR] $_\n"} @err;
-	#     exit 1;
-	# }
-	if (not exists $opts{"expiration-date"}){
-	    my $dt = DateTime->now + DateTime::Duration->new(months => 6, end_of_month => "limit");
-	    printf STDOUT "[INFO] VM will expire on %s\n", $dt->ymd if $debug;
-	    $opts{"expiration-date"} = $dt->ymd("-");
-	}else{
-	    if (not ParseDate($opts{"expiration-date"})){
-		print STDERR "[ERROR] Cannot parse \"".$opts{"expiration-date"}."\"\n";
-		exit 1;
-	    }
-	}
-	my $cmp = Date_Cmp($opts{"expiration-date"},ParseDate("today")) || 0;
-	if ($cmp < 0){
-	    print STDERR "[ERROR] expiration date \"".$opts{"expiration-date"}."\" in the past\n";
-	    exit 1;
-	}
-	$opts{"cpu-count"} ||=  2;
-	$opts{memory}      ||=  2;
-	$opts{disksize}    ||= 40;
-	$opts{comment}     ||= "(no description)";
-	
     }
 				      
     return $action,%opts;
@@ -1505,10 +1341,6 @@ Performs some basic consistency checks on the information about hosts
 
 Move the machine to the "disowned" hostgroup, assign ownership to SysAdmins. 
 
-=item B<createvm> [OPTIONS] HOSTNAME ...
-
-Create Virtual Machines in the CVI service
-
 =item B<showconfig> [OPTIONS]
 
 Show the Foreman configuration details 
@@ -1622,48 +1454,6 @@ B<Note:> --all and --filter are mutually exclusive.
 =item B<--ksopts> STRING
 
 Optional arguments that will be passed to Kickstart/Anaconda, in addition to those picked by this tool.
-
-=back
-
-=back
-
-=over 4 
-
-=item B<createvm>
-
-=over 8
-
-=item B<--expiration-date> YYYY-MM-DD
-
-Default: 6 months.
-Can be modified afterwards using CVI interface
-
-=item B<--template> NAME
-
-Default: linuxPXE
-
-=item B<--cpu-count> NUMBER
-
-Default: 2
-
-=item B<--memory> NUMBER
-
-Default: 2 [GB]
-
-=item B<--disksize> NUMBER
-
-Default: 40 [GB]
-
-=item B<--comment> COMMENT
-
-=item B<--owner> NAME
-
-Can be CERN account or E-group.
-Default: you.
-
-=item B<--hostgroup> NAME
-
-CVI hostgroup in which the VM will be created
 
 =back
 
