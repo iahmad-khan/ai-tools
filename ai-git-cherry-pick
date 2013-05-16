@@ -1,0 +1,61 @@
+#!/bin/bash
+# Utility script to cherry pick commits from
+# devel branch associated to the paths specified
+# as positional arguments.
+# It will select and cherry pick all the commits affecting
+# the specified paths that don't have an equivalent in the
+# target branch
+# Ex: ai-git-cherry-pick master modules/castor hostgroups/hg_castor
+# Ex: ai-git-cherry-pick testing modules/apache
+# Bugs: Nacho Barrientos <nacho.barrientos@cern.ch>
+
+function die {
+    echo $1
+    exit 1
+}
+
+function usage {
+    die "$0 <testing|master> path [path]..."
+}
+
+function fetch_latest {
+  echo -e "Getting latest $1..."
+  [[ ! -e .git/refs/heads/$1 ]] && git checkout -b $1 --track origin/$1
+  git checkout $1
+  git fetch origin
+  git merge --ff origin/$1
+  echo -e "Done"
+}
+
+[[ $# -gt 1 ]] || usage
+[[ $1 == "master" ]] || [[ $1 == "testing" ]] || usage
+[[ -d "modules" ]] || die "Seems you're not inside a clone of punch-modules"
+
+fetch_latest "$1"
+fetch_latest "devel"
+
+echo -e "\nOk, this is what I've got to cherry pick (only commits prefixed by \">\")..."
+beautiful="%Cred%m%Creset %h %Cgreen%s%Creset %Cred[%an]%Creset %aD"
+git log --pretty=format:"$beautiful" --stat $1...devel \
+  --left-right --no-merges --cherry-pick --reverse -- ${@:1}
+
+read -p "Do you wish to apply that onto $1? [ENTER/CTRL+C] " action
+
+echo "Checking $1 out..."
+git checkout $1
+
+commits=`git log --pretty=format:%m%H $1...devel --left-right --cherry-pick --reverse --no-merges -- ${@:1} | egrep ^\> | cut -f 2 -d ">"`
+
+for commit in `echo $commits`; do
+  echo "About the cherry pick commit $commit"
+  git cherry-pick -x -s $commit
+  if [ $? -ne 0 ]; then
+      echo "Git cherry-pick returned non-zero status :("
+      read -p "Press ENTER to continue, CTRL+C to stop" action
+  fi
+done
+
+echo -e "\nCommits applied into $1"
+echo "If you want to publish them: git push origin $1"
+echo "To reset $1 to the original state: git reset --hard origin/$1"
+exit 0
