@@ -65,6 +65,7 @@ rm -rf ${RPM_BUILD_ROOT}
 * Fri May 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.24-0-UNRELEASED
 - [ai-foreman-cli] Drop createvm subcommand
 - [ai-bs-vm] Stop installing virt-what, it's included in new images.
+- [ai-bs-vm] Create /etc/yum-puppet.repos.d
 
 * Tue Apr 30 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.23-0
 - [ai-foreman-cli] Sanity check: do not try to configure AIMS for hosts that are registered as "unmanaged" in Foreman (AI-2142)
