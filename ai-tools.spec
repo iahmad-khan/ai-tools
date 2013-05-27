@@ -62,7 +62,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
-* Fri May 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.24-0-UNRELEASED
+* Fri May 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.24-0
 - [ai-foreman-cli] Drop createvm subcommand
 - [ai-bs-vm] Stop installing virt-what, it's included in new images.
 - [ai-bs-vm] Create /etc/yum-puppet.repos.d
