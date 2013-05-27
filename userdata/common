@@ -219,6 +219,10 @@ execute_shell_block foreman_registration 10 2 || unrecoverable_error "foreman"
 # Puppet will recreate all of them.
 /bin/rm -rf /etc/yum.repos.d/*.repo
 
+# Because of: 418aa59f5c348bc97cfc48011ecdda62c26b5e36
+/bin/mkdir -p /etc/yum-puppet.repos.d
+/bin/echo "reposdir=/etc/yum-puppet.repos.d/" >> /etc/yum.conf
+
 # Turn puppet on for next reboot.
 /sbin/chkconfig puppet on
 
