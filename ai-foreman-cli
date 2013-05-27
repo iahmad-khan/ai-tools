@@ -61,7 +61,7 @@ if ($foreman_conn_params{hostname} =~ m/judy(\.cern\.ch)?/i and $foreman_conn_pa
     exit 1;
 }
 
-my @host = @ARGV;
+my @host = map {split(/,/,$_)} @ARGV;
 if (not @host and not ($action eq "showhost" or $action eq "showconfig")){
     print STDERR "[ERROR] No hostname(s) given...\n";
     exit 1;
