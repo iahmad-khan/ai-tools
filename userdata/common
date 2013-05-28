@@ -111,7 +111,7 @@ vardir = /var/lib/puppet
 logdir = /var/log/puppet
 rundir = /var/run/puppet
 ssldir = /var/lib/puppet/ssl
-runinterval = 60
+runinterval = 1800
 
 [agent]
 report = true
