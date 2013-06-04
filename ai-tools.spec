@@ -31,6 +31,7 @@ mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-foreman-cli    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-gen-ssh-yaml    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 ai-git-cherry-pick ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-vm ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin
 ln -s /usr/bin/ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin/ai-kill-pet
@@ -50,6 +51,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %doc README.judy
 /usr/bin/ai-foreman-cli
 /usr/bin/ai-landb-bind-mac
+/usr/bin/ai-git-cherry-pick
 /usr/bin/ai-bs-vm
 /usr/bin/ai-kill-vm
 /usr/bin/ai-kill-pet
