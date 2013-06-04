@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.24
+Version: 3.25
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -64,6 +64,10 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Tue Jun 04 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.25-0
+- [ai-git-cherry-pick] Install
+- [ai-bs-vm] Change initial Puppet interval to 1800
+
 * Fri May 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.24-0
 - [ai-foreman-cli] Drop createvm subcommand
 - [ai-bs-vm] Stop installing virt-what, it's included in new images.
