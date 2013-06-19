@@ -112,6 +112,7 @@ logdir = /var/log/puppet
 rundir = /var/run/puppet
 ssldir = /var/lib/puppet/ssl
 runinterval = 1800
+environment = %FOREMAN_ENVIRONMENT%
 
 [agent]
 report = true
