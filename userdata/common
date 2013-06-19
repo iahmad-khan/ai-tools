@@ -80,7 +80,7 @@ function set_repositories {
 }
 execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
 
-DEPS="cern-get-keytab certmgr-client CERN-CA-certs"
+DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
 
 [ "$OS_MAJOR_VERSION" == "6" ] && DEPS="$DEPS yum-plugin-priorities"
 [ "$OS_MAJOR_VERSION" == "5" ] && DEPS="$DEPS yum-priorities"
@@ -221,13 +221,17 @@ execute_shell_block foreman_registration 10 2 || unrecoverable_error "foreman"
 
 # Because of: 418aa59f5c348bc97cfc48011ecdda62c26b5e36
 /bin/mkdir -p /etc/yum-puppet.repos.d
-/bin/echo "reposdir=/etc/yum-puppet.repos.d/" >> /etc/yum.conf
+/usr/bin/augtool -s set /files/etc/yum.conf/main/reposdir /etc/yum-puppet.repos.d/
+
+# Make sure runs in the background use the batch cluster
+/usr/bin/augtool -s set /files/etc/sysconfig/puppet/PUPPET_PORT 8150
+/bin/echo "set /files/etc/sysconfig/puppet/PUPPET_EXTRA_OPTS --ca_port=8140" | augtool -s
 
 # Turn puppet on for next reboot.
 /sbin/chkconfig puppet on
 
 # And start it manually as the VM won't reboot
-service puppet start
+service puppet restart
 
 # Restart syslog to make sure it logs with new hostname
 service rsyslog restart
