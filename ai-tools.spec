@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.25
+Version: 3.26
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -64,6 +64,11 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Fri Jun 21 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.26-0
+- [ai-bs-vm] Point initial run to the batch cluster
+- [ai-bs-vm] Fill initial environment with %FOREMAN_ENVIRONMENT%
+- [ai-bs-vm] Modify /etc/yum.conf with an augeas call
+
 * Tue Jun 04 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.25-0
 - [ai-git-cherry-pick] Install
 - [ai-bs-vm] Change initial Puppet interval to 1800
