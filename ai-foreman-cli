@@ -958,7 +958,7 @@ sub SetupAims($$){
 	use Switch;
 	switch ($model) {
 	    case "hyper-v virtual machine" { $kopts .= ""                                   }
-	    case "X8DT6"                   { $kopts .= " console=tty0 console=ttyS2,9600n8" }
+	    case "x8dt6"                   { $kopts .= " console=tty0 console=ttyS2,9600n8" }
 	    else                           { $kopts .= " console=tty0" }
 	}
 	if (not exists $AimsImg{$todo{$host}{operatingsystem}}){

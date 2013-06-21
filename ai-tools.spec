@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.26
+Version: 3.27
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -64,6 +64,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* XXXXXXXXXXXX 3.27-0
+- [ai-foreman-cli] bug fix for upper-case model name
+
 * Fri Jun 21 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.26-0
 - [ai-bs-vm] Point initial run to the batch cluster
 - [ai-bs-vm] Fill initial environment with %FOREMAN_ENVIRONMENT%
