@@ -91,6 +91,7 @@ if (not defined $foreman_conn_params{cookiejar}) {
     print $cookie_jar->as_string() if $debug;
     $browser->cookie_jar( $cookie_jar );
     $browser->max_redirect(0);
+    $user_credentials{username} ||= (getpwuid($<))[0];
 }
 
 # There's only one UserAgent shared by all the script, so we can
@@ -402,7 +403,7 @@ sub InstallHost(@){
     #
     for my $host (sort keys %todo){
 
-	my %data = (USER => ($user_credentials{username} || (getpwuid($<))[0]));
+	my %data = (USER => $user_credentials{username});
 
 	if (gethostbyname("${host}-gigeth")){
 	    print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
