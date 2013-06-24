@@ -402,7 +402,7 @@ sub InstallHost(@){
     #
     for my $host (sort keys %todo){
 
-	my %data = (USER => $user_credentials{username});
+	my %data = (USER => ($user_credentials{username} || (getpwuid($<))[0]));
 
 	if (gethostbyname("${host}-gigeth")){
 	    print "[INFO] Getting LANdb info for host \"$host\", patience please...\n";
