@@ -475,7 +475,17 @@ sub InstallHost(@){
 	print F $result;
 	print $result if $debug;
 	close F;
-    
+
+	my $enc_request = HTTP::Request->new("GET","$url/node/$host.cern.ch?format=yml");
+	my $enc_response = $browser->request($enc_request);
+	next unless CheckAPIResponseStatus($enc_response);
+	use YAML::Syck;
+	my $enc_data = Load($enc_response->content);
+  if (exists $enc_data->{parameters}->{hwdbkopts} and
+        $enc_data->{parameters}->{hwdbkopts} ne "none") {
+    $todo{$host}{hwdbkopts} = $enc_data->{parameters}->{hwdbkopts};
+  }
+
     }
     #print Dumper(\%todo);exit;
     #
@@ -949,12 +959,20 @@ sub SetupAims($$){
     #
     for my $host (sort keys %todo){
 	my $cnt = 0;
-	my $kopts = "text network ks ksdevice=bootif latefcload $ksopts";
-	my $model = lc($todo{$host}{model});
+  my @kopts = ('text', 'network', 'ks', 'ksdevice=bootif', 'latefcload');
+  push(@kopts, split(/ +/, $ksopts));
+	#my $kopts = "text network ks ksdevice=bootif latefcload $ksopts";
 	#$kopts .= " pcie_aspm=off" if $model eq "X8DT6";
-	$kopts .= " nodmraid"; # AI 738, SNOW INC147316
-	#$kopts .= " hwprobe=-modules.pata"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
-	#$kopts .= " hda=noprobe"  if $model eq "hyper-v virtual machine" and $todo{$host}{operatingsystem} =~ /^(slc|redhat) 5/i;
+  # Add kopts coming from HWDB
+  if(exists $todo{$host}{hwdbkopts}) {
+    push(@kopts, split(/ +/, $todo{$host}{hwdbkopts}));
+  }
+  push(@kopts, "nodmraid"); # AI 738, SNOW INC147316
+  my $kopts = join(' ', @kopts);
+	my $model = lc($todo{$host}{model});
+
+  print STDOUT "[VERB] kopts = $kopts\n" if $verbose;
+
 	# Console options
 	use Switch;
 	switch ($model) {

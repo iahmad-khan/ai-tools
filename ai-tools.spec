@@ -67,6 +67,7 @@ rm -rf ${RPM_BUILD_ROOT}
 * XXXXXXXXXXXX 3.27-0
 - [ai-foreman-cli][installhost] bug fix for e-mail address in KS file [AI-2579]
 - [ai-foreman-cli][installhost] bug fix for upper-case model name
+- [ai-foreman-cli][installhost] Append host[params][hwdbkopts] to --kopts
 
 * Fri Jun 21 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.26-0
 - [ai-bs-vm] Point initial run to the batch cluster
