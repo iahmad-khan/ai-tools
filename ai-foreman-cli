@@ -379,7 +379,7 @@ sub InstallHost(@){
 	#
 	$todo{$host}{operatingsystem} = $fmdata{operatingsystem}{$data{host}{operatingsystem_id}};
 	$todo{$host}{architecture}    = $fmdata{architecture}   {$data{host}{architecture_id}   };
-	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          };
+	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          } if defined $data{host}{model_id};
 	$todo{$host}{hostname}        = $host;
 
 	my ($owner_id,$owner_type) = ($data{host}{owner_id},$data{host}{owner_type});
@@ -475,16 +475,15 @@ sub InstallHost(@){
 	print F $result;
 	print $result if $debug;
 	close F;
-
+	
 	my $enc_request = HTTP::Request->new("GET","$url/node/$host.cern.ch?format=yml");
 	my $enc_response = $browser->request($enc_request);
 	next unless CheckAPIResponseStatus($enc_response);
 	use YAML::Syck;
 	my $enc_data = Load($enc_response->content);
-  if (exists $enc_data->{parameters}->{hwdbkopts} and
-        $enc_data->{parameters}->{hwdbkopts} ne "none") {
-    $todo{$host}{hwdbkopts} = $enc_data->{parameters}->{hwdbkopts};
-  }
+	if (exists $enc_data->{parameters}->{hwdbkopts} and $enc_data->{parameters}->{hwdbkopts} ne "none") {
+	    $todo{$host}{hwdbkopts} = $enc_data->{parameters}->{hwdbkopts};
+	}
 
     }
     #print Dumper(\%todo);exit;
@@ -959,19 +958,19 @@ sub SetupAims($$){
     #
     for my $host (sort keys %todo){
 	my $cnt = 0;
-  my @kopts = ('text', 'network', 'ks', 'ksdevice=bootif', 'latefcload');
-  push(@kopts, split(/ +/, $ksopts));
+	my @kopts = qw(text network ks ksdevice=bootif latefcload);
+	push(@kopts, split(/ +/, $ksopts));
 	#my $kopts = "text network ks ksdevice=bootif latefcload $ksopts";
 	#$kopts .= " pcie_aspm=off" if $model eq "X8DT6";
-  # Add kopts coming from HWDB
-  if(exists $todo{$host}{hwdbkopts}) {
-    push(@kopts, split(/ +/, $todo{$host}{hwdbkopts}));
-  }
-  push(@kopts, "nodmraid"); # AI 738, SNOW INC147316
-  my $kopts = join(' ', @kopts);
+	# Add kopts coming from HWDB
+	if (exists $todo{$host}{hwdbkopts}) {
+	    push(@kopts, split(/ +/, $todo{$host}{hwdbkopts}));
+	}
+	push(@kopts, "nodmraid"); # AI 738, SNOW INC147316
+	my $kopts = join(' ', @kopts);
 	my $model = lc($todo{$host}{model});
 
-  print STDOUT "[VERB] kopts = $kopts\n" if $verbose;
+	print STDOUT "[VERB] kopts = $kopts\n" if $verbose;
 
 	# Console options
 	use Switch;
@@ -996,8 +995,7 @@ sub SetupAims($$){
 	    next;
 	}
 
-	print STDOUT "[INFO] Configuring AIMS for $host\n";
-	print STDOUT "[VERB] Running \"$todo{$host}{aimscmd}\"\n" if $verbose;
+	print STDOUT "[INFO] Configuring AIMS for $host: $todo{$host}{aimscmd}\n";
 	if (system("$todo{$host}{aimscmd} 2>/dev/null 1>/dev/null") != 0){
 	    print STDERR "[ERROR] AIMS configuration failed: $!\n";
 	}
@@ -1473,6 +1471,8 @@ B<Note:> --all and --filter are mutually exclusive.
 =item B<--ksopts> STRING
 
 Optional arguments that will be passed to Kickstart/Anaconda, in addition to those picked by this tool.
+
+Examples: --ksopts "nousb nousbstorage" 
 
 =back
 
