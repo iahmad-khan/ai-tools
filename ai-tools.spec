@@ -64,6 +64,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* XXXXXXXXXXXX 3.28-0
+- [ai-foreman-cli][installhost] Bug fix for PXE target for SCL 6.1 [AI-2680]
+
 * Tue Jul 02 2013 Jan van Eldik <Jan.van.Eldik@cern.ch> 3.27-0
 - [ai-foreman-cli][installhost] Bug fix for e-mail address in KS file [AI-2579]
 - [ai-foreman-cli][installhost] Bug fix for upper-case model name

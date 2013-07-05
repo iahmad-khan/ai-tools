@@ -146,7 +146,7 @@ if ($action eq "showhost"){
 my $err = 0;
 for my $attr (qw(architecture model operatingsystem hostgroup environment domain ptable owner)){
     next if not defined $opts{$attr};
-    my @values = ($attr eq "owner" ? sort values %{$fmdata{user}}, values %{$fmdata{usergroup}} : sort values %{$fmdata{$attr}} );
+    my @values = sort grep {defined($_)} ($attr eq "owner" ? (values %{$fmdata{user}}, values %{$fmdata{usergroup}}) : values %{$fmdata{$attr}} );
     next if grep {$opts{$attr} eq $_} @values;
     my $table = Text::TabularDisplay->new();
     my $max = ($attr eq "hostgroup" ? 4 : 5);
@@ -916,7 +916,7 @@ sub SetupAims($$){
         "SLC 6.4"     => "SLC64",
         "SLC 6.3"     => "SLC63",
 	"SLC 6.2"     => "SLC62",
-	"SLC 6.1"     => "SLC61",
+	"SLC 6.1"     => "SLC61_BETA",
         #"SLC 6"       => "SLC6X",
         "SLC 5.9"     => "SLC59",
         "SLC 5.8"     => "SLC58",
@@ -931,6 +931,7 @@ sub SetupAims($$){
         "RedHat 5.8"  => "RHES_5_U8",
         "RedHat 5.7"  => "RHES_5_U7",
 	# Fedora
+	"Fedora 19"   => "FEDORA19",
 	"Fedora 18"   => "FEDORA18",
 	"Fedora 17"   => "FEDORA17",
 	"Fedora 16"   => "FEDORA16",
