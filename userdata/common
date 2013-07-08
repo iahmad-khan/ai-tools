@@ -125,7 +125,40 @@ EOF
 #
 # Generate kerberos keytab.
 #
-curl  http://straylen.web.cern.ch/straylen/krb5.conf > /etc/krb5.conf
+echo "Generating initial krb5.conf..." >> $LOGFILE
+cat << EOF > /etc/krb5.conf
+[libdefaults]
+ default_realm = CERN.CH
+ ticket_lifetime = 25h
+ renew_lifetime = 120h
+ forwardable = true
+ proxiable = true
+ default_tkt_enctypes = arcfour-hmac-md5 aes256-cts aes128-cts des3-cbc-sha1 des-cbc-md5 des-cbc-crc
+
+[appdefaults]
+  pam = {
+         external = true
+         krb4_convert = false
+         krb4_convert_524 = false
+         krb4_use_as_req = false
+  }
+
+[domain_realm]
+  .cern.ch = CERN.CH
+
+[realms]
+  CERN.CH  = {
+    default_domain = cern.ch
+    kpasswd_server = afskrb5m.cern.ch
+    admin_server = afskrb5m.cern.ch
+    kdc = cerndc.cern.ch
+    v4_name_convert = {
+      host = {
+        rcmd = host
+      }
+    }
+  }
+EOF
 
 install -m 0771 -o puppet -d /var/lib/puppet/ssl
 install -m 0755 -o puppet -d /var/lib/puppet/ssl/certs
