@@ -22,7 +22,7 @@ function execute_shell_block {
   $1
   until [ $? == 0 ] ; do
     if [ $attemptno -eq $max_attempts ] ; then
-      echo "Max number of attempts exceeded"
+      echo "Max number of attempts exceeded" >> $LOGFILE
       return 1
     fi
     echo "Execution failed (attempt #$attemptno out of #$max_attempts) (next in $waittime secs)"
@@ -34,24 +34,18 @@ function execute_shell_block {
 }
 
 function unrecoverable_error {
-  # Recover stdout
-  exec 1>&3
-  echo "Step '$1' failed. Puppet won't run. Use SSH key to login."
+  echo "Step '$1' failed. Puppet won't run. Use SSH key (if available) to login." >> $LOGFILE
   exit 1
 }
 
 LOCKFILE=/var/lib/cloud/boothook_lock
 LOGFILE=/var/log/boothook.log
 
-[ -e "$LOCKFILE" ] && echo "This script has already run" && exit 0
+[ -e "$LOCKFILE" ] && echo "This script has already run" >> $LOGFILE && exit 0
 touch $LOCKFILE
 
-echo "Setting up keytab, certificates and Puppet. Please wait..."
-echo "In case of problems a logfile is available in $LOGFILE"
-
-exec 3>&1
-exec 1> $LOGFILE
-exec 2>&1
+echo "Setting up keytab, certificates and Puppet. Please wait..." >> $LOGFILE
+date >> $LOGFILE
 
 OS_MAJOR_VERSION=`lsb_release -r | awk '{split($2,a,"."); print a[1]}'`
 
@@ -66,14 +60,14 @@ function check_reverse {
 }
 execute_shell_block check_reverse 120 15 || unrecoverable_error "reverse"
 
-echo "DNS updated. Setting hostname to ${HOSTNAME}"
+echo "DNS updated. Setting hostname to ${HOSTNAME}" >> $LOGFILE
 hostname $HOSTNAME
 
 #
 # Install bootstrapping-time dependencies
 #
 function set_repositories {
-  echo "Setting AI repository..."
+  echo "Setting AI repository..." >> $LOGFILE
   curl http://linuxsoft.cern.ch/koji/ai$OS_MAJOR_VERSION.repo > \
     /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
   test -f /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
@@ -86,21 +80,24 @@ DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
 [ "$OS_MAJOR_VERSION" == "5" ] && DEPS="$DEPS yum-priorities"
 
 function install_dependencies {
-  echo "Trying to install dependencies..."
+  echo "Trying to install dependencies..." >> $LOGFILE
   yum install -y --enablerepo=ai$OS_MAJOR_VERSION $DEPS
   rpm -ql $DEPS > /dev/null
 }
 execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependencies"
 
 function install_puppet {
-  echo "Trying to install puppet..."
+  echo "Trying to install puppet from AI repositories..." >> $LOGFILE
   yum remove -y puppet
   yum install -y --enablerepo=ai$OS_MAJOR_VERSION puppet
   rpm -ql puppet > /dev/null
 }
 execute_shell_block install_puppet 60 5 || unrecoverable_error "puppet"
 
-# Fill puppet.conf
+#
+# Generate puppet.conf
+#
+echo "Generating initial puppet.conf..." >> $LOGFILE
 cat << EOF > /etc/puppet/puppet.conf
 # puppet.conf
 [main]
@@ -174,7 +171,7 @@ case $OS_MAJOR_VERSION in
 esac
 
 function generate_keytab {
-  echo "Calling cern-get-keytab..."
+  echo "Calling cern-get-keytab..." >> $LOGFILE
   cern-get-keytab
   [[ $? -ne 0 ]] && echo "cern-get-keytab didn't return 0" && return 1
   test -s /etc/krb5.keytab
@@ -194,7 +191,7 @@ HOSTPUBKEY=`puppet config print hostpubkey`
 HOSTCERT=`puppet config print hostcert`
 CACERT="/etc/pki/tls/certs/CERN-bundle.pem"
 function get_host_certificate {
-  echo "Getting host certificate..."
+  echo "Getting host certificate..." >> $LOGFILE
   certmgr-getcert -s %CASERVER_HOSTNAME% -p 8008 -w $HOSTKEYDIR > $HOSTCERT
   [[ $? -ne 0 ]] && echo "certmgr-getcert didn't return 0" && return 1
   if [ -e "$HOSTKEYDIR/$HOSTNAME.key.pem" ]; then
@@ -225,8 +222,7 @@ fi
 SUSIE_BODY="$SUSIE_BODY }"
 
 function foreman_registration {
-  echo "Registering VM in Foreman..."
-  echo "Request body: $SUSIE_BODY"
+  echo "Registering VM in Foreman..." >> $LOGFILE
   SUSIE_HTTP_CODE=$(curl -H "Content-Type: application/json" \
     -d "$SUSIE_BODY" \
     --cert $HOSTCERT --key $HOSTKEY \
@@ -235,16 +231,15 @@ function foreman_registration {
     $SUSIE_URL)
 
   if [ $SUSIE_HTTP_CODE == "201" ]; then
-      echo "Host registered in Foreman via Susie :-)"
+      echo "Host registered in Foreman via Susie :-)" >> $LOGFILE
       return 0
   elif [ $SUSIE_HTTP_CODE == "000" ]; then
-      echo "Host registration failed"
-      echo "Susie call failed (no network, bad certificates...)"
+      echo "Host registration failed" >> $LOGFILE
+      echo "Susie call failed (no network, bad certificates...)" >> $LOGFILE
       return 10
   else
-      echo "Host registration failed"
-      echo "HTTP status code: $SUSIE_HTTP_CODE"
-      echo "More info: http://aisusie.cern.ch"
+      echo "Host registration failed" >> $LOGFILE
+      echo "HTTP status code: $SUSIE_HTTP_CODE" >> $LOGFILE
       return 11
   fi
 }
@@ -271,10 +266,7 @@ service puppet restart
 # Restart syslog to make sure it logs with new hostname
 service rsyslog restart
 
-date
-echo "Done"
-
-exec 1>&3
-echo "Done. Puppet is ready to run for the first time."
+echo "Done. Puppet is ready to run for the first time." >> $LOGFILE
+date >> $LOGFILE
 
 --===============4259264238506844499==--
