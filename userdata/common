@@ -108,8 +108,6 @@ vardir = /var/lib/puppet
 logdir = /var/log/puppet
 rundir = /var/run/puppet
 ssldir = /var/lib/puppet/ssl
-runinterval = 1800
-environment = %FOREMAN_ENVIRONMENT%
 
 [agent]
 report = true
@@ -117,6 +115,8 @@ ignoreschedules = true
 certificate_revocation = false
 dynamicfacts = memorysize,memoryfree,swapsize,swapfree,uptime_seconds,uptime_hours
 configtimeout = 500
+runinterval = 1800
+environment = %FOREMAN_ENVIRONMENT%
 EOF
 
 #
