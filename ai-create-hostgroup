@@ -99,7 +99,8 @@ if [ ! -z $IMPORT ]; then
   dieiffail "Git clone (punch-modules:$PUNCH_MODULES_BRANCH) failed" 11
   echo "Copying code..."
   [[ ! -e $CLONE_PATH/hostgroups/hg_$HOSTGROUP_NAME ]] && \
-    die "Top level hostgroup $HOSTGROUP_NAME does not exist in punch-modules"
+    rm -rf $CLONE_PATH && \
+    die "Top level hostgroup '$HOSTGROUP_NAME' does not exist in punch-modules"
   cp -R $CLONE_PATH/hostgroups/hg_$HOSTGROUP_NAME/* $REPOSITORY_NAME/code/
   echo "Copying data..."
   if [ -e $CLONE_PATH/hieradata/hostgroups/$HOSTGROUP_NAME ]; then

@@ -98,7 +98,8 @@ if [ ! -z $IMPORT ]; then
   dieiffail "Git clone (punch-modules:$PUNCH_MODULES_BRANCH) failed" 11
   echo "Copying code..."
   [[ ! -e $CLONE_PATH/modules/$MODULE_NAME ]] && \
-    die "Module $MODULE_NAME does not exist in punch-modules"
+    rm -rf $CLONE_PATH && \
+    die "Module '$MODULE_NAME' does not exist in punch-modules"
   cp -R $CLONE_PATH/modules/$MODULE_NAME/* $REPOSITORY_NAME/code/
   echo "Copying data..."
   if [ -e $CLONE_PATH/hieradata/module_names/$MODULE_NAME.yaml ]; then
