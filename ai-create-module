@@ -134,7 +134,7 @@ myvar has <%= @myvar %> value
 EOF
 fi
 
-debug "Inializing Git repository and mandatory branches..."
+debug "Initializing Git repository and mandatory branches..."
 cd $REPOSITORY_NAME
 git init &> /dev/null
 dieiffail "Git init failed" 10
