@@ -7,11 +7,16 @@
 
 function usage {
   echo "Usage:"
-  echo "$0 -m MODULE_NAME -r URL"
+  echo "$0 -m MODULE_NAME -r URL -m MODULE_NAME [-i] [-v] [-p URL] [-b BRANCH]"
   echo "   -m Module name"
   echo "   -r URL to an empty Git repository where the module will be stored"
+  echo "   -i Enable import capabilities (module migration from punch-modules)"
+  echo "   -p Old punch-modules URL (defaults to: http://gitgw.cern.ch/git/punch-modules)"
+  echo "   -b Branch to import from (defaults to master)"
   echo "   -v Verbose"
-  echo "Example: $0 -m susie -r https://:@git.cern.ch/kerberos/it-puppet-module-susie"
+  echo "Examples:"
+  echo " * $0 -m susie -r https://:@git.cern.ch/kerberos/it-puppet-module-susie"
+  echo " * $0 -m susie -r https://:@git.cern.ch/kerberos/it-puppet-module-susie -i -v"
   exit 1
 }
 
@@ -29,13 +34,22 @@ function debug {
   [[ $VERBOSE == "VERBOSE" ]] && echo $1
 }
 
-while getopts "m:r:v" opt; do
+while getopts "m:r:p:b:iv" opt; do
   case $opt in
     m)
       MODULE_NAME=$OPTARG
     ;;
     r)
       REPOSITORY_URL=$OPTARG
+    ;;
+    p)
+      PUNCH_MODULES_URL=$OPTARG
+    ;;
+    b)
+      PUNCH_MODULES_BRANCH=$OPTARG
+    ;;
+    i)
+      IMPORT="IMPORT"
     ;;
     v)
       VERBOSE="VERBOSE"
@@ -48,6 +62,8 @@ done
 
 [[ -z $MODULE_NAME ]] && usage
 [[ -z $REPOSITORY_URL ]] && usage
+[[ -z $PUNCH_MODULES_URL ]] && PUNCH_MODULES_URL="http://gitgw.cern.ch/git/punch-modules"
+[[ -z $PUNCH_MODULES_BRANCH ]] && PUNCH_MODULES_BRANCH="master"
 
 MODULE_NAME=$(echo $MODULE_NAME | tr '[A-Z]' '[a-z]')
 REPOSITORY_NAME="it-puppet-module-$MODULE_NAME"
@@ -69,21 +85,43 @@ mkdir -p $REPOSITORY_NAME/code/manifests
 mkdir -p $REPOSITORY_NAME/data
 
 # Add some placeholders and templates
-debug "Adding examples..."
-echo "Module '$MODULE_NAME'" > $REPOSITORY_NAME/code/README.md
-cat << EOF > $REPOSITORY_NAME/code/manifests/init.pp
+if [ ! -z $IMPORT ]; then
+  echo "Cloning punch-modules (this may take a bit)..."
+  CLONE_PATH=$(mktemp -d)
+  git clone $PUNCH_MODULES_URL $CLONE_PATH -b $PUNCH_MODULES_BRANCH &> /dev/null
+  dieiffail "Git clone (punch-modules:$PUNCH_MODULES_BRANCH) failed" 11
+  debug "Copying code..."
+  [[ ! -e $CLONE_PATH/modules/$MODULE_NAME ]] && \
+    die "Module $MODULE_NAME does not exist in punch-modules"
+  cp -R $CLONE_PATH/modules/$MODULE_NAME/* $REPOSITORY_NAME/code/
+  if [ -e $CLONE_PATH/hieradata/module_names/$MODULE_NAME.yaml ]; then
+    debug "Copying module hieradata (YAML)..."
+    cp $CLONE_PATH/hieradata/module_names/$MODULE_NAME.yaml \
+      $REPOSITORY_NAME/data
+  fi
+  if [ -e $CLONE_PATH/hieradata/module_names/$MODULE_NAME.gpg ]; then
+    debug "Copying module hieradata (GPG)..."
+    cp $CLONE_PATH/hieradata/module_names/$MODULE_NAME.gpg \
+      $REPOSITORY_NAME/data
+  fi
+  rm -rf $CLONE_PATH
+else
+  debug "Nothing to import. Adding examples..."
+  echo "Module '$MODULE_NAME'" > $REPOSITORY_NAME/code/README.md
+  cat << EOF > $REPOSITORY_NAME/code/manifests/init.pp
 class $MODULE_NAME {
 }
 EOF
-cat << EOF > $REPOSITORY_NAME/data/$MODULE_NAME.yaml
+  cat << EOF > $REPOSITORY_NAME/data/$MODULE_NAME.yaml
 ---
 foo:bar
 EOF
-cat << EOF > $REPOSITORY_NAME/code/templates/example.erb
+  cat << EOF > $REPOSITORY_NAME/code/templates/example.erb
 <% if @myvar %>
 myvar has <%= @myvar %> value
 <% end %>
 EOF
+fi
 
 debug "Inializing Git repository and mandatory branches..."
 cd $REPOSITORY_NAME
