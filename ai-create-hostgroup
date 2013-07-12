@@ -93,7 +93,7 @@ mkdir -p $REPOSITORY_NAME/data/fqdns
 
 # Import old data
 if [ ! -z $IMPORT ]; then
-  echo "Cloning punch-modules (this may take a bit)..."
+  echo "Cloning punch-modules:$PUNCH_MODULES_BRANCH (this may take a bit)..."
   CLONE_PATH=$(mktemp -d)
   git clone $PUNCH_MODULES_URL $CLONE_PATH -b $PUNCH_MODULES_BRANCH &> /dev/null
   dieiffail "Git clone (punch-modules:$PUNCH_MODULES_BRANCH) failed" 11
