@@ -1,18 +1,26 @@
 #!/bin/bash
 # This is a helper script that creates an skeleton
 # for a Puppet hostgroup with the required directories
-# and branches.
+# and branches. It imports instead if specified.
+# Prerequesites:
+# - A brand new repository in the Central Git Service.
+#   http://cern.ch/forge
 #
 # Nacho Barrientos <nacho.barrientos@cern.ch>
 
 function usage {
   echo "Usage:"
-  echo "$0 -h HOSTGROUP_NAME -r URL"
-  echo "   -h Top-level hostgroup name"
+  echo "$0 -m HOSTGROUP_NAME -r URL -m MODULE_NAME [-i] [-v] [-p URL] [-b BRANCH]"
+  echo "   -h Top-level hostgroup name (without hg_ prefix)"
   echo "   -r URL to an empty Git repository where the module will be stored"
+  echo "   -i Enable import capabilities (module migration from punch-modules)"
+  echo "   -p Old punch-modules URL (defaults to: http://gitgw.cern.ch/git/punch-modules)"
+  echo "   -b Branch to import from (defaults to master)"
+  echo "   -d Don't push to the new repository (kind of a dry run)"
   echo "   -v Verbose"
-  echo -n "Example: $0 -h castor -r "
-  echo "https://:@git.cern.ch/kerberos/it-puppet-hostgroup-castor"
+  echo "Examples:"
+  echo " * $0 -h castor -r https://:@git.cern.ch/kerberos/it-puppet-hostgroup-castor"
+  echo " * $0 -h castor -r https://:@git.cern.ch/kerberos/it-puppet-hostgroup-castor -i -v"
   exit 1
 }
 
@@ -30,13 +38,25 @@ function debug {
   [[ $VERBOSE == "VERBOSE" ]] && echo $1
 }
 
-while getopts "h:r:v" opt; do
+while getopts "h:r:p:b:idv" opt; do
   case $opt in
     h)
       HOSTGROUP_NAME=$OPTARG
     ;;
     r)
       REPOSITORY_URL=$OPTARG
+    ;;
+    p)
+      PUNCH_MODULES_URL=$OPTARG
+    ;;
+    b)
+      PUNCH_MODULES_BRANCH=$OPTARG
+    ;;
+    i)
+      IMPORT="IMPORT"
+    ;;
+    d)
+      DRYRUN="DRYRUN"
     ;;
     v)
       VERBOSE="VERBOSE"
@@ -49,14 +69,16 @@ done
 
 [[ -z $HOSTGROUP_NAME ]] && usage
 [[ -z $REPOSITORY_URL ]] && usage
+[[ -z $PUNCH_MODULES_URL ]] && PUNCH_MODULES_URL="http://gitgw.cern.ch/git/punch-modules"
+[[ -z $PUNCH_MODULES_BRANCH ]] && PUNCH_MODULES_BRANCH="master"
 
 HOSTGROUP_NAME=$(echo $HOSTGROUP_NAME | tr '[A-Z]' '[a-z]')
 REPOSITORY_NAME="it-puppet-hostgroup-$HOSTGROUP_NAME"
 
+[[ -e $REPOSITORY_NAME ]] && die "Directory $REPOSITORY_NAME already exists"
+
 echo -n "Creating base structure for top-level hostgroup"
 echo " '$HOSTGROUP_NAME' in directory '$REPOSITORY_NAME'"
-
-[[ -e $REPOSITORY_NAME ]] && die "Directory $REPOSITORY_NAME already exists"
 
 GIT_NAME=$(git config --get user.name)
 [[ -z $GIT_NAME ]] && die "Git user.name not set (man git-config)"
@@ -65,31 +87,70 @@ GIT_EMAIL=$(git config --get user.email)
 
 # Create essential directories
 debug "Creating directories..."
-mkdir -p $REPOSITORY_NAME/code/templates
-mkdir -p $REPOSITORY_NAME/code/manifests
+mkdir -p $REPOSITORY_NAME/code
 mkdir -p $REPOSITORY_NAME/data/hostgroup
 mkdir -p $REPOSITORY_NAME/data/fqdns
 
+# Import old data
+if [ ! -z $IMPORT ]; then
+  echo "Cloning punch-modules (this may take a bit)..."
+  CLONE_PATH=$(mktemp -d)
+  git clone $PUNCH_MODULES_URL $CLONE_PATH -b $PUNCH_MODULES_BRANCH &> /dev/null
+  dieiffail "Git clone (punch-modules:$PUNCH_MODULES_BRANCH) failed" 11
+  echo "Copying code..."
+  [[ ! -e $CLONE_PATH/hostgroups/hg_$HOSTGROUP_NAME ]] && \
+    die "Top level hostgroup $HOSTGROUP_NAME does not exist in punch-modules"
+  cp -R $CLONE_PATH/hostgroups/hg_$HOSTGROUP_NAME/* $REPOSITORY_NAME/code/
+  echo "Copying data..."
+  if [ -e $CLONE_PATH/hieradata/hostgroups/$HOSTGROUP_NAME ]; then
+    debug "Copying hostgroup hieradata (directory)..."
+    mkdir $REPOSITORY_NAME/data/hostgroup/$HOSTGROUP_NAME
+    cp -R $CLONE_PATH/hieradata/hostgroups/$HOSTGROUP_NAME/* \
+      $REPOSITORY_NAME/data/hostgroup/$HOSTGROUP_NAME
+  fi
+  if [ -e $CLONE_PATH/hieradata/hostgroups/$HOSTGROUP_NAME.yaml ]; then
+    debug "Copying hostgroup hieradata ($HOSTGROUP_NAME.yaml)..."
+    cp $CLONE_PATH/hieradata/hostgroups/$HOSTGROUP_NAME.yaml \
+      $REPOSITORY_NAME/data/hostgroup
+  fi
+  if [ -e $CLONE_PATH/hieradata/hostgroups/$HOSTGROUP_NAME.gpg ]; then
+    debug "Copying hostgroup hieradata ($HOSTGROUP_NAME.gpg)..."
+    cp $CLONE_PATH/hieradata/hostgroups/$HOSTGROUP_NAME.gpg \
+      $REPOSITORY_NAME/data/hostgroup
+  fi
+  echo -n "FQDN-level Hiera definitions were not imported because "
+  echo -n "basically I don't know which hosts are yours. Explore "
+  echo -n "punch-modules/hieradata/fqdns and move your hosts to "
+  echo    "$REPOSITORY_NAME/data/fqdns, commit and push."
+  cat << EOF > $REPOSITORY_NAME/data/fqdns/$HOSTGROUP_NAME-node1.cern.ch.yaml
+---
+foo:bar
+EOF
+  rm -rf $CLONE_PATH
 # Add some placeholders and templates
-debug "Adding examples..."
-echo "Hostgroup '$HOSTGROUP_NAME'" > $REPOSITORY_NAME/code/README.md
+else
+  debug "Adding examples..."
+  mkdir -p $REPOSITORY_NAME/code/templates
+  mkdir -p $REPOSITORY_NAME/code/manifests
+  echo "Hostgroup '$HOSTGROUP_NAME'" > $REPOSITORY_NAME/code/README.md
 cat << EOF > $REPOSITORY_NAME/code/manifests/init.pp
 class hg_$HOSTGROUP_NAME {
 }
 EOF
-cat << EOF > $REPOSITORY_NAME/data/hostgroup/$HOSTGROUP_NAME.yaml
+  cat << EOF > $REPOSITORY_NAME/data/hostgroup/$HOSTGROUP_NAME.yaml
 ---
 foo:bar
 EOF
-cat << EOF > $REPOSITORY_NAME/data/fqdns/$HOSTGROUP_NAME-node1.cern.ch.yaml
+  cat << EOF > $REPOSITORY_NAME/data/fqdns/$HOSTGROUP_NAME-node1.cern.ch.yaml
 ---
 foo:bar
 EOF
-cat << EOF > $REPOSITORY_NAME/code/templates/example.erb
+  cat << EOF > $REPOSITORY_NAME/code/templates/example.erb
 <% if @myvar %>
 myvar has <%= @myvar %> value
 <% end %>
 EOF
+fi
 
 debug "Inializing Git repository and mandatory branches..."
 cd $REPOSITORY_NAME
@@ -101,15 +162,21 @@ git commit -m "Initial commit (generated by $0)" &> /dev/null
 dieiffail "Git commit failed" 12
 git remote add origin $REPOSITORY_URL &> /dev/null
 dieiffail "Git remote add failed" 13
-debug "Pushing master branch..."
-git push origin master &> /dev/null
-dieiffail "Git push (master) failed" 14
+if [ -z $DRYRUN ]; then
+  debug "Pushing master branch..."
+  git push origin master &> /dev/null
+  dieiffail "Git push (master) failed" 14
+  git branch master --set-upstream origin/master &> /dev/null
+  dieiffail "Git branch (--set-upstream) failed" 17
+fi
 git checkout -b testing &> /dev/null
 dieiffail "Git checkout (testing) failed" 15
-debug "Pushing testing branch..."
-git push origin testing &> /dev/null
-dieiffail "Git push (testing) failed" 16
-git branch testing --set-upstream origin/testing &> /dev/null
-dieiffail "Git branch (--set-upstream) failed" 17
+if [ -z $DRYRUN ]; then
+  debug "Pushing testing branch..."
+  git push origin testing &> /dev/null
+  dieiffail "Git push (testing) failed" 16
+  git branch testing --set-upstream origin/testing &> /dev/null
+  dieiffail "Git branch (--set-upstream) failed" 17
+fi
 cd - &> /dev/null
 echo "Done"
