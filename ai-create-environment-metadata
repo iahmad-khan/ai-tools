@@ -1,0 +1,142 @@
+#!/usr/bin/env python
+# This is a helper script that creates a YAML
+# enviroment definition file.
+# Prerequesites:
+# - The script is executed inside of a clone of
+#   it-puppet-enviroments
+#   https://:@git.cern.ch/kerberos/it-puppet-environments
+# Nacho Barrientos <nacho.barrientos@cern.ch>
+
+import sys
+import os
+import optparse
+import argparse
+import logging
+import yaml
+import re
+
+DEFAULT_LOGGING_LEVEL = logging.INFO
+
+class CmdlineError(Exception):
+    pass
+
+class OverrideError(Exception):
+    pass
+
+def parse_cmdline_args():
+    """Parses command line parameters."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-e', '--environment',
+        help="Name of the new environment")
+    parser.add_argument('-n', '--notifications',
+        help="Email address to notify problems with the environment")
+    parser.add_argument('-m', '--module', action="append",
+        help="Overrides a module (syntax module:branch)")
+    parser.add_argument('-g', '--hostgroup', action="append",
+        help="Overrides a hostgroup (syntax hostgroup:branch)")
+    parser.add_argument('-d', '--default',
+        help="Default branch (defaults to master)",
+        default="master")
+    parser.add_argument("-v", action="store_true", default=False, \
+        dest="verbose", help="Enable debug messages")
+    opts = parser.parse_args()
+    if opts.environment is None:
+        parser.print_usage()
+        raise CmdlineError("Environment (-e) not specified")
+    if opts.notifications is None:
+        parser.print_usage()
+        raise CmdlineError("Notifications email (-n) not specified")
+    return opts
+
+def configure_logging(verbose):
+    logging_level = DEFAULT_LOGGING_LEVEL
+    format = "%(message)s"
+    if verbose:
+        logging_level = logging.DEBUG
+    logging.basicConfig(level=logging_level,
+        format=format)
+
+def split_override(override):
+    split = re.match(r"(?P<element>[^:]+?):(?P<branch>[^:]+)", override)
+    if split is None:
+        logging.error("Malformed module override (%s)" % override)
+        raise OverrideError(override)
+    return (split.group("element"), split.group("branch"))
+
+def main():
+    """Application entrypoint."""
+    try:
+        opts = parse_cmdline_args()
+    except CmdlineError, error:
+        logging.error("Wrong command line: %s\n" % error)
+        return -1
+
+    configure_logging(opts.verbose)
+
+    if not os.path.exists("production.yaml"):
+        logging.error("Current directory does not look like \
+a clone of it-puppet-environments\n")
+        return -2
+
+    if os.path.exists(opts.environment + ".yaml"):
+        logging.error("Environment '%s' already exists\n" %
+            opts.environment)
+        return -3
+
+    logging.info("Creating environment '%s'..." % opts.environment)
+
+    environment = {'default': opts.default,
+        'notifications': opts.notifications}
+
+    if opts.module:
+        if not 'overrides' in environment:
+            environment['overrides'] = {'modules': {}}
+        for module_override in opts.module:
+            try:
+                module, branch = split_override(module_override)
+            except OverrideError:
+                return -4
+            environment['overrides']['modules'][module] = branch
+
+    if opts.hostgroup:
+        if not 'overrides' in environment:
+            environment['overrides'] = {'hostgroups': {}}
+        else:
+            environment['overrides']['hostgroups'] = {}
+        for hostgroup_override in opts.hostgroup:
+            try:
+                hostgroup, branch = split_override(hostgroup_override)
+            except OverrideError:
+                return -4
+            environment['overrides']['hostgroups'][hostgroup] = branch
+
+    try:
+        environment_file = open(opts.environment + ".yaml", "w")
+    except OSError:
+        logging.error("Unable to open %s for writing" % 
+            opts.environment + ".yaml")
+
+    environment_file.write("---\n")
+    yaml.dump(environment, environment_file, default_flow_style=False)
+
+    environment_file.close()
+
+    logging.info("Done")
+    logging.info("To publish it just execute:")
+    logging.info("\tgit add %s.yaml" % opts.environment)
+    logging.info("\tgit push origin master")
+
+    if opts.module or opts.hostgroup:
+        logging.info("IMPORTANT: Please note that you're overriding \
+some modules/hostgroups.")
+        logging.info("Make sure that the specified branches \
+exist in the corresponding repositories before pushing the new environment.")
+
+    if opts.default not in ("master", "testing"):
+        logging.info("IMPORTANT: You're using an unconventional \
+environment as default ('%s')." % opts.default)
+        logging.info("Make sure that all modules and hostgroups \
+have that branch")
+
+if __name__ == '__main__':
+    sys.exit(main())
