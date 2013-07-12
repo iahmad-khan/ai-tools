@@ -124,6 +124,7 @@ a clone of it-puppet-environments\n")
     logging.info("Done")
     logging.info("To publish it just execute:")
     logging.info("\tgit add %s.yaml" % opts.environment)
+    logging.info("\tgit commit -m \"Add environment %s\"" % opts.environment)
     logging.info("\tgit push origin master")
 
     if opts.module or opts.hostgroup:
