@@ -28,7 +28,7 @@ function usage {
 
 TMP=`mktemp`
 for module in `ls -1 modules`; do
-    ai-cc-module-type --cert $CERT --key $KEY --module $module &> $TMP
+    ai-rmt-module-type --cert $CERT --key $KEY --module $module &> $TMP
     [[ $? == 10 ]] && cat $TMP
 done
 
