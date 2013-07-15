@@ -83,6 +83,12 @@ a clone of it-puppet-environments\n")
             opts.environment)
         return -3
 
+    if re.match(r"^\w+$", opts.environment) is None:
+        logging.error("Environment names must contain only alphanumeric \
+characters and underscode")
+        return -3
+
+    opts.environment = opts.environment.lower()
     logging.info("Creating environment '%s'..." % opts.environment)
 
     environment = {'default': opts.default,
