@@ -85,7 +85,7 @@ a clone of it-puppet-environments\n")
 
     if re.match(r"^\w+$", opts.environment) is None:
         logging.error("Environment names must contain only alphanumeric \
-characters and underscode")
+characters and underscore")
         return -3
 
     opts.environment = opts.environment.lower()
