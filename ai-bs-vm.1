@@ -57,6 +57,19 @@ Name of the Foreman environment you want your new virtual
 machine to join
 [string] (defaults to "production")
 .TP
+.B AIBS_LANDB_RESPONSIBLE
+E-group name to be set as responsible in LANDB. If not specified
+the user creating the VM is set as responsible (Grizzly and onwards
+only).
+.TP
+.B AIBS_LANDB_MAINUSER
+E-group name to be set as main user in LANDB. If not specified
+the user creating the VM is set as main user (Grizzly and onwards
+only).
+.TP
+.B AIBS_LANDB_RESPONSIBLE
+E-group name to be set as responsible in LANDB
+.TP
 .B AIBS_SECURITYGROUPS_LIST
 List of security groups your VM will belong to
 [comma-separed list of strings] (defaults to "default")

@@ -86,6 +86,16 @@ if [ -n "${AIBS_METAPARAMETERS_LIST}" ]; then
   done
 fi
 
+# LANDB responsible (Grizzly and onwards)
+# (default: none -- nova uses identity of creator)
+[[ -n $AIBS_LANDB_RESPONSIBLE ]] && \
+  METAPARAMS="${METAPARAMS} --meta landb-responsible=$AIBS_LANDB_RESPONSIBLE"
+
+# LANDB main user (Grizzly and onwards)
+# (default: none -- nova uses identity of creator)
+[[ -n $AIBS_LANDB_MAINUSER ]] && \
+  METAPARAMS="${METAPARAMS} --meta landb-mainuser=$AIBS_LANDB_MAINUSER"
+
 # Susie host
 # (default: "aisusie.cern.ch")
 AIBS_SUSIE_HOSTNAME=${AIBS_SUSIE_HOSTNAME:-"aisusie.cern.ch"}
@@ -111,6 +121,8 @@ echo "VM tenant: $OS_TENANT_NAME"
 [[ ! -z $AIBS_METAPARAMETERS_LIST ]] && echo "VM metaparameters: $AIBS_METAPARAMETERS_LIST"
 [[ ! -z $AIBS_SSHKEY_NAME ]] && echo "VM SSH key name: $AIBS_SSHKEY_NAME"
 [[ ! -z $AIBS_VMAVAILZONE_NAME ]] && echo "VM availability zone: $AIBS_VMAVAILZONE_NAME"
+[[ ! -z $AIBS_LANDB_RESPONSIBLE ]] && echo "LANDB responsible: $AIBS_LANDB_RESPONSIBLE"
+[[ ! -z $AIBS_LANDB_MAINUSER ]] && echo "LANDB main user: $AIBS_LANDB_MAINUSER"
 echo "Foreman environment: $AIBS_ENVIRONMENT_NAME"
 echo "Foreman hostgroup: $AIBS_HOSTGROUP_NAME"
 echo "Puppet master: $AIBS_PUPPETMASTER_HOSTNAME"
