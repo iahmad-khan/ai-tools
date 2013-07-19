@@ -32,13 +32,11 @@ fi
 
 AIBS_VMNAME=$(echo $AIBS_HOSTNAME | sed -e 's/.cern.ch//g')
 
-# Judy's cookie jar
-AIBS_COOKIEJAR_PATH=${AIBS_COOKIEJAR_PATH:-"$HOME/ssocookie-judy.txt"}
-
 function dieiffail {
   if [ $1 -ne 0 ]; then
     echo "$2";
     exit $3;
+    rm -r $AIBS_COOKIEJAR_PATH
   fi
 }
 
@@ -46,11 +44,10 @@ function dieiffail {
 # Cookie jar
 #
 
-if [ ! -r $AIBS_COOKIEJAR_PATH ]; then
-  echo "Cookiejar not found or not readable. Getting it..."
-  cern-get-sso-cookie --krb -u https://judy.cern.ch -o $AIBS_COOKIEJAR_PATH -r
-  dieiffail $? "Failed to get SSO cookie. Exiting" 30;
-fi
+AIBS_COOKIEJAR_PATH=$(mktemp --tmpdir=$HOME --suffix="judy-cj-$HOSTNAME")
+echo "Getting cookie jar..."
+cern-get-sso-cookie --krb -u https://judy.cern.ch -o $AIBS_COOKIEJAR_PATH -r
+dieiffail $? "Failed to get SSO cookie (bad KRB credentials?). Exiting" 30;
 
 #
 # Cookie validation
@@ -58,7 +55,7 @@ fi
 
 FOREMANCLIOUT=$(ai-foreman-cli chkhost $AIBS_HOSTNAME --foreman-cookiejar $AIBS_COOKIEJAR_PATH 2>&1)
 echo $FOREMANCLIOUT | egrep -q ".+Bad cookie.+"
-[[ $? -eq 0 ]] && dieiffail 1 "Cookie $AIBS_COOKIEJAR_PATH refused. Delete it and let $0 generate one for you." 30;
+[[ $? -eq 0 ]] && dieiffail 1 "Cookie refused. Try again and open a ticket of the problem persists." 30;
 
 echo "Trying to terminate $AIBS_HOSTNAME..."
 
@@ -78,5 +75,6 @@ echo "VM deleted. Removing from Foreman..."
 ai-foreman-cli delhost $AIBS_HOSTNAME --foreman-cookiejar $AIBS_COOKIEJAR_PATH;
 dieiffail $? "Failed to remove host from Foreman. Manual action required. Exiting" 20
 
+rm $AIBS_COOKIEJAR_PATH
 echo "Done :)"
 exit 0
