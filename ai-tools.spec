@@ -69,6 +69,7 @@ rm -rf ${RPM_BUILD_ROOT}
 - [ai-bs-vm] Boothook: redirect outputs to $LOGFILE avoiding file descriptor voodoo.
 - [ai-bs-vm] Boothook: embed initial krb5.conf
 - [ai-bs-vm] Add options to set LANDB's responsible and main user
+- [ai-kill-vm] Always create a new cookie
 
 * Tue Jul 02 2013 Jan van Eldik <Jan.van.Eldik@cern.ch> 3.27-0
 - [ai-foreman-cli][installhost] Bug fix for e-mail address in KS file [AI-2579]
