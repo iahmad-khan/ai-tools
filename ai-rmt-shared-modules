@@ -2,10 +2,10 @@
 # CERN
 # IT Department
 # Nacho Barrientos <nacho.barrientos@cern.ch>
-# This scripts prints out the name of modules
-# that are shared or core. This script must be
-# invoked in the root directory of a clone of
-# punch-modules.
+# This scripts prints out the name of all modules
+# and the type separed by hyphen. Example:
+#  sssd - shared
+#  castor - individual
 # May 2013
 
 CERT=$1
@@ -21,15 +21,15 @@ function usage {
 }
 
 [[ -z $CERT ]] && usage
-[[ -z $CERT ]] && usage
+[[ -z $KEY ]] && usage
 [[ -d "modules" ]] || die "Seems you're not inside a clone of punch-modules"
 [[ -f $CERT ]] || die "Certificate not readable"
 [[ -f $KEY ]] || die "Certificate key not readable"
 
-TMP=`mktemp`
 for module in `ls -1 modules`; do
-    ai-rmt-module-type --cert $CERT --key $KEY --module $module &> $TMP
-    [[ $? == 10 ]] && cat $TMP
+    hostgroups=$(python ~/ai-tools/ai-rmt-module-type --cert $CERT --key $KEY --module $module -s)
+    TYPE=$?
+    [[ $TYPE == 10 ]] && echo "$module | shared | $hostgroups |"
+    [[ $TYPE == 11 ]] && echo "$module | individual | $hostgroups |"
+    [[ $TYPE == 12 ]] && echo "$module | notused | $hostgroups |"
 done
-
-rm $TMP

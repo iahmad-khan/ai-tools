@@ -72,8 +72,10 @@ def get_toplevel_affected_hgs_count(conn, modulename):
     if res.status == httplib.OK:
         output = json.loads(res.read())
         toplevel = set(map(lambda x: x['value'], output))
+        hostgroups = ",".join(sorted(toplevel))
         count = len(toplevel)
-        logging.info("%s found (%s)" % (count, ", ".join(toplevel)))
+        logging.info("%s found (%s)" % (count, hostgroups))
+        print hostgroups
         return count
     else:
         raise Exception()
@@ -90,12 +92,12 @@ def main():
     try:
         toplevel_affected_hostgroups = \
             get_toplevel_affected_hgs_count(conn, args.module)
-    except:
-        logging.error("Failed to get data from Puppet DB")
+    except Exception, error:
+        logging.error("Failed to get data from Puppet DB (%s)" % error)
         sys.exit(1)
 
     if toplevel_affected_hostgroups > 1:
-        logging.info("More than one top-level hostgroup affected => core or shared")
+        logging.info("More than one top-level hostgroup affected => shared")
         sys.exit(10)
     elif toplevel_affected_hostgroups == 1:
         logging.info("Only one top-level hostgroup affected => individual")
