@@ -134,21 +134,24 @@ of the virtual machine.
 .SH EXAMPLES
 .TP
 .B Create a named VM with default VM parameters and register it in hostgroup "foo/spare":
-AIBS_HOSTGROUP_NAME="foo/spare" ai-bs-vm higgsbox
+AIBS_VMIMAGE_NAME="SLC6 Server - x86_64" AIBS_HOSTGROUP_NAME="foo/spare" ai-bs-vm higgsbox
 
 .TP
 .B Same but with custom environment:
+AIBS_VMIMAGE_NAME="SLC6 Server - x86_64"
 AIBS_HOSTGROUP_NAME="foo/spare"
 AIBS_ENVIRONMENT_NAME="devel" ai-bs-vm higgsbox
 
 .TP
 .B Now with personalized security groups, different VM flavor and SSH key:
+AIBS_VMIMAGE_NAME="SLC6 Server - x86_64"
 AIBS_SECURITYGROUPS_LIST="default,my-sec-group" AIBS_HOSTGROUP_NAME="foo/spare"
 AIBS_SSHKEY_NAME="my-key" AIBS_ENVIRONMENT_NAME="devel"
 AIBS_VMFLAVOR_NAME="m1.large" ai-bs-vm higgsbox
 
 .TP
 .B Create a VM with random hostname prefixed by "foo":
+AIBS_VMIMAGE_NAME="SLC6 Server - x86_64"
 AIBS_VMNAME_PREFIX="foo" AIBS_HOSTGROUP_NAME="foo/spare" ai-bs-vm
 
 .SH BUGS
