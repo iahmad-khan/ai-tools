@@ -39,6 +39,7 @@ if [ -z $AIBS_VMIMAGE_NAME ]; then
   echo "you want to base you VM on. To get the list of available"
   echo "images run \"nova image-list\"."
   echo "Example AIBS_VMIMAGE_NAME=\"SLC6 Server - x86_64 [130624]\""
+  exit 1
 fi
 
 echo $AIBS_HOSTGROUP_NAME | egrep -q "^([-A-Za-z0-9_]+(/[-A-Za-z0-9_]+)*/spare|spare)$"
