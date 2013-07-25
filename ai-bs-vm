@@ -34,7 +34,8 @@ if [ -z $AIBS_HOSTGROUP_NAME ]; then
   exit 1
 fi
 
-if [ -z $AIBS_VMIMAGE_NAME ]; then
+
+if [ -z "$AIBS_VMIMAGE_NAME" ]; then
   echo "Now it's mandatory to specify also the name of the image"
   echo "you want to base you VM on. To get the list of available"
   echo "images run \"nova image-list\"."
