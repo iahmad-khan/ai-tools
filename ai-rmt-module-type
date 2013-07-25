@@ -62,6 +62,7 @@ def get_toplevel_affected_hgs_count(conn, modulename):
 ["select-resources", ["and",["=", "type", "Class"], 
 ["=","title","%s"]]]]]]
 """ % modulename
+    logging.debug(query)
 
     params = {'query': query}
     headers = {"Accept": "application/json",
