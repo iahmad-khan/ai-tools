@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.28
+Version: 3.29
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -64,6 +64,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Thu Jul 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.29-0
+- [ai-bs-vm] Fix manpage examples
+
 * Thu Jul 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.28-0
 - [ai-foreman-cli][installhost] Bug fix for PXE target for SCL 6.1 [AI-2680]
 - [ai-bs-vm] Boothook: redirect outputs to $LOGFILE avoiding file descriptor voodoo.
