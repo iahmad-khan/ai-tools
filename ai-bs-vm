@@ -34,6 +34,13 @@ if [ -z $AIBS_HOSTGROUP_NAME ]; then
   exit 1
 fi
 
+if [ -z $AIBS_VMIMAGE_NAME ]; then
+  echo "Now it's mandatory to specify also the name of the image"
+  echo "you want to base you VM on. To get the list of available"
+  echo "images run \"nova image-list\"."
+  echo "Example AIBS_VMIMAGE_NAME=\"SLC6 Server - x86_64 [130624]\""
+fi
+
 echo $AIBS_HOSTGROUP_NAME | egrep -q "^([-A-Za-z0-9_]+(/[-A-Za-z0-9_]+)*/spare|spare)$"
 dieiffail $? "Invalid hostgroup (examples: 'spare', 'a/spare', 'a/b/spare'). Exiting" 1;
 
@@ -66,10 +73,6 @@ AIBS_ENVIRONMENT_NAME=${AIBS_ENVIRONMENT_NAME:-"production"}
 # VM flavor
 # (default: 'm1.small')
 AIBS_VMFLAVOR_NAME=${AIBS_VMFLAVOR_NAME:-"m1.small"}
-
-# VM Image
-# (default: "SLC6 Server - x86_64"
-AIBS_VMIMAGE_NAME=${AIBS_VMIMAGE_NAME:-"SLC6 Server - x86_64"}
 
 # VM security groups
 # (default: "default")

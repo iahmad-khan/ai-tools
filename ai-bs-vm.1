@@ -48,6 +48,10 @@ machine to land. It \fBmust have spare as tip\fP (e.g. "spare",
 right after the machine shows up. If you want to use your own spare
 please \fBmake sure that the hostgroup exists before creating your
 virtual machine\fP. If it doesn't, just create it. [string]
+.TP
+.B AIBS_VMIMAGE_NAME
+OpenStack image name of the virtual machine (get a list with
+nova image-list) [string]
 
 .LP
 .I Optional variables:
@@ -90,10 +94,6 @@ The desired availability zone for the VM
 .B AIBS_VMFLAVOR_NAME
 OpenStack flavor name of the virtual machine
 [string] (defaults to "m1.small")
-.TP
-.B AIBS_VMIMAGE_NAME
-OpenStack image name of the virtual machine
-[string] (defaults to "SLC6 Server - x86_64")
 .TP
 .B AIBS_VMNAME_PREFIX
 Prefix to prepend to the randomly generated hostname
