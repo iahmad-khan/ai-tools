@@ -78,11 +78,11 @@ def print_output(args, summary):
         for fqdn in summary['fqdns']:
             sys.stdout.write("\t * %s: " % fqdn['fqdn'])
             if fqdn['success'] and args.operation == "status":
-                print fqdn['details'][0].upper()
+                print fqdn['details']
             elif fqdn['success']:
                 print "Command sent"
             else:
-                print "Error (%s)" % ",".join(fqdn['details'])
+                print "Error (%s)" % fqdn['details']
         print "End of summary"
 
 def foreman_power_operation(args, cookiejar, operation, fqdn):
@@ -103,7 +103,7 @@ def foreman_power_operation(args, cookiejar, operation, fqdn):
             if operation == "status":
                 msg = json.loads(response.text)["power"]
             else:
-                msg = "None"
+                msg = ""
             return (True, msg)
         elif response.status_code == requests.codes.found or \
             response.status_code == requests.codes.unauthorized:
@@ -188,16 +188,14 @@ def main():
 
     for fqdn in args.fqdns:
         logging.debug("Processing '%s'" % fqdn)
-        fqdn_summary = {'fqdn': fqdn,
-            'success': False, 'details': []}
+        fqdn_summary = {'fqdn': fqdn, 'success': False}
 
         if re.match(r".+?\.cern\.ch$", fqdn) is None:
-            fqdn_summary['details'].append("Invalid FQDN")
+            fqdn_summary['details'] = "Invalid FQDN"
             summary['fqdns'].append(fqdn_summary)
         else:
-            status, msg = foreman_power_operation(args, cookiejar, args.operation, fqdn)
-            fqdn_summary['success'] = status
-            fqdn_summary['details'].append(msg)
+            fqdn_summary['success'], fqdn_summary['details'] = \
+                foreman_power_operation(args, cookiejar, args.operation, fqdn)
         
         if fqdn_summary['success'] and args.errors:
             pass
