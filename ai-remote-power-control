@@ -20,6 +20,8 @@ import argparse
 import tempfile
 import socket
 import logging
+import time
+import functools
 import json
 import cookielib
 import requests
@@ -37,6 +39,17 @@ DEFAULT_FOREMAN_PORT = 443
 DEFAULT_COOKIEJAR_LOCATION = os.path.expanduser("~")
 CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 
+def timed(f):
+    """Decorator to output the time spent executed a given function"""
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = f(*args, **kwargs)
+        elapsed = time.time() - start
+        logging.debug("Executed '%s' in %.2f ms" % (f.__name__, elapsed*1000))
+        return result
+    return wrapper
+
 def __execute_command(args):
     logging.debug("Executing %s" % args)
     process = Popen(args, stdout=PIPE, stderr=PIPE)
@@ -44,11 +57,13 @@ def __execute_command(args):
     returncode = process.returncode
     return (process.returncode, stdout, stderr)
 
+@timed
 def validate_tgt():
     status, stdout, stderr = __execute_command(["klist", "-s"])
     if status != 0:
         raise AiRemotePowerControlError("kinit -s returned non-zero")
 
+@timed
 def get_sso_cookiejar(args):
     try:
         fd, cookiejar_path = tempfile.mkstemp(
@@ -70,20 +85,16 @@ def format_output(args, summary):
     if args.json:
         print json.dumps(summary)
     else:
-        print "Summary on applying '%s' operation to the specified FQDNs:" % \
-            args.operation
-        if args.errors:
-            print "(only errors are shown)"
         for fqdn in summary:
-            sys.stdout.write(" * %s: " % fqdn['fqdn'])
+            sys.stdout.write(" - %s: " % fqdn['fqdn'])
             if fqdn['success'] and args.operation == "status":
                 print fqdn['details']
             elif fqdn['success']:
                 print "Command sent"
             else:
                 print "Error (%s)" % fqdn['details']
-        print "End of summary"
 
+@timed
 def foreman_power_operation(args, cookiejar, operation, fqdn):
     logging.debug("Executing '%s' on host '%s'" % (operation, fqdn))
     ipmifqdn = re.sub(r'\.cern\.ch$', "-ipmi.cern.ch", fqdn)
