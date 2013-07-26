@@ -10,8 +10,7 @@
 #  1 some power operations failed
 #  10 bad command line
 #  20 current TGT is not valid or missing
-#  30 failed to obtain a SSO cookie
-#  31 SSO cookie obtained but failed to read it
+#  30 failed to obtain/load a SSO cookie
 #  40 failed to remove temporary cookie jar
 
 import sys
@@ -106,7 +105,7 @@ def foreman_power_operation(args, cookiejar, operation, fqdn):
             response.status_code == requests.codes.unauthorized:
                 return (False, "Authentication failed")
         elif response.status_code == requests.codes.not_found:
-            return (False, "Host not in Foreman or without an IPMI interface")
+            return (False, "Host not in Foreman or without an IPMI interface (VM?)")
         else:
             return (False, "Uncontrolled status code (%s), please report a bug" %
                 response.status_code)
@@ -133,7 +132,7 @@ def parse_cmdline_args():
     parser.add_argument('-v', '--verbose',
         action="store_true",
         help="Be chatty")
-    parser.add_argument('-e', '--errors',
+    parser.add_argument('-e', '--errors-only', dest="errors",
         action="store_true",
         help="Outputs errors only")
     parser.add_argument('--foreman-hostname', dest="hostname",
@@ -150,20 +149,13 @@ def parse_cmdline_args():
         help="One of more FQDNs",
         metavar="FQDN")
     args = parser.parse_args()
+    if args.operation not in VALID_OPERATIONS:
+        parser.error("Operation '%s' not valid. See --help." % args.operation)
     return args
 
 def main():
-    try:
-        args = parse_cmdline_args()
-    except AiRemotePowerControlError, error:
-        logging.error("Wrong command line args (%s)\n" % error)
-        return 10
-
+    args = parse_cmdline_args()
     configure_logging(args)
-
-    if args.operation not in VALID_OPERATIONS:
-        logging.error("Operation '%s' not valid." % args.operation)
-        return 10
 
     logging.debug("Validating TGT...")
     try:
