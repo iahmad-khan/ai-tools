@@ -98,13 +98,13 @@ def format_output(args, summary):
                 print "Error (%s)" % fqdn['details']
 
 @timed
-def foreman_power_operation(args, cookiejar, operation, fqdn):
+def foreman_power_operation(args, cookiejar, fqdn):
     """Performs a power operation on the passed fqdn"""
-    logging.debug("Executing '%s' on host '%s'" % (operation, fqdn))
+    logging.debug("Executing '%s' on host '%s'" % (args.operation, fqdn))
     ipmifqdn = re.sub(r'\.cern\.ch$', "-ipmi.cern.ch", fqdn)
     url="https://%s:%s/api/hosts/%s/interfaces/%s/power" % \
         (args.hostname, args.port, fqdn, ipmifqdn)
-    payload = json.dumps({'power_action': operation})
+    payload = json.dumps({'power_action': args.operation})
     headers = {'Content-type': 'application/json',
         'Accept': 'application/json, version=2'}
     try:
@@ -113,7 +113,7 @@ def foreman_power_operation(args, cookiejar, operation, fqdn):
             verify=CERN_CA_BUNDLE)
         if response.status_code == requests.codes.ok:
             msg = ""
-            if operation == "status":
+            if args.operation == "status":
                 msg = json.loads(response.text)["power"].upper()
             return (True, msg)
         elif response.status_code == requests.codes.found or \
@@ -208,7 +208,7 @@ def main():
             summary['fqdns'].append(fqdn_summary)
         else:
             fqdn_summary['success'], fqdn_summary['details'] = \
-                foreman_power_operation(args, cookiejar, args.operation, fqdn)
+                foreman_power_operation(args, cookiejar, fqdn)
         
         if fqdn_summary['success'] and args.errors:
             pass
