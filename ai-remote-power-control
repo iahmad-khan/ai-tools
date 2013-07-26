@@ -34,6 +34,7 @@ DEFAULT_OPERATION=("status")
 DEFAULT_LOGGING_LEVEL=logging.ERROR
 DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
 DEFAULT_FOREMAN_PORT = 443
+DEFAULT_COOKIEJAR_LOCATION = os.path.expanduser("~")
 CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 
 def __execute_command(args):
@@ -54,9 +55,9 @@ def get_sso_cookiejar(args):
     try:
         fd, cookiejar_path = tempfile.mkstemp(
             suffix="foreman-cookiejar-%s" % socket.gethostname(),
-            dir=os.path.expanduser("~"))
+            dir=args.cookiejar_path)
         os.close(fd)
-    except OSerror, error:
+    except OSError, error:
         raise AiRemotePowerControlError("Can't create temporary file for the cookie jar")
 
     status, stdout, stderr = __execute_command(["cern-get-sso-cookie",
@@ -146,6 +147,10 @@ def parse_cmdline_args():
     parser.add_argument('--foreman-port', dest="port",
         help="Foreman port (default: %s)" % DEFAULT_FOREMAN_PORT,
         default=DEFAULT_FOREMAN_PORT)
+    parser.add_argument('-c', '--cookiejar-path',
+        help="Directory where the cookiejar will temporary live (default: %s)" % \
+            DEFAULT_COOKIEJAR_LOCATION,
+        default=DEFAULT_COOKIEJAR_LOCATION)
     parser.add_argument('fqdns', nargs='+',
         help="One of more FQDNs",
         metavar="FQDN")
@@ -204,6 +209,7 @@ def main():
 
     print_output(args, summary)
 
+    logging.debug("Removing cookie jar...")
     os.remove(cookiejar_path)
 
     failures = reduce(lambda x, y: x+1 if y['success'] is False else x,
