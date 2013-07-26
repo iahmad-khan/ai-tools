@@ -170,6 +170,19 @@ def parse_cmdline_args():
         parser.error("Operation '%s' not valid. See --help." % args.operation)
     return args
 
+def process_fqdn(args, cookiejar, fqdn):
+    logging.debug("Processing '%s'" % fqdn)
+    fqdn_summary = {'fqdn': fqdn, 'success': False}
+
+    if re.match(r".+?\.cern\.ch$", fqdn) is None:
+        fqdn_summary['details'] = "Invalid FQDN"
+        summary['fqdns'].append(fqdn_summary)
+    else:
+        fqdn_summary['success'], fqdn_summary['details'] = \
+            foreman_power_operation(args, cookiejar, fqdn)
+
+    return fqdn_summary
+
 def main():
     """Application entrypoint"""
     args = parse_cmdline_args()
@@ -200,16 +213,8 @@ def main():
     summary = []
 
     for fqdn in args.fqdns:
-        logging.debug("Processing '%s'" % fqdn)
-        fqdn_summary = {'fqdn': fqdn, 'success': False}
+        fqdn_summary = process_fqdn(args, cookiejar, fqdn)
 
-        if re.match(r".+?\.cern\.ch$", fqdn) is None:
-            fqdn_summary['details'] = "Invalid FQDN"
-            summary['fqdns'].append(fqdn_summary)
-        else:
-            fqdn_summary['success'], fqdn_summary['details'] = \
-                foreman_power_operation(args, cookiejar, fqdn)
-        
         if fqdn_summary['success'] and args.errors:
             pass
         else:
