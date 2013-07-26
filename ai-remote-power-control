@@ -76,7 +76,7 @@ def print_output(args, summary):
             args.operation
         if args.errors:
             print "(only errors are shown)"
-        for fqdn in summary['fqdns']:
+        for fqdn in summary:
             sys.stdout.write(" * %s: " % fqdn['fqdn'])
             if fqdn['success'] and args.operation == "status":
                 print fqdn['details']
@@ -187,7 +187,7 @@ def main():
         logging.error("Unable to read cookies from '%s'" % cookiejar_path)
         return 31
 
-    summary = {'fqdns': []}
+    summary = []
 
     for fqdn in args.fqdns:
         logging.debug("Processing '%s'" % fqdn)
@@ -203,15 +203,14 @@ def main():
         if fqdn_summary['success'] and args.errors:
             pass
         else:
-            summary['fqdns'].append(fqdn_summary)
+            summary.append(fqdn_summary)
 
     print_output(args, summary)
 
     logging.debug("Removing cookie jar...")
     os.remove(cookiejar_path)
 
-    failures = reduce(lambda x, y: x+1 if y['success'] is False else x,
-        summary['fqdns'], 0)
+    failures = reduce(lambda x, y: x+1 if y['success'] is False else x, summary, 0)
     if failures:
         return 1
     return 0
