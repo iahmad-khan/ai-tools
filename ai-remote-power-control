@@ -211,7 +211,6 @@ def main():
         return 31
 
     summary = []
-
     for fqdn in args.fqdns:
         fqdn_summary = process_fqdn(args, cookiejar, fqdn)
 
