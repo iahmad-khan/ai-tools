@@ -22,8 +22,7 @@ import socket
 import json
 import re
 import cookielib
-import urllib2
-import httplib
+import requests
 
 from subprocess import Popen, PIPE
 
@@ -35,6 +34,7 @@ DEFAULT_OPERATION=("status")
 DEFAULT_LOGGING_LEVEL=logging.ERROR
 DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
 DEFAULT_FOREMAN_PORT = 443
+CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 
 def __execute_command(args):
     logging.debug("Executing %s" % args)
@@ -89,33 +89,32 @@ def foreman_power_operation(args, cookiejar, operation, fqdn):
         (args.hostname, args.port, fqdn, ipmifqdn)
     logging.debug("Via URL: %s" % url)
     payload = json.dumps({'power_action': operation})
-    request = urllib2.Request(url=url, data=payload)
-    request.get_method = lambda: 'PUT'
-    request.add_header('Content-type', 'application/json')
-    request.add_header('Accept', 'application/json, version=2')
-    cookiejar.add_cookie_header(request)
+    headers = {'Content-type': 'application/json',
+        'Accept': 'application/json, version=2'}
     try:
-        response = urllib2.urlopen(request)
+        response = requests.put(url, data=payload, 
+            headers=headers, cookies=cookiejar,
+            verify=CERN_CA_BUNDLE)
         logging.debug("Success")
-        if operation == "status":
-            msg = json.loads(response.read())["power"]
-        else:
-            msg = "None"
-        return (True, msg)
-    except urllib2.HTTPError, error:
-        logging.debug("Got %s HTTP code" % error.code)
-
-        if error.code == httplib.FOUND or \
-            error.code == httplib.UNAUTHORIZED:
-            return (False, "Authentication failed")
-
-        if error.code == httplib.NOT_FOUND:
+        logging.debug("Got %s HTTP code" % response.status_code)
+        if response.status_code == requests.codes.ok:
+            if operation == "status":
+                msg = json.loads(response.text)["power"]
+            else:
+                msg = "None"
+            return (True, msg)
+        elif response.status_code == requests.codes.found or \
+            response.status_code == requests.codes.unauthorized:
+                return (False, "Authentication failed")
+        elif response.status_code == requests.codes.not_found:
             return (False, "Host not in Foreman or without an IPMI interface")
-
-        return (False, "Uncontrolled status code (%s), please report a bug" %
-            error.code)
-    except urllib.URLError, error:
-        return False, error
+        else:
+            return (False, "Uncontrolled status code (%s), please report a bug" %
+                response.status_code)
+    except requests.exceptions.ConnectionError, error:
+        return (False, "Connection error (%s)" % error)
+    except requests.exceptions.Timeout, error:
+        return (False, "Connection timeout")
 
 def configure_logging(args):
     logging_level = DEFAULT_LOGGING_LEVEL
