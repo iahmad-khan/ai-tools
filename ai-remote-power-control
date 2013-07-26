@@ -77,7 +77,7 @@ def print_output(args, summary):
         if args.errors:
             print "(only errors are shown)"
         for fqdn in summary['fqdns']:
-            sys.stdout.write("\t * %s: " % fqdn['fqdn'])
+            sys.stdout.write(" * %s: " % fqdn['fqdn'])
             if fqdn['success'] and args.operation == "status":
                 print fqdn['details']
             elif fqdn['success']:
@@ -99,12 +99,10 @@ def foreman_power_operation(args, cookiejar, operation, fqdn):
         response = requests.put(url, data=payload, 
             headers=headers, cookies=cookiejar,
             verify=CERN_CA_BUNDLE)
-        logging.debug("Success. Got %s HTTP code" % response.status_code)
         if response.status_code == requests.codes.ok:
+            msg = ""
             if operation == "status":
-                msg = json.loads(response.text)["power"]
-            else:
-                msg = ""
+                msg = json.loads(response.text)["power"].upper()
             return (True, msg)
         elif response.status_code == requests.codes.found or \
             response.status_code == requests.codes.unauthorized:
@@ -126,7 +124,6 @@ def configure_logging(args):
     logging.basicConfig(level=logging_level, format="%(message)s")
 
 def parse_cmdline_args():
-    """Parses command line parameters."""
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--operation',
         help="Power operation to perform (%s) (default: %s)" % \
@@ -182,6 +179,7 @@ def main():
         logging.error("SSO %s" % error)
         return 30
 
+    logging.debug("Loading cookie jar...")
     cookiejar = cookielib.MozillaCookieJar(cookiejar_path)
     try:
         cookiejar.load()
