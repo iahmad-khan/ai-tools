@@ -59,12 +59,14 @@ def __execute_command(args):
 
 @timed
 def validate_tgt():
+    """Checks if there's a valid TGT in the environment"""
     status, stdout, stderr = __execute_command(["klist", "-s"])
     if status != 0:
         raise AiRemotePowerControlError("kinit -s returned non-zero")
 
 @timed
 def get_sso_cookiejar(args):
+    """Gets a cookie jar for Foreman via cern-get-sso-cookie"""
     try:
         fd, cookiejar_path = tempfile.mkstemp(
             suffix="foreman-cookiejar-%s" % socket.gethostname(),
@@ -82,6 +84,7 @@ def get_sso_cookiejar(args):
     return cookiejar_path
 
 def format_output(args, summary):
+    """Formats the output based on the output format specified"""
     if args.json:
         print json.dumps(summary)
     else:
@@ -96,6 +99,7 @@ def format_output(args, summary):
 
 @timed
 def foreman_power_operation(args, cookiejar, operation, fqdn):
+    """Performs a power operation on the passed fqdn"""
     logging.debug("Executing '%s' on host '%s'" % (operation, fqdn))
     ipmifqdn = re.sub(r'\.cern\.ch$', "-ipmi.cern.ch", fqdn)
     url="https://%s:%s/api/hosts/%s/interfaces/%s/power" % \
@@ -126,12 +130,14 @@ def foreman_power_operation(args, cookiejar, operation, fqdn):
         return (False, "Connection timeout")
 
 def configure_logging(args):
+    """Configures application log level based on cmdline arguments"""
     logging_level = DEFAULT_LOGGING_LEVEL
     if args.verbose:
         logging_level = logging.DEBUG
     logging.basicConfig(level=logging_level, format="%(message)s")
 
 def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--operation',
         help="Power operation to perform (%s) (default: %s)" % \
@@ -165,6 +171,7 @@ def parse_cmdline_args():
     return args
 
 def main():
+    """Application entrypoint"""
     args = parse_cmdline_args()
     configure_logging(args)
 
