@@ -1,0 +1,204 @@
+#!/usr/bin/env python
+# This script helps to perform power operations
+# on IPMI-enabled hosts via Foreman.
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+# July 2013
+
+# Exit codes:
+#  0 all power operations succeeded
+#  1 some power operations failed
+#  10 bad command line
+#  20 current TGT is not valid or missing
+#  30 failed to obtain a SSO cookie
+#  31 SSO cookie obtained but failed to read it
+
+import logging
+import argparse
+import sys
+import os
+import tempfile
+import socket
+import json
+import re
+import cookielib
+import urllib2
+import httplib
+
+from subprocess import Popen, PIPE
+
+class AiRemotePowerControlError(Exception):
+    pass
+
+VALID_OPERATIONS=("on", "off", "soft", "cycle", "status")
+DEFAULT_OPERATION=("status")
+DEFAULT_LOGGING_LEVEL=logging.ERROR
+FOREMAN_HOSTNAME = "judy.cern.ch"
+FOREMAN_PORT = 443
+
+def __execute_command(args):
+    logging.debug("Executing %s" % args)
+    env = os.environ.copy()
+    process = Popen(args, stdout=PIPE, stderr=PIPE, env=env)
+    (stdout, stderr)  = process.communicate()
+    returncode = process.returncode
+    return (process.returncode, stdout, stderr)
+
+def valid_tgt():
+    status, stdout, stderr = __execute_command(["klist", "-s"])
+    if status != 0:
+        logging.error(stderr)
+    return status == 0
+
+def get_sso_cookiejar():
+    try:
+        fd, cookiejar_path = tempfile.mkstemp(
+            suffix="foreman-cookiejar-%s" % socket.gethostname(),
+            dir=os.path.expanduser("~"))
+        os.close(fd)
+    except OSerror, error:
+        raise AiRemotePowerControlError("Can't create temporary file for the cookie jar")
+
+    status, stdout, stderr = __execute_command(["cern-get-sso-cookie",
+        "--krb", "-u", "https://%s" % FOREMAN_HOSTNAME, "-o",
+        cookiejar_path, "-r"])
+    if status != 0:
+        raise AiRemotePowerControlError("Failed to get cookiejar (%s)" % stderr)
+
+    return cookiejar_path
+
+def prettify_summary(args, summary):
+    print "Summary on applying '%s' operation to the specified FQDNs:" % \
+        args.operation
+    for fqdn in summary['fqdns']:
+        print "FQDN: %s, SUCCESS: %s, DETAILS: %s" % \
+            (fqdn['fqdn'], fqdn['success'], ",".join(fqdn['details']))
+
+def foreman_power_operation(cookiejar, operation, fqdn):
+    logging.debug("Executing '%s' on host '%s'" % (operation, fqdn))
+    ipmifqdn = re.sub(r'\.cern\.ch$', "-ipmi.cern.ch", fqdn)
+    url="https://%s:%s/api/hosts/%s/interfaces/%s/power" % \
+        (FOREMAN_HOSTNAME, FOREMAN_PORT, fqdn, ipmifqdn)
+    logging.debug("Via URL: %s" % url)
+    payload = json.dumps({'power_action': operation})
+    request = urllib2.Request(url=url, data=payload)
+    request.get_method = lambda: 'PUT'
+    request.add_header('Content-type', 'application/json')
+    request.add_header('Accept', 'application/json, version=2')
+    cookiejar.add_cookie_header(request)
+    try:
+        response = urllib2.urlopen(request)
+        logging.debug("Success")
+        if operation == "status":
+            msg = json.loads(response.read())["power"]
+        else:
+            msg = "None"
+        return (True, msg)
+    except urllib2.HTTPError, error:
+        logging.debug("Got %s HTTP code" % error.code)
+
+        if error.code == httplib.FOUND or \
+            error.code == httplib.UNAUTHORIZED:
+            return (False, "Authentication failed")
+
+        if error.code == httplib.NOT_FOUND:
+            return (False, "Host not in Foreman or without an IPMI interface")
+
+        return (False, "Uncontrolled status code (%s), please report a bug" %
+            error.code)
+    except urllib.URLError, error:
+        return False, error
+
+def configure_logging(args):
+    logging_level = DEFAULT_LOGGING_LEVEL
+    if args.verbose:
+        logging_level = logging.DEBUG
+    logging.basicConfig(level=logging_level,
+        format="%(message)s")
+
+def parse_cmdline_args():
+    """Parses command line parameters."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-o', '--operation',
+        help="Power operation to perform (%s) (default: %s)" % \
+            (", ".join(VALID_OPERATIONS), DEFAULT_OPERATION),
+        default=DEFAULT_OPERATION)
+    parser.add_argument('-j', '--json',
+        action="store_true",
+        help="Produce JSON output")
+    parser.add_argument('-v', '--verbose',
+        action="store_true",
+        help="Be chatty")
+    parser.add_argument('-e', '--errors',
+        action="store_true",
+        help="If -j is not specified, prints errors only")
+    parser.add_argument('fqdns', nargs='+',
+        help="One of more FQDNs",
+        metavar="FQDN")
+    args = parser.parse_args()
+    return args
+
+def main():
+    try:
+        args = parse_cmdline_args()
+    except AiRemotePowerControlError, error:
+        logging.error("Wrong command line args (%s)\n" % error)
+        return 10
+
+    configure_logging(args)
+
+    if args.operation not in VALID_OPERATIONS:
+        logging.error("Operation '%s' not valid." % args.operation)
+        return 10
+
+    logging.debug("Validating TGT...")
+    if not valid_tgt():
+        logging.error("TGT expired or non-existent")
+        return 20
+
+    logging.debug("Getting SSO cookie...")
+    try:
+        cookiejar_path = get_sso_cookiejar()
+    except AiRemotePowerControlError, error:
+        logging.error("SSO %s" % error)
+        return 30
+
+    cookiejar = cookielib.MozillaCookieJar(cookiejar_path)
+    try:
+        cookiejar.load()
+    except cookielib.LoadError, error:
+        logging.error("Unable to read cookies from '%s'" % cookiejar_path)
+        return 31
+
+    summary = {'fqdns': []}
+
+    for fqdn in args.fqdns:
+        logging.debug("Processing '%s'" % fqdn)
+        fqdn_summary = {'fqdn': fqdn,
+            'success': False, 'details': []}
+
+        if re.match(r".+?\.cern\.ch$", fqdn) is None:
+            fqdn_summary['details'].append("Invalid FQDN")
+            summary['fqdns'].append(fqdn_summary)
+        else:
+            status, msg = foreman_power_operation(cookiejar, args.operation, fqdn)
+            fqdn_summary['success'] = status
+            fqdn_summary['details'].append(msg)
+
+        summary['fqdns'].append(fqdn_summary)
+
+    if args.json:
+        print json.dumps(summary)
+    else:
+        prettify_summary(args, summary)
+
+    os.remove(cookiejar_path)
+
+    failures = reduce(lambda x, y: x+1 if y['success'] is False else x,
+        summary['fqdns'], 0)
+    if failures:
+        return 1
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
