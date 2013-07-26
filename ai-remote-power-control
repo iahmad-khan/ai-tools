@@ -70,9 +70,17 @@ def get_sso_cookiejar(args):
 def prettify_summary(args, summary):
     print "Summary on applying '%s' operation to the specified FQDNs:" % \
         args.operation
+    if args.errors:
+        print "(only errors are shown)"
     for fqdn in summary['fqdns']:
-        print "FQDN: %s, SUCCESS: %s, DETAILS: %s" % \
-            (fqdn['fqdn'], fqdn['success'], ",".join(fqdn['details']))
+        sys.stdout.write("\t * %s: " % fqdn['fqdn'])
+        if fqdn['success'] and args.operation == "status":
+            print fqdn['details'][0].upper()
+        elif fqdn['success']:
+            print "Command sent"
+        else:
+            print "Error (%s)" % ",".join(fqdn['details'])
+    print "End of summary"
 
 def foreman_power_operation(args, cookiejar, operation, fqdn):
     logging.debug("Executing '%s' on host '%s'" % (operation, fqdn))
