@@ -67,20 +67,23 @@ def get_sso_cookiejar(args):
 
     return cookiejar_path
 
-def prettify_summary(args, summary):
-    print "Summary on applying '%s' operation to the specified FQDNs:" % \
-        args.operation
-    if args.errors:
-        print "(only errors are shown)"
-    for fqdn in summary['fqdns']:
-        sys.stdout.write("\t * %s: " % fqdn['fqdn'])
-        if fqdn['success'] and args.operation == "status":
-            print fqdn['details'][0].upper()
-        elif fqdn['success']:
-            print "Command sent"
-        else:
-            print "Error (%s)" % ",".join(fqdn['details'])
-    print "End of summary"
+def print_output(args, summary):
+    if args.json:
+        print json.dumps(summary)
+    else:
+        print "Summary on applying '%s' operation to the specified FQDNs:" % \
+            args.operation
+        if args.errors:
+            print "(only errors are shown)"
+        for fqdn in summary['fqdns']:
+            sys.stdout.write("\t * %s: " % fqdn['fqdn'])
+            if fqdn['success'] and args.operation == "status":
+                print fqdn['details'][0].upper()
+            elif fqdn['success']:
+                print "Command sent"
+            else:
+                print "Error (%s)" % ",".join(fqdn['details'])
+        print "End of summary"
 
 def foreman_power_operation(args, cookiejar, operation, fqdn):
     logging.debug("Executing '%s' on host '%s'" % (operation, fqdn))
@@ -95,8 +98,7 @@ def foreman_power_operation(args, cookiejar, operation, fqdn):
         response = requests.put(url, data=payload, 
             headers=headers, cookies=cookiejar,
             verify=CERN_CA_BUNDLE)
-        logging.debug("Success")
-        logging.debug("Got %s HTTP code" % response.status_code)
+        logging.debug("Success. Got %s HTTP code" % response.status_code)
         if response.status_code == requests.codes.ok:
             if operation == "status":
                 msg = json.loads(response.text)["power"]
@@ -120,8 +122,7 @@ def configure_logging(args):
     logging_level = DEFAULT_LOGGING_LEVEL
     if args.verbose:
         logging_level = logging.DEBUG
-    logging.basicConfig(level=logging_level,
-        format="%(message)s")
+    logging.basicConfig(level=logging_level, format="%(message)s")
 
 def parse_cmdline_args():
     """Parses command line parameters."""
@@ -203,10 +204,7 @@ def main():
         else:
             summary['fqdns'].append(fqdn_summary)
 
-    if args.json:
-        print json.dumps(summary)
-    else:
-        prettify_summary(args, summary)
+    print_output(args, summary)
 
     os.remove(cookiejar_path)
 
