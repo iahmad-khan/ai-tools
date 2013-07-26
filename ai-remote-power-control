@@ -121,6 +121,8 @@ def foreman_power_operation(args, cookiejar, fqdn):
                 return (False, "Authentication failed")
         elif response.status_code == requests.codes.not_found:
             return (False, "Host not in Foreman or without an IPMI interface (VM?)")
+        elif response.status_code == requests.codes.internal_server_error:
+            return (False, "ISE. Open a bug against Foreman")
         else:
             return (False, "Uncontrolled status code (%s), please report a bug" %
                 response.status_code)
