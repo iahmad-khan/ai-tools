@@ -12,15 +12,16 @@
 #  20 current TGT is not valid or missing
 #  30 failed to obtain a SSO cookie
 #  31 SSO cookie obtained but failed to read it
+#  40 failed to remove temporary cookie jar
 
-import logging
-import argparse
 import sys
 import os
+import re
+import argparse
 import tempfile
 import socket
+import logging
 import json
-import re
 import cookielib
 import requests
 
@@ -39,17 +40,15 @@ CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 
 def __execute_command(args):
     logging.debug("Executing %s" % args)
-    env = os.environ.copy()
-    process = Popen(args, stdout=PIPE, stderr=PIPE, env=env)
+    process = Popen(args, stdout=PIPE, stderr=PIPE)
     (stdout, stderr)  = process.communicate()
     returncode = process.returncode
     return (process.returncode, stdout, stderr)
 
-def valid_tgt():
+def validate_tgt():
     status, stdout, stderr = __execute_command(["klist", "-s"])
     if status != 0:
-        logging.error(stderr)
-    return status == 0
+        raise AiRemotePowerControlError("kinit -s returned non-zero")
 
 def get_sso_cookiejar(args):
     try:
@@ -68,7 +67,7 @@ def get_sso_cookiejar(args):
 
     return cookiejar_path
 
-def print_output(args, summary):
+def format_output(args, summary):
     if args.json:
         print json.dumps(summary)
     else:
@@ -91,7 +90,6 @@ def foreman_power_operation(args, cookiejar, operation, fqdn):
     ipmifqdn = re.sub(r'\.cern\.ch$', "-ipmi.cern.ch", fqdn)
     url="https://%s:%s/api/hosts/%s/interfaces/%s/power" % \
         (args.hostname, args.port, fqdn, ipmifqdn)
-    logging.debug("Via URL: %s" % url)
     payload = json.dumps({'power_action': operation})
     headers = {'Content-type': 'application/json',
         'Accept': 'application/json, version=2'}
@@ -168,7 +166,9 @@ def main():
         return 10
 
     logging.debug("Validating TGT...")
-    if not valid_tgt():
+    try:
+        validate_tgt()
+    except AiRemotePowerControlError, error:
         logging.error("TGT expired or non-existent")
         return 20
 
@@ -179,7 +179,7 @@ def main():
         logging.error("SSO %s" % error)
         return 30
 
-    logging.debug("Loading cookie jar...")
+    logging.debug("Loading cookie jar into memory...")
     cookiejar = cookielib.MozillaCookieJar(cookiejar_path)
     try:
         cookiejar.load()
@@ -205,10 +205,15 @@ def main():
         else:
             summary.append(fqdn_summary)
 
-    print_output(args, summary)
+    logging.debug("Removing cookie jar '%s'..." % cookiejar_path)
+    try:
+        os.remove(cookiejar_path)
+    except OSError, error:
+        logging.error("Unable to remove cookie jar '%s'" % \
+            (cookiejar_path, error))
+        return 40
 
-    logging.debug("Removing cookie jar...")
-    os.remove(cookiejar_path)
+    format_output(args, summary)
 
     failures = reduce(lambda x, y: x+1 if y['success'] is False else x, summary, 0)
     if failures:
