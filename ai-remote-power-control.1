@@ -48,7 +48,7 @@ The following parameters are for advanced users and debugging.
 .TP
 .TP
 \fB\-c\fR, \fB\-\-cookiejar-basepath\fR PATH
-Directory where the temporary cookie jar will be generated (defaults to $HOME).
+Directory where the temporary SSO cookie jar will be generated (defaults to $HOME).
 .TP
 \fB\-\-foreman-hostname\fR FQDN
 FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
@@ -57,7 +57,7 @@ FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
 Port of the Foreman instance to use (defaults to 443).
 .TP
 \fB\-r\fR, \fB\-\-reuse-cookiejar\fR PATH
-Every time you call this command it will by default generate a cookie jar
+Every time you call this command it will by default generate a SSO cookie jar
 based on your Kerberos ticket and that operation takes around one second
 in normal conditions. Use this option to reuse an existing cookie jar
 generated externally to speed the execution up a bit.
@@ -103,10 +103,10 @@ Bad command line.
 The current Kerberos TGT is not valid or missing.
 .TP
 .B 4
-Failed to obtain/load the SSO cookie.
+Failed to obtain/load a SSO cookie jar.
 .TP
 .B 5
-Failed to remove temporary cookie jar.
+Failed to remove temporary SSO cookie jar.
 
 .SH JSON OUTPUT
 .TP
