@@ -107,7 +107,7 @@ def foreman_power_operation(fqdn):
     """Performs a power operation on the passed fqdn"""
     logging.debug("Executing '%s' on host '%s'" % (args.operation, fqdn))
     ipmifqdn = re.sub(r'\.cern\.ch$', "-ipmi.cern.ch", fqdn)
-    url="https://%s:%s/api/hosts/%s/interfaces/%s/power" % \
+    url="https://%s:%u/api/hosts/%s/interfaces/%s/power" % \
         (args.hostname, args.port, fqdn, ipmifqdn)
     payload = json.dumps({'power_action': args.operation})
     headers = {'Content-type': 'application/json',
@@ -163,7 +163,7 @@ def parse_cmdline_args():
     parser.add_argument('--foreman-hostname', dest="hostname",
         help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
         default=DEFAULT_FOREMAN_HOSTNAME)
-    parser.add_argument('--foreman-port', dest="port",
+    parser.add_argument('--foreman-port', dest="port", type=int,
         help="Foreman port (default: %s)" % DEFAULT_FOREMAN_PORT,
         default=DEFAULT_FOREMAN_PORT)
     parser.add_argument('-t', '--threads', type=int,
@@ -221,10 +221,7 @@ def main():
     cookiejar = cookielib.MozillaCookieJar(cookiejar_path)
     try:
         cookiejar.load()
-    except cookielib.LoadError, error:
-        logging.error("Unable to read cookies from '%s'" % cookiejar_path)
-        return 4
-    except IOError, error:
+    except (cookielib.LoadError, IOError), error:
         logging.error("Unable to read cookies from '%s'" % cookiejar_path)
         return 4
 
