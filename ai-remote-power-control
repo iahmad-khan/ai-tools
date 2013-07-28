@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# This script helps to perform power operations
+# This program helps to perform power operations
 # on IPMI-enabled hosts via Foreman.
 # Authors:
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
@@ -25,6 +25,7 @@ import functools
 import json
 import cookielib
 import requests
+import multiprocessing
 
 from subprocess import Popen, PIPE
 
@@ -65,7 +66,7 @@ def validate_tgt():
         raise AiRemotePowerControlError("kinit -s returned non-zero")
 
 @timed
-def get_sso_cookiejar(args):
+def get_sso_cookiejar():
     """Gets a cookie jar for Foreman via cern-get-sso-cookie"""
     try:
         fd, cookiejar_path = tempfile.mkstemp(
@@ -83,8 +84,10 @@ def get_sso_cookiejar(args):
 
     return cookiejar_path
 
-def format_output(args, summary):
+def format_output(summary):
     """Formats the output based on the output format specified"""
+    if args.errors:
+        summary = filter(lambda x: not x['success'], summary)
     if args.json:
         print json.dumps(summary)
     else:
@@ -98,7 +101,7 @@ def format_output(args, summary):
                 print "Error (%s)" % fqdn['details']
 
 @timed
-def foreman_power_operation(args, cookiejar, fqdn):
+def foreman_power_operation(fqdn):
     """Performs a power operation on the passed fqdn"""
     logging.debug("Executing '%s' on host '%s'" % (args.operation, fqdn))
     ipmifqdn = re.sub(r'\.cern\.ch$', "-ipmi.cern.ch", fqdn)
@@ -131,7 +134,7 @@ def foreman_power_operation(args, cookiejar, fqdn):
     except requests.exceptions.Timeout, error:
         return (False, "Connection timeout")
 
-def configure_logging(args):
+def configure_logging():
     """Configures application log level based on cmdline arguments"""
     logging_level = DEFAULT_LOGGING_LEVEL
     if args.verbose:
@@ -160,6 +163,10 @@ def parse_cmdline_args():
     parser.add_argument('--foreman-port', dest="port",
         help="Foreman port (default: %s)" % DEFAULT_FOREMAN_PORT,
         default=DEFAULT_FOREMAN_PORT)
+    parser.add_argument('-t', '--threads', type=int,
+        choices=xrange(1, (multiprocessing.cpu_count()*2)+1),
+        help="Number of threads (default: #cores) (max: #cores*2)",
+        default=multiprocessing.cpu_count())
     parser.add_argument('-c', '--cookiejar-path',
         help="Directory where the cookiejar will temporary live (default: %s)" % \
             DEFAULT_COOKIEJAR_LOCATION,
@@ -172,7 +179,7 @@ def parse_cmdline_args():
         parser.error("Operation '%s' not valid. See --help." % args.operation)
     return args
 
-def process_fqdn(args, cookiejar, fqdn):
+def process_fqdn(fqdn):
     logging.debug("Processing '%s'" % fqdn)
     fqdn_summary = {'fqdn': fqdn, 'success': False}
 
@@ -181,14 +188,15 @@ def process_fqdn(args, cookiejar, fqdn):
         summary['fqdns'].append(fqdn_summary)
     else:
         fqdn_summary['success'], fqdn_summary['details'] = \
-            foreman_power_operation(args, cookiejar, fqdn)
+            foreman_power_operation(fqdn)
 
     return fqdn_summary
 
 def main():
     """Application entrypoint"""
+    global args
     args = parse_cmdline_args()
-    configure_logging(args)
+    configure_logging()
 
     logging.debug("Validating TGT...")
     try:
@@ -199,12 +207,13 @@ def main():
 
     logging.debug("Getting SSO cookie...")
     try:
-        cookiejar_path = get_sso_cookiejar(args)
+        cookiejar_path = get_sso_cookiejar()
     except AiRemotePowerControlError, error:
         logging.error("SSO %s" % error)
         return 30
 
     logging.debug("Loading cookie jar into memory...")
+    global cookiejar
     cookiejar = cookielib.MozillaCookieJar(cookiejar_path)
     try:
         cookiejar.load()
@@ -212,14 +221,10 @@ def main():
         logging.error("Unable to read cookies from '%s'" % cookiejar_path)
         return 31
 
-    summary = []
-    for fqdn in args.fqdns:
-        fqdn_summary = process_fqdn(args, cookiejar, fqdn)
-
-        if fqdn_summary['success'] and args.errors:
-            pass
-        else:
-            summary.append(fqdn_summary)
+    pool = multiprocessing.Pool(processes=args.threads)
+    summary = pool.map(process_fqdn, args.fqdns)
+    pool.close()
+    pool.join()
 
     logging.debug("Removing cookie jar '%s'..." % cookiejar_path)
     try:
@@ -229,7 +234,7 @@ def main():
             (cookiejar_path, error))
         return 40
 
-    format_output(args, summary)
+    format_output(summary)
 
     failures = reduce(lambda x, y: x+1 if y['success'] is False else x, summary, 0)
     if failures:
