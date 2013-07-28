@@ -190,7 +190,6 @@ def process_fqdn(fqdn):
 
     if re.match(r".+?\.cern\.ch$", fqdn) is None:
         fqdn_summary['details'] = "Invalid FQDN"
-        summary['fqdns'].append(fqdn_summary)
     else:
         fqdn_summary['success'], fqdn_summary['details'] = \
             foreman_power_operation(fqdn)
