@@ -213,7 +213,7 @@ def main():
     try:
         cookiejar_path = get_sso_cookiejar()
     except AiRemotePowerControlError, error:
-        logging.error("SSO %s" % error)
+        logging.error("SSO: %s" % error)
         return 4
 
     logging.debug("Loading cookie jar into memory...")
