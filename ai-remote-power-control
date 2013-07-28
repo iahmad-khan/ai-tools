@@ -8,10 +8,10 @@
 # Exit codes:
 #  0 all power operations succeeded
 #  1 some power operations failed
-#  10 bad command line
-#  20 current TGT is not valid or missing
-#  30 failed to obtain/load a SSO cookie
-#  40 failed to remove temporary cookie jar
+#  2 bad command line
+#  3 current TGT is not valid or missing
+#  4 failed to obtain/load a SSO cookie
+#  5 failed to remove temporary cookie jar
 
 import sys
 import os
@@ -208,14 +208,14 @@ def main():
         validate_tgt()
     except AiRemotePowerControlError, error:
         logging.error("TGT expired or non-existent")
-        return 20
+        return 3
 
     logging.debug("Getting SSO cookie...")
     try:
         cookiejar_path = get_sso_cookiejar()
     except AiRemotePowerControlError, error:
         logging.error("SSO %s" % error)
-        return 30
+        return 4
 
     logging.debug("Loading cookie jar into memory...")
     global cookiejar
@@ -224,10 +224,10 @@ def main():
         cookiejar.load()
     except cookielib.LoadError, error:
         logging.error("Unable to read cookies from '%s'" % cookiejar_path)
-        return 31
+        return 4
     except IOError, error:
         logging.error("Unable to read cookies from '%s'" % cookiejar_path)
-        return 31
+        return 4
 
     pool = multiprocessing.Pool(processes=args.threads)
     summary = pool.map(process_fqdn, args.fqdns)
@@ -241,7 +241,7 @@ def main():
         except OSError, error:
             logging.error("Unable to remove cookie jar '%s'" % \
                 (cookiejar_path, error))
-            return 40
+            return 5
 
     format_output(summary)
 
