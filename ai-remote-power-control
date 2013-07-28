@@ -94,7 +94,7 @@ def format_output(summary):
         print json.dumps(summary)
     else:
         for fqdn in summary:
-            sys.stdout.write(" - %s: " % fqdn['fqdn'])
+            sys.stdout.write("%s: " % fqdn['fqdn'])
             if fqdn['success'] and args.operation == "status":
                 print fqdn['details']
             elif fqdn['success']:
