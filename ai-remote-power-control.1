@@ -29,7 +29,7 @@ with a valid registered IPMI interface will succeed.
 .SH OPTIONS
 .TP
 \fB\-e\fR, \fB\-\-errors-only\fR
-Report only machines on which the requested operation failed.
+Add to the report only machines on which the requested operation failed.
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 Display usage and exit.
@@ -57,7 +57,7 @@ FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
 Port of the Foreman instance to use (defaults to 443).
 .TP
 \fB\-r\fR, \fB\-\-reuse-cookiejar\fR PATH
-Every time you call this command it will by default generate a SSO cookie jar
+Every time you call this command it will by default generate a temporary SSO cookie jar
 based on your Kerberos ticket and that operation takes around one second
 in normal conditions. Use this option to reuse an existing cookie jar
 generated externally to speed the execution up a bit.
@@ -71,7 +71,7 @@ Enable debug messages (recommended to use -t 1 too).
 
 .SH IPMI OPERATIONS
 .TP
-This are currently the IPMI operations allowed by Foreman's API:
+These are currently the IPMI operations allowed by Foreman's API:
 .TP
 .B cycle
 Turn power off, wait and then turn power on.
@@ -103,7 +103,7 @@ Bad command line.
 The current Kerberos TGT is not valid or missing.
 .TP
 .B 4
-Failed to obtain/load a SSO cookie jar.
+Failed to obtain a temporary or to load an existing SSO cookie jar.
 .TP
 .B 5
 Failed to remove temporary SSO cookie jar.
@@ -114,7 +114,7 @@ The JSON output is basically a list of dictionaries. Each dictionary
 contains the following keys:
 .TP
 .B fqdn
-FQDN of the machine being reported
+FQDN of the machine being reported.
 .TP
 .B success
 Boolean describing if the operation was executed successfully.
@@ -127,7 +127,10 @@ a status operation is invoked, otherwise it will read "Command sent".
 .LP
 .I Example:
 .TP
-[{"fqdn": "lxfssm4404.cern.ch", "success": true, "details": "ON"}]
+[{"fqdn": "susie.cern.ch", "success": true, "details": "ON"}]
+.TP
+[{"fqdn": "murphy.cern.ch", "success": false, "details": "Host not in Foreman or
+without an IPMI interface (VM?)"}]
 
 .SH EXAMPLES
 .TP
@@ -135,12 +138,12 @@ a status operation is invoked, otherwise it will read "Command sent".
 ai-remote-power-control higgs.cern.ch
 
 .TP
-.B Do an 'on' operation on hosts higgs.cern.ch and foo.cern.ch with JSON output
-ai-remote-power-control -o on -j higgs.cern.ch foo.cern.ch
+.B Do an 'on' operation on hosts higgs.cern.ch and gijon.cern.ch with JSON output
+ai-remote-power-control -o on -j higgs.cern.ch gijon.cern.ch
 
 .TP
-.B Do a 'cycle' operation on host foo.cern.ch and print only errors
-ai-remote-power-control -o cycle -e foo.cern.ch
+.B Do a 'cycle' operation on host geneva.cern.ch and print only errors
+ai-remote-power-control -o cycle -e geneva.cern.ch
 
 .TP
 .B Do a 'cycle' operation on all the Puppet masters :)
