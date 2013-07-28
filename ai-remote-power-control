@@ -68,10 +68,12 @@ def validate_tgt():
 @timed
 def get_sso_cookiejar():
     """Gets a cookie jar for Foreman via cern-get-sso-cookie"""
+    if args.cookiejar_path:
+        return args.cookiejar_path
     try:
         fd, cookiejar_path = tempfile.mkstemp(
             suffix="foreman-cookiejar-%s" % socket.gethostname(),
-            dir=args.cookiejar_path)
+            dir=args.cookiejar_basepath)
         os.close(fd)
     except OSError, error:
         raise AiRemotePowerControlError("Can't create temporary file for the cookie jar")
@@ -109,11 +111,12 @@ def foreman_power_operation(fqdn):
         (args.hostname, args.port, fqdn, ipmifqdn)
     payload = json.dumps({'power_action': args.operation})
     headers = {'Content-type': 'application/json',
-        'Accept': 'application/json, version=2'}
+        'Accept': 'application/json, version=2',
+        'User-Agent': 'ai-remote-power-control'}
     try:
         response = requests.put(url, data=payload, 
             headers=headers, cookies=cookiejar,
-            verify=CERN_CA_BUNDLE)
+            verify=CERN_CA_BUNDLE, allow_redirects=False)
         if response.status_code == requests.codes.ok:
             msg = ""
             if args.operation == "status":
@@ -167,10 +170,12 @@ def parse_cmdline_args():
         choices=xrange(1, (multiprocessing.cpu_count()*2)+1),
         help="Number of threads (default: #cores) (max: #cores*2)",
         default=multiprocessing.cpu_count())
-    parser.add_argument('-c', '--cookiejar-path',
+    parser.add_argument('-c', '--cookiejar-basepath', dest="cookiejar_basepath",
         help="Directory where the cookiejar will temporary live (default: %s)" % \
             DEFAULT_COOKIEJAR_LOCATION,
         default=DEFAULT_COOKIEJAR_LOCATION)
+    parser.add_argument('-r', '--reuse-cookiejar', dest="cookiejar_path",
+        help="Path to a cookiejar generated with cern-get-sso-cookie to reuse")
     parser.add_argument('fqdns', nargs='+',
         help="One of more FQDNs",
         metavar="FQDN")
@@ -220,19 +225,23 @@ def main():
     except cookielib.LoadError, error:
         logging.error("Unable to read cookies from '%s'" % cookiejar_path)
         return 31
+    except IOError, error:
+        logging.error("Unable to read cookies from '%s'" % cookiejar_path)
+        return 31
 
     pool = multiprocessing.Pool(processes=args.threads)
     summary = pool.map(process_fqdn, args.fqdns)
     pool.close()
     pool.join()
 
-    logging.debug("Removing cookie jar '%s'..." % cookiejar_path)
-    try:
-        os.remove(cookiejar_path)
-    except OSError, error:
-        logging.error("Unable to remove cookie jar '%s'" % \
-            (cookiejar_path, error))
-        return 40
+    if not args.cookiejar_path:
+        logging.debug("Removing cookie jar '%s'..." % cookiejar_path)
+        try:
+            os.remove(cookiejar_path)
+        except OSError, error:
+            logging.error("Unable to remove cookie jar '%s'" % \
+                (cookiejar_path, error))
+            return 40
 
     format_output(summary)
 
