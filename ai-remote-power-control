@@ -9,9 +9,6 @@
 #  0 all power operations succeeded
 #  1 some power operations failed
 #  2 bad command line
-#  3 current TGT is not valid or missing
-#  4 failed to obtain/load a SSO cookie
-#  5 failed to remove temporary cookie jar
 
 import sys
 import os
@@ -23,11 +20,11 @@ import logging
 import time
 import functools
 import json
-import cookielib
 import requests
 import multiprocessing
 
 from subprocess import Popen, PIPE
+from requests_kerberos import HTTPKerberosAuth
 
 class AiRemotePowerControlError(Exception):
     pass
@@ -36,8 +33,7 @@ VALID_OPERATIONS=("on", "off", "soft", "cycle", "status")
 DEFAULT_OPERATION=("status")
 DEFAULT_LOGGING_LEVEL=logging.ERROR
 DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
-DEFAULT_FOREMAN_PORT = 443
-DEFAULT_COOKIEJAR_LOCATION = os.path.expanduser("~")
+DEFAULT_FOREMAN_PORT = 8443
 CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 
 def timed(f):
@@ -57,34 +53,6 @@ def __execute_command(args):
     (stdout, stderr)  = process.communicate()
     returncode = process.returncode
     return (process.returncode, stdout, stderr)
-
-@timed
-def validate_tgt():
-    """Checks if there's a valid TGT in the environment"""
-    status, stdout, stderr = __execute_command(["klist", "-s"])
-    if status != 0:
-        raise AiRemotePowerControlError("kinit -s returned non-zero")
-
-@timed
-def get_sso_cookiejar():
-    """Gets a cookie jar for Foreman via cern-get-sso-cookie"""
-    if args.cookiejar_path:
-        return args.cookiejar_path
-    try:
-        fd, cookiejar_path = tempfile.mkstemp(
-            suffix="foreman-cookiejar-%s" % socket.gethostname(),
-            dir=args.cookiejar_basepath)
-        os.close(fd)
-    except OSError, error:
-        raise AiRemotePowerControlError("Can't create temporary file for the cookie jar")
-
-    status, stdout, stderr = __execute_command(["cern-get-sso-cookie",
-        "--krb", "-u", "https://%s" % args.hostname, "-o",
-        cookiejar_path, "-r"])
-    if status != 0:
-        raise AiRemotePowerControlError("Failed to get cookiejar (%s)" % stderr)
-
-    return cookiejar_path
 
 def format_output(summary):
     """Formats the output based on the output format specified"""
@@ -115,20 +83,20 @@ def foreman_power_operation(fqdn):
         'User-Agent': 'ai-remote-power-control'}
     try:
         response = requests.put(url, data=payload, 
-            headers=headers, cookies=cookiejar,
-            verify=CERN_CA_BUNDLE, allow_redirects=False)
+            headers=headers, auth=HTTPKerberosAuth(),
+            verify=CERN_CA_BUNDLE, allow_redirects=True)
         if response.status_code == requests.codes.ok:
             msg = ""
             if args.operation == "status":
                 msg = json.loads(response.text)["power"].upper()
             return (True, msg)
-        elif response.status_code == requests.codes.found or \
+        elif response.status_code == requests.codes.forbidden or \
             response.status_code == requests.codes.unauthorized:
-                return (False, "Authentication failed")
+                return (False, "Authentication failed (Expired TGT?)")
         elif response.status_code == requests.codes.not_found:
             return (False, "Host not in Foreman or without an IPMI interface (VM?)")
         elif response.status_code == requests.codes.internal_server_error:
-            return (False, "ISE. Open a bug against Foreman")
+            return (False, "ISE. Open a bug")
         else:
             return (False, "Uncontrolled status code (%s), please report a bug" %
                 response.status_code)
@@ -170,12 +138,6 @@ def parse_cmdline_args():
         choices=xrange(1, (multiprocessing.cpu_count()*2)+1),
         help="Number of threads (default: #cores) (max: #cores*2)",
         default=multiprocessing.cpu_count())
-    parser.add_argument('-c', '--cookiejar-basepath', dest="cookiejar_basepath",
-        help="Directory where the cookiejar will temporary live (default: %s)" % \
-            DEFAULT_COOKIEJAR_LOCATION,
-        default=DEFAULT_COOKIEJAR_LOCATION)
-    parser.add_argument('-r', '--reuse-cookiejar', dest="cookiejar_path",
-        help="Path to a cookiejar generated with cern-get-sso-cookie to reuse")
     parser.add_argument('fqdns', nargs='+',
         help="One of more FQDNs",
         metavar="FQDN")
@@ -202,42 +164,10 @@ def main():
     args = parse_cmdline_args()
     configure_logging()
 
-    logging.debug("Validating TGT...")
-    try:
-        validate_tgt()
-    except AiRemotePowerControlError, error:
-        logging.error("TGT expired or non-existent")
-        return 3
-
-    logging.debug("Getting SSO cookie...")
-    try:
-        cookiejar_path = get_sso_cookiejar()
-    except AiRemotePowerControlError, error:
-        logging.error("SSO: %s" % error)
-        return 4
-
-    logging.debug("Loading cookie jar into memory...")
-    global cookiejar
-    cookiejar = cookielib.MozillaCookieJar(cookiejar_path)
-    try:
-        cookiejar.load()
-    except (cookielib.LoadError, IOError), error:
-        logging.error("Unable to read cookies from '%s'" % cookiejar_path)
-        return 4
-
     pool = multiprocessing.Pool(processes=args.threads)
     summary = pool.map(process_fqdn, args.fqdns)
     pool.close()
     pool.join()
-
-    if not args.cookiejar_path:
-        logging.debug("Removing cookie jar '%s'..." % cookiejar_path)
-        try:
-            os.remove(cookiejar_path)
-        except OSError, error:
-            logging.error("Unable to remove cookie jar '%s'" % \
-                (cookiejar_path, error))
-            return 5
 
     format_output(summary)
 

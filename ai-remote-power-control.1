@@ -7,8 +7,8 @@ ai-remote-power-control \- CLI to perform IPMI power operations on AI physical m
 
 .SH DESCRIPTION
 ai-remote-power-control is a command line tool to do IPMI power operations on
-AI physical machines via Foreman. It features automatic cookie jar
-retrieval, parallelism and optional JSON output. The default output
+AI physical machines via Foreman. It features Kerberos authentication,
+parallelism and optional JSON output. The default output
 format is a human-readable summary with one machine per line.
 .LP
 Apart from some of the options described below, the user has to
@@ -46,21 +46,11 @@ IPMI operation to perform, defaults to "status" (see IPMI OPERATIONS).
 The following parameters are for advanced users and debugging.
 
 .TP
-.TP
-\fB\-c\fR, \fB\-\-cookiejar-basepath\fR PATH
-Directory where the temporary SSO cookie jar will be generated (defaults to $HOME).
-.TP
 \fB\-\-foreman-hostname\fR FQDN
 FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
 .TP
 \fB\-\-foreman-port\fR PORT
 Port of the Foreman instance to use (defaults to 443).
-.TP
-\fB\-r\fR, \fB\-\-reuse-cookiejar\fR PATH
-Every time you call this command it will by default generate a temporary SSO cookie jar
-based on your Kerberos ticket and that operation takes around one second
-in normal conditions. Use this option to reuse an existing cookie jar
-generated externally to speed the execution up a bit.
 .TP
 \fB\-t\fR, \fB\-\-threads\fR INT
 Number of concurrent IPMI operations (defaults to the number of cores, with
@@ -98,15 +88,6 @@ Some IPMI operations have failed (see details at machine level).
 .TP
 .B 2
 Bad command line.
-.TP
-.B 3
-The current Kerberos TGT is not valid or missing.
-.TP
-.B 4
-Failed to obtain a temporary or to load an existing SSO cookie jar.
-.TP
-.B 5
-Failed to remove temporary SSO cookie jar.
 
 .SH JSON OUTPUT
 .TP
