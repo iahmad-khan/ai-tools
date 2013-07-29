@@ -135,19 +135,30 @@ without an IPMI interface (VM?)"}]
 .SH EXAMPLES
 .TP
 .B Do a 'status' operation on host higgs.cern.ch
-ai-remote-power-control higgs.cern.ch
+$ ai-remote-power-control higgs.cern.ch
+.br
+higgs.cern.ch: ON
 
 .TP
-.B Do an 'on' operation on hosts higgs.cern.ch and gijon.cern.ch with JSON output
-ai-remote-power-control -o on -j higgs.cern.ch gijon.cern.ch
+.B Do an 'on' operation on hosts higgs.cern.ch and gijon.cern.ch and produce JSON output
+$ ai-remote-power-control -o on -j higgs.cern.ch gijon.cern.ch
+.br
+higgs.cern.ch: Command sent
+.br
+gijon.cern.ch: Error (Host not in Foreman or without an IPMI interface (VM?))
 
 .TP
 .B Do a 'cycle' operation on host geneva.cern.ch and print only errors
-ai-remote-power-control -o cycle -e geneva.cern.ch
+$ ai-remote-power-control -o cycle -e 404.cern.ch
+.br
+404.cern.ch: Error (Host not in Foreman or without an IPMI interface (VM?))
+
+.LP
+.I Combining it with Mcollective:
 
 .TP
 .B Do a 'cycle' operation on all the Puppet masters :)
-mco find -T punch -F hostgroup_0=punch -F hostgroup_2=master | xargs ai-remote-power-control -o cycle
+$ mco find -T punch -F hostgroup_0=punch -F hostgroup_2=master | xargs ai-remote-power-control -o cycle
 
 .SH BUGS
 Any problem? Open a support call on Jira
