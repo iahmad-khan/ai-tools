@@ -132,7 +132,7 @@ def parse_cmdline_args():
         help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
         default=DEFAULT_FOREMAN_HOSTNAME)
     parser.add_argument('--foreman-port', dest="port", type=int,
-        help="Foreman port (default: %s)" % DEFAULT_FOREMAN_PORT,
+        help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
         default=DEFAULT_FOREMAN_PORT)
     parser.add_argument('-t', '--threads', type=int,
         choices=xrange(1, (multiprocessing.cpu_count()*2)+1),
