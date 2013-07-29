@@ -20,16 +20,16 @@ For Quattor-managed machines use remote-power-control instead.
 .TP
 .B Valid Kerberos5 ticket
 The user invoking the script must have a valid (existent and not expired)
-Kerberos ticket in the file pointed by the environment KRB5CCNAME.
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME.
 .TP
 .B Machine visibility
 Only operations on machines visible for the invoking user in Foreman and 
-with a valid registered IPMI interface will succeed.
+with a valid IPMI interface will succeed.
 
 .SH OPTIONS
 .TP
 \fB\-e\fR, \fB\-\-errors-only\fR
-Add to the report only machines on which the requested operation failed.
+Only add to the report machines on which the requested operation failed.
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 Display usage and exit.
