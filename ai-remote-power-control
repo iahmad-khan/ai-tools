@@ -45,13 +45,6 @@ def timed(f):
         return result
     return wrapper
 
-def __execute_command(args):
-    logging.debug("Executing %s" % args)
-    process = Popen(args, stdout=PIPE, stderr=PIPE)
-    (stdout, stderr)  = process.communicate()
-    returncode = process.returncode
-    return (process.returncode, stdout, stderr)
-
 def format_output(summary):
     """Formats the output based on the output format specified"""
     if args.errors:
