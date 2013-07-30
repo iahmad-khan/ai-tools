@@ -92,7 +92,7 @@ def foreman_power_operation(fqdn):
             return (True, msg)
         elif response.status_code == requests.codes.forbidden or \
             response.status_code == requests.codes.unauthorized:
-                return (False, "Authentication failed (Expired TGT?)")
+                return (False, "Authentication failed (Expired or non-existent TGT?)")
         elif response.status_code == requests.codes.not_found:
             return (False, "Host not in Foreman or without an IPMI interface (VM?)")
         elif response.status_code == requests.codes.internal_server_error:
