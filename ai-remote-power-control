@@ -75,10 +75,14 @@ def foreman_power_operation(fqdn):
             headers=headers, auth=HTTPKerberosAuth(),
             verify=CERN_CA_BUNDLE, allow_redirects=True)
         if response.status_code == requests.codes.ok:
-            msg = "Command sent"
+            outcome = json.loads(response.text)["power"]
             if args.operation == "status":
-                msg = json.loads(response.text)["power"].upper()
-            return (True, msg)
+                return (True, outcome.upper())
+            else:
+                if outcome is False:
+                    return (False, "Failed to send IPMI power operation")
+                else:
+                    return (True, "Command sent")
         elif response.status_code == requests.codes.forbidden or \
             response.status_code == requests.codes.unauthorized:
                 return (False, "Authentication failed (Expired or non-existent TGT?)")
