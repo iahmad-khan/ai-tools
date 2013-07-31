@@ -63,7 +63,7 @@ def foreman_power_operation(fqdn):
     logging.debug("Executing '%s' on host '%s'" % (args.operation, fqdn))
     ipmifqdn = re.sub(r'\.cern\.ch$', "-ipmi.cern.ch", fqdn)
     url="https://%s:%u/api/hosts/%s/interfaces/%s/power" % \
-        (args.hostname, args.port, fqdn, ipmifqdn)
+        (args.foreman_hostname, args.foreman_port, fqdn, ipmifqdn)
     payload = json.dumps({'power_action': args.operation})
     headers = {'Content-type': 'application/json',
         'Accept': 'application/json, version=2',
@@ -83,7 +83,7 @@ def foreman_power_operation(fqdn):
                     return (True, "Command sent")
         elif response.status_code == requests.codes.forbidden or \
             response.status_code == requests.codes.unauthorized:
-                return (False, "Authentication failed (Expired or non-existent TGT?)")
+                return (False, "Authentication failed (expired or non-existent TGT?)")
         elif response.status_code == requests.codes.not_found:
             return (False, "Host not in Foreman or without an IPMI interface (VM?)")
         elif response.status_code == requests.codes.internal_server_error:
@@ -119,19 +119,18 @@ def parse_cmdline_args():
     parser.add_argument('-e', '--errors-only', dest="errors",
         action="store_true",
         help="Outputs errors only")
-    parser.add_argument('--foreman-hostname', dest="hostname",
+    parser.add_argument('--foreman-hostname', dest="foreman_hostname",
         help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
         default=DEFAULT_FOREMAN_HOSTNAME)
-    parser.add_argument('--foreman-port', dest="port", type=int,
+    parser.add_argument('--foreman-port', dest="foreman_port", type=int,
         help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
         default=DEFAULT_FOREMAN_PORT)
     parser.add_argument('-t', '--threads', type=int,
         choices=xrange(1, (multiprocessing.cpu_count()*2)+1),
         help="Number of threads (default: #cores) (max: #cores*2)",
         default=multiprocessing.cpu_count())
-    parser.add_argument('fqdns', nargs='+',
-        help="One of more FQDNs",
-        metavar="FQDN")
+    parser.add_argument('hostname', nargs='+',
+        help="One of more hostnames (qualified or not)")
     args = parser.parse_args()
     if args.operation not in VALID_OPERATIONS:
         parser.error("Operation '%s' not valid. See --help." % args.operation)
@@ -142,7 +141,7 @@ def process_fqdn(fqdn):
     fqdn_summary = {'fqdn': fqdn, 'success': False}
 
     if re.match(r".+?\.cern\.ch$", fqdn) is None:
-        fqdn_summary['details'] = "Invalid FQDN"
+        fqdn_summary['details'] = "Unable to resolve FQDN"
     else:
         fqdn_summary['success'], fqdn_summary['details'] = \
             foreman_power_operation(fqdn)
@@ -155,8 +154,9 @@ def main():
     args = parse_cmdline_args()
     configure_logging()
 
+    fqdns = map(socket.getfqdn, args.hostname)
     pool = multiprocessing.Pool(processes=args.threads)
-    summary = pool.map(process_fqdn, args.fqdns)
+    summary = pool.map(process_fqdn, fqdns)
     pool.close()
     pool.join()
 
