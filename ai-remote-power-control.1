@@ -89,6 +89,32 @@ Some IPMI operations have failed (see details at machine level).
 .B 2
 Bad command line.
 
+.SH COMMON ERRORS
+.TP
+.B Failed to send IPMI power operation
+The IPMI proxy was unable to execute the requested operation on the
+BMC. Possibly caused by a misconfigured IPMI interface or a hardware
+problem. Open a support call on Foreman.
+.TP
+.B Authentication failed (Expired or non-existent TGT?)
+You either don't have permissions to do operations on the specified
+host or your Kerberos ticket is either expired or non-existent.
+.TP
+.B Uncontrolled status code (INT), please report a bug.
+The application got a HTTP status code that is not in the list of
+handled ones. Open a bug against ai-remote-power-control.
+.TP
+.B Host not in Foreman or without an IPMI interface (VM?)
+Either the host is not in Foreman or it does not have a configured
+IPMI interface (this could happen because is a legacy physical box
+or because the node is a virtual machine).
+.TP
+.B Connection timeout
+Foreman is not responding in the specified timeout.
+.TP
+.B ISE. Open a bug
+Something went very badly. Open a ticket against Foreman.
+
 .SH JSON OUTPUT
 .TP
 The JSON output is basically a list of dictionaries. Each dictionary 
