@@ -54,10 +54,8 @@ def format_output(summary):
     else:
         for fqdn in summary:
             sys.stdout.write("%s: " % fqdn['fqdn'])
-            if fqdn['success']:
-                print fqdn['details']
-            else:
-                print "Error (%s)" % fqdn['details']
+            print fqdn['details'] if fqdn['success'] \
+                else "Error (%s)" % fqdn['details']
 
 @timed
 def foreman_power_operation(fqdn):
