@@ -9,7 +9,7 @@
 #  1 some operations failed
 #  2 bad command line
 #  3 bad user environment
-#  3 Kerberos TGT not found or expired
+#  4 Kerberos TGT not found or expired
 
 import os
 import sys
