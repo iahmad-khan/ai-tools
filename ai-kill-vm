@@ -9,6 +9,7 @@
 #  1 some operations failed
 #  2 bad command line
 #  3 bad user environment
+#  3 Kerberos TGT not found or expired
 
 import os
 import sys
@@ -18,6 +19,7 @@ import re
 import socket
 import json
 import requests
+import krbV
 from requests_kerberos import HTTPKerberosAuth
 import novaclient.exceptions
 from novaclient.v1_1 import client
@@ -51,6 +53,14 @@ def verify_environment():
         if variable not in os.environ:
             raise AiKillVmError("%s not set (openrc not (or partially) sourced?)" % variable)
 
+def verify_kerberos():
+    context = krbV.default_context()
+    ccache = context.default_ccache()
+    try:
+        ccache.principal()
+    except krbV.Krb5Error:
+        raise AiKillVmError("Kerberos principal not found")
+
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
     parser = argparse.ArgumentParser()
@@ -74,10 +84,10 @@ def parse_cmdline_args():
         help="Timeout for Foreman operations (default: %s seconds)" % \
         DEFAULT_FOREMAN_TIMEOUT,
         default = DEFAULT_FOREMAN_TIMEOUT)
-    parser.add_argument('--foreman-hostname', dest="foreman_hostname",
+    parser.add_argument('--foreman-hostname',
         help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
         default=DEFAULT_FOREMAN_HOSTNAME)
-    parser.add_argument('--foreman-port', dest="foreman_port", type=int,
+    parser.add_argument('--foreman-port', type=int,
         help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
         default=DEFAULT_FOREMAN_PORT)
     parser.add_argument('hostname', nargs='+',
@@ -94,7 +104,7 @@ def format_output(summary):
     else:
         for element in summary:
             sys.stdout.write("%s: " % element['hostname'])
-            print element['details'] if element['success'] \
+            print "Deleted" if element['success'] \
                 else "Error (%s)" % element['details']
 
 def delete_virtual_machine(hostname):
@@ -176,7 +186,6 @@ remains intact" % error
         return summary
 
     summary['success'] = True
-    summary['details'] = "Done"
     return summary
 
 def main():
@@ -188,8 +197,14 @@ def main():
     try:
         verify_environment()
     except AiKillVmError, error:
-        logging.error("Failed to validate user's environment (%s)" % error)
+        logging.error("Failed to validate user's environment (%s). Exiting..." % error)
         return 3
+
+    try:
+        verify_kerberos()
+    except AiKillVmError, error:
+        logging.error("TGT not found or expired. Exiting...")
+        return 4
 
     format_output(map(destroy_host, args.hostname))
 
