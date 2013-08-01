@@ -1,20 +1,118 @@
-.TH AI-KILL-VM "1" "October 2012" "ai-kill-vm" "User Commands"
+.TH AI-KILL-VM "1" "July 2013" "ai-kill-vm" "User Commands"
 .SH NAME
-ai-kill-vm \- Command-line tool to kill OpenStack VMs
+ai-kill-vm \- Command-line tool to destroy Puppet-managed OpenStack VMs
+
 .SH SYNOPSIS
-.B "ai-kill-vm"
-<hostname>
+.B "ai-kill-vm [OPTIONS] HOSTNAME [HOSTNAME ...]"
+
 .SH DESCRIPTION
-ai-kill-vm is a shell script that helps to kill Puppet-managed Foreman-enabled OpenStack VMs.
-.PP
-.SH COMMAND OVERVIEW
+ai-kill-vm is a Python command line tool to kill Puppet-managed Foreman-enabled
+OpenStack VMs in CERN's context.
+.LP
+Apart from some of the options described below, the user has to
+provide a combination of one or more hostnames or fully qualified domain names.
+When necessary, this tool resolves the FQDN of the passed hostnames based on
+the configuration of the local DNS resolver library (/etc/resolv.conf).
+.LP
+.I Prerequisites:
 .TP
-See
-https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/PuppetizeInstancesOnOpenstack
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME.
+.TP
+.B Machine visibility
+Only operations on machines visible for the invoking user in Foreman will
+succeed.
+
+.SH OPTIONS
+.TP
+\fB\-e\fR, \fB\-\-errors-only\fR
+Only add to the report virtual machines on which the deletion operation failed.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display usage and exit.
+.TP
+\fB\-j\fR, \fB\-\-json\fR
+Print a machine-readable output in JSON (see JSON OUTPUT for details).
+.TP
+\fB\-d\fR, \fB\-\-dryrun\fR
+Do everything except from the actual deletion API requests
+
+.LP
+.I Advanced options:
+.TP
+The following parameters are for advanced users and debugging.
+
+.TP
+\fB\-\-nova-timeout\fR INT
+Timeout (in seconds) for Nova operations (default: 15)
+.TP
+\fB\-\-foreman-hostname\fR FQDN
+FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
+.TP
+\fB\-\-foreman-port\fR PORT
+Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
+.TP
+\fB\-\-foreman-timeout\fR INT
+Timeout (in seconds) for Foreman operations (default: 15)
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Enable debug messages.
+
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 1
+Some IPMI operations have failed (see details at machine level).
+.TP
+.B 2
+Bad command line.
+.TP
+.B 3
+Bad user environment (no OpenStack's openrc.sh has been sourced)
+.TP
+.B 4
+Kerberos TGT not-existent or expired.
+
+.SH JSON OUTPUT
+.TP
+The JSON output is basically a list of dictionaries. Each dictionary contains the following keys:
+.TP
+.B hostname
+Hostname (as passed by the user) of the machine being reported.
+.TP
+.B success
+Boolean describing if the operation was executed successfully.
+.TP
+.B details
+In case of error (success is false) this field contains the error
+message. This field is not present in case of success.
+
+.LP
+.I Example:
+.TP
+[{"hostname": "susie", "details": "Couldn't delete VM (VM 'susie' not found). Foreman entry remains intact", "success": false}]
+
 .SH EXAMPLES
 .TP
-ai-kill-vm higgsbox.cern.ch
-.SH SEE ALSO
+.B Kill foo1.cern.ch and foo2 and print the output formatted in JSON
+$ ai-kill-vm -j foo1.cern.ch foo2
+
+.LP
+.I Combining it with Mcollective:
+
 .TP
+.B Destroy all VMs in hostgroup foo/bar
+$ mco find -T foo -F hostgroup_0=foo -F hostgroup_1=bar | xargs ai-kill-vm
+
+.SH BUGS
+Any problem? Open a support call on Jira
+(https://its.cern.ch/jira/) project "Agile Infrastructure".
+
+.SH AUTHOR
+Nacho Barrientos <nacho.barrientos@cern.ch> 
+
+.SH SEE ALSO
 ai-bs-vm (1)
-.PP
