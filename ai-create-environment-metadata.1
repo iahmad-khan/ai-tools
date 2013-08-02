@@ -1,0 +1,84 @@
+.TH AI-CREATE-ENVIRONMENT-METADATA "1" "August 2013" "ai-create-environment-metadata" "User Commands"
+.SH NAME
+ai-create-environment-metadata \- Helper tool to create Puppet environment definitions
+
+.SH SYNOPSIS
+.B "ai-create-environment-metadata -e ENVIRONMENT -n EMAIL [OPTIONS]"
+
+.SH DESCRIPTION
+ai-create-environment-metadata is a command line tool to create YAML
+Puppet environment definitions to be consumed by the Puppet masters.
+.LP
+With it you can basically define what is the default branch and add
+overrides for modules and top-level hostgroups. The output is a YAML
+file ready to be added, committed and pushed. After some minutes, the
+new environment will show up in Foreman.
+.LP
+More information: http://cern.ch/go/l9Nr ("Environments" section)
+.TP
+.I Prerequisites:
+.TP
+.B Working directory
+The current directory must be a clone of it-puppet-environments (see the
+link above for more details)
+
+.TP
+\fB\-e\fR, \fB\-\-environment ENVIRONMENT\fR
+Name of the environment to be created (must contain only alphanumeric
+characters and underscore).
+.TP
+\fB\-n\fR, \fB\-\-notifications EMAIL\fR
+Email address to sent notifications to in case of badly defined overrides (for
+instance, if the specified branch does not exist).
+
+.SH OPTIONS
+.TP
+\fB\-m\fR, \fB\-\-module MODULE:BRANCH\fR
+Adds an override for module MODULE to use branch BRANCH.
+.TP
+\fB\-g\fR, \fB\-\-hostgroup HOSTGROUP:BRANCH\fR
+Adds an override for top-level hostgroup HOSTGROUP to use branch BRANCH.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Enable debug messages.
+
+.SH EXIT CODES
+.TP
+.B 0
+Environment definition file created.
+.TP
+.B 2
+Bad command line.
+.TP
+.B 3
+The working directory is not a clone of it-puppet-environments.
+.TP
+.B 4
+The environment already exists.
+.TP
+.B 5
+The environment name does not follow the rules.
+.TP
+.B 6
+One or more invalid module overrides.
+.TP
+.B 7
+One or more invalid hostgroup overrides.
+.TP
+.B 8
+Couldn't open the output file for writing.
+
+.SH EXAMPLES
+.TP
+Create environment \fBafs_ai123\fR overriding module \fBafs\fR:
+$ ai-create-environment-metadata -e afs_ai123 -n afs-admins@cern.ch -m afs:ai123
+.TP
+Create environment \fBbi_afs_ai123\fR overriding module \fBafs\fR and hostgroup \fBbi\fR:
+$ ai-create-environment-metadata -e bi_afs_ai123 -n batch-operations@cern.ch -m afs:ai123 -g bi:ai123
+
+.SH BUGS
+Any problem? Open a support call on Jira
+(https://its.cern.ch/jira/) project "Agile Infrastructure".
+
+.SH AUTHOR
+Nacho Barrientos <nacho.barrientos@cern.ch>
