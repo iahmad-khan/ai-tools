@@ -69,24 +69,24 @@ def main():
         opts = parse_cmdline_args()
     except CmdlineError, error:
         logging.error("Wrong command line: %s\n" % error)
-        return -1
+        return 2
 
     configure_logging(opts.verbose)
 
     if not os.path.exists("production.yaml"):
         logging.error("Current directory does not look like \
 a clone of it-puppet-environments\n")
-        return -2
+        return 3
 
     if os.path.exists(opts.environment + ".yaml"):
         logging.error("Environment '%s' already exists\n" %
             opts.environment)
-        return -3
+        return 4
 
     if re.match(r"^\w+$", opts.environment) is None:
         logging.error("Environment names must contain only alphanumeric \
 characters and underscore")
-        return -3
+        return 5
 
     opts.environment = opts.environment.lower()
     logging.info("Creating environment '%s'..." % opts.environment)
@@ -101,7 +101,7 @@ characters and underscore")
             try:
                 module, branch = split_override(module_override)
             except OverrideError:
-                return -4
+                return 6
             environment['overrides']['modules'][module] = branch
 
     if opts.hostgroup:
@@ -113,7 +113,7 @@ characters and underscore")
             try:
                 hostgroup, branch = split_override(hostgroup_override)
             except OverrideError:
-                return -4
+                return 7
             environment['overrides']['hostgroups'][hostgroup] = branch
 
     try:
@@ -121,6 +121,7 @@ characters and underscore")
     except OSError:
         logging.error("Unable to open %s for writing" % 
             opts.environment + ".yaml")
+        return 8
 
     environment_file.write("---\n")
     yaml.dump(environment, environment_file, default_flow_style=False)
