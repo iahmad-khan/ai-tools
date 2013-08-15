@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 4.0
+Version: 4.1
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -60,6 +60,10 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Thu Aug 15 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 4.1-0
+- [ai-kill-vm] Typos manual page.
+- [ai-kill-vm] Return 1 if some operations failed
+
 * Thu Aug 15 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 4.0-0
 - Bump major version: "Kerberos era"
 - Remove link ai-kill-pet
