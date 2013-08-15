@@ -16,6 +16,10 @@ the configuration of the local DNS resolver library (/etc/resolv.conf).
 .LP
 .I Prerequisites:
 .TP
+.B Valid OpenStack credentials
+The adequate openrc must be sourced and the password set for the tenant
+where the VM to be removed lives.
+.TP
 .B Valid Kerberos5 ticket
 The user invoking the script must have a valid (existent and not expired)
 Kerberos ticket in the file pointed by the environment variable KRB5CCNAME.
@@ -65,7 +69,7 @@ Enable debug messages.
 All operations executed successfully.
 .TP
 .B 1
-Some IPMI operations have failed (see details at machine level).
+Some operations have failed (see details at machine level).
 .TP
 .B 2
 Bad command line.
