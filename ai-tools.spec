@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 3.29
+Version: 4.0
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -34,14 +34,12 @@ install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-git-cherry-pick ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-vm ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin
-ln -s /usr/bin/ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin/ai-kill-pet
 install -Dm 755 userdata/common ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/common
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-gen-ssh-yaml.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
-ln -s %{_mandir}/man1/ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/ai-kill-pet.1
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
@@ -54,16 +52,19 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/bin/ai-git-cherry-pick
 /usr/bin/ai-bs-vm
 /usr/bin/ai-kill-vm
-/usr/bin/ai-kill-pet
 /usr/bin/ai-gen-ssh-yaml
 %{_mandir}/man1/ai-foreman-cli.1*
 %{_mandir}/man1/ai-bs-vm.1*
-%{_mandir}/man1/ai-kill-pet.1*
 %{_mandir}/man1/ai-kill-vm.1*
 %{_mandir}/man1/ai-gen-ssh-yaml.1*
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Thu Aug 15 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 4.0-0
+- Bump major version: "Kerberos era"
+- Remove link ai-kill-pet
+- ai-kill-vm completely rewritten with Kerberos support and Nova API
+
 * Thu Jul 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 3.29-0
 - [ai-bs-vm] Fix manpage examples
 
