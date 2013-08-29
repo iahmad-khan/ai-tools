@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 4.1
+Version: 4.2
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -29,6 +29,7 @@ pod2man ai-foreman-cli > ai-foreman-cli.1
 %install
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-foreman-cli    ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 ai-create-environment-metadata ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-gen-ssh-yaml    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-vm ${RPM_BUILD_ROOT}/usr/bin
@@ -36,6 +37,7 @@ install -m 755 ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin
 install -Dm 755 userdata/common ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/common
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 ai-create-environment-metadata.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-gen-ssh-yaml.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
@@ -47,17 +49,22 @@ rm -rf ${RPM_BUILD_ROOT}
 %defattr (-, root, root)
 %doc README.judy
 /usr/bin/ai-foreman-cli
+/usr/bin/ai-create-environment-metadata
 /usr/bin/ai-landb-bind-mac
 /usr/bin/ai-bs-vm
 /usr/bin/ai-kill-vm
 /usr/bin/ai-gen-ssh-yaml
 %{_mandir}/man1/ai-foreman-cli.1*
+%{_mandir}/man1/ai-create-environment-metadata.1*
 %{_mandir}/man1/ai-bs-vm.1*
 %{_mandir}/man1/ai-kill-vm.1*
 %{_mandir}/man1/ai-gen-ssh-yaml.1*
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Thu Aug 29 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 4.2-0
+- [ai-create-environment-metadata] Released
+
 * Thu Aug 15 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 4.1-0
 - [ai-kill-vm] Typos manual page.
 - [ai-kill-vm] Return 1 if some operations failed
