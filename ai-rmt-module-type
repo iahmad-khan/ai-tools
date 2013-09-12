@@ -59,8 +59,8 @@ def get_toplevel_affected_hgs_count(conn, modulename):
     query = """
 ["and",["=","name","hostgroup_0"], 
 ["in","certname",["extract","certname", 
-["select-resources", ["and",["=", "type", "Class"], 
-["=","title","%s"]]]]]]
+["select-resources", ["and",["=", "type", "Class"],
+["~","title","\\\A%s"]]]]]]
 """ % modulename
     logging.debug(query)
 
