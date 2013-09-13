@@ -20,6 +20,7 @@ use Switch;
 use DateTime;
 use Text::TabularDisplay;
 use YAML::Syck;
+use MIME::Base64;
 
 $Data::Dumper::Sortkeys = 1;
 
@@ -83,6 +84,8 @@ my $browser     = LWP::UserAgent->new;
 if (not defined $foreman_conn_params{cookiejar}) {
     ($user_credentials{username},$user_credentials{password}) = GetUserCredentials($user_credentials{username});
     $browser->credentials($netlocation,$realm,$user_credentials{username} => $user_credentials{password});
+    my $enccreds = encode_base64($user_credentials{username} . ':' . $user_credentials{password});
+    $browser->default_header('Authorization' => 'Basic ' . $enccreds);
     $browser->max_redirect(1);
 } else {
     use HTTP::Cookies::Netscape;

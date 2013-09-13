@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 4.2
+Version: 4.3
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -62,6 +62,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Fri Sep 13 2013 Gavin McCance <gavin.mccance@cern.ch> - 4.3-0
+- Fixed AI-2932 - bad credentials with new Foreman version
+
 * Thu Aug 29 2013 Nacho Barrientos <nacho.barrientos@cern.ch> 4.2-0
 - [ai-create-environment-metadata] Released
 

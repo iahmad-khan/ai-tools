@@ -1,4 +1,4 @@
-PKGNAME=ai-tools-4.2
+PKGNAME=ai-tools-4.3
 TARFILE=$(PKGNAME).tgz
 
 all:
