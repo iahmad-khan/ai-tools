@@ -68,7 +68,7 @@ hostname $HOSTNAME
 #
 function set_repositories {
   echo "Setting AI repository..." >> $LOGFILE
-  curl http://linuxsoft.cern.ch/koji/ai$OS_MAJOR_VERSION.repo > \
+  curl http://linuxsoft.cern.ch/internal/repos/ai$OS_MAJOR_VERSION.repo > \
     /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
   test -f /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
 }
