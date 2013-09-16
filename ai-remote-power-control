@@ -106,10 +106,6 @@ def configure_logging():
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--operation',
-        help="Power operation to perform (%s) (default: %s)" % \
-            (", ".join(VALID_OPERATIONS), DEFAULT_OPERATION),
-        default=DEFAULT_OPERATION)
     parser.add_argument('-j', '--json',
         action="store_true",
         help="Produce JSON output")
@@ -129,9 +125,12 @@ def parse_cmdline_args():
         choices=xrange(1, (multiprocessing.cpu_count()*2)+1),
         help="Number of threads (default: #cores) (max: #cores*2)",
         default=multiprocessing.cpu_count())
+    parser.add_argument('operation', nargs=1,
+        help="Power operation to perform (%s)" % ", ".join(VALID_OPERATIONS))
     parser.add_argument('hostname', nargs='+',
-        help="One of more hostnames (qualified or not)")
+        help="One of more hostnames (qualified or not) separated by comma or blank")
     args = parser.parse_args()
+    args.operation = args.operation[0]
     if args.operation not in VALID_OPERATIONS:
         parser.error("Operation '%s' not valid. See --help." % args.operation)
     return args

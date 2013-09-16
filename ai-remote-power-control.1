@@ -3,7 +3,7 @@
 ai-remote-power-control \- CLI to perform IPMI power operations on AI physical machines.
 
 .SH SYNOPSIS
-.B "ai-remote-power-control [OPTIONS] HOSTNAME [HOSTNAME ...]"
+.B "ai-remote-power-control [OPTIONS] OPERATION HOSTNAME [HOSTNAME ...]"
 
 .SH DESCRIPTION
 ai-remote-power-control is a command line tool to do IPMI power operations on
@@ -12,10 +12,11 @@ parallelism and optional JSON output. The default output
 format is a human-readable summary with one machine per line.
 .LP
 Apart from some of the options described below, the user has to
-provide a combination of one or more hostnames or fully qualified domain names,
-which must be separated by blank or comma.
-This tool resolves the FQDN of the passed hostnames based on
-the configuration of the local DNS resolver library (/etc/resolv.conf).
+provide an operation (see IPMI OPERATIONS) and a combination of one or
+more hostnames or fully qualified domain names (which must be separated
+by blank or comma). This tool resolves the FQDN of the passed hostnames
+based on the configuration of the local DNS resolver library
+(/etc/resolv.conf).
 .LP
 Always expect FQDNs in all the possible output formats unless the hostname
 is not resolvable.
@@ -42,9 +43,6 @@ Display usage and exit.
 .TP
 \fB\-j\fR, \fB\-\-json\fR
 Print a machine-readable output in JSON (see JSON OUTPUT for details).
-.TP
-\fB\-o\fR, \fB\-\-operation\fR OPERATION
-IPMI operation to perform, defaults to "status" (see IPMI OPERATIONS).
 
 .LP
 .I Advanced options:
@@ -154,7 +152,7 @@ without an IPMI interface (VM?)"}]
 .SH EXAMPLES
 .TP
 .B Do a 'status' operation on hosts higgs.cern.ch, boson.cern.ch, found.cern.ch
-$ ai-remote-power-control higgs.cern.ch,boson.cern.ch found.cern.ch
+$ ai-remote-power-control status higgs.cern.ch,boson.cern.ch found.cern.ch
 .br
 higgs.cern.ch: ON
 boson.cern.ch: ON
@@ -162,7 +160,7 @@ found.cern.ch: ON
 
 .TP
 .B Do an 'on' operation on hosts higgs.cern.ch and gijon and produce JSON output
-$ ai-remote-power-control -o on -j higgs.cern.ch gijon
+$ ai-remote-power-control on -j higgs.cern.ch gijon
 .br
 higgs.cern.ch: Command sent
 .br
@@ -170,7 +168,7 @@ gijon.cern.ch: Error (Host not in Foreman or without an IPMI interface (VM?))
 
 .TP
 .B Do a 'cycle' operation on host geneva.cern.ch and print only errors
-$ ai-remote-power-control -o cycle -e 404.cern.ch
+$ ai-remote-power-control cycle -e 404.cern.ch
 .br
 404.cern.ch: Error (Host not in Foreman or without an IPMI interface (VM?))
 
@@ -179,7 +177,7 @@ $ ai-remote-power-control -o cycle -e 404.cern.ch
 
 .TP
 .B Do a 'cycle' operation on all the Puppet masters :)
-$ mco find -T punch -F hostgroup_0=punch -F hostgroup_2=master | xargs ai-remote-power-control -o cycle
+$ mco find -T punch -F hostgroup_0=punch -F hostgroup_2=master | xargs ai-remote-power-control cycle
 
 .SH BUGS
 Any problem? Open a support call on Jira
