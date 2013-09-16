@@ -12,7 +12,8 @@ parallelism and optional JSON output. The default output
 format is a human-readable summary with one machine per line.
 .LP
 Apart from some of the options described below, the user has to
-provide a combination of one or more hostnames or fully qualified domain names.
+provide a combination of one or more hostnames or fully qualified domain names,
+which must be separated by blank or comma.
 This tool resolves the FQDN of the passed hostnames based on
 the configuration of the local DNS resolver library (/etc/resolv.conf).
 .LP
@@ -152,10 +153,12 @@ without an IPMI interface (VM?)"}]
 
 .SH EXAMPLES
 .TP
-.B Do a 'status' operation on host higgs.cern.ch
-$ ai-remote-power-control higgs.cern.ch
+.B Do a 'status' operation on hosts higgs.cern.ch, boson.cern.ch, found.cern.ch
+$ ai-remote-power-control higgs.cern.ch,boson.cern.ch found.cern.ch
 .br
 higgs.cern.ch: ON
+boson.cern.ch: ON
+found.cern.ch: ON
 
 .TP
 .B Do an 'on' operation on hosts higgs.cern.ch and gijon and produce JSON output

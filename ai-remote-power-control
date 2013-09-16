@@ -154,6 +154,8 @@ def main():
     args = parse_cmdline_args()
     configure_logging()
 
+    args.hostname = reduce(list.__add__, map(lambda x: x.split(','), \
+        args.hostname), [])
     fqdns = map(socket.getfqdn, args.hostname)
     pool = multiprocessing.Pool(processes=args.threads)
     summary = pool.map(process_fqdn, fqdns)
