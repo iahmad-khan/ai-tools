@@ -68,19 +68,23 @@ Enable debug messages (recommended to use -t 1 too).
 These are currently the IPMI operations allowed by Foreman's API:
 .TP
 .B cycle
-Turn power off, wait and then turn power on.
+Provides a power off interval of at least 1 second. Be aware that
+some BMCs fail to set the power on after waiting.
 .TP
 .B off
-Turn power off without an orchestrated shutdown.
+Power down chassis.
 .TP
 .B on
-Turn power on.
+Power up chassis.
 .TP
 .B soft
-Do an OS shutdown via ACPI.
+Initiate a soft-shutdown of OS via ACPI.
+.TP
+.B reset
+NOT IMPLEMENTED YET. This command will perform a hard reset.
 .TP
 .B status
-Query power status (default).
+Show current chassis power status.
 
 .SH EXIT CODES
 .TP

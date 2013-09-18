@@ -27,6 +27,7 @@ from requests_kerberos import HTTPKerberosAuth
 class AiRemotePowerControlError(Exception):
     pass
 
+# Reset not available as the smart proxy does not support it yet
 VALID_OPERATIONS=("on", "off", "soft", "cycle", "status")
 DEFAULT_OPERATION=("status")
 DEFAULT_LOGGING_LEVEL=logging.ERROR
