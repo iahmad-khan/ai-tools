@@ -132,10 +132,9 @@ characters and underscore")
 
     logging.info("Done")
     logging.info("To publish it just execute:")
-    logging.info("\tgit add %s.yaml" % opts.environment)
-    logging.info("\tgit commit -m \"Add environment %s\"" % opts.environment)
-    logging.info("\tgit pull --rebase origin master")
-    logging.info("\tgit push origin master")
+    logging.info("\tgit add %s.yaml && git commit -m \"Add environment %s\"" % \
+        (opts.environment, opts.environment))
+    logging.info("\tgit pull --rebase origin master && git push origin master")
 
     if opts.module or opts.hostgroup:
         logging.info("IMPORTANT: Please note that you're overriding \
