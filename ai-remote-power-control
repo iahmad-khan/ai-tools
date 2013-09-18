@@ -62,9 +62,8 @@ def format_output(summary):
 def foreman_power_operation(fqdn):
     """Performs a power operation on the passed fqdn"""
     logging.debug("Executing '%s' on host '%s'" % (args.operation, fqdn))
-    ipmifqdn = re.sub(r'\.cern\.ch$', "-ipmi.cern.ch", fqdn)
-    url="https://%s:%u/api/hosts/%s/interfaces/%s/power" % \
-        (args.foreman_hostname, args.foreman_port, fqdn, ipmifqdn)
+    url="https://%s:%u/api/hosts/%s/power" % \
+        (args.foreman_hostname, args.foreman_port, fqdn)
     payload = json.dumps({'power_action': args.operation})
     headers = {'Content-type': 'application/json',
         'Accept': 'application/json, version=2',
