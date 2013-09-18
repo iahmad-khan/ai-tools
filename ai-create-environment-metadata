@@ -75,7 +75,9 @@ def main():
 
     if not os.path.exists("production.yaml"):
         logging.error("Current directory does not look like \
-a clone of it-puppet-environments\n")
+a clone of it-puppet-environments")
+        logging.error("git clone \
+https://:@git.cern.ch/kerberos/it-puppet-environments")
         return 3
 
     if os.path.exists(opts.environment + ".yaml"):
