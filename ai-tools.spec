@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 4.4
+Version: 4.5
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -62,6 +62,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Wed Oct 02 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 4.5-0
+- [ai-bs-vm] Don't allow hostgroups with dashes.
+
 * Tue Sep 24 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 4.4-0
 - [ai-bs-vm] AI-2711 Use new Linuxsoft replicas.
 - [ai-create-environment-metadata] Improve user messages.
