@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 4.5
+Version: 4.6
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -15,7 +15,7 @@ License: GPL+
 URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
 Requires: aims2-client, certmgr-client, python-novaclient, python-krbV
-Requires: perl-YAML-Syck, python-requests, python-requests-kerberos
+Requires: perl-YAML-Syck, python-requests, python-requests-kerberos, python-argparse
 
 %description
 A collection of tools used by CERN/IT's Agile Infrastructure project
@@ -34,6 +34,7 @@ install -m 755 ai-gen-ssh-yaml    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-bs-vm ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 ai-pdb ${RPM_BUILD_ROOT}/usr/bin
 install -Dm 755 userdata/common ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/common
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
@@ -52,6 +53,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/bin/ai-create-environment-metadata
 /usr/bin/ai-landb-bind-mac
 /usr/bin/ai-bs-vm
+/usr/bin/ai-pdb
 /usr/bin/ai-kill-vm
 /usr/bin/ai-gen-ssh-yaml
 %{_mandir}/man1/ai-foreman-cli.1*
@@ -62,6 +64,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Mon Oct 07 2013 Ben Jones <ben.dylan.jones@cern.ch> - 4.6-1A
+- [ai-pdb] initial addition of script
+
 * Wed Oct 02 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 4.5-0
 - [ai-bs-vm] Don't allow hostgroups with dashes.
 
