@@ -1,0 +1,45 @@
+#!/usr/bin/python
+
+from argparse import ArgumentParser
+from argparse import ArgumentError
+import os
+import sys
+import requests
+from requests_kerberos import HTTPKerberosAuth, OPTIONAL
+import json
+
+
+def do_request(server, port, endpoint, show_url=False):
+    url = "https://%s:%s/%s" % (server, port, endpoint)
+    if show_url:
+        print url
+    kerberos_auth = HTTPKerberosAuth(mutual_authentication=OPTIONAL)
+    r = requests.get(url, auth=kerberos_auth, verify=False)
+    if r.status_code != 200:
+        # FIXME logging, error handling... lazy for now
+        sys.stderr.write("received error code '%d' from puppetdb" % r.status_code)
+        sys.exit(2)
+    j = r.json()
+    return j
+
+def raw_main(pargs):
+    j = do_request(pargs.server, pargs.port, pargs.endpoint, pargs.show_urls)
+    print json.dumps(j, sort_keys=True, indent=5, separators=(',', ': '))
+
+def main():
+    parser = ArgumentParser(description="wrap puppetdb commands")
+    parser.add_argument("-s", "--server", metavar="HOSTNAME", dest="server",
+                        default="judy.cern.ch", help="server running puppetdb proxy")
+    parser.add_argument("-p", "--port", metavar="PORT", dest="port", default="9081",
+                        help="port for puppetdb proxy")
+    parser.add_argument("--show_url", action="store_true", default=False, dest="show_urls",
+                        help="show REST urls")
+    subparsers = parser.add_subparsers()
+    raw_parser = subparsers.add_parser("raw", help="raw puppetdb queries")
+    raw_parser.add_argument("endpoint", metavar="URI", help="REST endpoint for puppetdb api (include version!)")
+    raw_parser.set_defaults(func=raw_main)
+    pargs = parser.parse_args()
+    pargs.func(pargs)
+
+if __name__ == "__main__":
+    main()
