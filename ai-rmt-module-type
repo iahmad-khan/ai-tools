@@ -11,27 +11,25 @@
 # May 2013
 
 import sys
-import httplib
 import json
 import urllib
 import argparse
 import datetime
 import logging
+import requests
+from requests_kerberos import HTTPKerberosAuth
 
 CONFIG_PDB_HOST = "judy.cern.ch"
-CONFIG_PDB_PORT = "8081"
-CONFIG_DEFAULT_DEBUG_LEVEL = logging.INFO
+CONFIG_PDB_PORT = "9081"
+CONFIG_DEFAULT_DEBUG_LEVEL = logging.ERROR
 CONFIG_HTTPCONN_TIMEOUT = 500
+CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 
 def enum(**enums):
     return type('Enum', (), enums)
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cert', type=str, required=True,
-        help="User certificate path")
-    parser.add_argument('--key', type=str, required=True, 
-        help="User certificate key")
     parser.add_argument('--module', type=str, required=True, 
         help="Concerned module name")
     parser.add_argument('--verbose', '-v', action='store_true',
@@ -52,7 +50,7 @@ def configure_logging(args):
         level = level,
         format = format)
 
-def get_toplevel_affected_hgs_count(conn, modulename):
+def get_toplevel_affected_hgs(modulename):
     logging.info("Getting count of top-level hostgroups using module '%s'..." % modulename)
     modulename = "%s%s" % (modulename[0].upper(), modulename[1:].lower())
 
@@ -64,47 +62,42 @@ def get_toplevel_affected_hgs_count(conn, modulename):
 """ % modulename
     logging.debug(query)
 
+    url = "https://%s:%s/v2/facts" % (CONFIG_PDB_HOST, CONFIG_PDB_PORT)
     params = {'query': query}
     headers = {"Accept": "application/json",
         "Content-type": "application/x-www-form-urlencoded"}
 
-    conn.request("GET", "/v2/facts", urllib.urlencode(params), headers)
-    res = conn.getresponse()
-    if res.status == httplib.OK:
-        output = json.loads(res.read())
+    response = requests.get(url, data=urllib.urlencode(params),
+        headers=headers, auth=HTTPKerberosAuth(),
+        verify=CERN_CA_BUNDLE, allow_redirects=True)
+    if response.status_code == requests.codes.ok:
+        output = json.loads(response.text)
         toplevel = set(map(lambda x: x['value'], output))
         hostgroups = ",".join(sorted(toplevel))
-        count = len(toplevel)
-        logging.info("%s found (%s)" % (count, hostgroups))
-        print hostgroups
-        return count
+        return hostgroups
     else:
         raise Exception()
 
 def main():
     args = parse_args()
     configure_logging(args)
-    conn = httplib.HTTPSConnection(host=CONFIG_PDB_HOST,
-        port=CONFIG_PDB_PORT,
-        timeout=CONFIG_HTTPCONN_TIMEOUT,
-        key_file=args.key,
-        cert_file=args.cert)
 
     try:
         toplevel_affected_hostgroups = \
-            get_toplevel_affected_hgs_count(conn, args.module)
+            get_toplevel_affected_hgs(args.module)
     except Exception, error:
         logging.error("Failed to get data from Puppet DB (%s)" % error)
         sys.exit(1)
 
-    if toplevel_affected_hostgroups > 1:
-        logging.info("More than one top-level hostgroup affected => shared")
+    print "Affected hostgroups: %s" % toplevel_affected_hostgroups
+    if len(toplevel_affected_hostgroups) > 1:
+        print "More than one top-level hostgroup affected => shared"
         sys.exit(10)
-    elif toplevel_affected_hostgroups == 1:
-        logging.info("Only one top-level hostgroup affected => individual")
+    elif len(toplevel_affected_hostgroups) == 1:
+        print "Only one top-level hostgroup affected => individual"
         sys.exit(11)
     else:
-        logging.info("No hostgroups are using this module")
+        print "No hostgroups are using this module"
         sys.exit(12)
 
 if __name__ == "__main__":
