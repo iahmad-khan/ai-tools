@@ -59,7 +59,7 @@ def get_toplevel_affected_hgs(modulename):
 ["and",["=","name","hostgroup_0"], 
 ["in","certname",["extract","certname", 
 ["select-resources", ["and",["=", "type", "Class"],
-["~","title","\\\A%s"]]]]]]
+["~","title","\\\A%s$"]]]]]]
 """ % modulename
     logging.debug(query)
 
