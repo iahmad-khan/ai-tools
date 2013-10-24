@@ -28,6 +28,7 @@ from aitools.common import verify_openstack_environment
 from aitools.common import generate_random_fqdn
 from aitools.common import generate_userdata
 from aitools.common import validate_fqdn
+from aitools.common import append_domain
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
@@ -176,7 +177,7 @@ def main():
         logging.error("TGT not found or expired. Exiting...")
         return 4
 
-    fqdn = args.hostname
+    fqdn = append_domain(args.hostname)
     if fqdn is None:
         fqdn = generate_random_fqdn(args.prefix)
 

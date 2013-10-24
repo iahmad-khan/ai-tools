@@ -63,3 +63,8 @@ def generate_userdata(args):
         'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
         'FOREMAN_ENVIRONMENT': args.foreman_environment}
     return template.substitute(values)
+
+def append_domain(hostname):
+    if hostname is not None:
+        hostname = "%s.cern.ch" % hostname.split('.')[0]
+    return hostname
