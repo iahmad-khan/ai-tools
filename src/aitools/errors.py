@@ -9,3 +9,6 @@ class AiToolsForemanError(AiToolsError):
 
 class AiToolsCertmgrError(AiToolsError):
     pass
+
+class AiToolsNovaError(AiToolsError):
+    pass

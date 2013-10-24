@@ -7,6 +7,7 @@ import logging
 import krbV
 import hashlib
 import time
+from string import Template 
 
 from aitools.errors import AiToolsInitError
 
@@ -50,3 +51,11 @@ def generate_random_fqdn(prefix):
 
 def validate_fqdn(fqdn):
     return re.match(FQDN_VALIDATION_RE, fqdn)
+
+def generate_userdata(args):
+    template = Template(open(args.userdata_path).read())
+    values = {'CASERVER_HOSTNAME': args.caserver_hostname,
+        'CASERVER_PORT': args.caserver_port,
+        'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
+        'FOREMAN_ENVIRONMENT': args.foreman_environment}
+    return template.substitute(values)

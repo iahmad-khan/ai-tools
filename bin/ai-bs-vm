@@ -10,25 +10,31 @@
 #  2 bad command line
 #  3 bad user environment
 #  4 Kerberos TGT not found or expired
+#  10 Foreman registration failed
+#  20 Certmgr-stage failed
+#  30 Nova boot failed
 
 import os
 import sys
 import logging
 import argparse
-import re
-import json
 
 from aitools.foreman import ForemanClient
 from aitools.certmgr import CertmgrClient
+from aitools.nova import NovaClient
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
+from aitools.common import verify_openstack_environment
 from aitools.common import generate_random_fqdn
+from aitools.common import generate_userdata
 from aitools.common import validate_fqdn
 
-from aitools.errors import AiToolsInitError
-from aitools.errors import AiToolsForemanError
-from aitools.errors import AiToolsCertmgrError
+from aitools.errors import AiToolsInitError, AiToolsForemanError
+from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
+
+DEFAULT_OPENSTACK_FLAVOR="m1.small"
+DEFAULT_OPENSTACK_SECUTIRYGROUPS="default"
 
 DEFAULT_FOREMAN_TIMEOUT = 15
 DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
@@ -46,7 +52,9 @@ DEFAULT_USERDATA_PATH = "/usr/share/ai-tools/userdata/nosusie"
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
     parser = argparse.ArgumentParser()
+    ##
     ## Internal options
+    ##
     parser.add_argument('-v', '--verbose',
         action="store_true",
         help="Be chatty")
@@ -77,12 +85,32 @@ def parse_cmdline_args():
         help="Path to the template to generate the user data of the virtual machine (default: '%s')" % \
         DEFAULT_USERDATA_PATH,
         default=os.environ.get('AIBS_VMBASEUSERDATA_PATH', DEFAULT_USERDATA_PATH))
+    ##
     ## Nova options
+    ##
     parser.add_argument('--nova-timeout', type=int,
         help="Timeout for OpenStack operations (default: %s seconds)" % \
         DEFAULT_NOVA_TIMEOUT,
         default = DEFAULT_NOVA_TIMEOUT)
+    parser.add_argument('--nova-sshkey', type=str,
+        help="OpenStack SSH key name",
+        default=os.environ.get('AIBS_SSHKEY_NAME', None))
+    parser.add_argument('--nova-availabilityzone', type=str,
+        help="OpenStack availability zone",
+        default=os.environ.get('AIBS_VMAVAILZONE_NAME', None))
+    parser.add_argument('--nova-flavor', type=str,
+        help="Openstack flavor (default: %s)" % DEFAULT_OPENSTACK_FLAVOR,
+        default=os.environ.get('AIBS_VMFLAVOR_NAME', DEFAULT_OPENSTACK_FLAVOR))
+    parser.add_argument('--nova-image', type=str,
+        help="OpenStack SSH image name",
+        default=os.environ.get('AIBS_VMIMAGE_NAME', None))
+    parser.add_argument('--nova-securitygroups', type=str,
+        help="OpenStack security groups (comma-separed list) (default: %s)" % \
+        DEFAULT_OPENSTACK_SECUTIRYGROUPS,
+        default=os.environ.get('AIBS_SECURITYGROUPS_LIST', DEFAULT_OPENSTACK_SECUTIRYGROUPS))
+    ##
     ## Foreman options
+    ##
     parser.add_argument('--foreman-timeout', type=int,
         help="Timeout for Foreman operations (default: %s seconds)" % \
         DEFAULT_FOREMAN_TIMEOUT,
@@ -103,18 +131,22 @@ def parse_cmdline_args():
         help="Hostname (qualified or not)")
     args = parser.parse_args()
     if args.foreman_hostgroup is None:
-        raise AiToolsInitError('Foreman hostgroup not defined')
+        raise AiToolsInitError('Foreman hostgroup not specified.')
+    if args.nova_image is None:
+        raise AiToolsInitError('Openstack image not speficied.')
     return args
 
 def print_summary(args, fqdn):
     logging.info("Trying to bootstrap '%s'..." % fqdn)
-    #logging.info "VM flavor: $AIBS_VMFLAVOR_NAME"
-    #logging.info "VM image: $AIBS_VMIMAGE_NAME"
-    #logging.info "VM security groups: $AIBS_SECURITYGROUPS_LIST"
-    #logging.info "VM tenant: $OS_TENANT_NAME"
+    logging.info("VM flavor: %s" % args.nova_flavor)
+    logging.info("VM image: %s" % args.nova_image)
+    logging.info("VM security groups: %s" % args.nova_securitygroups)
+    logging.info("VM tenant: %s" % os.environ["OS_TENANT_NAME"])
     #[[ ! -z $AIBS_METAPARAMETERS_LIST ]] && echo "VM metaparameters: $AIBS_METAPARAMETERS_LIST"
-    #[[ ! -z $AIBS_SSHKEY_NAME ]] && echo "VM SSH key name: $AIBS_SSHKEY_NAME"
-    #[[ ! -z $AIBS_VMAVAILZONE_NAME ]] && echo "VM availability zone: $AIBS_VMAVAILZONE_NAME"
+    if args.nova_sshkey:
+        logging.info("VM SSH key name: %s" % args.nova_sshkey)
+    if args.nova_availabilityzone:
+        logging.info("VM availability zone: %s" % args.nova_availabilityzone)
     #[[ ! -z $AIBS_LANDB_RESPONSIBLE ]] && echo "LANDB responsible: $AIBS_LANDB_RESPONSIBLE"
     #[[ ! -z $AIBS_LANDB_MAINUSER ]] && echo "LANDB main user: $AIBS_LANDB_MAINUSER"
     logging.info("Foreman environment: %s" % args.foreman_environment)
@@ -134,9 +166,16 @@ def main():
     configure_logging(args)
 
     try:
+        verify_openstack_environment()
+    except AiToolsInitError, error:
+        logging.error(error)
+        return 3
+
+    try:
         verify_kerberos_environment()
     except AiToolsInitError, error:
         logging.error("TGT not found or expired. Exiting...")
+        return 4
 
     fqdn = args.hostname
     if fqdn is None:
@@ -152,6 +191,9 @@ def main():
         args.foreman_timeout, args.dryrun)
     certmgr = CertmgrClient(args.caserver_hostname, args.caserver_port,
         args.foreman_timeout, args.dryrun)
+    nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
+        os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
+        args.nova_timeout, args.dryrun)
 
     try:
         foreman.addhost(fqdn=fqdn,
@@ -168,8 +210,24 @@ def main():
         logging.error("Couldn't stage host (%s)" % error)
         return 11
 
-    #foreman.delhost(fqdn)
+    try:
+        userdata = generate_userdata(args)
+        logging.debug(userdata)
+        nova.boot(fqdn,
+            flavor=args.nova_flavor,
+            image=args.nova_image,
+            userdata=userdata,
+            key_name=args.nova_sshkey,
+            availability_zone=args.nova_availabilityzone)
+    except AiToolsNovaError, error:
+        logging.error("Couldn't create VM (%s)" % error)
+        foreman.delhost(fqdn)
+        return 12
 
+    logging.info("Your machine is booting and the network is being configured right now.")
+    logging.info("After a successful boot process Puppet will run immediately.")
+    logging.info("In case of problems, if you provided a SSH key when creating the VM")
+    logging.info("use it to log into the box and take a look at /var/log/boothook.log")
     return 0
 
 if __name__ == '__main__':
