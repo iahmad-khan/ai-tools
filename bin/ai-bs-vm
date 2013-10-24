@@ -35,9 +35,15 @@ DEFAULT_FOREMAN_ENVIRONMENT = 'production'
 
 DEFAULT_NOVA_TIMEOUT = 15
 
+DEFAULT_PUPPETMASTER_HOSTNAME = "it-puppet-masters-public.cern.ch"
+DEFAULT_CASERVER_HOSTNAME = "baby01.cern.ch"
+
+DEFAULT_USERDATA_PATH = "/usr/share/ai-tools/userdata/nosusie"
+
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
     parser = argparse.ArgumentParser()
+    ## Internal options
     parser.add_argument('-v', '--verbose',
         action="store_true",
         help="Be chatty")
@@ -52,6 +58,18 @@ def parse_cmdline_args():
         help="Outputs errors only")
     parser.add_argument('--prefix', type=str,
         help="Prefix to prepend to the randomly generated hostname")
+    parser.add_argument('--puppetmaster-hostname', type=str,
+        help="Hostname of the master used to request the host cert the VM (default: '%s')" % \
+        DEFAULT_PUPPETMASTER_HOSTNAME,
+        default=os.environ.get('AIBS_PUPPETMASTER_HOSTNAME', DEFAULT_PUPPETMASTER_HOSTNAME))
+    parser.add_argument('--caserver-hostname', type=str,
+        help="Hostname of the certmgr server used to retrieve the host certificate (default: '%s')" % \
+        DEFAULT_CASERVER_HOSTNAME,
+        default=os.environ.get('AIBS_CASERVER_HOSTNAME', DEFAULT_CASERVER_HOSTNAME))
+    parser.add_argument('--userdata-path', type=str,
+        help="Path to the template to generate the user data of the virtual machine (default: '%s')" % \
+        DEFAULT_USERDATA_PATH,
+        default=os.environ.get('AIBS_VMBASEUSERDATA_PATH', DEFAULT_USERDATA_PATH))
     ## Nova options
     parser.add_argument('--nova-timeout', type=int,
         help="Timeout for OpenStack operations (default: %s seconds)" % \
@@ -81,6 +99,22 @@ def parse_cmdline_args():
         raise AiToolsInitError('Foreman hostgroup not defined')
     return args
 
+def print_summary(args, fqdn):
+    logging.info("Trying to bootstrap '%s'..." % fqdn)
+    #logging.info "VM flavor: $AIBS_VMFLAVOR_NAME"
+    #logging.info "VM image: $AIBS_VMIMAGE_NAME"
+    #logging.info "VM security groups: $AIBS_SECURITYGROUPS_LIST"
+    #logging.info "VM tenant: $OS_TENANT_NAME"
+    #[[ ! -z $AIBS_METAPARAMETERS_LIST ]] && echo "VM metaparameters: $AIBS_METAPARAMETERS_LIST"
+    #[[ ! -z $AIBS_SSHKEY_NAME ]] && echo "VM SSH key name: $AIBS_SSHKEY_NAME"
+    #[[ ! -z $AIBS_VMAVAILZONE_NAME ]] && echo "VM availability zone: $AIBS_VMAVAILZONE_NAME"
+    #[[ ! -z $AIBS_LANDB_RESPONSIBLE ]] && echo "LANDB responsible: $AIBS_LANDB_RESPONSIBLE"
+    #[[ ! -z $AIBS_LANDB_MAINUSER ]] && echo "LANDB main user: $AIBS_LANDB_MAINUSER"
+    logging.info("Foreman environment: %s" % args.foreman_environment)
+    logging.info("Foreman hostgroup: %s" % args.foreman_hostgroup)
+    logging.info("Puppet master: %s" % args.puppetmaster_hostname)
+    logging.info("CA server: %s" % args.caserver_hostname)
+
 def main():
     """Application entrypoint"""
     try:
@@ -109,6 +143,8 @@ def main():
     if not validate_fqdn(fqdn):
         logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
         return 5
+
+    print_summary(args, fqdn)
 
     try:
         foreman.addhost(fqdn=fqdn,
