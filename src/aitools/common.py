@@ -14,6 +14,7 @@ from aitools.errors import AiToolsInitError
 DEFAULT_LOGGING_LEVEL=logging.INFO
 CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 FQDN_VALIDATION_RE = "^[a-zA-Z0-9][a-zA-Z0-9\-]{0,59}?\.cern\.ch$"
+HASHLEN = 10
 
 class HTTPClient():
     def __init__(self, host, port, timeout, dryrun=False):
@@ -47,7 +48,8 @@ def verify_kerberos_environment():
 def generate_random_fqdn(prefix):
     hash = hashlib.sha1()
     hash.update(str(time.time()))
-    return "%s%s.cern.ch" % (prefix if prefix else "", hash.hexdigest()[:10])
+    return "%s%s.cern.ch" % (prefix if prefix else "",
+        hash.hexdigest()[:HASHLEN])
 
 def validate_fqdn(fqdn):
     return re.match(FQDN_VALIDATION_RE, fqdn)

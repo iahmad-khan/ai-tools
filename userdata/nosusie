@@ -73,7 +73,7 @@ function set_repositories {
 }
 execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
 
-DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
+DEPS="cern-get-keytab certmgr-client CERN-CA-certs"
 
 [ "$$OS_MAJOR_VERSION" == "6" ] && DEPS="$$DEPS yum-plugin-priorities"
 [ "$$OS_MAJOR_VERSION" == "5" ] && DEPS="$$DEPS yum-priorities"
@@ -171,8 +171,8 @@ esac
 
 function installack {
   echo "Calling certmgr-installack..." >> $$LOGFILE
-  /usr/bin/certmgr-installack --url https://$CASERVER_HOSTNAME:$CASERVER_PORT/krb/certmgr/host/
-  [[ $$? -ne 0 ]] && echo "certmgr-getcert didn't return 0" && return 1
+  /usr/bin/certmgr-installack --url https://$CASERVER_HOSTNAME:$CASERVER_PORT/krb/certmgr/host/ >> $$LOGFILE
+  [[ $$? -ne 0 ]] && return 1
 }
 execute_shell_block installack 10 15 || unrecoverable_error "installack"
 
@@ -184,9 +184,20 @@ execute_shell_block installack 10 15 || unrecoverable_error "installack"
 /bin/mkdir -p /etc/yum-puppet.repos.d
 /usr/bin/augtool -s set /files/etc/yum.conf/main/reposdir /etc/yum-puppet.repos.d/
 
-# Make sure runs in the background use the batch cluster
-/usr/bin/augtool -s set /files/etc/sysconfig/puppet/PUPPET_PORT 8150
-/bin/echo "set /files/etc/sysconfig/puppet/PUPPET_EXTRA_OPTS --ca_port=8140" | augtool -s
+echo "Generating initial /etc/sysconfig/puppet" >> $$LOGFILE
+cat << EOF > /etc/sysconfig/puppet
+# The puppetmaster server
+#PUPPET_SERVER=puppet
+
+# If you wish to specify the port to connect to do so here
+PUPPET_PORT=8150
+
+# Where to log to. Specify syslog to send log messages to the system log.
+#PUPPET_LOG=/var/log/puppet/puppet.log
+
+# You may specify other parameters to the puppet client here
+PUPPET_EXTRA_OPTS="--waitforcert=500 --ca_port=8140"
+EOF
 
 # Turn puppet on for next reboot.
 /sbin/chkconfig puppet on
