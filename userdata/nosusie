@@ -172,7 +172,6 @@ esac
 function installack {
   echo "Calling certmgr-installack..." >> $$LOGFILE
   /usr/bin/certmgr-installack --url https://$CASERVER_HOSTNAME:$CASERVER_PORT/krb/certmgr/host/ >> $$LOGFILE
-  [[ $$? -ne 0 ]] && return 1
 }
 execute_shell_block installack 10 15 || unrecoverable_error "installack"
 
