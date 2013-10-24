@@ -2,13 +2,17 @@
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
 
 import os
+import re
 import logging
 import krbV
+import hashlib
+import time
 
 from aitools.errors import AiToolsInitError
 
 DEFAULT_LOGGING_LEVEL=logging.INFO
 CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
+FQDN_VALIDATION_RE = "^[a-zA-Z0-9][a-zA-Z0-9\-]*?\.cern\.ch$"
 
 def configure_logging(args):
     """Configures application log level based on cmdline arguments"""
@@ -30,3 +34,11 @@ def verify_kerberos_environment():
         ccache.principal()
     except krbV.Krb5Error:
         raise AiToolsInitError("Kerberos principal not found")
+
+def generate_random_fqdn(prefix):
+    hash = hashlib.sha1()
+    hash.update(str(time.time()))
+    return "%s%s.cern.ch" % (prefix if prefix else "", hash.hexdigest()[:10])
+
+def validate_fqdn(fqdn):
+    return re.match(FQDN_VALIDATION_RE, fqdn)
