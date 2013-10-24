@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
 import re
 import logging
 import novaclient.exceptions

@@ -5,13 +5,12 @@
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
 
 # Exit codes:
-#  0 all operations succeeded
-#  1 some operations failed
-#  2 bad command line
-#  3 bad user environment
-#  4 Kerberos TGT not found or expired
+#   0 all operations succeeded
+#   2 bad command line
+#   3 bad user environment
+#   4 Kerberos TGT not found or expired
 #  10 Foreman registration failed
-#  20 Certmgr-stage failed
+#  20 Host staging failed
 #  30 Nova boot failed
 
 import os

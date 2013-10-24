@@ -13,7 +13,7 @@ from aitools.common import CERN_CA_BUNDLE, HTTPClient
 
 class CertmgrClient(HTTPClient):
     def stage(self, fqdn):
-        logging.info("Staging host %s on certmgr (%s)" % 
+        logging.info("Staging host '%s' on certmgr (%s)" % 
             (fqdn, self.host))
         payload = {'hostname': fqdn}
         logging.debug("With payload: %s" % payload)
