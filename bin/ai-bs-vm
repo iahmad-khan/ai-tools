@@ -60,13 +60,7 @@ def parse_cmdline_args():
         help="Be chatty")
     parser.add_argument('-d', '--dryrun',
         action="store_true",
-        help="Don't do the actual deletion requests")
-    parser.add_argument('-j', '--json',
-        action="store_true",
-        help="Produce JSON output")
-    parser.add_argument('-e', '--errors-only', dest="errors",
-        action="store_true",
-        help="Outputs errors only")
+        help="Don't do the requests that alter data")
     parser.add_argument('--prefix', type=str,
         help="Prefix to prepend to the randomly generated hostname")
     parser.add_argument('--puppetmaster-hostname', type=str,
