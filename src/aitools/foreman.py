@@ -24,7 +24,7 @@ class ForemanClient(HTTPClient):
             if code == requests.codes.ok:
                 logging.info("Host '%s' created in Foreman" % fqdn)
             elif code == requests.codes.unprocessable_entity:
-                logging.info("Host '%s' not created (already in Foreman)" % fqdn)
+                raise AiToolsForemanError("Host '%s' not created (already in Foreman)" % fqdn)
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
 
