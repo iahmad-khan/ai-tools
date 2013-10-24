@@ -132,7 +132,7 @@ def parse_cmdline_args():
     if args.foreman_hostgroup is None:
         raise AiToolsInitError('Foreman hostgroup not specified.')
     if args.nova_image is None:
-        raise AiToolsInitError('Openstack image not speficied.')
+        raise AiToolsInitError('Openstack image not specified (nova image-list)')
     return args
 
 def print_summary(args, fqdn):
@@ -199,14 +199,14 @@ def main():
             environment=args.foreman_environment,
             hostgroup=args.foreman_hostgroup)
     except AiToolsForemanError, error:
-        logging.error("Couldn't create Foreman entry (%s)" % error)
+        logging.error("Couldn't create Foreman entry (%s). VM not created." % error)
         return 10
 
     try:
         certmgr.stage(fqdn)
     except AiToolsCertmgrError, error:
+        logging.error("Couldn't stage host (%s). VM not created." % error)
         foreman.delhost(fqdn)
-        logging.error("Couldn't stage host (%s)" % error)
         return 11
 
     try:

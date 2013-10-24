@@ -55,6 +55,8 @@ def validate_fqdn(fqdn):
     return re.match(FQDN_VALIDATION_RE, fqdn)
 
 def generate_userdata(args):
+    logging.info("Generating dynamic userdata...")
+    logging.info("Using template '%s'" % args.userdata_path)
     template = Template(open(args.userdata_path).read())
     values = {'CASERVER_HOSTNAME': args.caserver_hostname,
         'CASERVER_PORT': args.caserver_port,
