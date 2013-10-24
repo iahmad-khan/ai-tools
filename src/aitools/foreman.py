@@ -35,6 +35,18 @@ class ForemanClient():
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
 
+    def delhost(self, fqdn):
+        logging.info("Deleting host %s from Foreman" % fqdn)
+
+        if not self.dryrun:
+            (code, body) = self.__do_api_request("delete", "hosts/%s" % fqdn)
+            if code == requests.codes.ok:
+                logging.info("Host '%s' deleted from Foreman" % fqdn)
+            elif code == requests.codes.not_found:
+                raise AiToolsForemanError("Host '%s' not found in Foreman" % fqdn)
+        else:
+            logging.info("Host '%s' not deleted because dryrun is enabled" % fqdn)
+
     def __resolve_environment_id(self, name):
         return self.__resolve_model_id('environment', name)
 
