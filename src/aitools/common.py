@@ -14,6 +14,14 @@ DEFAULT_LOGGING_LEVEL=logging.INFO
 CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 FQDN_VALIDATION_RE = "^[a-zA-Z0-9][a-zA-Z0-9\-]*?\.cern\.ch$"
 
+class HTTPClient():
+    def __init__(self, host, port, timeout, dryrun=False):
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        self.dryrun = dryrun
+        self.cache = {}
+
 def configure_logging(args):
     """Configures application log level based on cmdline arguments"""
     logging_level = DEFAULT_LOGGING_LEVEL

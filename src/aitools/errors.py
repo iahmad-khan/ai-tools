@@ -6,3 +6,6 @@ class AiToolsInitError(AiToolsError):
 
 class AiToolsForemanError(AiToolsError):
     pass
+
+class AiToolsCertmgrError(AiToolsError):
+    pass

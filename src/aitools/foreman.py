@@ -9,16 +9,9 @@ import urllib
 from requests_kerberos import HTTPKerberosAuth
 
 from aitools.errors import AiToolsForemanError
-from aitools.common import CERN_CA_BUNDLE
+from aitools.common import CERN_CA_BUNDLE, HTTPClient
 
-class ForemanClient():
-    def __init__(self, foreman_host, foreman_port, timeout, dryrun=False):
-        self.foreman_host = foreman_host
-        self.foreman_port = foreman_port
-        self.foreman_timeout = timeout
-        self.dryrun = dryrun
-        self.cache = {}
-
+class ForemanClient(HTTPClient):
     def addhost(self, fqdn, environment, hostgroup):
         logging.info("Adding host %s to Foreman" % fqdn)
         payload = {'managed': False, 'name': fqdn}
@@ -91,7 +84,7 @@ class ForemanClient():
 
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/api/%s" % \
-            (self.foreman_host, self.foreman_port, url)
+            (self.host, self.port, url)
         logging.debug("Issuing %s on %s" % (method, url))
         headers = {'Content-type': 'application/json',
             'Accept': 'application/json, version=2',
@@ -100,7 +93,7 @@ class ForemanClient():
 
         try:
             caller = getattr(requests, method)
-            response = caller(url, timeout=self.foreman_timeout,
+            response = caller(url, timeout=self.timeout,
                 headers=headers, auth=HTTPKerberosAuth(),
                 verify=CERN_CA_BUNDLE, allow_redirects=True,
                 data=data)

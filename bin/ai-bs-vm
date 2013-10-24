@@ -19,6 +19,7 @@ import re
 import json
 
 from aitools.foreman import ForemanClient
+from aitools.certmgr import CertmgrClient
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
@@ -27,6 +28,7 @@ from aitools.common import validate_fqdn
 
 from aitools.errors import AiToolsInitError
 from aitools.errors import AiToolsForemanError
+from aitools.errors import AiToolsCertmgrError
 
 DEFAULT_FOREMAN_TIMEOUT = 15
 DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
@@ -37,6 +39,7 @@ DEFAULT_NOVA_TIMEOUT = 15
 
 DEFAULT_PUPPETMASTER_HOSTNAME = "it-puppet-masters-public.cern.ch"
 DEFAULT_CASERVER_HOSTNAME = "baby01.cern.ch"
+DEFAULT_CASERVER_PORT = 8008
 
 DEFAULT_USERDATA_PATH = "/usr/share/ai-tools/userdata/nosusie"
 
@@ -66,6 +69,10 @@ def parse_cmdline_args():
         help="Hostname of the certmgr server used to retrieve the host certificate (default: '%s')" % \
         DEFAULT_CASERVER_HOSTNAME,
         default=os.environ.get('AIBS_CASERVER_HOSTNAME', DEFAULT_CASERVER_HOSTNAME))
+    parser.add_argument('--caserver-port', type=str,
+        help="Port of the certmgr server used to retrieve the host certificate (default: '%s')" % \
+        DEFAULT_CASERVER_PORT,
+        default=DEFAULT_CASERVER_PORT)
     parser.add_argument('--userdata-path', type=str,
         help="Path to the template to generate the user data of the virtual machine (default: '%s')" % \
         DEFAULT_USERDATA_PATH,
@@ -114,6 +121,7 @@ def print_summary(args, fqdn):
     logging.info("Foreman hostgroup: %s" % args.foreman_hostgroup)
     logging.info("Puppet master: %s" % args.puppetmaster_hostname)
     logging.info("CA server: %s" % args.caserver_hostname)
+    logging.info("CA port: %s" % args.caserver_port)
 
 def main():
     """Application entrypoint"""
@@ -130,12 +138,6 @@ def main():
     except AiToolsInitError, error:
         logging.error("TGT not found or expired. Exiting...")
 
-
-    foreman = ForemanClient(args.foreman_hostname, \
-        args.foreman_port,
-        args.foreman_timeout,
-        args.dryrun)
-
     fqdn = args.hostname
     if fqdn is None:
         fqdn = generate_random_fqdn(args.prefix)
@@ -146,15 +148,27 @@ def main():
 
     print_summary(args, fqdn)
 
+    foreman = ForemanClient(args.foreman_hostname, args.foreman_port,
+        args.foreman_timeout, args.dryrun)
+    certmgr = CertmgrClient(args.caserver_hostname, args.caserver_port,
+        args.foreman_timeout, args.dryrun)
+
     try:
         foreman.addhost(fqdn=fqdn,
             environment=args.foreman_environment,
             hostgroup=args.foreman_hostgroup)
-        foreman.delhost(fqdn)
     except AiToolsForemanError, error:
         logging.error("Couldn't create Foreman entry (%s)" % error)
+        return 10
 
+    try:
+        certmgr.stage(fqdn)
+    except AiToolsCertmgrError, error:
+        foreman.delhost(fqdn)
+        logging.error("Couldn't stage host (%s)" % error)
+        return 11
 
+    #foreman.delhost(fqdn)
 
     return 0
 
