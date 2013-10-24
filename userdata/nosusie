@@ -73,7 +73,7 @@ function set_repositories {
 }
 execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
 
-DEPS="cern-get-keytab certmgr-client CERN-CA-certs"
+DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
 
 [ "$$OS_MAJOR_VERSION" == "6" ] && DEPS="$$DEPS yum-plugin-priorities"
 [ "$$OS_MAJOR_VERSION" == "5" ] && DEPS="$$DEPS yum-priorities"
