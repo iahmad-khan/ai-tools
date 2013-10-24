@@ -21,7 +21,7 @@ class NovaClient():
 
     def boot(self, fqdn, flavor, image, userdata,
             key_name=None, availability_zone=None):
-        vmname = re.sub("\.cern\.ch$", "", fqdn)
+        vmname = self.__vmname_from_fqdn(fqdn)
         logging.info("Creating virtual machine '%s'..." % vmname)
         tenant = client.Client(self.username, self.password,
             self.tenant_name, 
@@ -47,6 +47,9 @@ class NovaClient():
             raise AiToolsNovaError(error)
         except novaclient.exceptions.ConnectionRefused, error:
             raise AiToolsNovaError(error)
+
+    def __vmname_from_fqdn(self, fqdn):
+        return re.sub("\.cern\.ch$", "", fqdn)
 
     def __resolve_id(self, collection, name):
         filtered = filter(lambda x: x.name == name, collection)
