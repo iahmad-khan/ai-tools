@@ -220,6 +220,8 @@ def main():
 
     logging.info("Your machine is booting and the network is being configured right now.")
     logging.info("After a successful boot process Puppet will run immediately.")
+    logging.info("If a custom LANDB owner has been speficied, it will be visible")
+    logging.info("in Foreman a few minutes after the VM is bootstrapped.")
     logging.info("In case of problems, if you provided a SSH key when creating the VM")
     logging.info("use it to log into the box and take a look at /var/log/boothook.log")
     return 0
