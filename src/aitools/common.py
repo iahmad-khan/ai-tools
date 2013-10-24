@@ -12,7 +12,7 @@ from aitools.errors import AiToolsInitError
 
 DEFAULT_LOGGING_LEVEL=logging.INFO
 CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
-FQDN_VALIDATION_RE = "^[a-zA-Z0-9][a-zA-Z0-9\-]*?\.cern\.ch$"
+FQDN_VALIDATION_RE = "^[a-zA-Z0-9][a-zA-Z0-9\-]{0,59}?\.cern\.ch$"
 
 class HTTPClient():
     def __init__(self, host, port, timeout, dryrun=False):
