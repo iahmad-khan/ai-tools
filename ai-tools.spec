@@ -36,6 +36,7 @@ install -m 755 scripts/ai-create-environment-metadata ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-gen-ssh-yaml    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-pdb ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 scripts/ai-rmt-module-type ${RPM_BUILD_ROOT}/usr/bin
 install -Dm 755 userdata/nosusie ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/nosusie
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 man/ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
@@ -59,6 +60,7 @@ rm -rf ${RPM_BUILD_ROOT}
 - New common API for ai-bs-vm, ai-kill-vm and ai-remote-power-control
 - [ai-bs-vm] Rewritten in Python
 - [ai-kill-vm] Connected to the new API
+- [ai-rmt-module-type] Installed
 
 * Mon Oct 07 2013 Ben Jones <ben.dylan.jones@cern.ch> - 4.6-1A
 - [ai-pdb] initial addition of script
