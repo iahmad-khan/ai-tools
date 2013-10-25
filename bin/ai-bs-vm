@@ -193,6 +193,13 @@ def main():
         args.nova_timeout, args.dryrun)
 
     try:
+        userdata = generate_userdata(args)
+        logging.debug(userdata)
+    except AiToolsInitError, error:
+        logging.error("Failed to generate userdata (%s). Exiting..." % error)
+        return 2
+
+    try:
         foreman.addhost(fqdn=fqdn,
             environment=args.foreman_environment,
             hostgroup=args.foreman_hostgroup)
@@ -208,8 +215,6 @@ def main():
         return 11
 
     try:
-        userdata = generate_userdata(args)
-        logging.debug(userdata)
         meta = {}
         if args.landb_responsible:
             meta['landb-responsible'] = args.landb_responsible

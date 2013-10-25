@@ -57,7 +57,10 @@ def validate_fqdn(fqdn):
 def generate_userdata(args):
     logging.info("Preparing dynamic user data...")
     logging.info("Using '%s' as template" % args.userdata_path)
-    template = Template(open(args.userdata_path).read())
+    try:
+        template = Template(open(args.userdata_path).read())
+    except IOError, error:
+        raise AiToolsInitError(error)
     values = {'CASERVER_HOSTNAME': args.caserver_hostname,
         'CASERVER_PORT': args.caserver_port,
         'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
