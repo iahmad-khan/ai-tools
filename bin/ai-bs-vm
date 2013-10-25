@@ -235,6 +235,8 @@ def main():
     logging.info("----------------------------------------------------------------------")
     logging.info("* Your machine is booting and the network is being configured right now,")
     logging.info("  Puppet will run immediately after a successful boot process.")
+    logging.info("* The first Puppet report will be registered in Foreman soon:")
+    logging.info("  https://%s/hosts/%s/reports" % (args.foreman_hostname, fqdn))
     if args.landb_responsible or args.landb_mainuser:
         logging.info("* A custom LANDB responsible/user has been set. It will be visible")
         logging.info("  in Foreman a few minutes after the VM is booted. In the")
