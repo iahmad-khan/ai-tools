@@ -59,6 +59,8 @@ rm -rf ${RPM_BUILD_ROOT}
 * Fri Oct 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.0-1
 - New common API for ai-bs-vm, ai-kill-vm and ai-remote-power-control
 - [ai-bs-vm] Rewritten in Python
+- [ai-bs-vm] Foreman registration
+- [ai-bs-vm] Add --foreman-parameter
 - [ai-kill-vm] Connected to the new API
 - [ai-rmt-module-type] Installed
 
