@@ -57,6 +57,10 @@ nova image-list).
 Name of the Foreman environment you want your new virtual
 machine to join (defaults to "production").
 .TP
+.B --foreman-parameter
+Parameter to be added to the host in Foreman (format: key=value,
+example: network=23)
+.TP
 .B --landb-responsible (AIBS_LANDB_RESPONSIBLE)
 E-group name to be set as responsible in LANDB. If not specified
 the user creating the VM is set as responsible (Grizzly and onwards
