@@ -19,8 +19,12 @@ import logging
 import argparse
 
 from aitools.foreman import ForemanClient
+from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
+from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
+from aitools.foreman import DEFAULT_FOREMAN_PORT
 from aitools.certmgr import CertmgrClient
 from aitools.nova import NovaClient
+from aitools.nova import DEFAULT_NOVA_TIMEOUT
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
@@ -36,12 +40,7 @@ from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
 DEFAULT_OPENSTACK_FLAVOR="m1.small"
 DEFAULT_OPENSTACK_SECUTIRYGROUPS="default"
 
-DEFAULT_FOREMAN_TIMEOUT = 15
-DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
-DEFAULT_FOREMAN_PORT = 8443
 DEFAULT_FOREMAN_ENVIRONMENT = 'production'
-
-DEFAULT_NOVA_TIMEOUT = 15
 
 DEFAULT_PUPPETMASTER_HOSTNAME = "it-puppet-masters-public.cern.ch"
 DEFAULT_CASERVER_HOSTNAME = "baby01.cern.ch"

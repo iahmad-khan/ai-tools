@@ -18,7 +18,11 @@ import logging
 import argparse
 
 from aitools.foreman import ForemanClient
+from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
+from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
+from aitools.foreman import DEFAULT_FOREMAN_PORT
 from aitools.nova import NovaClient
+from aitools.nova import DEFAULT_NOVA_TIMEOUT
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
@@ -28,12 +32,6 @@ from aitools.common import append_domain
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsNovaError
-
-DEFAULT_FOREMAN_TIMEOUT = 15
-DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
-DEFAULT_FOREMAN_PORT = 8443
-
-DEFAULT_NOVA_TIMEOUT = 15
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""

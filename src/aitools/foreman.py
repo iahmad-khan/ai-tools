@@ -11,6 +11,10 @@ from requests_kerberos import HTTPKerberosAuth
 from aitools.errors import AiToolsForemanError
 from aitools.common import CERN_CA_BUNDLE, HTTPClient
 
+DEFAULT_FOREMAN_TIMEOUT = 15
+DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
+DEFAULT_FOREMAN_PORT = 8443
+
 class ForemanClient(HTTPClient):
     def addhost(self, fqdn, environment, hostgroup):
         logging.info("Adding host '%s' to Foreman" % fqdn)
