@@ -24,9 +24,9 @@ class HTTPClient():
         self.dryrun = dryrun
         self.cache = {}
 
-def configure_logging(args):
+def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
     """Configures application log level based on cmdline arguments"""
-    logging_level = DEFAULT_LOGGING_LEVEL
+    logging_level = default_lvl
     if args.verbose:
         logging_level = logging.DEBUG
     logging.basicConfig(level=logging_level, format="%(message)s")
