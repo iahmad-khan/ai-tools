@@ -13,7 +13,7 @@ from aitools.common import CERN_CA_BUNDLE, HTTPClient
 
 class ForemanClient(HTTPClient):
     def addhost(self, fqdn, environment, hostgroup):
-        logging.info("Adding host %s to Foreman" % fqdn)
+        logging.info("Adding host '%s' to Foreman" % fqdn)
         payload = {'managed': False, 'name': fqdn}
         payload['environment_id'] = self.__resolve_environment_id(environment)
         payload['hostgroup_id'] = self.__resolve_hostgroup_id(hostgroup)
@@ -29,7 +29,7 @@ class ForemanClient(HTTPClient):
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
 
     def delhost(self, fqdn):
-        logging.info("Deleting host %s from Foreman" % fqdn)
+        logging.info("Deleting host '%s' from Foreman" % fqdn)
 
         if not self.dryrun:
             (code, body) = self.__do_api_request("delete", "hosts/%s" % fqdn)
