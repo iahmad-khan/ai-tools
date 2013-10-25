@@ -104,10 +104,6 @@ def parse_cmdline_args():
     parser.add_argument('--nova-image', type=str,
         help="OpenStack SSH image name",
         default=os.environ.get('AIBS_VMIMAGE_NAME', None))
-    parser.add_argument('--nova-securitygroups', type=str,
-        help="OpenStack security groups (comma-separed list) (default: %s)" % \
-        DEFAULT_OPENSTACK_SECUTIRYGROUPS,
-        default=os.environ.get('AIBS_SECURITYGROUPS_LIST', DEFAULT_OPENSTACK_SECUTIRYGROUPS))
     ##
     ## Foreman options
     ##
@@ -140,7 +136,6 @@ def print_summary(args, fqdn):
     logging.info("Trying to bootstrap '%s'..." % fqdn)
     logging.info("VM flavor: %s" % args.nova_flavor)
     logging.info("VM image: %s" % args.nova_image)
-    logging.info("VM security groups: %s" % args.nova_securitygroups)
     logging.info("VM tenant: %s" % os.environ["OS_TENANT_NAME"])
     #[[ ! -z $AIBS_METAPARAMETERS_LIST ]] && echo "VM metaparameters: $AIBS_METAPARAMETERS_LIST"
     if args.nova_sshkey:
