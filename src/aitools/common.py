@@ -44,7 +44,7 @@ def verify_kerberos_environment():
     context = krbV.default_context()
     ccache = context.default_ccache()
     try:
-        ccache.principal()
+        return ccache.principal().name
     except krbV.Krb5Error:
         raise AiToolsInitError("Kerberos principal not found")
 
