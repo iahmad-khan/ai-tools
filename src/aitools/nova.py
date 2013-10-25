@@ -4,6 +4,7 @@
 import re
 import logging
 import novaclient.exceptions
+import requests
 from novaclient.v1_1 import client
 
 from aitools.errors import AiToolsNovaError
@@ -39,7 +40,8 @@ class NovaClient():
                     availability_zone=availability_zone)
             else:
                 logging.info("VM '%s' not created because dryrun is enabled" % vmname)
-                
+        except requests.exceptions.Timeout, error:
+            raise AiToolsNovaError(error)
         except novaclient.exceptions.ClientException, error:
             raise AiToolsNovaError(error)
         except novaclient.exceptions.ConnectionRefused, error:
@@ -57,6 +59,8 @@ class NovaClient():
                 logging.info("Delete request sent")
             else:
                 logging.info("VM '%s' not deleted because dryrun is enabled" % vmname)
+        except requests.exceptions.Timeout, error:
+            raise AiToolsNovaError(error)
         except novaclient.exceptions.ClientException, error:
             raise AiToolsNovaError(error)
         except novaclient.exceptions.ConnectionRefused, error:
