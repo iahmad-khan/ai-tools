@@ -51,11 +51,10 @@ class ForemanClient(HTTPClient):
         logging.debug("With payload: %s" % payload)
 
         if not self.dryrun:
-            #(code, body) = self.__do_api_request("post", "hosts/%s/parameters" % fqdn,
-            #                    data=json.dumps(payload))
-            #if code == requests.codes.ok:
-            #    logging.info("Parameter '%s' created in Foreman" % name)
-            pass # Untested: AI-1795
+            (code, body) = self.__do_api_request("post", "hosts/%s/parameters" % fqdn,
+                                data=json.dumps(payload))
+            if code == requests.codes.ok:
+                logging.info("Parameter '%s' created in Foreman" % name)
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 

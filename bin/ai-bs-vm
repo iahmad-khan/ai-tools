@@ -125,7 +125,7 @@ def parse_cmdline_args():
         help="Foreman hostgroup",
         default=os.environ.get('AIBS_HOSTGROUP_NAME', None))
     parser.add_argument('--foreman-parameter', type=str,
-        help="Foreman parameter", action='append')
+        help="Foreman parameter", action='append', default=[])
     ##
     ## Positional
     ##
