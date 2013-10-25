@@ -44,6 +44,18 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Host '%s' not deleted because dryrun is enabled" % fqdn)
 
+    def power_operation(self, fqdn, operation):
+        logging.info("Executing '%s' on host '%s'" % (operation, fqdn))
+        payload = {'power_action': operation}
+        logging.debug("With payload: %s" % payload)
+
+        if not self.dryrun:
+            return self.__do_api_request("put", "hosts/%s/power" % fqdn,
+                                data=json.dumps(payload))
+        else:
+            logging.info("Power operation on '%s' cancelled because dryrun is enabled" % fqdn)
+            return (requests.codes.ok, {'power': 'dryrun'})
+
     def __resolve_environment_id(self, name):
         return self.__resolve_model_id('environment', name)
 
