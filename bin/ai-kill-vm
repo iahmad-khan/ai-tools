@@ -1,0 +1,124 @@
+#!/usr/bin/env python
+# This program helps to kill a puppet-managed
+# Foreman-enabled Openstack VM
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
+# Exit codes:
+#   0 all operations succeeded
+#   2 bad command line
+#   3 bad user environment
+#   4 Kerberos TGT not found or expired
+#  10 Nova deletion request failed
+#  20 Foreman delete operation failed
+
+import os
+import sys
+import logging
+import argparse
+
+from aitools.foreman import ForemanClient
+from aitools.nova import NovaClient
+
+from aitools.common import configure_logging
+from aitools.common import verify_kerberos_environment
+from aitools.common import verify_openstack_environment
+from aitools.common import validate_fqdn
+from aitools.common import append_domain
+
+from aitools.errors import AiToolsInitError, AiToolsForemanError
+from aitools.errors import AiToolsNovaError
+
+DEFAULT_FOREMAN_TIMEOUT = 15
+DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
+DEFAULT_FOREMAN_PORT = 8443
+
+DEFAULT_NOVA_TIMEOUT = 15
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser()
+    ##
+    ## Internal options
+    ##
+    parser.add_argument('-v', '--verbose',
+        action="store_true",
+        help="Be chatty")
+    parser.add_argument('-d', '--dryrun',
+        action="store_true",
+        help="Don't do the requests that alter data")
+    ##
+    ## Nova options
+    ##
+    parser.add_argument('--nova-timeout', type=int,
+        help="Timeout for OpenStack operations (default: %s seconds)" % \
+        DEFAULT_NOVA_TIMEOUT,
+        default = DEFAULT_NOVA_TIMEOUT)
+    ##
+    ## Foreman options
+    ##
+    parser.add_argument('--foreman-timeout', type=int,
+        help="Timeout for Foreman operations (default: %s seconds)" % \
+        DEFAULT_FOREMAN_TIMEOUT,
+        default = DEFAULT_FOREMAN_TIMEOUT)
+    parser.add_argument('--foreman-hostname',
+        help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
+        default=DEFAULT_FOREMAN_HOSTNAME)
+    parser.add_argument('--foreman-port', type=int,
+        help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
+        default=DEFAULT_FOREMAN_PORT)
+    parser.add_argument('hostname', nargs='?', default=None,
+        help="Hostname (qualified or not)")
+    args = parser.parse_args()
+    return args
+
+def main():
+    """Application entrypoint"""
+    try:
+        args = parse_cmdline_args()
+    except AiToolsInitError, error:
+        sys.stdout.write("Wrong command line arguments (%s)\n" % error)
+        return 2
+
+    configure_logging(args)
+
+    try:
+        verify_openstack_environment()
+    except AiToolsInitError, error:
+        logging.error(error)
+        return 3
+
+    try:
+        verify_kerberos_environment()
+    except AiToolsInitError, error:
+        logging.error("TGT not found or expired. Exiting...")
+        return 4
+
+    fqdn = append_domain(args.hostname)
+
+    if not validate_fqdn(fqdn):
+        logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
+        return 5
+
+    foreman = ForemanClient(args.foreman_hostname, args.foreman_port,
+        args.foreman_timeout, args.dryrun)
+    nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
+        os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
+        args.nova_timeout, args.dryrun)
+
+    try:
+        nova.delete(fqdn)
+    except AiToolsNovaError, error:
+        logging.error("Couldn't delete VM, Foreman entry remains intact (%s)" % error)
+        return 10
+
+    try:
+        foreman.delhost(fqdn)
+    except AiToolsForemanError, error:
+        logging.error("Couldn't delete Foreman entry (%s)." % error)
+        return 20
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
