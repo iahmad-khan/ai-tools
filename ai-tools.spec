@@ -9,7 +9,7 @@ BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Packager: ai-admins@cern.ch
+Packager: ai-config-team@cern.ch
 Vendor: CERN 
 License: GPL+
 URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
