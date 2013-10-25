@@ -101,7 +101,7 @@ def parse_cmdline_args():
     parser.add_argument('--nova-flavor', type=str,
         help="Openstack flavor (default: %s)" % DEFAULT_OPENSTACK_FLAVOR,
         default=os.environ.get('AIBS_VMFLAVOR_NAME', DEFAULT_OPENSTACK_FLAVOR))
-    parser.add_argument('--nova-image', type=str,
+    parser.add_argument('-i', '--nova-image', type=str,
         help="OpenStack SSH image name",
         default=os.environ.get('AIBS_VMIMAGE_NAME', None))
     ##
@@ -120,7 +120,7 @@ def parse_cmdline_args():
     parser.add_argument('--foreman-environment', type=str,
         help="Foreman environment (default: %s)" % DEFAULT_FOREMAN_ENVIRONMENT,
         default=os.environ.get('AIBS_ENVIRONMENT_NAME', DEFAULT_FOREMAN_ENVIRONMENT))
-    parser.add_argument('--foreman-hostgroup', type=str,
+    parser.add_argument('-g', '--foreman-hostgroup', type=str,
         help="Foreman hostgroup",
         default=os.environ.get('AIBS_HOSTGROUP_NAME', None))
     parser.add_argument('hostname', nargs='?', default=None,
