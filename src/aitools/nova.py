@@ -19,7 +19,7 @@ class NovaClient():
         self.timeout = timeout
         self.dryrun = dryrun
 
-    def boot(self, fqdn, flavor, image, userdata,
+    def boot(self, fqdn, flavor, image, userdata, meta,
             key_name=None, availability_zone=None):
         vmname = self.__vmname_from_fqdn(fqdn)
         logging.info("Creating virtual machine '%s'..." % vmname)
@@ -34,6 +34,7 @@ class NovaClient():
                     image=image_id,
                     flavor=flavor_id,
                     userdata=userdata,
+                    meta=meta,
                     key_name=key_name,
                     availability_zone=availability_zone)
             else:

@@ -79,6 +79,12 @@ def parse_cmdline_args():
         help="Path to the template to generate the user data of the virtual machine (default: '%s')" % \
         DEFAULT_USERDATA_PATH,
         default=os.environ.get('AIBS_VMBASEUSERDATA_PATH', DEFAULT_USERDATA_PATH))
+    parser.add_argument('--landb-mainuser', type=str,
+        help="LANDB main user",
+        default=os.environ.get('AIBS_LANDB_MAINUSER', None))
+    parser.add_argument('--landb-responsible', type=str,
+        help="LANDB responsible",
+        default=os.environ.get('AIBS_LANDB_RESPONSIBLE', None))
     ##
     ## Nova options
     ##
@@ -141,8 +147,10 @@ def print_summary(args, fqdn):
         logging.info("VM SSH key name: %s" % args.nova_sshkey)
     if args.nova_availabilityzone:
         logging.info("VM availability zone: %s" % args.nova_availabilityzone)
-    #[[ ! -z $AIBS_LANDB_RESPONSIBLE ]] && echo "LANDB responsible: $AIBS_LANDB_RESPONSIBLE"
-    #[[ ! -z $AIBS_LANDB_MAINUSER ]] && echo "LANDB main user: $AIBS_LANDB_MAINUSER"
+    if args.landb_responsible:
+        logging.info("LANDB responsible: %s" % args.landb_responsible)
+    if args.landb_mainuser:
+        logging.info("LANDB mainuser: %s" % args.landb_mainuser)
     logging.info("Foreman environment: %s" % args.foreman_environment)
     logging.info("Foreman hostgroup: %s" % args.foreman_hostgroup)
     logging.info("Puppet master: %s" % args.puppetmaster_hostname)
@@ -207,10 +215,16 @@ def main():
     try:
         userdata = generate_userdata(args)
         logging.debug(userdata)
+        meta = {}
+        if args.landb_responsible:
+            meta['landb-responsible'] = args.landb_responsible
+        if args.landb_mainuser:
+            meta['landb-mainuser'] = args.landb_mainuser
         nova.boot(fqdn,
             flavor=args.nova_flavor,
             image=args.nova_image,
             userdata=userdata,
+            meta=meta,
             key_name=args.nova_sshkey,
             availability_zone=args.nova_availabilityzone)
     except AiToolsNovaError, error:
