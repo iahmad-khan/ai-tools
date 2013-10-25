@@ -30,6 +30,9 @@ def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
     if args.verbose:
         logging_level = logging.DEBUG
     logging.basicConfig(level=logging_level, format="%(message)s")
+    # Workaround to get rid of "Starting new HTTP connection..."
+    if logging_level > logging.DEBUG:
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 def verify_openstack_environment():
     for variable in ("OS_USERNAME", "OS_PASSWORD", \
