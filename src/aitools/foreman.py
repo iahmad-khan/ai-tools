@@ -44,6 +44,21 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Host '%s' not deleted because dryrun is enabled" % fqdn)
 
+    def addhostparameter(self, fqdn, name, value):
+        logging.info("Adding parameter '%s' to host '%s' with value '%s'"
+                        % (name, fqdn, value))
+        payload = {'parameter': {'name' : name, 'value': value}}
+        logging.debug("With payload: %s" % payload)
+
+        if not self.dryrun:
+            #(code, body) = self.__do_api_request("post", "hosts/%s/parameters" % fqdn,
+            #                    data=json.dumps(payload))
+            #if code == requests.codes.ok:
+            #    logging.info("Parameter '%s' created in Foreman" % name)
+            pass # Untested: AI-1795
+        else:
+            logging.info("Parameter '%s' not added because dryrun is enabled" % name)
+
     def power_operation(self, fqdn, operation):
         logging.info("Executing '%s' on host '%s'" % (operation, fqdn))
         payload = {'power_action': operation}
