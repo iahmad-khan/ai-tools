@@ -9,7 +9,8 @@ ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 \fI-i IMAGE\fR [VMNAME]
 
 .SH DESCRIPTION
-ai-bs-vm is a Python program that helps to create Puppet-managed Foreman-enabled OpenStack VMs.
+ai-bs-vm is a Python command line tool to create Puppet-managed
+Foreman-enabled OpenStack VMs.
 .LP
 If no VM name is specified a random hostname will be generated
 based on a trimmed SHA1 hashed UNIX timestamp. The length is
@@ -43,18 +44,18 @@ variables (in parenthesis):
 .TP
 .B -g, --foreman-hostgroup (AIBS_HOSTGROUP_NAME)
 Name of the Foreman hostgroup where you want your new virtual
-machine to land (you must be hostgroup manager of it)
+machine to land (you must be hostgroup manager of it).
 .TP
 .B -i, --nova-image (AIBS_VMIMAGE_NAME)
-OpenStack image name of the virtual machine (get a list with
-nova image-list)
+OpenStack image name of the virtual machine (get a list from
+nova image-list).
 
 .LP
 .I Optional switches:
 .TP
 .B --foreman-environment (AIBS_ENVIRONMENT_NAME)
 Name of the Foreman environment you want your new virtual
-machine to join (defaults to "production")
+machine to join (defaults to "production").
 .TP
 .B --landb-responsible (AIBS_LANDB_RESPONSIBLE)
 E-group name to be set as responsible in LANDB. If not specified
@@ -75,13 +76,13 @@ module enabled by default, use it to configure who has root access
 to the box. See http://cern.ch/go/7qW6
 .TP
 .B --nova-availabilityzone (AIBS_VMAVAILZONE_NAME)
-The desired availability zone for the VM
+The desired availability zone for the VM.
 .TP
 .B --nova-flavor (AIBS_VMFLAVOR_NAME)
-OpenStack flavor name of the virtual machine (defaults to "m1.small")
+OpenStack flavor name of the virtual machine (defaults to "m1.small").
 .TP
 .B --prefix (AIBS_VMNAME_PREFIX)
-Prefix to prepend to the randomly generated hostname (defaults to "")
+Prefix to prepend to the randomly generated hostname (defaults to "").
 .LP
 .I Other optional switches:
 .TP
@@ -91,33 +92,44 @@ Probably you won't ever have to use any of them.
 .TP
 .B --caserver-hostname (AIBS_CASERVER_HOSTNAME)
 Hostname of the CA server the virtual machine will request a certificate
-from (defaults to "baby01.cern.ch")
+from (defaults to "baby01.cern.ch").
 .TP
 .B --caserver-port
 Port of the CA server the virtual machine will request a certificate
-from (defaults to 8008)
+from (defaults to 8008).
 .TP
 .B AIBS_METAPARAMETERS_LIST
 Space separated list of key=value pairs of metaparameters for nova boot (e.g
 "key1=value1 key2=value2").
-(there is no default)
 .TP
 .B --puppetmaster-hostname (AIBS_PUPPETMASTER_HOSTNAME)
 Hostname of the Puppet master the virtual machine will request its
-configuration from (defaults to "it-puppet-masters-public.cern.ch")
+configuration from (defaults to "it-puppet-masters-public.cern.ch").
 .TP
 .B --userdata-path (AIBS_VMBASEUSERDATA_PATH)
 Path to the template to generate the user data
-of the virtual machine (defaults to "/usr/share/ai-tools/userdata/nosusie")
+of the virtual machine (defaults to "/usr/share/ai-tools/userdata/nosusie").
 .TP
-.B ---foreman-hostname
-FQDN of the Foreman instance to use (defaults to "judy.cern.ch")
+.B --foreman-hostname
+FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
 .TP
-.B ---foreman-port
+.B --foreman-port
 Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
 .TP
-.B ---foreman-timeout
-Timeout (in seconds) for Foreman operations (default: 15)
+.B --foreman-timeout
+Timeout (in seconds) for Foreman operations (default: 15).
+.TP
+.B --nova-timeout
+Timeout (in seconds) for Openstack operations (default: 15).
+.TP
+.B -h, --help
+Display usage and exit.
+.TP
+.B -d, --dryrun
+Don't do the requests that alter data.
+.TP
+.B -v, --verbose
+Be chatty.
 
 .SH EXAMPLES
 .TP
@@ -130,12 +142,12 @@ ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --foreman-environment qa 
 
 .TP
 .B Now with different VM flavor and SSH key:
-ai-bs-vm --foreman-hostgroup foo/bar --nova-image "SLC6 Server - x86_64 [130920]"
+ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]"
 --foreman-environment qa --nova-sshkey my-key --nova-flavor m1.large higgsbox.cern.ch
 
 .TP
 .B Create a VM with random hostname prefixed by "foo":
-ai-bs-vm --foreman-hostgroup foo/bar --nova-image "SLC6 Server - x86_64 [130920]" --prefix foo
+ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --prefix foo
 
 .SH BUGS
 Any problem? Open a support call on Jira
