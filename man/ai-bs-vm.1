@@ -28,10 +28,10 @@ OpenStack Horizon and source it). By doing this you will set the OpenStack
 instance you want to use and the tenant for your VM. More info:
 http://cern.ch/go/k9hf
 .TP
-.B Foreman username
-You must have logged into Foreman at least once \fBbefore\fR creating
-your first virtual machine with the same username you used to log into
-OpenStack to get your credentials.
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
 
 .SH OPTIONS
 The behaviour of the tool can be customized by the following
