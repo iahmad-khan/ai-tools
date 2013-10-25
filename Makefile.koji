@@ -1,4 +1,7 @@
-PKGNAME=ai-tools-4.6
+SPECFILE = ai-tools.spec
+PACKAGE=$(shell grep -s '^Name'    $(SPECFILE) | sed -e 's/Name: *//')
+VERSION=$(shell grep -s '^Version' $(SPECFILE) | sed -e 's/Version: *//')
+PKGNAME=$(PACKAGE)-$(VERSION)
 TARFILE=$(PKGNAME).tgz
 
 all:

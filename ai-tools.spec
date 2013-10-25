@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 4.6
+Version: 5.0
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -24,46 +24,42 @@ A collection of tools used by CERN/IT's Agile Infrastructure project
 %setup -q
 
 %build
-pod2man ai-foreman-cli > ai-foreman-cli.1
+pod2man scripts/ai-foreman-cli > man/ai-foreman-cli.1
+CFLAGS="%{optflags}" %{__python} setup.py build
 
 %install
+%{__rm} -rf %{buildroot}
+%{__python} setup.py install --skip-build --root %{buildroot}
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
-install -m 755 ai-foreman-cli    ${RPM_BUILD_ROOT}/usr/bin
-install -m 755 ai-create-environment-metadata ${RPM_BUILD_ROOT}/usr/bin
-install -m 755 ai-gen-ssh-yaml    ${RPM_BUILD_ROOT}/usr/bin
-install -m 755 ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
-install -m 755 ai-bs-vm ${RPM_BUILD_ROOT}/usr/bin
-install -m 755 ai-kill-vm ${RPM_BUILD_ROOT}/usr/bin
-install -m 755 ai-pdb ${RPM_BUILD_ROOT}/usr/bin
-install -Dm 755 userdata/common ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/common
+install -m 755 scripts/ai-foreman-cli    ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 scripts/ai-create-environment-metadata ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 scripts/ai-gen-ssh-yaml    ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 scripts/ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 scripts/ai-pdb ${RPM_BUILD_ROOT}/usr/bin
+install -Dm 755 userdata/nosusie ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/nosusie
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
-install -m 644 ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
-install -m 644 ai-create-environment-metadata.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
-install -m 644 ai-gen-ssh-yaml.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
-install -m 644 ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
-install -m 644 ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-create-environment-metadata.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-gen-ssh-yaml.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
 
 %files
 %defattr (-, root, root)
-%doc README.judy
-/usr/bin/ai-foreman-cli
-/usr/bin/ai-create-environment-metadata
-/usr/bin/ai-landb-bind-mac
-/usr/bin/ai-bs-vm
-/usr/bin/ai-pdb
-/usr/bin/ai-kill-vm
-/usr/bin/ai-gen-ssh-yaml
-%{_mandir}/man1/ai-foreman-cli.1*
-%{_mandir}/man1/ai-create-environment-metadata.1*
-%{_mandir}/man1/ai-bs-vm.1*
-%{_mandir}/man1/ai-kill-vm.1*
-%{_mandir}/man1/ai-gen-ssh-yaml.1*
+%{_bindir}/ai-*
+%{python_sitelib}/*
+%{_mandir}/man1/*
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Fri Oct 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.0-1
+- New common API for ai-bs-vm, ai-kill-vm and ai-remote-power-control
+- [ai-bs-vm] Rewritten in Python
+- [ai-kill-vm] Connected to the new API
+
 * Mon Oct 07 2013 Ben Jones <ben.dylan.jones@cern.ch> - 4.6-1A
 - [ai-pdb] initial addition of script
 
