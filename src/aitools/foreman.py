@@ -55,6 +55,8 @@ class ForemanClient(HTTPClient):
                                 data=json.dumps(payload))
             if code == requests.codes.ok:
                 logging.info("Parameter '%s' created in Foreman" % name)
+            elif code == requests.codes.not_found:
+                raise AiToolsForemanError("Host '%s' not found in Foreman" % fqdn)
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
