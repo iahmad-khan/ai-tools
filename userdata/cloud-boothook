@@ -1,13 +1,3 @@
-Content-Type: multipart/mixed; boundary="===============4259264238506844499=="
-MIME-Version: 1.0
-
---===============4259264238506844499==
-Content-Type: text/cloud-boothook; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment; filename="cbh"
-
-#cloud-boothook
 #!/bin/sh
 # Nacho Barrientos <nacho.barrientos@cern.ch>
 
@@ -199,5 +189,3 @@ service rsyslog restart
 
 echo "Done. Puppet is ready to run for the first time." >> $$LOGFILE
 date >> $$LOGFILE
-
---===============4259264238506844499==--

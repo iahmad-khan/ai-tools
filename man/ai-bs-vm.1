@@ -110,9 +110,14 @@ Space separated list of key=value pairs of metaparameters for nova boot (e.g
 Hostname of the Puppet master the virtual machine will request its
 configuration from (defaults to "it-puppet-masters-public.cern.ch").
 .TP
-.B --userdata-path (AIBS_VMBASEUSERDATA_PATH)
-Path to the template to generate the user data
-of the virtual machine (defaults to "/usr/share/ai-tools/userdata/nosusie").
+.B --boothook-path (AIBS_VMBASEUSERDATA_PATH)
+Path to the template to generate the boothook that will be part of the userdata
+sent to the virtual machine (defaults to "/usr/share/ai-tools/userdata/cloud-boothook").
+.TP
+.B --userdata-dir
+Directory containing text files that will be attached to the userdata.
+The name of the file will be used to set the Content-Type (see
+http://cern.ch/go/C9hm).
 .TP
 .B --foreman-hostname
 FQDN of the Foreman instance to use (defaults to "judy.cern.ch").

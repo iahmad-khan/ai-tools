@@ -7,7 +7,9 @@ import logging
 import krbV
 import hashlib
 import time
-from string import Template 
+from string import Template
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from aitools.errors import AiToolsInitError
 
@@ -59,16 +61,28 @@ def validate_fqdn(fqdn):
 
 def generate_userdata(args):
     logging.info("Preparing dynamic user data...")
-    logging.info("Using '%s' as template" % args.userdata_path)
+    logging.info("Using '%s' as boothook template" % args.boothook_path)
     try:
-        template = Template(open(args.userdata_path).read())
+        boothook = Template(open(args.boothook_path).read())
     except IOError, error:
         raise AiToolsInitError(error)
     values = {'CASERVER_HOSTNAME': args.caserver_hostname,
         'CASERVER_PORT': args.caserver_port,
         'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
         'FOREMAN_ENVIRONMENT': args.foreman_environment}
-    return template.substitute(values)
+    userdata = MIMEMultipart()
+    userdata.attach(MIMEText(boothook.substitute(values), 'cloud-boothook'))
+    if args.userdata_dir:
+        try:
+            for snippet_name in os.listdir(args.userdata_dir):
+                snippet_path = os.path.join(args.userdata_dir, snippet_name)
+                if os.path.isfile(snippet_path):
+                    logging.info("Adding snippet '%s'" % snippet_name)
+                    userdata.attach(MIMEText(open(snippet_path).read(),
+                                        snippet_name))
+        except (IOError, OSError), error:
+            raise AiToolsInitError(error)
+    return userdata.as_string()
 
 def append_domain(hostname):
     if hostname is not None:

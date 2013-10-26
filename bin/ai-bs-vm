@@ -47,7 +47,7 @@ DEFAULT_PUPPETMASTER_HOSTNAME = "it-puppet-masters-public.cern.ch"
 DEFAULT_CASERVER_HOSTNAME = "baby01.cern.ch"
 DEFAULT_CASERVER_PORT = 8008
 
-DEFAULT_USERDATA_PATH = "/usr/share/ai-tools/userdata/nosusie"
+DEFAULT_BOOTHOOK_PATH = "/usr/share/ai-tools/userdata/cloud-boothook"
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -76,10 +76,12 @@ def parse_cmdline_args():
         help="Port of the certmgr server used to retrieve the host certificate (default: '%s')" % \
         DEFAULT_CASERVER_PORT,
         default=DEFAULT_CASERVER_PORT)
-    parser.add_argument('--userdata-path', type=str,
+    parser.add_argument('--boothook-path', type=str,
         help="Path to the template to generate the user data of the virtual machine (default: '%s')" % \
-        DEFAULT_USERDATA_PATH,
-        default=os.environ.get('AIBS_VMBASEUSERDATA_PATH', DEFAULT_USERDATA_PATH))
+        DEFAULT_BOOTHOOK_PATH,
+        default=os.environ.get('AIBS_VMBASEUSERDATA_PATH', DEFAULT_BOOTHOOK_PATH))
+    parser.add_argument('--userdata-dir', type=str,
+        help="Path to a directory with snippets to attach to the userdata")
     parser.add_argument('--landb-mainuser', type=str,
         help="LANDB main user",
         default=os.environ.get('AIBS_LANDB_MAINUSER', None))
