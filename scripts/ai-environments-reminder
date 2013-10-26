@@ -2,6 +2,8 @@
 # Authors:
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
 
+# To adapt to the library
+
 # Exit codes:
 #  0 all operations succeeded
 #  2 bad command line
@@ -26,13 +28,17 @@ from email.mime.text import MIMEText
 from requests_kerberos import HTTPKerberosAuth
 
 DEFAULT_LOGGING_LEVEL=logging.INFO
-DEFAULT_FOREMAN_TIMEOUT = 15
-DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
-DEFAULT_FOREMAN_PORT = 8443
 CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 
+from aitools.foreman import ForemanClient
+from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
+from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
+from aitools.foreman import DEFAULT_FOREMAN_PORT
+
+from aitools.errors import AiToolsInitError, AiToolsForemanError
+
 DEFAULT_ENVIRONMENTS_PATH = "it-puppet-environments"
-ENVIRONMENTS_BLACKLIST = ['production.yaml', 'qa.yaml', 'migration_ai1437.yaml']
+ENVIRONMENTS_BLACKLIST = ['production.yaml', 'qa.yaml']
 
 CACHE = {}
 
