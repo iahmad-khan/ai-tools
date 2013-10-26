@@ -136,13 +136,15 @@ def parse_cmdline_args():
     parser.add_argument('hostname', nargs='?', default=None,
         help="Hostname (qualified or not)")
     args = parser.parse_args()
+    # Most of these checks will be removed when support for
+    # environment variables is dropped.
     if args.foreman_hostgroup is None:
-        raise AiToolsInitError('Foreman hostgroup not specified.')
+        parser.error('Foreman hostgroup not specified.')
     if args.nova_image is None:
-        raise AiToolsInitError('Openstack image not specified (nova image-list)')
+        parser.error('Openstack image not specified (nova image-list)')
     for parameter in args.foreman_parameter:
         if not re.match(r'[-a-zA-Z0-9_]+?=[-a-zA-Z0-9_]+?', parameter):
-            raise AiToolsInitError("Invalid parameter '%s'. Syntax: key=value" % parameter)
+            parser.error("Invalid Foreman parameter '%s' (syntax: key=value)" % parameter)
     return args
 
 def print_summary(args, fqdn):
@@ -169,12 +171,7 @@ def print_summary(args, fqdn):
 
 def main():
     """Application entrypoint"""
-    try:
-        args = parse_cmdline_args()
-    except AiToolsInitError, error:
-        sys.stdout.write("Wrong command line arguments (%s)\n" % error)
-        return 2
-
+    args = parse_cmdline_args()
     configure_logging(args)
 
     try:
