@@ -27,11 +27,7 @@ function unrecoverable_error {
   exit 1
 }
 
-LOCKFILE=/var/lib/cloud/boothook_lock
 LOGFILE=/var/log/boothook.log
-
-[ -e "$$LOCKFILE" ] && echo "This script has already run" >> $$LOGFILE && exit 0
-touch $$LOCKFILE
 
 echo "Setting up Puppet for the initial run. Please wait..." >> $$LOGFILE
 date >> $$LOGFILE
@@ -125,8 +121,8 @@ cat << EOF > /etc/krb5.conf
 [realms]
   CERN.CH  = {
     default_domain = cern.ch
-    kpasswd_server = afskrb5m.cern.ch
-    admin_server = afskrb5m.cern.ch
+    kpasswd_server = cerndc.cern.ch
+    admin_server = cerndc.cern.ch
     kdc = cerndc.cern.ch
     v4_name_convert = {
       host = {
@@ -165,24 +161,15 @@ execute_shell_block installack 10 15 || unrecoverable_error "installack"
 
 echo "Generating initial /etc/sysconfig/puppet" >> $$LOGFILE
 cat << EOF > /etc/sysconfig/puppet
-# The puppetmaster server
-#PUPPET_SERVER=puppet
-
-# If you wish to specify the port to connect to do so here
 PUPPET_PORT=8150
-
-# Where to log to. Specify syslog to send log messages to the system log.
-#PUPPET_LOG=/var/log/puppet/puppet.log
-
-# You may specify other parameters to the puppet client here
 PUPPET_EXTRA_OPTS="--waitforcert=500 --ca_port=8140"
 EOF
 
-# Turn puppet on for next reboot.
+# Turn puppet on for next boot.
 /sbin/chkconfig puppet on
 
 # And start it manually as the VM won't reboot
-service puppet restart
+service puppet start
 
 # Restart syslog to make sure it logs with new hostname
 service rsyslog restart

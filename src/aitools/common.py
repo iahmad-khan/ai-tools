@@ -71,7 +71,7 @@ def generate_userdata(args):
         'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
         'FOREMAN_ENVIRONMENT': args.foreman_environment}
     userdata = MIMEMultipart()
-    userdata.attach(MIMEText(boothook.substitute(values), 'cloud-boothook'))
+    userdata.attach(MIMEText(boothook.substitute(values), 'x-shellscript'))
     if args.userdata_dir:
         try:
             for snippet_name in os.listdir(args.userdata_dir):
