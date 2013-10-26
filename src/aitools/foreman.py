@@ -17,7 +17,7 @@ DEFAULT_FOREMAN_PORT = 8443
 
 class ForemanClient(HTTPClient):
     def addhost(self, fqdn, environment, hostgroup):
-        logging.info("Adding host '%s' to Foreman" % fqdn)
+        logging.info("Adding host '%s' to Foreman..." % fqdn)
         payload = {'managed': False, 'name': fqdn}
         payload['environment_id'] = self.__resolve_environment_id(environment)
         payload['hostgroup_id'] = self.__resolve_hostgroup_id(hostgroup)
@@ -45,7 +45,7 @@ class ForemanClient(HTTPClient):
             logging.info("Host '%s' not deleted because dryrun is enabled" % fqdn)
 
     def addhostparameter(self, fqdn, name, value):
-        logging.info("Adding parameter '%s' to host '%s' with value '%s'"
+        logging.info("Adding parameter '%s' to host '%s' with value '%s'..."
                         % (name, fqdn, value))
         payload = {'parameter': {'name' : name, 'value': value}}
         logging.debug("With payload: %s" % payload)
