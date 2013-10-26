@@ -61,9 +61,10 @@ def validate_fqdn(fqdn):
 
 def generate_userdata(args):
     logging.info("Preparing dynamic user data...")
-    logging.info("Using '%s' as boothook template" % args.boothook_path)
+    logging.info("Using '%s' as userdata script template to init Puppet" % \
+        args.puppetinit_path)
     try:
-        boothook = Template(open(args.boothook_path).read())
+        script = Template(open(args.puppetinit_path).read())
     except IOError, error:
         raise AiToolsInitError(error)
     values = {'CASERVER_HOSTNAME': args.caserver_hostname,
@@ -71,7 +72,7 @@ def generate_userdata(args):
         'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
         'FOREMAN_ENVIRONMENT': args.foreman_environment}
     userdata = MIMEMultipart()
-    userdata.attach(MIMEText(boothook.substitute(values), 'x-shellscript'))
+    userdata.attach(MIMEText(script.substitute(values), 'x-shellscript'))
     if args.userdata_dir:
         try:
             for snippet_name in os.listdir(args.userdata_dir):
