@@ -61,6 +61,7 @@ rm -rf ${RPM_BUILD_ROOT}
 - [ai-bs-vm] Rewritten in Python
 - [ai-bs-vm] Foreman registration
 - [ai-bs-vm] Add --foreman-parameter
+- [ai-bs-vm] Add support for custom userdata fragments
 - [ai-kill-vm] Connected to the new API
 - [ai-rmt-module-type] Installed
 
