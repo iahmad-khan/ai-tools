@@ -40,6 +40,7 @@ class NovaClient():
                     meta=meta,
                     key_name=key_name,
                     availability_zone=availability_zone)
+                logging.info("Request to create VM '%s' sent" % vmname)
             else:
                 logging.info("VM '%s' not created because dryrun is enabled" % vmname)
         except requests.exceptions.Timeout, error:
