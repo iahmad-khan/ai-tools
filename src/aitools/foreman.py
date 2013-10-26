@@ -6,6 +6,7 @@ import socket
 import json
 import requests
 import urllib
+import kerberos
 from requests_kerberos import HTTPKerberosAuth
 
 from aitools.errors import AiToolsForemanError
@@ -146,5 +147,7 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanError("Connection error (%s)" % error)
         except requests.exceptions.Timeout, error:
             raise AiToolsForemanError("Connection timeout")
+        except kerberos.GSSError, error:
+            raise AiToolsForemanError("Kerberos authentication problem (%s)" % error)
 
         return (response.status_code, body)
