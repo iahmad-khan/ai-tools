@@ -9,6 +9,8 @@
 #   2 bad command line
 #   3 bad user environment
 #   4 Kerberos TGT not found or expired
+#   5 FQDN is invalid
+#   6 Userdata generation failed
 #  10 Foreman registration failed
 #  20 Host staging failed
 #  30 Nova boot failed
@@ -210,7 +212,7 @@ def main():
         logging.debug(userdata)
     except AiToolsInitError, error:
         logging.error("Failed to generate userdata (%s). Exiting..." % error)
-        return 2
+        return 6
 
     try:
         foreman.addhost(fqdn=fqdn,
@@ -227,7 +229,7 @@ def main():
     except AiToolsCertmgrError, error:
         logging.error("Couldn't stage host (%s). VM not started." % error)
         foreman.delhost(fqdn)
-        return 11
+        return 20
 
     try:
         meta = {}
@@ -245,7 +247,7 @@ def main():
     except AiToolsNovaError, error:
         logging.error("Couldn't create VM (%s)" % error)
         foreman.delhost(fqdn)
-        return 12
+        return 30
 
     logging.info("----------------------------------------------------------------------")
     logging.info("* Your machine is booting and the network is being configured right now,")
