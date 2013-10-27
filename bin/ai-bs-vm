@@ -67,7 +67,7 @@ def parse_cmdline_args():
         help="Prefix to prepend to the randomly generated hostname",
         default=os.environ.get('AIBS_VMNAME_PREFIX', None))
     parser.add_argument('--puppetmaster-hostname', type=str,
-        help="Hostname of the master used to request the host cert the VM (default: '%s')" % \
+        help="Hostname of the master used to fetch the configuration (default: '%s')" % \
         DEFAULT_PUPPETMASTER_HOSTNAME,
         default=os.environ.get('AIBS_PUPPETMASTER_HOSTNAME', DEFAULT_PUPPETMASTER_HOSTNAME))
     parser.add_argument('--caserver-hostname', type=str,
@@ -85,10 +85,10 @@ def parse_cmdline_args():
     parser.add_argument('--userdata-dir', type=str,
         help="Path to a directory with snippets to attach to the userdata")
     parser.add_argument('--landb-mainuser', type=str,
-        help="LANDB main user",
+        help="LANDB main user to be assigned to the virtual machine",
         default=os.environ.get('AIBS_LANDB_MAINUSER', None))
     parser.add_argument('--landb-responsible', type=str,
-        help="LANDB responsible",
+        help="LANDB responsible to be assigned to the virtual machine",
         default=os.environ.get('AIBS_LANDB_RESPONSIBLE', None))
     ##
     ## Nova options
@@ -107,7 +107,7 @@ def parse_cmdline_args():
         help="Openstack flavor (default: %s)" % DEFAULT_OPENSTACK_FLAVOR,
         default=os.environ.get('AIBS_VMFLAVOR_NAME', DEFAULT_OPENSTACK_FLAVOR))
     parser.add_argument('-i', '--nova-image', type=str,
-        help="OpenStack SSH image name",
+        help="OpenStack image name",
         default=os.environ.get('AIBS_VMIMAGE_NAME', None))
     ##
     ## Foreman options
