@@ -2,22 +2,16 @@
 # Authors:
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
 
-# To adapt to the library
-
 # Exit codes:
 #  0 all operations succeeded
 #  2 bad command line
-#  3 Kerberos TGT not found or expired
+#  4 Kerberos TGT not found or expired
 
 import os
 import sys
 import logging
 import argparse
-import socket
 import json
-import requests
-import krbV
-import urllib
 import yaml
 import re
 import smtplib
@@ -25,46 +19,23 @@ import datetime
 import dateutil.parser
 from string import Template
 from email.mime.text import MIMEText
-from requests_kerberos import HTTPKerberosAuth
 
-DEFAULT_LOGGING_LEVEL=logging.INFO
-CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
+from aitools.common import configure_logging
+from aitools.common import verify_kerberos_environment
 
 from aitools.foreman import ForemanClient
 from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
 from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
 from aitools.foreman import DEFAULT_FOREMAN_PORT
 
+from aitools.errors import AiToolsError
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 
-DEFAULT_ENVIRONMENTS_PATH = "it-puppet-environments"
+DEFAULT_ENVIRONMENTS_PATH = "/mnt/puppetnfsdir/metadata/environments"
 ENVIRONMENTS_BLACKLIST = ['production.yaml', 'qa.yaml']
 
-CACHE = {}
-
-class LocalError(Exception):
+class AiEnvironmentsReminderError(AiToolsError):
     pass
-
-class ForemanError(Exception):
-    pass
-
-class ForemanElementNotFound(Exception):
-    pass
-
-def configure_logging():
-    """Configures application log level based on cmdline arguments"""
-    logging_level = DEFAULT_LOGGING_LEVEL
-    if args.verbose:
-        logging_level = logging.DEBUG
-    logging.basicConfig(level=logging_level, format="%(message)s")
-
-def verify_kerberos():
-    context = krbV.default_context()
-    ccache = context.default_ccache()
-    try:
-        ccache.principal()
-    except krbV.Krb5Error:
-        raise LocalError("Kerberos principal not found")
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -128,55 +99,8 @@ def send_email(subject, to_addr, cc_addr, body):
         server.sendmail("noreply@cern.ch", (to_addr,), msg.as_string())
         logging.debug("Email sent to %s" % to_addr)
     except smtplib.SMTPException, error:
-        raise LocalError("Failed to send mail to '%s' (%s)" %
+        raise AiEnvironmentsReminderError("Failed to send mail to '%s' (%s)" %
             (to_addr, error))
-
-def foreman_query(path):
-    if path in CACHE:
-        logging.debug('%s is cached' % path)
-        return CACHE[path]
-    url="https://%s:%u/api/%s" % \
-        (args.foreman_hostname, args.foreman_port, path)
-    logging.debug("Issuing GET on %s" % url)
-    headers = {'Content-type': 'application/json',
-        'Accept': 'application/json, version=2',
-        'User-Agent': 'ai-environments-reminder'}
-    logging.debug("With headers: %s" % headers)
-    try:
-        response = requests.get(url, timeout=args.foreman_timeout,
-            headers=headers, auth=HTTPKerberosAuth(),
-            verify=CERN_CA_BUNDLE, allow_redirects=True)
-        if response.status_code == requests.codes.ok:
-            try:
-                output = json.loads(response.text)
-                CACHE[path] = output
-                return output
-            except ValueError:
-                logging.error("Failed to parse JSON")
-        elif response.status_code == requests.codes.forbidden or \
-            response.status_code == requests.codes.unauthorized:
-                raise ForemanError("Authentication failed (expired or non-existent TGT?)")
-        elif response.status_code == requests.codes.not_found:
-            raise ForemanElementNotFound("%s not found in Foreman" % path)
-        elif response.status_code == requests.codes.internal_server_error:
-            raise ForemanError("Foreman's ISE. Open a bug against Foreman")
-        else:
-            raise ForemanError("Uncontrolled status code (%s), please report a bug" %
-                response.status_code)
-    except requests.exceptions.ConnectionError, error:
-        raise ForemanError("Connection error (%s)" % error)
-    except requests.exceptions.Timeout, error:
-        raise ForemanError("Connection timeout")
-
-def get_environment(environment):
-    try:
-        environment = foreman_query('environments/%s' % environment)
-    except ForemanElementNotFound:
-        logging.error("Environment '%s' not found or not visible with the presented \
-credentials" % environment)
-        return None
-    environment = environment['environment']
-    return environment
 
 def read_environment_definition(environment):
     try:
@@ -184,9 +108,9 @@ def read_environment_definition(environment):
         logging.debug("Reading environment from %s" % path)
         return yaml.load(open(path, 'r'))
     except yaml.YAMLError:
-        raise LocalError("Unable to parse %s" % path)
+        raise AiEnvironmentsReminderError("Unable to parse %s" % path)
     except IOError:
-        raise LocalError("Unable to open %s for reading" % path)
+        raise AiEnvironmentsReminderError("Unable to open %s for reading" % path)
 
 def process_environments():
     environment_files = os.listdir(args.environments)
@@ -194,24 +118,25 @@ def process_environments():
         environment_files)
     environment_files = filter(lambda x: x not in ENVIRONMENTS_BLACKLIST,
         environment_files)
+    foreman = ForemanClient(args.foreman_hostname, args.foreman_port,
+        args.foreman_timeout, args.dryrun)
     for environment_file in environment_files:
         logging.info("Processing '%s'..." % environment_file)
 
         try:
             environment = read_environment_definition(environment_file)
-        except LocalError, error:
+        except AiEnvironmentsReminderError, error:
             logging.error(error)
             continue
 
         environment['name'] = re.sub(".yaml$", "", environment_file)
 
         try:
-            foreman_environment = get_environment(environment['name'])
+            foreman_environment = foreman.get_environment_by_name(environment['name'])
             logging.debug("Found Foreman environment '%s'..." %
                 foreman_environment['name'])
-        except ForemanError, error:
-            logging.error("Environment '%s' not found in Foreman" % \
-                environment_file)
+        except AiToolsForemanError, error:
+            logging.error(error)
             continue
 
         notify(environment, foreman_environment)
@@ -234,7 +159,7 @@ def main():
     """Application entrypoint"""
     global args
     args = parse_cmdline_args()
-    configure_logging()
+    configure_logging(args)
 
     try:
         os.stat(args.environments)
@@ -245,10 +170,10 @@ def main():
         return 2
 
     try:
-        verify_kerberos()
-    except LocalError, error:
+        verify_kerberos_environment()
+    except AiToolsInitError, error:
         logging.error("TGT not found or expired. Exiting...")
-        return 3
+        return 4
 
     process_environments()
     return 0
