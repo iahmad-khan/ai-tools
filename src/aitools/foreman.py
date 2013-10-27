@@ -73,6 +73,20 @@ class ForemanClient(HTTPClient):
             logging.info("Power operation on '%s' cancelled because dryrun is enabled" % fqdn)
             return (requests.codes.ok, {'power': 'dryrun'})
 
+    def get_environment_by_name(self, name):
+        return self.__get_model_by_name('environment', name)
+
+    def __get_model_by_name(self, model, name):
+        logging.debug("Requesting %s '%s' from Foreman" % (model, name))
+
+        (code, body) = self.__do_api_request("get", "%ss/%s" % (model, name))
+        if code == requests.codes.ok:
+            logging.debug("Found: %s" % body)
+            return body[model]
+        elif code == requests.codes.not_found:
+            raise AiToolsForemanError("%s '%s' not found in Foreman" % \
+                    (model, name))
+
     def __resolve_environment_id(self, name):
         return self.__resolve_model_id('environment', name)
 
