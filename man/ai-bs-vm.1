@@ -16,17 +16,17 @@ If no VM name is specified a random hostname will be generated
 based on a trimmed SHA1 hashed UNIX timestamp. The length is
 limited to 60 characters (prefix included). Using a prefix is
 recommended (see --prefix).
-
 .LP
 Current officially supported images are: SLC6 Server and SLC5 Server.
-CERN "Server" ones are NOT supported.
+.LP
+"SLCx CERN Server" ones \fBare not supported\fR.
 .LP
 .I Prerequisites:
 .TP
 .B OpenStack credentials
 Your OpenStack credentials are in place (get an \fBopenrc.sh\fR from
 OpenStack Horizon and source it). By doing this you will set the OpenStack
-instance you want to use and the tenant for your VM. More info:
+instance you want to use and the project for your VM. More info:
 http://cern.ch/go/k9hf
 .TP
 .B Valid Kerberos5 ticket
@@ -39,19 +39,24 @@ The behaviour of the tool can be customized by the following
 parameters. In order to keep backwards compatibility with older
 versions of ai-bs-vm, some of them can also be set via environment
 variables (in parenthesis):
+
 .LP
-.I Mandatory switches:
+.I Mandatory parameters:
 .TP
 .B -g, --foreman-hostgroup (AIBS_HOSTGROUP_NAME)
 Name of the Foreman hostgroup where you want your new virtual
-machine to land (you must be hostgroup manager of it).
+machine to land (beware that you must be hostgroup manager of it).
 .TP
 .B -i, --nova-image (AIBS_VMIMAGE_NAME)
 OpenStack image name of the virtual machine (get a list from
 nova image-list).
+.LP
+Although the synopsis indicates that -g and -i are mandatory
+parameters, both will become optional if the values are passed via
+the corresponding environment variables.
 
 .LP
-.I Optional switches:
+.I Optional parameters:
 .TP
 .B --foreman-environment (AIBS_ENVIRONMENT_NAME)
 Name of the Foreman environment you want your new virtual
@@ -61,15 +66,21 @@ machine to join (defaults to "production").
 Parameter to be added to the host in Foreman (format: key=value,
 example: network=23). This option can be specified several times.
 .TP
+.B --landb-mainuser (AIBS_LANDB_MAINUSER)
+E-group name to be set as main user in LANDB. If not specified
+the user creating the VM is set as main user (Grizzly and onwards
+only). Foreman owner will be set accordingly later on.
+.TP
 .B --landb-responsible (AIBS_LANDB_RESPONSIBLE)
 E-group name to be set as responsible in LANDB. If not specified
 the user creating the VM is set as responsible (Grizzly and onwards
 only). Foreman owner will be set accordingly later on.
 .TP
-.B --landb-mainuser (AIBS_LANDB_MAINUSER)
-E-group name to be set as main user in LANDB. If not specified
-the user creating the VM is set as main user (Grizzly and onwards
-only). Foreman owner will be set accordingly later on.
+.B --nova-availabilityzone (AIBS_VMAVAILZONE_NAME)
+The desired availability zone for the VM (see http://cern.ch/go/7ttT).
+.TP
+.B --nova-flavor (AIBS_VMFLAVOR_NAME)
+OpenStack flavor name of the virtual machine (defaults to "m1.small").
 .TP
 .B --nova-sshkey (AIBS_SSHKEY_NAME)
 Name of the SSH key to login into the machine as root in case of
@@ -79,20 +90,12 @@ strongly recommended to avoid it. Your new VM will have the Kerberos
 module enabled by default, use it to configure who has root access
 to the box. See http://cern.ch/go/7qW6
 .TP
-.B --nova-availabilityzone (AIBS_VMAVAILZONE_NAME)
-The desired availability zone for the VM.
-.TP
-.B --nova-flavor (AIBS_VMFLAVOR_NAME)
-OpenStack flavor name of the virtual machine (defaults to "m1.small").
-.TP
 .B --prefix (AIBS_VMNAME_PREFIX)
 Prefix to prepend to the randomly generated hostname (defaults to "").
 .LP
-.I Other optional switches:
+.I Other optional parameters:
 .TP
 The following parameters are for advanced users and debugging.
-.TP
-Probably you won't ever have to use any of them.
 .TP
 .B --caserver-hostname (AIBS_CASERVER_HOSTNAME)
 Hostname of the CA server the virtual machine will request a certificate
@@ -102,23 +105,9 @@ from (defaults to "baby01.cern.ch").
 Port of the CA server the virtual machine will request a certificate
 from (defaults to 8008).
 .TP
-.B AIBS_METAPARAMETERS_LIST
-Space separated list of key=value pairs of metaparameters for nova boot (e.g
-"key1=value1 key2=value2").
-.TP
-.B --puppetmaster-hostname (AIBS_PUPPETMASTER_HOSTNAME)
-Hostname of the Puppet master the virtual machine will request its
-configuration from (defaults to "it-puppet-masters-public.cern.ch").
-.TP
-.B --puppetinit-path
-Path to the template to generate the script to initialize the Puppet
-environment that will be part of the userdata
-sent to the virtual machine (defaults to "/usr/share/ai-tools/userdata/cloud-boothook").
-.TP
-.B --userdata-dir
-Directory containing fragments that will be attached to the userdata.
-The name of the file will be used to set the Content-Type (see
-http://cern.ch/go/C9hm).
+.B -d, --dryrun
+Don't do the requests that alter data (Foreman registration, host staging
+and VM creation request).
 .TP
 .B --foreman-hostname
 FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
@@ -129,14 +118,29 @@ Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
 .B --foreman-timeout
 Timeout (in seconds) for Foreman operations (default: 15).
 .TP
-.B --nova-timeout
-Timeout (in seconds) for Openstack operations (default: 15).
+.B AIBS_METAPARAMETERS_LIST
+Space separated list of key=value pairs of metaparameters for nova boot (e.g
+"key1=value1 key2=value2").
 .TP
 .B -h, --help
 Display usage and exit.
 .TP
-.B -d, --dryrun
-Don't do the requests that alter data.
+.B --puppetmaster-hostname (AIBS_PUPPETMASTER_HOSTNAME)
+Hostname of the Puppet master the virtual machine will request its
+configuration from (defaults to "it-puppet-masters-public.cern.ch").
+.TP
+.B --puppetinit-path
+Path to the template to generate the script to initialize the Puppet
+environment that will be part of the userdata
+sent to the virtual machine (defaults to "/usr/share/ai-tools/userdata/puppetinit").
+.TP
+.B --nova-timeout
+Timeout (in seconds) for Openstack operations (default: 15).
+.TP
+.B --userdata-dir
+Directory containing fragments that will be attached to the userdata.
+The name of the file will be used to set the Content-Type (see
+http://cern.ch/go/C9hm).
 .TP
 .B -v, --verbose
 Be chatty.
