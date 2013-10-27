@@ -1,4 +1,4 @@
-%{!?dist: %define dist .ai6}                                                   
+%{!?dist: %define dist .ai6}
 %define debug_package %{nil}
 
 Summary: Tools for Agile Infrastructure project
@@ -30,7 +30,7 @@ CFLAGS="%{optflags}" %{__python} setup.py build
 %install
 %{__rm} -rf %{buildroot}
 %{__python} setup.py install --skip-build --root %{buildroot}
-mkdir -p ${RPM_BUILD_ROOT}/usr/bin
+#mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-foreman-cli    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-create-environment-metadata ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-gen-ssh-yaml    ${RPM_BUILD_ROOT}/usr/bin
@@ -58,11 +58,17 @@ rm -rf ${RPM_BUILD_ROOT}
 %changelog
 * Fri Oct 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.0-1
 - New common API for ai-bs-vm, ai-kill-vm and ai-remote-power-control
-- [ai-bs-vm] Rewritten in Python
-- [ai-bs-vm] Foreman registration
-- [ai-bs-vm] Add --foreman-parameter
+- Reorganization of the whole source tree
+- Change package's maintainer email to ai-config-team@cern.ch
+- [ai-bs-vm] Rewritten in Python from scratch
+- [ai-bs-vm] Foreman registration (Susie not needed anymore)
+- [ai-bs-vm] Add --foreman-parameter option
 - [ai-bs-vm] Add support for custom userdata fragments
+- [ai-bs-vm] Use userdata script instead of boothook
+- [ai-bs-vm] Drop support for security groups (not supported in Grizzly)
 - [ai-kill-vm] Connected to the new API
+- [ai-environments-reminder] Connected to the new API
+- [ai-remote-power-control] Connected to the new API
 - [ai-rmt-module-type] Installed
 
 * Mon Oct 07 2013 Ben Jones <ben.dylan.jones@cern.ch> - 4.6-1A
