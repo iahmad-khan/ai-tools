@@ -145,6 +145,35 @@ http://cern.ch/go/C9hm).
 .B -v, --verbose
 Be chatty.
 
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 2
+Bad command line.
+.TP
+.B 3
+Bad user environment (no OpenStack's openrc.sh has been sourced)
+.TP
+.B 4
+Kerberos TGT not-existent or expired.
+.TP
+.B 5
+FQDN is invalid.
+.TP
+.B 6
+Userdata generation failed.
+.TP
+.B 10
+Foreman registration failed.
+.TP
+.B 20
+Host staging failed.
+.TP
+.B 30
+Nova boot failed.
+
 .SH EXAMPLES
 .TP
 .B Create a named VM with default VM parameters and register it in hostgroup "foo/bar":
