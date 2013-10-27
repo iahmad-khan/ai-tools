@@ -118,9 +118,9 @@ Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
 .B --foreman-timeout
 Timeout (in seconds) for Foreman operations (default: 15).
 .TP
-.B AIBS_METAPARAMETERS_LIST
-Space separated list of key=value pairs of metaparameters for nova boot (e.g
-"key1=value1 key2=value2").
+.B --nova-parameter
+Parameter to be passed to Nova as metaparameter (format: key=value,
+example: network=23). This option can be specified several times.
 .TP
 .B -h, --help
 Display usage and exit.

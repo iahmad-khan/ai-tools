@@ -109,6 +109,8 @@ def parse_cmdline_args():
     parser.add_argument('-i', '--nova-image', type=str,
         help="OpenStack image name",
         default=os.environ.get('AIBS_VMIMAGE_NAME', None))
+    parser.add_argument('--nova-parameter', type=str,
+        help="Openstack metaparameter", action='append', default=[])
     ##
     ## Foreman options
     ##
@@ -142,9 +144,9 @@ def parse_cmdline_args():
         parser.error('Foreman hostgroup not specified.')
     if args.nova_image is None:
         parser.error('Openstack image not specified (nova image-list)')
-    for parameter in args.foreman_parameter:
+    for parameter in args.foreman_parameter + args.nova_parameter:
         if not re.match(r'[-a-zA-Z0-9_]+?=[-a-zA-Z0-9_]+?', parameter):
-            parser.error("Invalid Foreman parameter '%s' (syntax: key=value)" % parameter)
+            parser.error("Invalid Foreman/Nova parameter '%s' (syntax: key=value)" % parameter)
     return args
 
 def print_summary(args, fqdn):
@@ -152,7 +154,8 @@ def print_summary(args, fqdn):
     logging.info("VM flavor: %s" % args.nova_flavor)
     logging.info("VM image: %s" % args.nova_image)
     logging.info("VM tenant: %s" % os.environ["OS_TENANT_NAME"])
-    #[[ ! -z $AIBS_METAPARAMETERS_LIST ]] && echo "VM metaparameters: $AIBS_METAPARAMETERS_LIST"
+    if args.nova_parameter:
+        logging.info("VM metaparameters: %s" % ', '.join(args.nova_parameter))
     if args.nova_sshkey:
         logging.info("VM SSH key name: %s" % args.nova_sshkey)
     if args.nova_availabilityzone:
@@ -229,7 +232,7 @@ def main():
         return 20
 
     try:
-        meta = {}
+        meta = dict(map(lambda x: x.split('='), args.nova_parameter))
         if args.landb_responsible:
             meta['landb-responsible'] = args.landb_responsible
         if args.landb_mainuser:
