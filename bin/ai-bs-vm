@@ -145,7 +145,7 @@ def parse_cmdline_args():
     if args.nova_image is None:
         parser.error('Openstack image not specified (nova image-list)')
     for parameter in args.foreman_parameter + args.nova_parameter:
-        if not re.match(r'[-a-zA-Z0-9_]+?=[-a-zA-Z0-9_]+?', parameter):
+        if not re.match(r'\S+?=\S+?', parameter):
             parser.error("Invalid Foreman/Nova parameter '%s' (syntax: key=value)" % parameter)
     return args
 
@@ -219,7 +219,7 @@ def main():
             environment=args.foreman_environment,
             hostgroup=args.foreman_hostgroup)
         for parameter in set(args.foreman_parameter):
-            foreman.addhostparameter(fqdn, *parameter.split('='))
+            foreman.addhostparameter(fqdn, *parameter.split('=', 1))
     except AiToolsForemanError, error:
         logging.error("Couldn't create Foreman entry (%s). VM not started." % error)
         return 10
@@ -232,7 +232,7 @@ def main():
         return 20
 
     try:
-        meta = dict(map(lambda x: x.split('='), args.nova_parameter))
+        meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
         if args.landb_responsible:
             meta['landb-responsible'] = args.landb_responsible
         if args.landb_mainuser:
