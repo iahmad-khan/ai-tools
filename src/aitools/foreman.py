@@ -164,4 +164,5 @@ class ForemanClient(HTTPClient):
         except kerberos.GSSError, error:
             raise AiToolsForemanError("Kerberos authentication problem (%s)" % error)
 
+        logging.debug("Server response (code: %s) %s" % (response.status_code, body))
         return (response.status_code, body)
