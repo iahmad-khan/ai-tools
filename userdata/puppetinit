@@ -30,10 +30,14 @@ function unrecoverable_error {
   exit 1
 }
 
-LOGFILE=/var/log/boothook.log
+LOCKFILE=/var/lock/puppetinit
+LOGFILE=/var/log/puppetinit.log
+
+date >> $$LOGFILE
+[ -e "$$LOCKFILE" ] && echo "This script has already run" >> $$LOGFILE && exit 0
+touch $$LOCKFILE
 
 echo "Setting up Puppet for the initial run. Please wait..." >> $$LOGFILE
-date >> $$LOGFILE
 
 OS_MAJOR_VERSION=`lsb_release -r | awk '{split($$2,a,"."); print a[1]}'`
 
