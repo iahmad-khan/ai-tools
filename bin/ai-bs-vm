@@ -70,14 +70,6 @@ def parse_cmdline_args():
         help="Hostname of the master used to fetch the configuration (default: '%s')" % \
         DEFAULT_PUPPETMASTER_HOSTNAME,
         default=os.environ.get('AIBS_PUPPETMASTER_HOSTNAME', DEFAULT_PUPPETMASTER_HOSTNAME))
-    parser.add_argument('--caserver-hostname', type=str,
-        help="Hostname of the certmgr server used to retrieve the host certificate (default: '%s')" % \
-        DEFAULT_CASERVER_HOSTNAME,
-        default=os.environ.get('AIBS_CASERVER_HOSTNAME', DEFAULT_CASERVER_HOSTNAME))
-    parser.add_argument('--caserver-port', type=str,
-        help="Port of the certmgr server used to retrieve the host certificate (default: '%s')" % \
-        DEFAULT_CASERVER_PORT,
-        default=DEFAULT_CASERVER_PORT)
     parser.add_argument('--puppetinit-path', type=str,
         help="Path to the template to generate the userdata script to init Puppet (default: '%s')" % \
         DEFAULT_PUPPETINIT_PATH,
@@ -91,8 +83,23 @@ def parse_cmdline_args():
         help="LANDB responsible to be assigned to the virtual machine",
         default=os.environ.get('AIBS_LANDB_RESPONSIBLE', None))
     ##
+    ## Certmgr options
+    ##
+    parser.add_argument('--caserver-disable', action="store_true",
+        help="Disable Certmgr actions")
+    parser.add_argument('--caserver-hostname', type=str,
+        help="Hostname of the certmgr server used to retrieve the host certificate (default: '%s')" % \
+        DEFAULT_CASERVER_HOSTNAME,
+        default=os.environ.get('AIBS_CASERVER_HOSTNAME', DEFAULT_CASERVER_HOSTNAME))
+    parser.add_argument('--caserver-port', type=str,
+        help="Port of the certmgr server used to retrieve the host certificate (default: '%s')" % \
+        DEFAULT_CASERVER_PORT,
+        default=DEFAULT_CASERVER_PORT)
+    ##
     ## Nova options
     ##
+    parser.add_argument('--nova-disable', action="store_true",
+        help="Disable Nova actions")
     parser.add_argument('--nova-timeout', type=int,
         help="Timeout for OpenStack operations (default: %s seconds)" % \
         DEFAULT_NOVA_TIMEOUT,
@@ -114,6 +121,8 @@ def parse_cmdline_args():
     ##
     ## Foreman options
     ##
+    parser.add_argument('--foreman-disable', action="store_true",
+        help="Disable Foreman actions")
     parser.add_argument('--foreman-timeout', type=int,
         help="Timeout for Foreman operations (default: %s seconds)" % \
         DEFAULT_FOREMAN_TIMEOUT,
@@ -199,14 +208,6 @@ def main():
 
     print_summary(args, fqdn)
 
-    foreman = ForemanClient(args.foreman_hostname, args.foreman_port,
-        args.foreman_timeout, args.dryrun)
-    certmgr = CertmgrClient(args.caserver_hostname, args.caserver_port,
-        args.foreman_timeout, args.dryrun)
-    nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
-        os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
-        args.nova_timeout, args.dryrun)
-
     try:
         userdata = generate_userdata(args)
         logging.debug(userdata)
@@ -214,40 +215,53 @@ def main():
         logging.error("Failed to generate userdata (%s). Exiting..." % error)
         return 6
 
-    try:
-        foreman.addhost(fqdn=fqdn,
-            environment=args.foreman_environment,
-            hostgroup=args.foreman_hostgroup)
-        for parameter in set(args.foreman_parameter):
-            foreman.addhostparameter(fqdn, *parameter.split('=', 1))
-    except AiToolsForemanError, error:
-        logging.error("Couldn't create Foreman entry (%s). VM not started." % error)
-        return 10
+    foreman = ForemanClient(args.foreman_hostname, args.foreman_port,
+        args.foreman_timeout, args.dryrun)
 
-    try:
-        certmgr.stage(fqdn)
-    except AiToolsCertmgrError, error:
-        logging.error("Couldn't stage host (%s). VM not started." % error)
-        foreman.delhost(fqdn)
-        return 20
+    if not args.foreman_disable:
+        try:
+            foreman.addhost(fqdn=fqdn,
+                environment=args.foreman_environment,
+                hostgroup=args.foreman_hostgroup)
+            for parameter in set(args.foreman_parameter):
+                foreman.addhostparameter(fqdn, *parameter.split('=', 1))
+        except AiToolsForemanError, error:
+            logging.error("Couldn't create Foreman entry (%s). VM not started." % error)
+            return 10
 
-    try:
-        meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
-        if args.landb_responsible:
-            meta['landb-responsible'] = args.landb_responsible
-        if args.landb_mainuser:
-            meta['landb-mainuser'] = args.landb_mainuser
-        nova.boot(fqdn,
-            flavor=args.nova_flavor,
-            image=args.nova_image,
-            userdata=userdata,
-            meta=meta,
-            key_name=args.nova_sshkey,
-            availability_zone=args.nova_availabilityzone)
-    except AiToolsNovaError, error:
-        logging.error("Couldn't create VM (%s)" % error)
-        foreman.delhost(fqdn)
-        return 30
+    if not args.caserver_disable:
+        try:
+            certmgr = CertmgrClient(args.caserver_hostname, args.caserver_port,
+                args.foreman_timeout, args.dryrun)
+            certmgr.stage(fqdn)
+        except AiToolsCertmgrError, error:
+            logging.error("Couldn't stage host (%s). VM not started." % error)
+            if not args.foreman_disable:
+                foreman.delhost(fqdn)
+            return 20
+
+    if not args.nova_disable:
+        try:
+            nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
+                os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
+                args.nova_timeout, args.dryrun)
+            meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
+            if args.landb_responsible:
+                meta['landb-responsible'] = args.landb_responsible
+            if args.landb_mainuser:
+                meta['landb-mainuser'] = args.landb_mainuser
+            nova.boot(fqdn,
+                flavor=args.nova_flavor,
+                image=args.nova_image,
+                userdata=userdata,
+                meta=meta,
+                key_name=args.nova_sshkey,
+                availability_zone=args.nova_availabilityzone)
+        except AiToolsNovaError, error:
+            logging.error("Couldn't create VM (%s)" % error)
+            if not args.foreman_disable:
+                foreman.delhost(fqdn)
+            return 30
 
     logging.info("----------------------------------------------------------------------")
     logging.info("* Your machine is booting and the network is being configured right now,")

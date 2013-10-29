@@ -6,11 +6,10 @@ import socket
 import json
 import requests
 import urllib
-import kerberos
-from requests_kerberos import HTTPKerberosAuth
 
+from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
-from aitools.common import CERN_CA_BUNDLE, HTTPClient
+from aitools.httpclient import HTTPClient
 
 DEFAULT_FOREMAN_TIMEOUT = 15
 DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
@@ -132,37 +131,14 @@ class ForemanClient(HTTPClient):
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/api/%s" % \
             (self.host, self.port, url)
-        logging.debug("Issuing %s on %s" % (method, url))
-        headers = {'Content-type': 'application/json',
-            'Accept': 'application/json, version=2',
-            'User-Agent': 'ai-tools'}
-        logging.debug("With headers: %s" % headers)
+        headers = {'User-Agent': 'ai-tools'}
+        # Yes, Foreman is stupid.
+        headers['Content-type'] = 'application/json'
+        if method not in ('post', 'put'):
+            headers['Accept'] = 'application/json'
 
         try:
-            caller = getattr(requests, method)
-            response = caller(url, timeout=self.timeout,
-                headers=headers, auth=HTTPKerberosAuth(),
-                verify=CERN_CA_BUNDLE, allow_redirects=True,
-                data=data)
-            logging.debug("Returned %s", response.status_code)
-            body = response.text
-            if response.status_code == requests.codes.ok:
-                try:
-                    body = response.json()
-                except:
-                    pass #FIMXE
-                logging.debug("Done")
-            elif response.status_code == requests.codes.forbidden or \
-                response.status_code == requests.codes.unauthorized:
-                    raise AiToolsForemanError("Authentication failed (expired or non-existent TGT?)")
-            elif response.status_code == requests.codes.internal_server_error:
-                raise AiToolsForemanError("Foreman's ISE. Open a bug against Foreman")
-        except requests.exceptions.ConnectionError, error:
-            raise AiToolsForemanError("Connection error (%s)" % error)
-        except requests.exceptions.Timeout, error:
-            raise AiToolsForemanError("Connection timeout")
-        except kerberos.GSSError, error:
-            raise AiToolsForemanError("Kerberos authentication problem (%s)" % error)
-
-        logging.debug("Server response (code: %s) %s" % (response.status_code, body))
-        return (response.status_code, body)
+            code, response = super(ForemanClient, self).do_request(method, url, headers, data)
+            return (code, response.json())
+        except AiToolsHTTPClientError, error:
+            raise AiToolsForemanError(error)

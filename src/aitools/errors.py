@@ -4,11 +4,17 @@ class AiToolsError(Exception):
 class AiToolsInitError(AiToolsError):
     pass
 
-class AiToolsForemanError(AiToolsError):
+class AiToolsHTTPClientError(AiToolsError):
     pass
 
-class AiToolsCertmgrError(AiToolsError):
+class AiToolsForemanError(AiToolsHTTPClientError):
+    pass
+
+class AiToolsCertmgrError(AiToolsHTTPClientError):
     pass
 
 class AiToolsNovaError(AiToolsError):
+    pass
+
+class AiToolsRogerError(AiToolsHTTPClientError):
     pass
