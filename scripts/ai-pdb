@@ -5,16 +5,21 @@ from argparse import ArgumentError
 import os
 import sys
 import requests
+import re
+from urllib import urlencode
 from requests_kerberos import HTTPKerberosAuth, OPTIONAL
 import json
 
 
-def do_request(server, port, endpoint, show_url=False):
+def do_request(server, port, endpoint, show_url=False, data=False):
     url = "https://%s:%s/%s" % (server, port, endpoint)
     if show_url:
         print url
     kerberos_auth = HTTPKerberosAuth(mutual_authentication=OPTIONAL)
-    r = requests.get(url, auth=kerberos_auth, verify=False)
+    if data:
+        r = requests.get(url, auth=kerberos_auth, verify=False, params=data)
+    else:
+        r = requests.get(url, auth=kerberos_auth, verify=False)
     if r.status_code != 200:
         # FIXME logging, error handling... lazy for now
         sys.stderr.write("received error code '%d' from puppetdb" % r.status_code)
@@ -22,9 +27,40 @@ def do_request(server, port, endpoint, show_url=False):
     j = r.json()
     return j
 
+
 def raw_main(pargs):
-    j = do_request(pargs.server, pargs.port, pargs.endpoint, pargs.show_urls)
+    query = None
+    if pargs.query:
+        if pargs.query.startswith("query="):
+            q = pargs.query.lstrip("query=") 
+        else:
+            q = pargs.query
+        if not q.startswith("["):
+            q = "[" + q
+        if not q.endswith("["):
+            q += "]"
+        query = urlencode({"query": q})
+    j = do_request(pargs.server, pargs.port, pargs.endpoint, pargs.show_urls, data=query)
     print json.dumps(j, sort_keys=True, indent=5, separators=(',', ': '))
+
+
+def hg_main(pargs):
+    endpoint = "/v2/facts/hostgroup"
+    if pargs.subgroups:
+        op = "~"
+        hg = os.path.join(pargs.hostgroup, "*")
+    else:
+        op = "="
+        hg = pargs.hostgroup
+    data = urlencode({"query": '["%s", "value", "%s"]' % (op, hg)})
+    j = do_request(pargs.server, pargs.port, endpoint, pargs.show_urls, data)
+    res = list()
+    for entry in j:
+        entry["hostgroup"] = entry.pop("value")
+        del(entry['name'])
+        res.append(entry)
+    res = sorted(res, key=lambda k: k["hostgroup"])
+    print json.dumps(res, sort_keys=True, indent=5, separators=(',', ': '))
 
 def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
@@ -37,7 +73,14 @@ def main():
     subparsers = parser.add_subparsers()
     raw_parser = subparsers.add_parser("raw", help="raw puppetdb queries")
     raw_parser.add_argument("endpoint", metavar="URI", help="REST endpoint for puppetdb api (include version!)")
+    raw_parser.add_argument("--query", metavar="QUERY", dest="query",
+                            help="puppetdb query string")
     raw_parser.set_defaults(func=raw_main)
+    hg_parser = subparsers.add_parser("hostgroup", help="get hostgroup members")
+    hg_parser.add_argument("hostgroup", metavar="HG", help="hostgroup string")
+    hg_parser.add_argument("--subgroups", action="store_true", default="false", dest="subgroups",
+                            help="return nodes from subgroups")
+    hg_parser.set_defaults(func=hg_main)
     pargs = parser.parse_args()
     pargs.func(pargs)
 
