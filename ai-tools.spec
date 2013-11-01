@@ -44,6 +44,7 @@ install -m 644 man/ai-create-environment-metadata.1 $RPM_BUILD_ROOT/%{_mandir}/m
 install -m 644 man/ai-gen-ssh-yaml.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-pdb.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
