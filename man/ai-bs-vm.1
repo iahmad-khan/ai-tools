@@ -192,10 +192,17 @@ ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]"
 .B Create a VM with random hostname prefixed by "foo":
 ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --prefix foo
 
-.SH BUGS
-Any problem? Open a support call on Jira
-(https://its.cern.ch/jira/) project "Agile Infrastructure" and assign it
-to Nacho Barrientos Arias <nacho.barrientos@cern.ch>.
+.SH KNOWN BUGS
+A warning is printed on the top of the output because of a duplicate
+import. An upgrade of python-novaclient is necessary (see AI-3093).
+
+.SH REPORTING BUGS
+If you experience any problem with the Foreman registration or the initial
+Puppet runs of your box, please open a support call on SNOW (Functional
+Element "Configuration Management"). Check the state of your VM with
+"nova show" before opening a ticket. If you can see the machine
+in Foreman but the VM is in ERROR state then please assign the ticket
+directly to "Cloud Infrastructure".
 
 .SH SEE ALSO
 ai-kill-vm (1), ai-remote-power-control (1)
