@@ -274,6 +274,8 @@ def main():
     logging.info("  rootusers in Foreman or Hiera you should be able to log in as")
     logging.info("  root using your Kerberos credentials. The LANDB responsible")
     logging.info("  has also root access by default.")
+    logging.info("* You can check the status of the VM creation request by running:")
+    logging.info("  'nova show %s'" % fqdn.replace('.cern.ch', ''))
     if args.landb_responsible or args.landb_mainuser:
         logging.info("* A custom LANDB responsible/user has been set. It will be visible")
         logging.info("  in Foreman a few minutes after the VM is booted. In the")
