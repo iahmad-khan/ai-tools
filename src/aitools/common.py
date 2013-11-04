@@ -45,7 +45,7 @@ def verify_kerberos_environment():
 def generate_random_fqdn(prefix):
     hash = hashlib.sha1()
     hash.update(str(time.time()))
-    return "%s%s.cern.ch" % (prefix if prefix else "",
+    return "%s%s.cern.ch" % (prefix.lower() if prefix else "",
         hash.hexdigest()[:HASHLEN])
 
 def validate_fqdn(fqdn):
@@ -79,5 +79,5 @@ def generate_userdata(args):
 
 def append_domain(hostname):
     if hostname is not None:
-        hostname = "%s.cern.ch" % hostname.split('.')[0]
+        hostname = "%s.cern.ch" % hostname.split('.')[0].lower()
     return hostname
