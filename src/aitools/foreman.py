@@ -6,6 +6,7 @@ import socket
 import json
 import requests
 import urllib
+import re
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
@@ -140,6 +141,9 @@ class ForemanClient(HTTPClient):
 
         try:
             code, response = super(ForemanClient, self).do_request(method, url, headers, data)
-            return (code, response.json())
+            body = response.text
+            if re.match('application/json', response.headers['content-type']):
+                body = response.json()
+            return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsForemanError(error)
