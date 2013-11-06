@@ -133,11 +133,10 @@ class ForemanClient(HTTPClient):
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/api/%s" % \
             (self.host, self.port, url)
-        headers = {'User-Agent': 'ai-tools'}
-        # Yes, Foreman is stupid.
-        headers['Content-type'] = 'application/json'
-        if method not in ('post', 'put'):
-            headers['Accept'] = 'application/json'
+        # Yes, Foreman is stupid
+        headers = {'User-Agent': 'ai-tools',
+            'Content-type': 'application/json',
+            'Accept': 'application/json, version=2'}
 
         try:
             code, response = super(ForemanClient, self).do_request(method, url, headers, data)
