@@ -57,7 +57,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
-* Fri Oct 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.0-1
+* Fri Oct 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.0-0
 - New common API for ai-bs-vm, ai-kill-vm and ai-remote-power-control
 - Reorganization of the whole source tree
 - Change package's maintainer email to ai-config-team@cern.ch
