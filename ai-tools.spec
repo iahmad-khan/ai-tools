@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.0
+Version: 5.1
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -57,6 +57,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Fri Nov 08 2013 Gavin McCance <gavin.mccance@cern.ch> - 5.1-0
+- Misc URL and paging fixes for compatibility with Foreman 1.3. AI-3273
+
 * Fri Oct 25 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.0-0
 - New common API for ai-bs-vm, ai-kill-vm and ai-remote-power-control
 - Reorganization of the whole source tree
