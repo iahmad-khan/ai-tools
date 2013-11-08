@@ -50,6 +50,7 @@ DEFAULT_CASERVER_HOSTNAME = "baby01.cern.ch"
 DEFAULT_CASERVER_PORT = 8008
 
 DEFAULT_PUPPETINIT_PATH = "/usr/share/ai-tools/userdata/puppetinit"
+DEFAULT_PREFIX = "vm"
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -65,7 +66,7 @@ def parse_cmdline_args():
         help="Don't do the requests that alter data")
     parser.add_argument('--prefix', type=str,
         help="Prefix to prepend to the randomly generated hostname",
-        default=os.environ.get('AIBS_VMNAME_PREFIX', None))
+        default=os.environ.get('AIBS_VMNAME_PREFIX', DEFAULT_PREFIX))
     parser.add_argument('--puppetmaster-hostname', type=str,
         help="Hostname of the master used to fetch the configuration (default: '%s')" % \
         DEFAULT_PUPPETMASTER_HOSTNAME,
