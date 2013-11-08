@@ -74,7 +74,8 @@ map {s/.cern.ch//; $_ = lc} @host;  # strip domain name, change to lower case
 # Connect to Foreman
 #
 my $netlocation = "$foreman_conn_params{hostname}:$foreman_conn_params{port}";
-my $url         = "https://$netlocation";
+my $url         = "https://$netlocation/api";
+my $encurl      = "https://$netlocation";
 my $realm       = "Application";
 my $browser     = LWP::UserAgent->new;
 
@@ -194,7 +195,7 @@ sub ShowHost($@){
 	    $all_hosts_url = "${all_hosts_url}?search=${filter}";
 	    print STDOUT "[DEBUG] Query URI w/ filter applied: \"${all_hosts_url}\"\n" if $debug;
 	}
-	my $request = HTTP::Request->new("GET", $all_hosts_url);
+	my $request = HTTP::Request->new("GET", $all_hosts_url."&per_page=10000000");
 	my $response = $browser->request($request);
 	if (not CheckAPIResponseStatus($response)) {
 	    return -1;
@@ -237,7 +238,7 @@ sub ShowHost($@){
 	$data{ptable}          = $fmdata{ptable}         { $data{ptable_id}          || -1 } || "";
 
 	# get information from the Node Classifier as well
-	$request = HTTP::Request->new("GET","$url/node/$host.cern.ch?format=yml");
+	$request = HTTP::Request->new("GET","$encurl/node/$host.cern.ch?format=yml");
 	$response = $browser->request($request);
 	if (CheckAPIResponseStatus($response)){
 	    print "[DEBUG] \"$url/node/$host?format=yml\": ".$response->content."\n" if $debug;
@@ -272,6 +273,7 @@ sub DeleteHost($@){
     #
     my @err = ();
     for my $host (sort @host){
+
 	my $request = HTTP::Request->new("DELETE","$url/hosts/$host.cern.ch");
 	my $response = $browser->request($request);
 	if (not CheckAPIResponseStatus($response)) {
@@ -448,7 +450,7 @@ sub InstallHost(@){
 	my $iaddr = gethostbyname($host);
 	die "aargh..." if not defined $iaddr;
 	$iaddr = inet_ntoa($iaddr);
-	my $ksfile = "$url/unattended/provision?spoof=$iaddr";
+	my $ksfile = "$encurl/unattended/provision?spoof=$iaddr";
 	my $request = HTTP::Request->new("GET",$ksfile);
 	my $response = $browser->request($request);
 	if (not $response->is_success){
@@ -775,7 +777,7 @@ sub ForemanConfig($$){
 
     # record ptable per OS
     my %ptable = my %medium = ();
-    my $response = $browser->get("$url/operatingsystems?format=json");
+    my $response = $browser->get("$url/operatingsystems?format=json&per_page=10000000");
     return %config unless CheckAPIResponseStatus($response);
     # TODO: responses should be checked in all subsequent requests
     for (@{from_json($response->content)}){
@@ -795,21 +797,21 @@ sub ForemanConfig($$){
     #print Dumper(\%medium);exit;
 
     # partition tables
-    map {$config{ptable}         {$$_{ptable}         {id}} = $$_{ptable}         {name} } @{from_json($browser->get("$url/ptables?format=json")->content)};
+    map {$config{ptable}         {$$_{ptable}         {id}} = $$_{ptable}         {name} } @{from_json($browser->get("$url/ptables?format=json&per_page=10000000")->content)};
     map {delete $config{ptable}{$_} unless exists $ptable{$config{ptable}{$_}}} keys %{$config{ptable}}; # remove ptables that are supported for unsupported OS-es :)
 
     # installation media
-    map {$config{medium}         {$$_{medium}         {id}} = $$_{medium}         {name} } @{from_json($browser->get("$url/media?format=json")->content)};
+    map {$config{medium}         {$$_{medium}         {id}} = $$_{medium}         {name} } @{from_json($browser->get("$url/media?format=json&per_page=10000000")->content)};
     map {delete $config{medium}{$_} unless exists $medium{$config{medium}{$_}}} keys %{$config{medium}}; # remove media that are supported for unsupported OS-es :)
 
-    map {$config{operatingsystem}{$$_{operatingsystem}{id}} = $$_{operatingsystem}{name} } @{from_json($browser->get("$url/operatingsystems?format=json")->content)};
-    map {$config{architecture}   {$$_{architecture}   {id}} = $$_{architecture}   {name} } @{from_json($browser->get("$url/architectures?format=json")->content)};
-    map {$config{model}          {$$_{model}          {id}} = $$_{model}          {name} } @{from_json($browser->get("$url/models?format=json")->content)};
-    map {$config{hostgroup}      {$$_{hostgroup}      {id}} = $$_{hostgroup}      {label}} @{from_json($browser->get("$url/hostgroups?format=json")->content)};
-    map {$config{environment}    {$$_{environment}    {id}} = $$_{environment}    {name} } @{from_json($browser->get("$url/environments?format=json")->content)};
-    map {$config{user}           {$$_{user}           {id}} = $$_{user}           {login}} @{from_json($browser->get("$url/users?format=json")->content)};
-    map {$config{usergroup}      {$$_{usergroup}      {id}} = $$_{usergroup}      {name} } @{from_json($browser->get("$url/usergroups?format=json")->content)};
-    map {$config{domain}         {$$_{domain}         {id}} = $$_{domain}         {name} } @{from_json($browser->get("$url/domains?format=json")->content)};
+    map {$config{operatingsystem}{$$_{operatingsystem}{id}} = $$_{operatingsystem}{name}." ".$$_{operatingsystem}{major}.".".$$_{operatingsystem}{minor} } @{from_json($browser->get("$url/operatingsystems?format=json&per_page=10000000")->content)};
+    map {$config{architecture}   {$$_{architecture}   {id}} = $$_{architecture}   {name} } @{from_json($browser->get("$url/architectures?format=json&per_page=10000000")->content)};
+    map {$config{model}          {$$_{model}          {id}} = $$_{model}          {name} } @{from_json($browser->get("$url/models?format=json&per_page=10000000")->content)};
+    map {$config{hostgroup}      {$$_{hostgroup}      {id}} = $$_{hostgroup}      {label}} @{from_json($browser->get("$url/hostgroups?format=json&per_page=10000000")->content)};
+    map {$config{environment}    {$$_{environment}    {id}} = $$_{environment}    {name} } @{from_json($browser->get("$url/environments?format=json&per_page=10000000")->content)};
+    map {$config{user}           {$$_{user}           {id}} = $$_{user}           {login}} @{from_json($browser->get("$url/users?format=json&per_page=10000000")->content)};
+    map {$config{usergroup}      {$$_{usergroup}      {id}} = $$_{usergroup}      {name} } @{from_json($browser->get("$url/usergroups?format=json&per_page=10000000")->content)};
+    map {$config{domain}         {$$_{domain}         {id}} = $$_{domain}         {name} } @{from_json($browser->get("$url/domains?format=json&per_page=10000000")->content)};
     #map {$config{subnet}         {$$_{subnet}         {id}} = $$_{subnet}         {name} } @{from_json($browser->get("$url/subnets?format=json")->content)};
     #%{$config{sp_subnet}} = %{$config{subnet}};
 
