@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.1
+Version: 5.2
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -57,6 +57,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Fri Nov 08 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.2-0
+- Set default prefix to "vm".
+
 * Fri Nov 08 2013 Gavin McCance <gavin.mccance@cern.ch> - 5.1-0
 - Misc URL and paging fixes for compatibility with Foreman 1.3. AI-3273
 
