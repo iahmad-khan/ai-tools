@@ -43,6 +43,9 @@ Display usage and exit.
 .TP
 \fB\-j\fR, \fB\-\-json\fR
 Print a machine-readable output in JSON (see JSON OUTPUT for details).
+.TP
+.B -d, --dryrun
+Skip Foreman requests.
 
 .LP
 .I Advanced options:
@@ -96,6 +99,9 @@ Some IPMI operations have failed (see details at machine level).
 .TP
 .B 2
 Bad command line.
+.TP
+.B 4
+Bad Kerberos credentials.
 
 .SH COMMON ERRORS
 .TP
@@ -125,7 +131,7 @@ because the host does not exist in the DNS server.
 .B Connection timeout
 Foreman didn't reply in the specified timeout.
 .TP
-.B ISE. Open a bug
+.B Internal Server Error
 Something went very badly. Open a ticket against Foreman (paste verbose
 output if possible).
 
