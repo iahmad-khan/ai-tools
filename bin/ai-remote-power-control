@@ -40,7 +40,7 @@ DEFAULT_OPERATION=("status")
 DEFAULT_LOGGING_LEVEL=logging.ERROR
 
 def timed(f):
-    """Decorator to output the time spent executed a given function"""
+    """Decorator to print the time spent executing a given function"""
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         start = time.time()
