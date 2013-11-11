@@ -10,5 +10,6 @@ setup(name='ai-tools',
       url='http://www.cern.ch/ai',
       package_dir= {'': 'src'},
       packages=['aitools'],
-      scripts=['bin/ai-bs-vm', 'bin/ai-kill-vm'],
+      scripts=['bin/ai-bs-vm', 'bin/ai-kill-vm',
+        'ai-remote-power-control'],
      )

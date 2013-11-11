@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.2
+Version: 5.3
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -45,6 +45,7 @@ install -m 644 man/ai-gen-ssh-yaml.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-pdb.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-remote-power-control.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
@@ -57,6 +58,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Mon Nov 11 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.3-0
+- Install ai-remote-power-control.
+
 * Fri Nov 08 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.2-0
 - Set default prefix to "vm".
 
