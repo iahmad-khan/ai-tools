@@ -78,13 +78,8 @@ def foreman_power_operation(client, fqdn):
                     return (False, "Failed to send IPMI power operation")
                 else:
                     return (True, "Command sent")
-        elif code == requests.codes.forbidden or \
-            code == requests.codes.unauthorized:
-                return (False, "Authentication failed (expired or non-existent TGT?)")
         elif code == requests.codes.not_found:
             return (False, "Host not in Foreman or without an IPMI interface (VM?)")
-        elif code == requests.codes.internal_server_error:
-            return (False, "ISE. Open a bug")
         else:
             return (False, "Uncontrolled status code (%s), please report a bug" %
                 code)
