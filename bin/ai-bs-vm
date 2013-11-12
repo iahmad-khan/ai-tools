@@ -65,7 +65,8 @@ def parse_cmdline_args():
         action="store_true",
         help="Don't do the requests that alter data")
     parser.add_argument('--prefix', type=str,
-        help="Prefix to prepend to the randomly generated hostname",
+        help="Prefix to prepend to the randomly generated hostname (default: '%s')" % \
+        DEFAULT_PREFIX,
         default=os.environ.get('AIBS_VMNAME_PREFIX', DEFAULT_PREFIX))
     parser.add_argument('--puppetmaster-hostname', type=str,
         help="Hostname of the master used to fetch the configuration (default: '%s')" % \
