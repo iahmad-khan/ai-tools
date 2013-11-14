@@ -4,7 +4,7 @@
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
 Version: 5.3
-Release: 0%{?dist}
+Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -58,6 +58,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Thu Nov 14 2013 Gavin McCance <gavin.mccance@cern.ch> - 5.3-1
+- Fix ENC url for ksopts
+
 * Mon Nov 11 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.3-0
 - Install ai-remote-power-control.
 
