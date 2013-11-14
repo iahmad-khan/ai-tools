@@ -481,7 +481,7 @@ sub InstallHost(@){
 	print $result if $debug;
 	close F;
 	
-	my $enc_request = HTTP::Request->new("GET","$url/node/$host.cern.ch?format=yml");
+	my $enc_request = HTTP::Request->new("GET","$encurl/node/$host.cern.ch?format=yml");
 	my $enc_response = $browser->request($enc_request);
 	next unless CheckAPIResponseStatus($enc_response);
 	use YAML::Syck;
