@@ -64,7 +64,10 @@ def generate_userdata(args):
         'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
         'FOREMAN_ENVIRONMENT': args.foreman_environment}
     userdata = MIMEMultipart()
-    userdata.attach(MIMEText(script.substitute(values), 'x-shellscript'))
+    puppetinit = MIMEText(script.safe_substitute(values), 'x-shellscript')
+    puppetinit.add_header('Content-Disposition', 'attachment',
+        filename=os.path.basename(args.puppetinit_path))
+    userdata.attach(puppetinit)
     if args.userdata_dir:
         try:
             for snippet_name in os.listdir(args.userdata_dir):
