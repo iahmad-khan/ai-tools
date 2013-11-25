@@ -915,20 +915,24 @@ sub SetupAims($$){
     # Run "aims2 showimg all" to get list of all available AIMS images
     my %AimsImg = (
 	# SLC
+        "SLC 6.5"     => "SLC65",
         "SLC 6.4"     => "SLC64",
         "SLC 6.3"     => "SLC63",
 	"SLC 6.2"     => "SLC62",
 	"SLC 6.1"     => "SLC61_BETA",
         #"SLC 6"       => "SLC6X",
+        "SLC 5.10"     => "SLC510",
         "SLC 5.9"     => "SLC59",
         "SLC 5.8"     => "SLC58",
         "SLC 5.7"     => "SLC57",
 	# RedHat
+        "RedHat 6.5"  => "RHEL6_U5",
         "RedHat 6.4"  => "RHEL6_U4",
         "RedHat 6.3"  => "RHEL6_U3",
         "RedHat 6.2"  => "RHEL6_U2",
         "RedHat 6.1"  => "RHEL6_U1",
         #"RedHat 6"    => "RHEL6_U2",
+        "RedHat 5.10"  => "RHES_5_U10",
         "RedHat 5.9"  => "RHES_5_U9",
         "RedHat 5.8"  => "RHES_5_U8",
         "RedHat 5.7"  => "RHES_5_U7",
@@ -1174,7 +1178,7 @@ sub HandleOptions(){
 	}
     }elsif ($action eq "disownhost"){  # "disownhost" is a special case of "updatehost"
 	$action = "updatehost";
-	$opts{operatingsystem} ||= "SLC 6.4";
+	$opts{operatingsystem} ||= "SLC 6.5";
 	$opts{architecture}    ||= "x86_64";
 	$opts{hostgroup}       ||= "disowned";
 	#$opts{model}           ||= "";
