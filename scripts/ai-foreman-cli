@@ -529,12 +529,10 @@ sub InstallHost(@){
 
     #my $mess1 = join("\n",map {"      ssh root\@punch puppetca --clean $_.cern.ch"} @host);
     my $mess2 = join("\n",map {"      ssh root\@$_ shutdown -r now"} @host);
-    my $mess3 = "      ssh lxadm remote-power-control reset ". join(",",@host)."\n";
-    #my $mess3 = join("\n",map {"      ssh lxadm remote-power-control reset $_"} @host);
-    my $mess4 = join("\n",map {"      ssh lxadm connect2console.sh $_"} @host);
+    my $mess3 = "      ai-remote-power-control reset ". join(",",@host)."\n";
     my $mess5 = "";
     if (@alarmed){
-	map {$mess5 .= "[WARN] $_\n"} ("Alarms are active on:",(map {"    $_"} @host),"A reinstallation would trigger operator alarms");
+	map {$mess5 .= "[WARN] $_\n"} ("Note: alarms are active on:",(map {"    $_"} @host),"A reinstallation may trigger operator alarms.");
     }
 
 
@@ -548,11 +546,10 @@ $mess2
 
 $mess3
 
--- To see installation in progress:
-
-$mess4
+-- To see the progress of the installation please log into the console via Foreman.
 
 $mess5
+
 EOMESS
 
     return 0;
