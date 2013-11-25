@@ -3,8 +3,8 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.3
-Release: 3%{?dist}
+Version: 5.4
+Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -58,6 +58,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Mon Nov 25 2013 Gavin McCance <gavin.mccance@cern.ch> - 5.4-0
+- bump version
+
 * Mon Nov 25 2013 Gavin McCance <gavin.mccance@cern.ch> - 5.3-3
 - bump version
 
