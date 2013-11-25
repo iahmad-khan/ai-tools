@@ -4,7 +4,7 @@
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
 Version: 5.3
-Release: 1%{?dist}
+Release: 2%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -58,6 +58,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Mon Nov 25 2013 Gavin McCance <gavin.mccance@cern.ch> - 5.3-2
+- AI-3287: SLC5.10/6.5, AI-3287: better messages
+
 * Thu Nov 14 2013 Gavin McCance <gavin.mccance@cern.ch> - 5.3-1
 - Fix ENC url for ksopts
 
