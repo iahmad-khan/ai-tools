@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.4
+Version: 5.5
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -58,6 +58,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/share/ai-tools/userdata/*
 
 %changelog
+* Tue Dec 03 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.5-0
+- [ai-bs-vm] Set owner of hosts explicitly.
+
 * Mon Nov 25 2013 Gavin McCance <gavin.mccance@cern.ch> - 5.4-0
 - bump version
 
