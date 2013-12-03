@@ -224,7 +224,8 @@ def main():
         try:
             foreman.addhost(fqdn=fqdn,
                 environment=args.foreman_environment,
-                hostgroup=args.foreman_hostgroup)
+                hostgroup=args.foreman_hostgroup,
+                owner=krb_principal.replace("@CERN.CH", ""))
             for parameter in set(args.foreman_parameter):
                 foreman.addhostparameter(fqdn, *parameter.split('=', 1))
         except AiToolsForemanError, error:

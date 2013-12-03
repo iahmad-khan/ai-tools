@@ -17,11 +17,13 @@ DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
 DEFAULT_FOREMAN_PORT = 8443
 
 class ForemanClient(HTTPClient):
-    def addhost(self, fqdn, environment, hostgroup):
+    def addhost(self, fqdn, environment, hostgroup, owner):
         logging.info("Adding host '%s' to Foreman..." % fqdn)
         payload = {'managed': False, 'name': fqdn}
         payload['environment_id'] = self.__resolve_environment_id(environment)
         payload['hostgroup_id'] = self.__resolve_hostgroup_id(hostgroup)
+        payload['owner_type'] = "User"
+        payload['owner_id'] = self.__resolve_user_id(owner)
         logging.debug("With payload: %s" % payload)
 
         if not self.dryrun:
@@ -93,6 +95,9 @@ class ForemanClient(HTTPClient):
 
     def __resolve_hostgroup_id(self, name):
         return self.__resolve_model_id('hostgroup', name, search_key='label')
+
+    def __resolve_user_id(self, name):
+        return self.__resolve_model_id('user', name, search_key='login')
 
     def __resolve_model_id(self, modelname, value, results_filter=None,
                             search_key="name",
