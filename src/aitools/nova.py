@@ -8,17 +8,17 @@ import requests
 from novaclient.v1_1 import client
 
 from aitools.errors import AiToolsNovaError
-from aitools.common import CERN_CA_BUNDLE
 
 DEFAULT_NOVA_TIMEOUT = 15
 
 class NovaClient():
     def __init__(self, auth_url, username, password,
-            tenant_name, timeout, dryrun):
+            tenant_name, cacert, timeout, dryrun):
         self.auth_url = auth_url
         self.username = username
         self.password = password
         self.tenant_name = tenant_name
+        self.cacert = cacert
         self.timeout = timeout
         self.dryrun = dryrun
 
@@ -74,7 +74,7 @@ class NovaClient():
             return client.Client(self.username, self.password,
                     self.tenant_name,
                     auth_url=self.auth_url,
-                    cacert=CERN_CA_BUNDLE,
+                    cacert=self.cacert,
                     service_type="compute",
                     timeout=self.timeout)
         except novaclient.exceptions.ClientException, error:
