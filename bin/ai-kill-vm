@@ -102,6 +102,7 @@ def main():
         args.foreman_timeout, args.dryrun)
     nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
         os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
+        os.environ.get('OS_CACERT', None),
         args.nova_timeout, args.dryrun)
 
     try:
