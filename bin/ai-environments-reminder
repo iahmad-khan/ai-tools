@@ -153,7 +153,8 @@ def notify(environment, foreman_environment):
             send_email_environment_empty(environment['name'],
              environment['notifications'])
         else:
-            logging.info("Email not sent because dryrun flag is on")
+            logging.info("Email to %s not sent because dryrun flag is on" \
+              % environment['notifications'])
 
 def main():
     """Application entrypoint"""
