@@ -1,0 +1,31 @@
+#!/usr/bin/python
+#
+# Script to dump out everything that everyone knows about a host
+#
+# Exit codes:
+#   0 all operations succeeded
+
+import sys
+from argparse import ArgumentParser
+from aitools.common import configure_logging, add_common_foreman_args, add_common_puppetdb_args
+
+
+def parse_cmdline_args():
+    parser = ArgumentParser(description="Dump information about AI hosts")
+    add_common_foreman_args(parser)
+    add_common_puppetdb_args(parser)
+
+    parser.add_argument("hosts", metavar="HOST", nargs="+",
+                        help="hostnames to query for quattor or AI")
+    parser.add_argument('-v', '--verbose', action="store_true", help="Be chatty")
+    args = parser.parse_args()
+    return args
+
+def main():
+    """Application entrypoint"""
+    args = parse_cmdline_args()
+    configure_logging(args)
+
+
+if __name__ == '__main__':
+    sys.exit(main())
