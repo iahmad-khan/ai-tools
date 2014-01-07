@@ -11,6 +11,12 @@ import time
 from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
+from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
+from aitools.foreman import DEFAULT_FOREMAN_PORT
+from aitools.pdb import DEFAULT_PUPPETDB_TIMEOUT
+from aitools.pdb import DEFAULT_PUPPETDB_HOSTNAME
+from aitools.pdb import DEFAULT_PUPPETDB_PORT
 
 from aitools.errors import AiToolsInitError
 
@@ -96,3 +102,27 @@ def append_domain(hostname):
     if hostname is not None:
         hostname = "%s.cern.ch" % hostname.split('.')[0].lower()
     return hostname
+
+def add_foreman_args(parser):
+    parser.add_argument('--foreman-timeout', type=int,
+        help="Timeout for Foreman operations (default: %s seconds)" % \
+        DEFAULT_FOREMAN_TIMEOUT,
+        default = DEFAULT_FOREMAN_TIMEOUT)
+    parser.add_argument('--foreman-hostname',
+        help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
+        default=DEFAULT_FOREMAN_HOSTNAME)
+    parser.add_argument('--foreman-port', type=int,
+        help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
+        default=DEFAULT_FOREMAN_PORT)
+
+def add_puppetdb_args(parser):
+    parser.add_argument('--pdb-timeout', type=int,
+        help="Timeout for PuppetDB operations (default: %s seconds)" % \
+        DEFAULT_PUPPETDB_TIMEOUT,
+        default = DEFAULT_PUPPETDB_TIMEOUT)
+    parser.add_argument('--pdb-hostname',
+        help="PuppetDB hostname (default: %s)" % DEFAULT_PUPPETDB_HOSTNAME,
+        default=DEFAULT_PUPPETDB_HOSTNAME)
+    parser.add_argument('--pdb-port', type=int,
+        help="PuppetDB port (default: %s)" % DEFAULT_PUPPETDB_PORT,
+        default=DEFAULT_PUPPETDB_PORT)
