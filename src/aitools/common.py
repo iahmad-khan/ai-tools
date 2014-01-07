@@ -11,7 +11,9 @@ import time
 from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from aitools.params import FQDN_VALIDATION_RE, HASHLEN, DEFAULT_LOGGING_LEVEL
+from aitools.params import FQDN_VALIDATION_RE
+from aitools.params import HASHLEN
+from aitools.params import DEFAULT_LOGGING_LEVEL
 from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
 from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
 from aitools.foreman import DEFAULT_FOREMAN_PORT
