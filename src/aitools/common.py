@@ -11,6 +11,7 @@ import time
 from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from aitools.params import FQDN_VALIDATION_RE, HASHLEN, DEFAULT_LOGGING_LEVEL
 from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
 from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
 from aitools.foreman import DEFAULT_FOREMAN_PORT
@@ -20,10 +21,6 @@ from aitools.pdb import DEFAULT_PUPPETDB_PORT
 
 from aitools.errors import AiToolsInitError
 
-DEFAULT_LOGGING_LEVEL=logging.INFO
-CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
-FQDN_VALIDATION_RE = "^[a-zA-Z0-9][a-zA-Z0-9\-]{0,59}?\.cern\.ch$"
-HASHLEN = 10
 
 def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
     """Configures application log level based on cmdline arguments"""

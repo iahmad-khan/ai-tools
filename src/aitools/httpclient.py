@@ -2,7 +2,7 @@ import logging
 import requests
 from requests_kerberos import HTTPKerberosAuth
 
-from aitools.common import CERN_CA_BUNDLE
+from aitools.params import CERN_CA_BUNDLE
 from aitools.errors import AiToolsHTTPClientError
 
 class HTTPClient(object):
