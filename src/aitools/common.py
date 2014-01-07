@@ -6,6 +6,7 @@ import re
 import logging
 import krbV
 import hashlib
+import socket
 import time
 from string import Template
 from email.mime.multipart import MIMEMultipart
@@ -50,6 +51,17 @@ def generate_random_fqdn(prefix):
 
 def validate_fqdn(fqdn):
     return re.match(FQDN_VALIDATION_RE, fqdn)
+
+def fqdnify(h):
+    try:
+        ip = socket.gethostbyname(h)
+    except socket.gaierror:
+        return False
+    return socket.getfqdn(h)
+
+def shortify(h):
+    fqdn = fqdnify(h)
+    return fqdn.split('.')[0]
 
 def generate_userdata(args):
     logging.info("Preparing dynamic user data...")
