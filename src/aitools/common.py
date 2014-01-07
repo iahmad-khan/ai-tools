@@ -100,7 +100,7 @@ def append_domain(hostname):
         hostname = "%s.cern.ch" % hostname.split('.')[0].lower()
     return hostname
 
-def add_foreman_args(parser):
+def add_common_foreman_args(parser):
     parser.add_argument('--foreman-timeout', type=int,
         help="Timeout for Foreman operations (default: %s seconds)" % \
         DEFAULT_FOREMAN_TIMEOUT,
@@ -112,7 +112,7 @@ def add_foreman_args(parser):
         help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
         default=DEFAULT_FOREMAN_PORT)
 
-def add_puppetdb_args(parser):
+def add_common_puppetdb_args(parser):
     parser.add_argument('--pdb-timeout', type=int,
         help="Timeout for PuppetDB operations (default: %s seconds)" % \
         DEFAULT_PUPPETDB_TIMEOUT,

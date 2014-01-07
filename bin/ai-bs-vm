@@ -29,6 +29,7 @@ from aitools.certmgr import CertmgrClient
 from aitools.nova import NovaClient
 from aitools.nova import DEFAULT_NOVA_TIMEOUT
 
+from aitools.common import add_common_foreman_args
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
 from aitools.common import verify_openstack_environment
@@ -125,16 +126,7 @@ def parse_cmdline_args():
     ##
     parser.add_argument('--foreman-disable', action="store_true",
         help="Disable Foreman actions")
-    parser.add_argument('--foreman-timeout', type=int,
-        help="Timeout for Foreman operations (default: %s seconds)" % \
-        DEFAULT_FOREMAN_TIMEOUT,
-        default = DEFAULT_FOREMAN_TIMEOUT)
-    parser.add_argument('--foreman-hostname',
-        help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
-        default=DEFAULT_FOREMAN_HOSTNAME)
-    parser.add_argument('--foreman-port', type=int,
-        help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
-        default=DEFAULT_FOREMAN_PORT)
+    add_common_foreman_args(parser)
     parser.add_argument('--foreman-environment', type=str,
         help="Foreman environment (default: %s)" % DEFAULT_FOREMAN_ENVIRONMENT,
         default=os.environ.get('AIBS_ENVIRONMENT_NAME', DEFAULT_FOREMAN_ENVIRONMENT))

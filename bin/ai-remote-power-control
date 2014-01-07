@@ -26,11 +26,9 @@ import multiprocessing
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
+from aitools.common import add_common_foreman_args
 
 from aitools.foreman import ForemanClient
-from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
-from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
-from aitools.foreman import DEFAULT_FOREMAN_PORT
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 
@@ -101,16 +99,7 @@ def parse_cmdline_args():
     parser.add_argument('-e', '--errors-only', dest="errors",
         action="store_true",
         help="Outputs errors only")
-    parser.add_argument('--foreman-hostname', dest="foreman_hostname",
-        help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
-        default=DEFAULT_FOREMAN_HOSTNAME)
-    parser.add_argument('--foreman-port', dest="foreman_port", type=int,
-        help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
-        default=DEFAULT_FOREMAN_PORT)
-    parser.add_argument('--foreman-timeout', type=int,
-        help="Timeout for Foreman operations (default: %s seconds)" % \
-        DEFAULT_FOREMAN_TIMEOUT,
-        default = DEFAULT_FOREMAN_TIMEOUT)
+    add_common_foreman_args(parser)
     parser.add_argument('-t', '--threads', type=int,
         choices=xrange(1, (multiprocessing.cpu_count()*2)+1),
         help="Number of threads (default: #cores) (max: #cores*2)",
