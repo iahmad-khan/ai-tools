@@ -4,27 +4,46 @@ from argparse import ArgumentParser
 from argparse import ArgumentError
 import os
 import sys
-import requests
 import re
 from urllib import urlencode
-from requests_kerberos import HTTPKerberosAuth, OPTIONAL
-import json
+import urllib2
+from urllib2_kerberos import HTTPKerberosAuthHandler
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 
 def do_request(server, port, endpoint, show_url=False, data=False):
     url = "https://%s:%s/%s" % (server, port, endpoint)
     if show_url:
         print url
-    kerberos_auth = HTTPKerberosAuth(mutual_authentication=OPTIONAL)
+    opener = urllib2.build_opener()
+    opener.add_handler(HTTPKerberosAuthHandler())
     if data:
-        r = requests.get(url, auth=kerberos_auth, verify=False, params=data)
+        headers = {"Content-type": "application/json"}
     else:
-        r = requests.get(url, auth=kerberos_auth, verify=False)
-    if r.status_code != 200:
-        # FIXME logging, error handling... lazy for now
-        sys.stderr.write("received error code '%d' from puppetdb" % r.status_code)
-        sys.exit(2)
-    j = r.json()
+        headers = {"Accept": "application/json"}
+    request = urllib2.Request(url, headers=headers)
+    try:
+        resp = opener.open(request)
+        resp = resp.read()
+    except urllib2.HTTPError, e:
+        # python 2.4 is dumb
+        if e.code >= 200 and e.code < 300:
+            # it's a success you ninny
+            resp = e.read()
+        else:
+            if e.code == 404:
+                # we're expecting things to be missing
+                return False
+            sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
+            return None
+    except urllib2.URLError, e:
+        sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
+        return None
+
+    j = json.loads(resp)
     return j
 
 
