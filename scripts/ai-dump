@@ -1,0 +1,117 @@
+#!/usr/bin/python
+
+from argparse import ArgumentParser
+from argparse import ArgumentError
+import os
+import sys
+import re
+from urllib import urlencode
+import urllib2
+from urllib2_kerberos import HTTPKerberosAuthHandler
+try:
+    import simplejson as json
+except ImportError:
+    import json
+import iso8601
+import datetime
+import pytz
+import humanize
+
+def do_request(server, port, endpoint, show_url=False, data=False):
+    url = "https://%s:%s/%s" % (server, port, endpoint)
+    if show_url:
+        print url
+    opener = urllib2.build_opener()
+    opener.add_handler(HTTPKerberosAuthHandler())
+    if data:
+        headers = {"Content-type": "application/json"}
+    else:
+        headers = {"Accept": "application/json"}
+    request = urllib2.Request(url, headers=headers)
+    try:
+        resp = opener.open(request)
+        resp = resp.read()
+    except urllib2.HTTPError, e:
+        # python 2.4 is dumb
+        if e.code >= 200 and e.code < 300:
+            # it's a success you ninny
+            resp = e.read()
+        else:
+            if e.code == 404:
+                # we're expecting things to be missing
+                return False
+            sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
+            return None
+    except urllib2.URLError, e:
+        sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
+        return None
+
+    j = json.loads(resp)
+    return j
+
+
+
+#    print json.dumps(res, sort_keys=True, indent=5, separators=(',', ': '))
+
+
+def host_main(pargs):
+    hostname = pargs.hostname
+    host_endpoint = "/v3/nodes/%s" % hostname
+
+    host_info = do_request(pargs.server, pargs.port, host_endpoint, pargs.show_urls)
+    deactivated = host_info['catalog_timestamp']
+
+    facts_endpoint = "/v3/nodes/%s/facts" % pargs.hostname
+    facts = do_request(pargs.server, pargs.port, facts_endpoint, pargs.show_urls)
+    facts = dict([ (f['name'], f['value']) for f in facts ])
+
+    for f in facts:
+        print "%s : %s" % (f, facts[f])
+
+    ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['catalog_timestamp'])
+
+    if facts['is_virtual'] == 'true':
+        vtype = "virtual"
+    else:
+        vtype = "physical"
+    print "Hostname: \t\t%s   (%s, uptime: %s)" % (hostname, vtype, facts['uptime'])
+    disks = len(facts['disks'].split(","))
+    print "   (%s cores, %s memory, %s swap, %i disks)" % (facts['processorcount'],
+                                                           facts['memorysize'], facts['swapsize'], disks )
+    print "Hostgroup: \t\t%s" % facts['hostgroup']
+    print "Responsible: \t%s" % facts['landb_responsible_email']
+    print "OS: \t\t\t%s %s %s" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'])
+    print "Kernel: \t\t%s" % (facts['configured_kernel'])
+    if facts['is_virtual'] == 'true':
+        print "VM Flavour: \t%s" % facts['ec2_instance_type']
+    else:
+        print "LanDB Location:\t%s" % (facts['landb_location'])
+
+    facts.setdefault('landbset', 'none')
+    print "LANDBsets:\t\t%s" % facts['landbset'] #todo: catalog
+    print "LB aliases: " % facts['lbaliases'] # todo: catalog
+    print "IP:\t\t\t\t%s (%s)" % (facts['ipaddress'], facts['landb_network_domain'])
+
+    if ago > datetime.timedelta(hours=24):
+        pdbsync = "out of sync"
+    else:
+        pdbsync = "synced ok"
+    print
+    print "Last PDB report: \t%s (%s)" % ( humanize.naturaltime(ago), pdbsync )
+
+def main():
+    parser = ArgumentParser(description="wrap puppetdb commands")
+    parser.add_argument("-s", "--server", metavar="HOSTNAME", dest="server",
+                        default="judy.cern.ch", help="server running puppetdb proxy")
+    parser.add_argument("-p", "--port", metavar="PORT", dest="port", default="9081",
+                        help="port for puppetdb proxy")
+    parser.add_argument("--show_url", action="store_true", default=False, dest="show_urls",
+                        help="show REST urls")
+    parser.add_argument("hostname", metavar="HOST", help="hostname to dump")
+    parser.set_defaults(func=host_main)
+
+    pargs = parser.parse_args()
+    pargs.func(pargs)
+
+if __name__ == "__main__":
+    main()
