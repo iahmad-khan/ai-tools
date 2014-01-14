@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.7
+Version: 5.8
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -16,6 +16,7 @@ URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
 Requires: aims2-client, certmgr-client, python-novaclient, python-krbV, python-urllib2_kerberos
 Requires: perl-YAML-Syck, python-requests, python-requests-kerberos, python-argparse
+Requires: python-argcomplete
 
 %description
 A collection of tools used by CERN/IT's Agile Infrastructure project
@@ -26,6 +27,7 @@ A collection of tools used by CERN/IT's Agile Infrastructure project
 %build
 pod2man scripts/ai-foreman-cli > man/ai-foreman-cli.1
 CFLAGS="%{optflags}" %{__python} setup.py build
+
 
 %install
 %{__rm} -rf %{buildroot}
@@ -47,6 +49,10 @@ install -m 644 man/ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-pdb.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-remote-power-control.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
+mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/bash_completion.d
+install -m 0644 -p addons/bash_completion.d/ai-kill-vm $RPM_BUILD_ROOT/%{_sysconfdir}/bash_completion.d
+
+
 %clean
 rm -rf ${RPM_BUILD_ROOT}
 
@@ -56,8 +62,12 @@ rm -rf ${RPM_BUILD_ROOT}
 %{python_sitelib}/*
 %{_mandir}/man1/*
 /usr/share/ai-tools/userdata/*
+%config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Jan 14 2014 Steve Traylen <steve.traylen@cern.ch> - 5.8-0
+- Add bash completion for ai-kill-vm
+
 * Thu Dec 05 2013 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.7-0
 - [ai-kill-vm] Get CA cert path from the shell environment
 
