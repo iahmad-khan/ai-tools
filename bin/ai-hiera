@@ -127,7 +127,7 @@ def print_summary(args, fqdn):
         logging.info("Foreman hostgroup forced to: %s" % args.foreman_hostgroup)
     if args.foreman_environment:
         logging.info("Foreman environment forced to: %s" % args.foreman_environment)
-    logging.info("With the following resolved variables:")
+    logging.info("With the following environment:")
 
 def main():
     """Application entrypoint"""
