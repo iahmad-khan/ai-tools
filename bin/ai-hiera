@@ -24,6 +24,7 @@ from aitools.common import validate_fqdn
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 
 DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
+HIERA_BINARY_PATH = "/usr/bin/hiera"
 HIERA_HOSTGROUP_DEPTH = 5
 
 def parse_cmdline_args():
@@ -85,7 +86,7 @@ def append_fact(name, facts, fqdn, hiera_cmd):
         logging.info("Fact '%s' not found, won't be used" % name)
         
 def hiera_lookup(args, fqdn, environment, hostgroup, facts):
-    hiera_cmd = ["/usr/bin/hiera", "-c", args.hiera_config, args.key]
+    hiera_cmd = [HIERA_BINARY_PATH, "-c", args.hiera_config, args.key]
     if args.trace:
         hiera_cmd.append("-d")
     if args.array:
