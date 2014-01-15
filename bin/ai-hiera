@@ -69,10 +69,10 @@ def extract_fact(name, facts, fqdn):
 def append_fact(name, facts, fqdn, hiera_cmd):
     value = extract_fact(name, facts, fqdn)
     if value:
-        logging.info("%s to be used: %s" % (name, value))
+        logging.info("Fact '%s' : %s" % (name, value))
         hiera_cmd.append("::%s=%s" % (name, value))
     else:
-        logging.info("%s not found, won't be used" % name)
+        logging.info("Fact '%s' not found, won't be used" % name)
         
 def hiera_lookup(args, fqdn, environment, hostgroup, facts):
     hiera_cmd = ["/usr/bin/hiera", "-c", "/etc/puppet/hiera.yaml", args.key]
@@ -104,6 +104,7 @@ def print_summary(args, fqdn):
         logging.info("Foreman hostgroup forced to: %s" % args.foreman_hostgroup)
     if args.foreman_environment:
         logging.info("Foreman environment forced to: %s" % args.foreman_environment)
+    logging.info("With the following resolved variables:")
 
 def main():
     """Application entrypoint"""
@@ -137,7 +138,7 @@ def main():
                 logging.error("Environment not found in Foreman and not manually set")
         else:
             environment = args.foreman_environment
-        logging.info("Environment to be used: %s" % environment)
+        logging.info("Environment: %s" % environment)
         # Resolve hostgroup
         if not args.foreman_hostgroup:
             if host['host']['hostgroup']:
@@ -146,8 +147,8 @@ def main():
                 logging.error("Hostgroup not found in Foreman and not manually set")
         else:
             hostgroup = args.foreman_hostgroup
+        logging.info("Hostgroup: %s" % hostgroup)
         facts = foreman.getfacts(fqdn=fqdn)
-        logging.info("Hostgroup to be used: %s" % hostgroup)
     except AiToolsForemanError, error:
         logging.error("Couldn't fetch Foreman entry (%s)" % error)
         return 10
