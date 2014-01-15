@@ -71,6 +71,8 @@ def append_fact(name, facts, fqdn, hiera_cmd):
     if value:
         logging.info("%s to be used: %s" % (name, value))
         hiera_cmd.append("::%s=%s" % (name, value))
+    else:
+        logging.info("%s not found, won't be used" % name)
         
 def hiera_lookup(args, fqdn, environment, hostgroup, facts):
     hiera_cmd = ["/usr/bin/hiera", "-c", "/etc/puppet/hiera.yaml", args.key]
