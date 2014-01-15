@@ -76,6 +76,7 @@ def parse_cmdline_args():
 def extract_fact(name, facts, fqdn):
     if fqdn in facts and name in facts[fqdn]:
         return facts[fqdn][name]
+    return None
 
 def append_fact(name, facts, fqdn, hiera_cmd):
     value = extract_fact(name, facts, fqdn)
