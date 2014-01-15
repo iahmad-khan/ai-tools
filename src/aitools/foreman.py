@@ -36,6 +36,32 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
 
+    def gethost(self, fqdn):
+        logging.info("Getting host '%s' from Foreman..." % fqdn)
+
+        (code, body) = self.__do_api_request("get", "hosts/%s" % fqdn)
+        if code == requests.codes.ok:
+            body['host']['hostgroup'] = self.__resolve_model('hostgroup',
+                body['host']['hostgroup_id'])
+            return body
+        elif code == requests.codes.not_found:
+            raise AiToolsForemanError("Host '%s' not found in Foreman)" % fqdn)
+        elif code == requests.codes.unprocessable_entity:
+            error = ','.join(body['host']['full_messages'])
+            raise AiToolsForemanError("gethost call failed (%s)" % error)
+
+    def getfacts(self, fqdn):
+        logging.info("Getting facts for host '%s' from Foreman..." % fqdn)
+
+        (code, body) = self.__do_api_request("get", "hosts/%s/facts/?per_page=500" % fqdn)
+        if code == requests.codes.ok:
+            return body
+        elif code == requests.codes.not_found:
+            raise AiToolsForemanError("Host '%s' (or facts) not found in Foreman)" % fqdn)
+        elif code == requests.codes.unprocessable_entity:
+            error = ','.join(body['host']['full_messages']) # FIXME
+            raise AiToolsForemanError("getfacts call failed (%s)" % error)
+
     def delhost(self, fqdn):
         logging.info("Deleting host '%s' from Foreman" % fqdn)
 
@@ -123,6 +149,24 @@ class ForemanClient(HTTPClient):
                 raise AiToolsForemanError("Multiple choices for %s lookup" % modelname)
             self.cache[cache_key] = results[0][modelname]['id']
             return results[0][modelname]['id']
+
+    def __resolve_model(self, modelname, id):
+        cache_key = '%s_%s' % (modelname, id)
+        if cache_key in self.cache:
+            logging.debug("'%s' found in cache" % cache_key)
+            return self.cache[cache_key]
+        else:
+            logging.debug("Asking Foreman for %s with id '%s'" %
+                (modelname, id))
+            (code, body) = self.__do_api_request("get", "%ss/%s" % (modelname, id))
+            if code == requests.codes.ok:
+                self.cache[cache_key] = body
+                return body
+            elif code == requests.codes.not_found:
+                raise AiToolsForemanError("Model not found in Foreman)" % fqdn)
+            elif code == requests.codes.unprocessable_entity:
+                error = ','.join(body['host']['full_messages'])
+                raise AiToolsForemanError("__resolve_model_name call failed (%s)" % error)
 
     def __search_query(self, model, search_string):
         query_string = urllib.urlencode({'search': search_string})

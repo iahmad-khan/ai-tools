@@ -1,0 +1,159 @@
+#!/usr/bin/env python
+# Wrapper making hiera-cli a bit more friendly
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
+# Exit codes:
+#   0 all operations succeeded
+#  10 Foreman registration failed
+
+import os
+import sys
+import logging
+import argparse
+import re
+import socket
+import subprocess
+
+from aitools.foreman import ForemanClient
+
+from aitools.common import add_common_foreman_args
+from aitools.common import configure_logging
+from aitools.common import verify_kerberos_environment
+from aitools.common import validate_fqdn
+
+from aitools.errors import AiToolsInitError, AiToolsForemanError
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser()
+    ##
+    ## Internal options
+    ##
+    parser.add_argument('-v', '--verbose',
+        action="store_true",
+        help="Be chatty")
+    parser.add_argument('-a', '--array',
+        action="store_true",
+        help="Do the lookup in array mode")
+    parser.add_argument('-s', '--hash',
+        action="store_true",
+        help="Do the lookup in hash mode")
+    parser.add_argument('-t', '--trace',
+        action="store_true",
+        help="Prints out how the hierarchy is traversed")
+    ##
+    ## Foreman options
+    ##
+    add_common_foreman_args(parser)
+    parser.add_argument('--foreman-environment', type=str,
+        default=None, help="Override Foreman environment")
+    parser.add_argument('--foreman-hostgroup', type=str,
+        default=None, help="Override Foreman hostgroup")
+    ##
+    ## Positional
+    ##
+    parser.add_argument('hostname', nargs=1, default=None,
+        help="Hostname (qualified or not)")
+    parser.add_argument('key', nargs=1, default=None,
+        help="Hiera key to be looked up")
+    args = parser.parse_args()
+    args.hostname = args.hostname[0]
+    args.key = args.key[0]
+    return args
+
+def extract_fact(name, facts, fqdn):
+    if fqdn in facts and name in facts[fqdn]:
+        value = facts[fqdn][name]
+        return value 
+
+def append_fact(name, facts, fqdn, hiera_cmd):
+    value = extract_fact(name, facts, fqdn)
+    if value:
+        logging.info("%s to be used: %s" % (name, value))
+        hiera_cmd.append("::%s=%s" % (name, value))
+        
+def hiera_lookup(args, fqdn, environment, hostgroup, facts):
+    hiera_cmd = ["/usr/bin/hiera", "-c", "/etc/puppet/hiera.yaml", args.key]
+    if args.trace:
+        hiera_cmd.append("-d")
+    if args.array:
+        hiera_cmd.append("-a")
+    if args.hash:
+        hiera_cmd.append("-h")
+    hiera_cmd.append("::foreman_env=%s" % environment)
+    hiera_cmd.append("::fqdn=%s" % fqdn)
+    hostgroup = hostgroup.split("/")
+    hiera_cmd.extend(["::encgroup_%d=%s" % (i,x) 
+        for i,x in enumerate(hostgroup)])
+    append_fact("operatingsystemmajorrelease", facts, fqdn, hiera_cmd)
+    append_fact("osfamily", facts, fqdn, hiera_cmd)
+    append_fact("cern_hwvendor", facts, fqdn, hiera_cmd)
+    logging.debug("About to execute: %s" % hiera_cmd)
+    return subprocess.Popen(hiera_cmd, stdout=subprocess.PIPE, 
+        stderr=subprocess.STDOUT).communicate()[0]
+
+def print_summary(args, fqdn):
+    logging.info("Resolving key '%s' for host '%s'..." % (args.key, fqdn))
+    if args.foreman_hostgroup:
+        logging.info("Foreman hostgroup forced to: %s" % args.foreman_hostgroup)
+    if args.foreman_environment:
+        logging.info("Foreman environment forced to: %s" % args.foreman_environment)
+
+def main():
+    """Application entrypoint"""
+    args = parse_cmdline_args()
+    configure_logging(args)
+
+    try:
+        krb_principal = verify_kerberos_environment()
+    except AiToolsInitError, error:
+        logging.error("TGT not found or expired. Exiting...")
+        return 4
+
+    fqdn = socket.getfqdn(args.hostname)
+
+    if not validate_fqdn(fqdn):
+        logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
+        return 5
+
+    print_summary(args, fqdn)
+
+    foreman = ForemanClient(args.foreman_hostname, args.foreman_port,
+        args.foreman_timeout, dryrun=False)
+
+    try:
+        host = foreman.gethost(fqdn=fqdn)
+        # Resolve environment
+        if not args.foreman_environment:
+            if host['host']['environment']:
+                environment = host['host']['environment']['environment']['name']
+            else:
+                logging.error("Environment not found in Foreman and not manually set")
+        else:
+            environment = args.foreman_environment
+        logging.info("Environment to be used: %s" % environment)
+        # Resolve hostgroup
+        if not args.foreman_hostgroup:
+            if host['host']['hostgroup']:
+                hostgroup = host['host']['hostgroup']['hostgroup']['label']
+            else:
+                logging.error("Hostgroup not found in Foreman and not manually set")
+        else:
+            hostgroup = args.foreman_hostgroup
+        facts = foreman.getfacts(fqdn=fqdn)
+        logging.info("Hostgroup to be used: %s" % hostgroup)
+    except AiToolsForemanError, error:
+        logging.error("Couldn't fetch Foreman entry (%s)" % error)
+        return 10
+
+    try:
+        print hiera_lookup(args, fqdn, environment, hostgroup, facts)
+    except Exception, error:
+        logging.error(error)
+        return 11
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
