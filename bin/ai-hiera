@@ -85,12 +85,16 @@ def hiera_lookup(args, fqdn, environment, hostgroup, facts):
     hiera_cmd.append("::foreman_env=%s" % environment)
     hiera_cmd.append("::fqdn=%s" % fqdn)
     hostgroup = hostgroup.split("/")
+    if len(hostgroup) > 5:
+        logging.warn("The lookup depth for hostgroup is limited to 5 levels")
+        logging.warn("You might be leaving behind some data")
     hiera_cmd.extend(["::encgroup_%d=%s" % (i,x) 
         for i,x in enumerate(hostgroup)])
     append_fact("operatingsystemmajorrelease", facts, fqdn, hiera_cmd)
     append_fact("osfamily", facts, fqdn, hiera_cmd)
     append_fact("cern_hwvendor", facts, fqdn, hiera_cmd)
     logging.debug("About to execute: %s" % hiera_cmd)
+    # TODO: Catch exceptions
     return subprocess.Popen(hiera_cmd, stdout=subprocess.PIPE, 
         stderr=subprocess.STDOUT).communicate()[0]
 
