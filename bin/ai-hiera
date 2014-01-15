@@ -24,6 +24,7 @@ from aitools.common import validate_fqdn
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 
 DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
+HIERA_HOSTGROUP_DEPTH = 5
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -96,8 +97,9 @@ def hiera_lookup(args, fqdn, environment, hostgroup, facts):
     hiera_cmd.append("::foreman_env=%s" % environment)
     hiera_cmd.append("::fqdn=%s" % fqdn)
     hostgroup = hostgroup.split("/")
-    if len(hostgroup) > 5:
-        logging.warn("The lookup depth for hostgroup is limited to 5 levels")
+    if len(hostgroup) > HIERA_HOSTGROUP_DEPTH:
+        logging.warn("The lookup depth for hostgroup keys is limited to %d levels"
+            % HIERA_HOSTGROUP_DEPTH)
         logging.warn("You might be leaving behind some data")
     hiera_cmd.extend(["::encgroup_%d=%s" % (i,x) 
         for i,x in enumerate(hostgroup)])
