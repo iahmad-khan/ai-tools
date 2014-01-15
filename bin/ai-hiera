@@ -23,6 +23,8 @@ from aitools.common import validate_fqdn
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 
+DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
+
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
     parser = argparse.ArgumentParser()
@@ -32,6 +34,9 @@ def parse_cmdline_args():
     parser.add_argument('-v', '--verbose',
         action="store_true",
         help="Be chatty")
+    ##
+    ## Hiera options
+    ##
     parser.add_argument('-a', '--array',
         action="store_true",
         help="Do the lookup in array mode")
@@ -43,6 +48,9 @@ def parse_cmdline_args():
         help="Prints out how the hierarchy is traversed")
     parser.add_argument('--module', type=str,
         default=None, help="Add also a module to the mix")
+    parser.add_argument('--hiera-config', type=str,
+        help="Hiera configuration file (default: %s)" % DEFAULT_HIERA_CONF_PATH,
+        default=DEFAULT_HIERA_CONF_PATH)
     ##
     ## Foreman options
     ##
@@ -77,7 +85,7 @@ def append_fact(name, facts, fqdn, hiera_cmd):
         logging.info("Fact '%s' not found, won't be used" % name)
         
 def hiera_lookup(args, fqdn, environment, hostgroup, facts):
-    hiera_cmd = ["/usr/bin/hiera", "-c", "/etc/puppet/hiera.yaml", args.key]
+    hiera_cmd = ["/usr/bin/hiera", "-c", args.hiera_config, args.key]
     if args.trace:
         hiera_cmd.append("-d")
     if args.array:
