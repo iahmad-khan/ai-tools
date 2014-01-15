@@ -113,7 +113,7 @@ class ForemanClient(HTTPClient):
             if value_filter is not None:
                 search_string_value = value_filter(value)
             search_string = "%s=\"%s\"" % (search_key, search_string_value)
-            results = self.__search_query("%ss" % modelname, search_string)
+            results = self.search_query("%ss" % modelname, search_string)
             if results_filter:
                 results = results_filter(results)
             if not results:
@@ -124,7 +124,7 @@ class ForemanClient(HTTPClient):
             self.cache[cache_key] = results[0][modelname]['id']
             return results[0][modelname]['id']
 
-    def __search_query(self, model, search_string):
+    def search_query(self, model, search_string):
         query_string = urllib.urlencode({'search': search_string})
         url = "%s/?%s" % (model, query_string)
         (code, body) = self.__do_api_request("get", url)
