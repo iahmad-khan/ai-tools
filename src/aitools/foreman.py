@@ -45,7 +45,7 @@ class ForemanClient(HTTPClient):
                 body['host']['hostgroup_id'])
             return body
         elif code == requests.codes.not_found:
-            raise AiToolsForemanError("Host '%s' not found in Foreman)" % fqdn)
+            raise AiToolsForemanError("Host '%s' not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
             error = ','.join(body['host']['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)
@@ -57,9 +57,9 @@ class ForemanClient(HTTPClient):
         if code == requests.codes.ok:
             return body
         elif code == requests.codes.not_found:
-            raise AiToolsForemanError("Host '%s' (or facts) not found in Foreman)" % fqdn)
+            raise AiToolsForemanError("Host '%s' (or facts) not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
-            error = ','.join(body['host']['full_messages']) # FIXME
+            error = ','.join(body[fqdn]['full_messages'])
             raise AiToolsForemanError("getfacts call failed (%s)" % error)
 
     def delhost(self, fqdn):
