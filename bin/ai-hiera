@@ -41,6 +41,8 @@ def parse_cmdline_args():
     parser.add_argument('-t', '--trace',
         action="store_true",
         help="Prints out how the hierarchy is traversed")
+    parser.add_argument('--module', type=str,
+        default=None, help="Add also a module to the mix")
     ##
     ## Foreman options
     ##
@@ -82,6 +84,8 @@ def hiera_lookup(args, fqdn, environment, hostgroup, facts):
         hiera_cmd.append("-a")
     if args.hash:
         hiera_cmd.append("-h")
+    if args.module:
+        hiera_cmd.append("module_name=%s" % args.module)
     hiera_cmd.append("::foreman_env=%s" % environment)
     hiera_cmd.append("::fqdn=%s" % fqdn)
     hostgroup = hostgroup.split("/")
