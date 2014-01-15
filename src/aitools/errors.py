@@ -18,3 +18,6 @@ class AiToolsNovaError(AiToolsError):
 
 class AiToolsRogerError(AiToolsHTTPClientError):
     pass
+
+class AiToolsHieraError(AiToolsHTTPClientError):
+    pass

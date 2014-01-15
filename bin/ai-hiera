@@ -22,6 +22,7 @@ from aitools.common import verify_kerberos_environment
 from aitools.common import validate_fqdn
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
+from aitools.errors import AiToolsHieraError
 
 DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
 HIERA_BINARY_PATH = "/usr/bin/hiera"
@@ -109,9 +110,17 @@ def hiera_lookup(args, fqdn, environment, hostgroup, facts):
     append_fact("osfamily", facts, fqdn, hiera_cmd)
     append_fact("cern_hwvendor", facts, fqdn, hiera_cmd)
     logging.debug("About to execute: %s" % hiera_cmd)
-    # TODO: Catch exceptions
-    return subprocess.Popen(hiera_cmd, stdout=subprocess.PIPE, 
-        stderr=subprocess.STDOUT).communicate()[0]
+    try:
+        process = subprocess.Popen(hiera_cmd, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        stdout = process.communicate()[0]
+    except OSError, error:
+        raise AiToolsHieraError("Hiera call failed (%s)" % error)
+    if process.returncode == os.EX_OK:
+        return stdout
+    else:
+        raise AiToolsHieraError("Hiera returned non-zero exit code (%d)" %
+            process.returncode)
 
 def print_summary(args, fqdn):
     logging.info("Resolving key '%s' for host '%s'..." % (args.key, fqdn))
@@ -170,9 +179,9 @@ def main():
 
     try:
         sys.stdout.write(hiera_lookup(args, fqdn, environment, hostgroup, facts))
-    except Exception, error: # FIXME
-        logging.error(error)
-        return 11
+    except AiToolsHieraError, error:
+        logging.error("Lookup failed (%s)" % error)
+        return 20
 
     return 0
 
