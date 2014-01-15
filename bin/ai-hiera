@@ -153,8 +153,8 @@ def main():
         return 10
 
     try:
-        print hiera_lookup(args, fqdn, environment, hostgroup, facts)
-    except Exception, error:
+        sys.stdout.write(hiera_lookup(args, fqdn, environment, hostgroup, facts))
+    except Exception, error: # FIXME
         logging.error(error)
         return 11
 
