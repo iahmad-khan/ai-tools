@@ -106,9 +106,8 @@ def hiera_lookup(args, fqdn, environment, hostgroup, facts):
         logging.warn("You might be leaving behind some data")
     hiera_cmd.extend(["::encgroup_%d=%s" % (i,x) 
         for i,x in enumerate(hostgroup)])
-    append_fact("operatingsystemmajorrelease", facts, fqdn, hiera_cmd)
-    append_fact("osfamily", facts, fqdn, hiera_cmd)
-    append_fact("cern_hwvendor", facts, fqdn, hiera_cmd)
+    for factname in ['operatingsystemmajorrelease', 'osfamily', 'cern_hwvendor']:
+        append_fact(factname, facts, fqdn, hiera_cmd)
     logging.debug("About to execute: %s" % hiera_cmd)
     try:
         process = subprocess.Popen(hiera_cmd, stdout=subprocess.PIPE,
