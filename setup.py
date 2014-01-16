@@ -11,5 +11,5 @@ setup(name='ai-tools',
       package_dir= {'': 'src'},
       packages=['aitools'],
       scripts=['bin/ai-bs-vm', 'bin/ai-kill-vm',
-        'bin/ai-remote-power-control'],
+        'bin/ai-remote-power-control', 'bin/ai-hiera'],
      )
