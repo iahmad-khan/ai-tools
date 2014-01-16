@@ -104,6 +104,10 @@ ai-hiera --hash --trace --node lxfsrb6207.cern.ch castor_conf
 .B Resolve key 'lemonsensor_url' for node 'lxplus0108.cern.ch' with lemon module enabled.
 ai-hiera -n lxplus0108.cern.ch lemonsensor_url --module lemon
 
+.TP
+.B Resolve keys 'sssd::min_id' and 'cvmfs_quota_limit' for node 'lxplus0108.cern.ch'
+ai-hiera -n lxplus0108.cern.ch sssd::min_id cvmfs_quota_limit
+
 .SH KNOWN BUGS
 None so far.
 
