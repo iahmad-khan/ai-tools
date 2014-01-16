@@ -56,7 +56,7 @@ class HieraClient():
     def __append_fact(self, name, facts, fqdn, hiera_cmd):
         value = extract_fact(name, facts, fqdn)
         if value:
-            logging.info("Fact '%s': %s" % (name, value))
+            logging.debug("Fact '%s': %s" % (name, value))
             hiera_cmd.append("::%s=%s" % (name, value))
         else:
             logging.info("Fact '%s' not found, won't be used" % name)
