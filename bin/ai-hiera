@@ -66,10 +66,9 @@ def parse_cmdline_args():
     ##
     ## Positional
     ##
-    parser.add_argument('key', nargs=1, default=None,
-        help="Hiera key to be looked up")
+    parser.add_argument('key', nargs='+', default=None,
+        help="Hiera keys to be looked up")
     args = parser.parse_args()
-    args.key = args.key[0]
     # hash and array mutually exclusive
     return args
 
@@ -131,8 +130,10 @@ def main():
     hiera = HieraClient(args.hiera_config, args.trace, args.hash, args.array)
 
     try:
-        sys.stdout.write(hiera.lookupkey(args.key, fqdn, environment,
-            hostgroup, facts, args.module))
+        for key in args.key:
+            logging.info("Looking up '%s'..." % key)
+            sys.stdout.write(hiera.lookupkey(key, fqdn, environment,
+                hostgroup, facts, args.module))
     except AiToolsHieraError, error:
         logging.error("Lookup failed (%s)" % error)
         return 20
