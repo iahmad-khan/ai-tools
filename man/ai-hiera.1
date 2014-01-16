@@ -38,16 +38,16 @@ the first matching element).
 .B -h, --help
 Display usage and exit.
 .TP
+.B -m, --module
+Simulates that the lookup is done in the context of the module passed
+via this parameter.
+.TP
 .B -n, --node
 Node name to base the generation of all the resolution environment
 on (variables such as hostgroup, environment and facts). Non fully
 qualified names are allowed, but the FQDNfication depends on the
 local configuration of the resolver (defaults to the FQDN where
 this command is executed).
-.TP
-.B -m, --module
-Simulates that the lookup is done in the context of the module passed
-via this parameter.
 .TP
 .B -s, --hash
 Do the lookup in hash mode.
@@ -56,9 +56,6 @@ Do the lookup in hash mode.
 .I Other optional parameters:
 .TP
 The following parameters are for advanced users and debugging.
-.TP
-.B --hiera-config
-Hiera configuration file (defaults to "/etc/puppet/hiera.yaml")
 .TP
 .B --foreman-environment
 This option overrides the environment fetched from Foreman
@@ -76,6 +73,9 @@ Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
 .TP
 .B --foreman-timeout
 Timeout (in seconds) for Foreman operations (default: 15).
+.TP
+.B --hiera-config
+Hiera configuration file (defaults to "/etc/puppet/hiera.yaml")
 .TP
 .B -t, --trace
 Prints out how the hierarchy is traversed. Useful to know exactly
