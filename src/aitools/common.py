@@ -125,3 +125,8 @@ def add_common_puppetdb_args(parser):
     parser.add_argument('--pdb-port', type=int,
         help="PuppetDB port (default: %s)" % DEFAULT_PUPPETDB_PORT,
         default=DEFAULT_PUPPETDB_PORT)
+
+def extract_fact(name, facts, fqdn):
+    if fqdn in facts and name in facts[fqdn]:
+        return facts[fqdn][name]
+    return None

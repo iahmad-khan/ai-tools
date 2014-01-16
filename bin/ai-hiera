@@ -12,9 +12,11 @@ import sys
 import logging
 import argparse
 import socket
-import subprocess
 
 from aitools.foreman import ForemanClient
+from aitools.hiera import HieraClient
+
+from aitools.hiera import DEFAULT_HIERA_CONF_PATH
 
 from aitools.common import add_common_foreman_args
 from aitools.common import configure_logging
@@ -23,10 +25,6 @@ from aitools.common import validate_fqdn
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsHieraError
-
-DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
-HIERA_BINARY_PATH = "/usr/bin/hiera"
-HIERA_HOSTGROUP_DEPTH = 5
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -72,54 +70,8 @@ def parse_cmdline_args():
     args = parser.parse_args()
     args.hostname = args.hostname[0]
     args.key = args.key[0]
+    # hash and array mutually exclusive
     return args
-
-def extract_fact(name, facts, fqdn):
-    if fqdn in facts and name in facts[fqdn]:
-        return facts[fqdn][name]
-    return None
-
-def append_fact(name, facts, fqdn, hiera_cmd):
-    value = extract_fact(name, facts, fqdn)
-    if value:
-        logging.info("Fact '%s': %s" % (name, value))
-        hiera_cmd.append("::%s=%s" % (name, value))
-    else:
-        logging.info("Fact '%s' not found, won't be used" % name)
-        
-def hiera_lookup(args, fqdn, environment, hostgroup, facts):
-    hiera_cmd = [HIERA_BINARY_PATH, "-c", args.hiera_config, args.key]
-    if args.trace:
-        hiera_cmd.append("-d")
-    if args.array:
-        hiera_cmd.append("-a")
-    if args.hash:
-        hiera_cmd.append("-h")
-    if args.module:
-        hiera_cmd.append("module_name=%s" % args.module)
-    hiera_cmd.append("::foreman_env=%s" % environment)
-    hiera_cmd.append("::fqdn=%s" % fqdn)
-    hostgroup = hostgroup.split("/")
-    if len(hostgroup) > HIERA_HOSTGROUP_DEPTH:
-        logging.warn("The lookup depth for hostgroup keys is limited to %d levels"
-            % HIERA_HOSTGROUP_DEPTH)
-        logging.warn("You might be leaving behind some data")
-    hiera_cmd.extend(["::encgroup_%d=%s" % (i,x) 
-        for i,x in enumerate(hostgroup)])
-    for factname in ['operatingsystemmajorrelease', 'osfamily', 'cern_hwvendor']:
-        append_fact(factname, facts, fqdn, hiera_cmd)
-    logging.debug("About to execute: %s" % hiera_cmd)
-    try:
-        process = subprocess.Popen(hiera_cmd, stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
-        stdout = process.communicate()[0]
-    except OSError, error:
-        raise AiToolsHieraError("Hiera call failed (%s)" % error)
-    if process.returncode == os.EX_OK:
-        return stdout
-    else:
-        raise AiToolsHieraError("Hiera returned non-zero exit code (%d)" %
-            process.returncode)
 
 def print_summary(args, fqdn):
     logging.info("Resolving key '%s' for host '%s'..." % (args.key, fqdn))
@@ -176,8 +128,11 @@ def main():
         logging.error("Couldn't fetch Foreman entry (%s)" % error)
         return 10
 
+    hiera = HieraClient(args.hiera_config, args.trace, args.hash, args.array)
+
     try:
-        sys.stdout.write(hiera_lookup(args, fqdn, environment, hostgroup, facts))
+        sys.stdout.write(hiera.lookupkey(args.key, fqdn, environment,
+            hostgroup, facts, args.module))
     except AiToolsHieraError, error:
         logging.error("Lookup failed (%s)" % error)
         return 20
