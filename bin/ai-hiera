@@ -6,6 +6,7 @@
 # Exit codes:
 #   0 all operations succeeded
 #  10 Foreman registration failed
+#  20 Hiera lookup failed
 
 import sys
 import logging
