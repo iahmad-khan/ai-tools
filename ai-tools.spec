@@ -4,7 +4,6 @@
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
 Version: 5.10
->>>>>>> version bump
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
