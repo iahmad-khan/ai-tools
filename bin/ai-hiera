@@ -35,6 +35,9 @@ def parse_cmdline_args():
     parser.add_argument('-v', '--verbose',
         action="store_true",
         help="Be chatty")
+    parser.add_argument('--node', type=str,
+        default=socket.getfqdn(),
+        help="Node to base the resolution of the environment on")
     ##
     ## Hiera options
     ##
@@ -63,12 +66,9 @@ def parse_cmdline_args():
     ##
     ## Positional
     ##
-    parser.add_argument('hostname', nargs=1, default=None,
-        help="Hostname (qualified or not)")
     parser.add_argument('key', nargs=1, default=None,
         help="Hiera key to be looked up")
     args = parser.parse_args()
-    args.hostname = args.hostname[0]
     args.key = args.key[0]
     # hash and array mutually exclusive
     return args
@@ -92,7 +92,7 @@ def main():
         logging.error("TGT not found or expired. Exiting...")
         return 4
 
-    fqdn = socket.getfqdn(args.hostname)
+    fqdn = socket.getfqdn(args.node)
 
     if not validate_fqdn(fqdn):
         logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
