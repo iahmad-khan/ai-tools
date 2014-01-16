@@ -35,7 +35,7 @@ def parse_cmdline_args():
     parser.add_argument('-v', '--verbose',
         action="store_true",
         help="Be chatty")
-    parser.add_argument('--node', type=str,
+    parser.add_argument('-n', '--node', type=str,
         default=socket.getfqdn(),
         help="Node to base the resolution of the environment on")
     ##
@@ -51,7 +51,7 @@ def parse_cmdline_args():
     parser.add_argument('-t', '--trace',
         action="store_true",
         help="Prints out how the hierarchy is traversed")
-    parser.add_argument('--module', type=str,
+    parser.add_argument('-m', '--module', type=str,
         default=None, help="Add also a module to the mix")
     parser.add_argument('--hiera-config', type=str,
         help="Hiera configuration file (default: %s)" % DEFAULT_HIERA_CONF_PATH,
