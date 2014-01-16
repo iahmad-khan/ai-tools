@@ -1,0 +1,115 @@
+.TH AI-HIERA "1" "January 2014" "ai-hiera" "User Commands"
+.SH NAME
+ai-hiera \- Command-line tool to do plain-text Hiera lookups
+
+.SH SYNOPSIS
+.B "ai-hiera"
+[OPTION]...
+\fIKEY\fR [KEY]...
+
+.SH DESCRIPTION
+ai-hiera is a Python command line tool wrapping PuppetLabs's Hiera
+CLI that adds extra logic to get all the necessary information to
+do the look-ups from external data sources (such as Foreman).
+
+.LP
+.I Prerequisites:
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+
+.SH OPTIONS
+The behaviour of the tool can be customized by the following
+parameters. 
+
+.LP
+.I Optional parameters:
+.TP
+.B -a, --array
+Do the lookup in array mode (the resolution won't stop after finding
+the first matching element).
+.TP
+.B -h, --help
+Display usage and exit.
+.TP
+.B -n, --node
+Node name to base the generation of all the resolution environment
+on (variables such as hostgroup, environment and facts). Non fully
+qualified names are allowed, but the FQDNfication depends on the
+local configuration of the resolver.
+(defaults to the FQDN where this command is executed).
+.TP
+.B -m, --module
+Simulates that the lookup is done in a context of the module passed
+via this parameter.
+.TP
+.B -s, --hash
+To the lookup in hash mode.
+
+.LP
+.I Other optional parameters:
+.TP
+The following parameters are for advanced users and debugging.
+.TP
+.B --hiera-config
+Hiera configuration file (defaults to "/etc/puppet/hiera.yaml")
+.TP
+.B --foreman-environment
+This option overrides the environment fetched from Foreman
+for the given node.
+.TP
+.B --foreman-hostgroup
+This option overrides the hostgroup fetched from Foreman
+for the given node.
+.TP
+.B --foreman-hostname
+FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
+.TP
+.B --foreman-port
+Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
+.TP
+.B --foreman-timeout
+Timeout (in seconds) for Foreman operations (default: 15).
+.TP
+.B -t, --trace
+Prints out how the hierarchy is traversed. Useful to know exactly
+where the value is coming from.
+.TP
+.B -v, --verbose
+Be chatty.
+
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 10
+Foreman call failed.
+.TP
+.B 20
+Hiera call failed.
+
+.SH EXAMPLES
+.TP
+.B Get key 'osrepos_repository_date' for node 'lxplus0108.cern.ch'
+ai-hiera --node lxplus0108.cern.ch osrepos_repository_date
+
+.TP
+.B Get key 'castor_conf' for node 'lxfsrb6207.cern.ch' in hash mode and show the full trace
+ai-hiera --hash --trace --node lxfsrb6207.cern.ch castor_conf
+
+.TP
+.B Get key 'lemonsensor_url' for node 'lxplus0108.cern.ch' with lemon module enabled.
+ai-hiera -n lxplus0108.cern.ch lemonsensor_url --module lemon
+
+.SH KNOWN BUGS
+None so far.
+
+.SH REPORTING BUGS
+If you experience any problem with this tool, please open a support 
+call on SNOW (Functional Element "Configuration Management"). 
+
+.SH SEE ALSO
+ai-pdb (1), ai-bs-vm (1), ai-kill-vm (1), ai-remote-power-control (1)
