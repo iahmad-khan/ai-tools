@@ -16,3 +16,11 @@ all:
 
 clean:
 	rm $(TARFILE)
+
+srpm:   all
+	rpmbuild -bs --define '_sourcedir $(PWD)' ${SPECFILE}
+
+rpm:   all
+	rpmbuild -ba --define '_sourcedir $(PWD)' ${SPECFILE}
+
+
