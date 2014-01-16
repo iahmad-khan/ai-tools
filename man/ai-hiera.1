@@ -112,6 +112,10 @@ ai-hiera -n lxplus0108.cern.ch lemon_4019 --module lemon
 .B Resolve keys 'sssd::min_id' and 'cvmfs_quota_limit' for node 'lxplus0108.cern.ch'.
 ai-hiera -n lxplus0108.cern.ch sssd::min_id cvmfs_quota_limit
 
+.TP
+.B Resolve key 'interactiveallowusers' for node 'lxfssm4403.cern.ch' in array mode.
+ai-hiera --array -n lxfssm4003.cern.ch interactiveallowusers
+
 .SH KNOWN BUGS
 None so far.
 
