@@ -12,6 +12,9 @@ ai-hiera is a Python command line tool wrapping PuppetLabs's Hiera
 CLI that adds extra logic to get all the necessary information to
 do the look-ups from external data sources (such as Foreman).
 
+If the key is not found in any of the available Hiera data sources
+the returned value is \fBnil\fR.
+
 .LP
 .I Prerequisites:
 .TP
@@ -42,11 +45,11 @@ local configuration of the resolver.
 (defaults to the FQDN where this command is executed).
 .TP
 .B -m, --module
-Simulates that the lookup is done in a context of the module passed
+Simulates that the lookup is done in the context of the module passed
 via this parameter.
 .TP
 .B -s, --hash
-To the lookup in hash mode.
+Do the lookup in hash mode.
 
 .LP
 .I Other optional parameters:
@@ -93,19 +96,19 @@ Hiera call failed.
 
 .SH EXAMPLES
 .TP
-.B Resolve key 'osrepos_repository_date' for node 'lxplus0108.cern.ch'
+.B Resolve key 'osrepos_repository_date' for node 'lxplus0108.cern.ch'.
 ai-hiera --node lxplus0108.cern.ch osrepos_repository_date
 
 .TP
-.B Resolve key 'castor_conf' for node 'lxfsrb6207.cern.ch' in hash mode and show the full trace
+.B Resolve key 'castor_conf' for node 'lxfsrb6207.cern.ch' in hash mode and show the full trace.
 ai-hiera --hash --trace --node lxfsrb6207.cern.ch castor_conf
 
 .TP
-.B Resolve key 'lemonsensor_url' for node 'lxplus0108.cern.ch' with lemon module enabled.
-ai-hiera -n lxplus0108.cern.ch lemonsensor_url --module lemon
+.B Resolve key 'lemon_4019' for node 'lxplus0108.cern.ch' with lemon module enabled.
+ai-hiera -n lxplus0108.cern.ch lemon_4019 --module lemon
 
 .TP
-.B Resolve keys 'sssd::min_id' and 'cvmfs_quota_limit' for node 'lxplus0108.cern.ch'
+.B Resolve keys 'sssd::min_id' and 'cvmfs_quota_limit' for node 'lxplus0108.cern.ch'.
 ai-hiera -n lxplus0108.cern.ch sssd::min_id cvmfs_quota_limit
 
 .SH KNOWN BUGS
