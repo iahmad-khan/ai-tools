@@ -85,7 +85,7 @@ def main():
     configure_logging(args)
 
     try:
-        krb_principal = verify_kerberos_environment()
+        verify_kerberos_environment()
     except AiToolsInitError, error:
         logging.error("TGT not found or expired. Exiting...")
         return 4
