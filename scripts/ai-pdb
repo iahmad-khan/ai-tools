@@ -16,15 +16,15 @@ except ImportError:
 
 def do_request(server, port, endpoint, show_url=False, data=False):
     url = "https://%s:%s/%s" % (server, port, endpoint)
-    if show_url:
-        print url
     opener = urllib2.build_opener()
     opener.add_handler(HTTPKerberosAuthHandler())
+    headers = {"Accept": "application/json"}
     if data:
-        headers = {"Content-type": "application/json"}
-    else:
-        headers = {"Accept": "application/json"}
+        url = url + "?" + data
+    if show_url:
+        print url
     request = urllib2.Request(url, headers=headers)
+        
     try:
         resp = opener.open(request)
         resp = resp.read()
@@ -64,7 +64,7 @@ def raw_main(pargs):
 
 
 def hg_main(pargs):
-    endpoint = "/v2/facts/hostgroup"
+    endpoint = "/v3/facts/hostgroup"
     if pargs.subgroups:
         op = "~"
         hg = os.path.join(pargs.hostgroup, "*")
@@ -97,7 +97,7 @@ def main():
     raw_parser.set_defaults(func=raw_main)
     hg_parser = subparsers.add_parser("hostgroup", help="get hostgroup members")
     hg_parser.add_argument("hostgroup", metavar="HG", help="hostgroup string")
-    hg_parser.add_argument("--subgroups", action="store_true", default="false", dest="subgroups",
+    hg_parser.add_argument("--subgroups", action="store_true", default=False, dest="subgroups",
                             help="return nodes from subgroups")
     hg_parser.set_defaults(func=hg_main)
     pargs = parser.parse_args()
