@@ -41,10 +41,11 @@ def parse_cmdline_args():
     ##
     ## Hiera options
     ##
-    parser.add_argument('-a', '--array',
+    lookup_mode = parser.add_mutually_exclusive_group()
+    lookup_mode.add_argument('-a', '--array',
         action="store_true",
         help="Do the lookup in array mode")
-    parser.add_argument('-s', '--hash',
+    lookup_mode.add_argument('-s', '--hash',
         action="store_true",
         help="Do the lookup in hash mode")
     parser.add_argument('-t', '--trace',
@@ -69,7 +70,6 @@ def parse_cmdline_args():
     parser.add_argument('key', nargs='+', default=None,
         help="Hiera keys to be looked up")
     args = parser.parse_args()
-    # hash and array mutually exclusive
     return args
 
 def print_summary(args, fqdn):
