@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.8
+Version: 5.9
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -50,7 +50,7 @@ install -m 644 man/ai-pdb.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-remote-power-control.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/bash_completion.d
-install -m 0644 -p addons/bash_completion.d/ai-kill-vm $RPM_BUILD_ROOT/%{_sysconfdir}/bash_completion.d
+install -m 0644 -p addons/bash_completion.d/ai-tools $RPM_BUILD_ROOT/%{_sysconfdir}/bash_completion.d
 
 
 %clean
@@ -65,6 +65,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Jan 16 2014 Steve Traylen <steve.traylen@cern.ch> - 5.9-0
+- Add bash completion for ai-remote-power-control
+
 * Tue Jan 14 2014 Steve Traylen <steve.traylen@cern.ch> - 5.8-0
 - Add bash completion for ai-kill-vm
 

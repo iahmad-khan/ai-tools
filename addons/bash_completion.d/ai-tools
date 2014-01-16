@@ -7,3 +7,4 @@ _python_argcomplete() {
     fi
 }
 complete -o default -F _python_argcomplete ai-kill-vm
+complete -o default -F _python_argcomplete ai-remote-power-control

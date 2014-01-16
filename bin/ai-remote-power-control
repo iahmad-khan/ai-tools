@@ -15,6 +15,7 @@ import sys
 import os
 import re
 import argparse
+import argcomplete
 import tempfile
 import socket
 import logging
@@ -31,6 +32,9 @@ from aitools.common import add_common_foreman_args
 from aitools.foreman import ForemanClient
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
+
+from aitools.completer import ForemanCompleter
+from argcomplete.completers import ChoicesCompleter
 
 # Reset not available as the smart proxy does not support it yet
 VALID_OPERATIONS=("on", "off", "soft", "cycle", "status")
@@ -105,9 +109,12 @@ def parse_cmdline_args():
         help="Number of threads (default: #cores) (max: #cores*2)",
         default=multiprocessing.cpu_count())
     parser.add_argument('operation', nargs=1,
-        help="Power operation to perform (%s)" % ", ".join(VALID_OPERATIONS))
+        help="Power operation to perform (%s)" % ", ".join(VALID_OPERATIONS)
+        ).completer = ChoicesCompleter(VALID_OPERATIONS)
     parser.add_argument('hostname', nargs='+',
-        help="One of more hostnames (qualified or not) separated by comma or blank")
+        help="One of more hostnames (qualified or not) separated by comma or blank"
+        ).completer = ForemanCompleter()
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
     args.operation = args.operation[0]
     if args.operation not in VALID_OPERATIONS:
