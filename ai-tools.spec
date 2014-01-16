@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.10
+Version: 5.11
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -65,6 +65,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Jan 16 2014 Steve Traylen <steve.traylen@cern.ch> - 5.11-0
+- Add bash completion for ai-bs-vm.
+
 * Thu Jan 16 2014 Ben Jones <ben.dylan.jones@cern.ch> - 5.10-0
 - ai-pdb fixes for hostgroup and detailed queries
 

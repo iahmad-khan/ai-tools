@@ -19,6 +19,7 @@ import os
 import sys
 import logging
 import argparse
+import argcomplete
 import re
 
 from aitools.foreman import ForemanClient
@@ -40,6 +41,9 @@ from aitools.common import append_domain
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
+
+from aitools.completer import ForemanCompleter
+from aitools.completer import NovaCompleter
 
 DEFAULT_OPENSTACK_FLAVOR="m1.small"
 DEFAULT_OPENSTACK_SECUTIRYGROUPS="default"
@@ -109,16 +113,20 @@ def parse_cmdline_args():
         default = DEFAULT_NOVA_TIMEOUT)
     parser.add_argument('--nova-sshkey', type=str,
         help="OpenStack SSH key name",
-        default=os.environ.get('AIBS_SSHKEY_NAME', None))
+        default=os.environ.get('AIBS_SSHKEY_NAME', None)
+    ).completer = NovaCompleter(cache='keypair')
     parser.add_argument('--nova-availabilityzone', type=str,
         help="OpenStack availability zone",
-        default=os.environ.get('AIBS_VMAVAILZONE_NAME', None))
+        default=os.environ.get('AIBS_VMAVAILZONE_NAME', None)
+    ).completer = NovaCompleter('availabilityzone')
     parser.add_argument('--nova-flavor', type=str,
         help="Openstack flavor (default: %s)" % DEFAULT_OPENSTACK_FLAVOR,
-        default=os.environ.get('AIBS_VMFLAVOR_NAME', DEFAULT_OPENSTACK_FLAVOR))
+        default=os.environ.get('AIBS_VMFLAVOR_NAME', DEFAULT_OPENSTACK_FLAVOR)
+    ).completer = NovaCompleter(cache='flavor')
     parser.add_argument('-i', '--nova-image', type=str,
         help="OpenStack image name",
-        default=os.environ.get('AIBS_VMIMAGE_NAME', None))
+        default=os.environ.get('AIBS_VMIMAGE_NAME', None)
+    ).completer = NovaCompleter(cache='image')
     parser.add_argument('--nova-parameter', type=str,
         help="Openstack metaparameter", action='append', default=[])
     ##
@@ -129,17 +137,21 @@ def parse_cmdline_args():
     add_common_foreman_args(parser)
     parser.add_argument('--foreman-environment', type=str,
         help="Foreman environment (default: %s)" % DEFAULT_FOREMAN_ENVIRONMENT,
-        default=os.environ.get('AIBS_ENVIRONMENT_NAME', DEFAULT_FOREMAN_ENVIRONMENT))
+        default=os.environ.get('AIBS_ENVIRONMENT_NAME', DEFAULT_FOREMAN_ENVIRONMENT)
+    ).completer = ForemanCompleter(model='environments')
     parser.add_argument('-g', '--foreman-hostgroup', type=str,
         help="Foreman hostgroup",
-        default=os.environ.get('AIBS_HOSTGROUP_NAME', None))
+        default=os.environ.get('AIBS_HOSTGROUP_NAME', None)
+        ).completer = ForemanCompleter(model='hostgroups',item='label')
     parser.add_argument('--foreman-parameter', type=str,
         help="Foreman parameter", action='append', default=[])
     ##
     ## Positional
     ##
     parser.add_argument('hostname', nargs='?', default=None,
-        help="Hostname (qualified or not)")
+        help="Hostname (qualified or not)"
+        ).completer = ForemanCompleter()
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
     # Most of these checks will be removed when support for
     # environment variables is dropped.
