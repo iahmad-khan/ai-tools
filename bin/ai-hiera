@@ -73,12 +73,11 @@ def parse_cmdline_args():
     return args
 
 def print_summary(args, fqdn):
-    logging.info("Resolving key '%s' for host '%s'..." % (args.key, fqdn))
+    logging.info("Starting resolution in the context of host '%s'..." % fqdn)
     if args.foreman_hostgroup:
         logging.info("Foreman hostgroup forced to: %s" % args.foreman_hostgroup)
     if args.foreman_environment:
         logging.info("Foreman environment forced to: %s" % args.foreman_environment)
-    logging.info("With the following environment:")
 
 def main():
     """Application entrypoint"""
