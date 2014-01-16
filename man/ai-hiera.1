@@ -93,15 +93,15 @@ Hiera call failed.
 
 .SH EXAMPLES
 .TP
-.B Get key 'osrepos_repository_date' for node 'lxplus0108.cern.ch'
+.B Resolve key 'osrepos_repository_date' for node 'lxplus0108.cern.ch'
 ai-hiera --node lxplus0108.cern.ch osrepos_repository_date
 
 .TP
-.B Get key 'castor_conf' for node 'lxfsrb6207.cern.ch' in hash mode and show the full trace
+.B Resolve key 'castor_conf' for node 'lxfsrb6207.cern.ch' in hash mode and show the full trace
 ai-hiera --hash --trace --node lxfsrb6207.cern.ch castor_conf
 
 .TP
-.B Get key 'lemonsensor_url' for node 'lxplus0108.cern.ch' with lemon module enabled.
+.B Resolve key 'lemonsensor_url' for node 'lxplus0108.cern.ch' with lemon module enabled.
 ai-hiera -n lxplus0108.cern.ch lemonsensor_url --module lemon
 
 .SH KNOWN BUGS
