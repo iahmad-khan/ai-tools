@@ -7,7 +7,6 @@
 #   0 all operations succeeded
 #  10 Foreman registration failed
 
-import os
 import sys
 import logging
 import argparse
