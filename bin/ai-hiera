@@ -11,7 +11,11 @@
 import sys
 import logging
 import argparse
+import argcomplete
 import socket
+
+
+from argcomplete.completers import FilesCompleter
 
 from aitools.foreman import ForemanClient
 from aitools.hiera import HieraClient
@@ -26,6 +30,8 @@ from aitools.common import validate_fqdn
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsHieraError
 
+from aitools.completer import ForemanCompleter
+
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
     parser = argparse.ArgumentParser()
@@ -37,7 +43,9 @@ def parse_cmdline_args():
         help="Be chatty")
     parser.add_argument('-n', '--node', type=str,
         default=socket.getfqdn(),
-        help="Node to base the resolution of the environment on")
+        help="Node to base the resolution of the environment on"
+        ).completer = ForemanCompleter()
+
     ##
     ## Hiera options
     ##
@@ -55,20 +63,25 @@ def parse_cmdline_args():
         default=None, help="Add also a module to the mix")
     parser.add_argument('--hiera-config', type=str,
         help="Hiera configuration file (default: %s)" % DEFAULT_HIERA_CONF_PATH,
-        default=DEFAULT_HIERA_CONF_PATH)
+        default=DEFAULT_HIERA_CONF_PATH
+        ).completer = FilesCompleter(directories=False)
     ##
     ## Foreman options
     ##
     add_common_foreman_args(parser)
     parser.add_argument('--foreman-environment', type=str,
-        default=None, help="Override Foreman environment")
+        default=None, help="Override Foreman environment"
+        ).completer = ForemanCompleter(model='environments')
     parser.add_argument('--foreman-hostgroup', type=str,
-        default=None, help="Override Foreman hostgroup")
+        default=None, help="Override Foreman hostgroup"
+        ).completer = ForemanCompleter(model='hostgroups',item='label')
+
     ##
     ## Positional
     ##
     parser.add_argument('key', nargs='+', default=None,
         help="Hiera keys to be looked up")
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
     return args
 

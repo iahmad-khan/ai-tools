@@ -25,7 +25,7 @@ class ForemanCompleter(object):
 
     def __call__(self, prefix, parsed_args, **kwargs):
         foreman = ForemanClient(parsed_args.foreman_hostname, parsed_args.foreman_port,
-            parsed_args.foreman_timeout, parsed_args.dryrun)
+            parsed_args.foreman_timeout, dryrun=True)
         if prefix == '':
            query = ''
         else:
