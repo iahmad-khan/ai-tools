@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.12
+Version: 5.13
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -66,6 +66,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Jan 20 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.13-0
+- **** TO BE RELEASED: ADD MORE ENTRIES HERE ***
+- [ai-bs-vm] Use aiX-qa if --foreman-environment qa
+
 * Fri Jan 17 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.12-0
 - [ai-hiera] First release.
 
