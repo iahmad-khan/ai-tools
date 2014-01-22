@@ -68,6 +68,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %changelog
 * Mon Jan 20 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.13-0
 - **** TO BE RELEASED: ADD MORE ENTRIES HERE ***
+- [ai-bs-vm/ai-kill-vm] Mask UserWarning (OS-192 is stuck)
 - [ai-bs-vm] Use aiX-qa if --foreman-environment qa
 
 * Fri Jan 17 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.12-0
