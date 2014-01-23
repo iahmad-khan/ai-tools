@@ -16,6 +16,10 @@ import iso8601
 import datetime
 import pytz
 import humanize
+import teigi.rogerclient
+from aitools.common import fqdnify
+
+from ConfigParser import SafeConfigParser
 
 def do_request(server, port, endpoint, show_url=False, data=False):
     url = "https://%s:%s/%s" % (server, port, endpoint)
@@ -39,7 +43,7 @@ def do_request(server, port, endpoint, show_url=False, data=False):
         else:
             if e.code == 404:
                 # we're expecting things to be missing
-                return False
+                return None
             sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
             return None
     except urllib2.URLError, e:
@@ -49,24 +53,93 @@ def do_request(server, port, endpoint, show_url=False, data=False):
     j = json.loads(resp)
     return j
 
+def location_name(lan_dblocation):
+    room = lan_dblocation.split(' ')[0]
+    if room == '0513':
+        return "(Meyrin CC)"
+    elif room == '0613':
+        return "(Wigner CC)"
+    elif room == 'XXX':
+        return '(XXX)'
+    else:
+        return ""
+
 
 
 #    print json.dumps(res, sort_keys=True, indent=5, separators=(',', ': '))
 
+def get_roger_client(pargs, host):
+    config = SafeConfigParser()
+    server = None
+    port = None
+    confloc = "/etc/roger.conf" #TODO: pargs.configfile
+    use_kerberos = True
+    if not confloc:
+        confloc = os.environ.get("ROGERCONF", "/etc/roger.conf")
+    if confloc and os.path.isfile(confloc):
+        config.read(confloc)
+        server = config.get("client", "server")
+        if use_kerberos:
+            port = config.get("client", "krbport")
+        else:
+            port = config.get("client", "sslport")
+    # cli options win
+    #if not pargs.server:
+    pargs.server = server
+    #if not pargs.port:
+    pargs.port = port
+    if not (pargs.server and pargs.port):
+        sys.stderr.write("need server and port defined")  # TODO:  ab it more specific please
+        sys.exit(3)
+    roger = teigi.rogerclient.RogerClient(pargs.server, int(pargs.port))
+    url = roger.state_url(host)
+    try:
+        answer = roger.open_url(url)
+    except urllib2.HTTPError, e:
+        if e.code == 401:
+            sys.stderr.write("Not authorized to view '%s'" % host)
+            sys.exit(3)
+        elif e.code == 404:
+            return None
+    except urllib2.URLError, e:
+        sys.stderr.write("Cannot open url '%s': '%s'" % (url, e))
+        sys.exit(3)
+    return answer
+
 
 def host_main(pargs):
-    hostname = pargs.hostname
+    hostname = fqdnify(pargs.hostname)
     host_endpoint = "/v3/nodes/%s" % hostname
 
     host_info = do_request(pargs.server, pargs.port, host_endpoint, pargs.show_urls)
-    deactivated = host_info['catalog_timestamp']
+    if not host_info:
+        sys.stderr.write('Host not found in PuppetDB!')
+        sys.exit(1)
+    deactivated = host_info['deactivated']
+    if deactivated:
+        sys.stderr.write("This host was deactivated in PupeptDB at %s (%s)" % (deactivated,
+               pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['deactivated'])))
+        print "Either the host was deleted or it hasn't been running Puppet for some time."
+        sys.exit(2)
 
-    facts_endpoint = "/v3/nodes/%s/facts" % pargs.hostname
+    facts_endpoint = "/v3/nodes/%s/facts" % hostname
     facts = do_request(pargs.server, pargs.port, facts_endpoint, pargs.show_urls)
     facts = dict([ (f['name'], f['value']) for f in facts ])
 
-    for f in facts:
-        print "%s : %s" % (f, facts[f])
+    json_landbsets = do_request(pargs.server, pargs.port,
+                "/v3/nodes/%s/resources/Cernfw::Landbset" % hostname, pargs.show_urls)
+    landbsets = ', '.join([ j['title'] for j in json_landbsets ]) or '-'
+
+    json_lbaliases = do_request(pargs.server, pargs.port,
+                "/v3/nodes/%s/resources/Lbd::Client" % hostname, pargs.show_urls)
+    lbaliases = ', '.join([ j['parameters']['lbalias'] for j in json_lbaliases ]) or '-'
+
+    roger = get_roger_client(pargs, hostname)
+
+    #print json.dumps(roger, sort_keys=True, indent=5, separators=(',', ': '))
+
+
+
 
     ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['catalog_timestamp'])
 
@@ -74,30 +147,43 @@ def host_main(pargs):
         vtype = "virtual"
     else:
         vtype = "physical"
-    print "Hostname: \t\t%s   (%s, uptime: %s)" % (hostname, vtype, facts['uptime'])
+    print "Hostname: \t\t%s   (uptime: %s)" % (hostname, facts['uptime'])
     disks = len(facts['disks'].split(","))
-    print "   (%s cores, %s memory, %s swap, %i disks)" % (facts['processorcount'],
+    print "Hardware:\t\t%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
                                                            facts['memorysize'], facts['swapsize'], disks )
     print "Hostgroup: \t\t%s" % facts['hostgroup']
     print "Responsible: \t%s" % facts['landb_responsible_email']
-    print "OS: \t\t\t%s %s %s" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'])
-    print "Kernel: \t\t%s" % (facts['configured_kernel'])
+    print "OS: \t\t\t%s %s %s (%s)" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'], facts['configured_kernel'])
     if facts['is_virtual'] == 'true':
         print "VM Flavour: \t%s" % facts['ec2_instance_type']
+        print "Avail zone: \t%s" % facts['ec2_placement_availability_zone']
     else:
-        print "LanDB Location:\t%s" % (facts['landb_location'])
+        location = location_name(facts['landb_location'])
+        print "LanDB Location:\t%s %s" % (facts['landb_location'], location)
 
-    facts.setdefault('landbset', 'none')
-    print "LANDBsets:\t\t%s" % facts['landbset'] #todo: catalog
-    print "LB aliases: " % facts['lbaliases'] # todo: catalog
+    print "LANDBsets:\t\t%s" % landbsets
+    print "LB aliases: \t%s" % lbaliases
     print "IP:\t\t\t\t%s (%s)" % (facts['ipaddress'], facts['landb_network_domain'])
 
+    if roger:
+        print "App state:\t\t%s" % roger['appstate']
+        rh = roger['hw_alarmed'] and 'Y' or 'N'
+        ro = roger['os_alarmed'] and 'Y' or 'N'
+        ra = roger['app_alarmed'] and 'Y' or 'N'
+        rn = roger['nc_alarmed'] and 'Y' or 'N'
+        print "Alarm state:\tHardware(%s) OS(%s) App(%s) NoContact(%s)" %(rh, ro, ra, rn)
+    else:
+        print "App state:\t\t[not yet registered in Roger]"
+        print "Alarm state:\t[not yet registered in Roger]"
+
+
     if ago > datetime.timedelta(hours=24):
-        pdbsync = "out of sync"
+        pdbsync = ""
     else:
         pdbsync = "synced ok"
     print
-    print "Last PDB report: \t%s (%s)" % ( humanize.naturaltime(ago), pdbsync )
+    print "Last Puppet report: %s (%s)" % ( humanize.naturaltime(ago), pdbsync )
+
 
 def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
