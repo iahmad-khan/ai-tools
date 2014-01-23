@@ -1,23 +1,22 @@
 #!/usr/bin/python
 
-from argparse import ArgumentParser
-from argparse import ArgumentError
-import os
-import sys
-import re
-from urllib import urlencode
-import urllib2
-from urllib2_kerberos import HTTPKerberosAuthHandler
 try:
     import simplejson as json
 except ImportError:
     import json
+import os
+import sys
+import urllib2
 import iso8601
 import datetime
 import pytz
 import humanize
 import teigi.rogerclient
+
+from argparse import ArgumentParser
 from aitools.common import fqdnify
+from aitools.common import add_common_puppetdb_args
+from urllib2_kerberos import HTTPKerberosAuthHandler
 
 from ConfigParser import SafeConfigParser
 
@@ -60,13 +59,9 @@ def location_name(lan_dblocation):
     elif room == '0613':
         return "(Wigner CC)"
     elif room == 'XXX':
-        return '(XXX)'
+        return '(???)'
     else:
         return ""
-
-
-
-#    print json.dumps(res, sort_keys=True, indent=5, separators=(',', ': '))
 
 def get_roger_client(pargs, host):
     config = SafeConfigParser()
@@ -83,15 +78,12 @@ def get_roger_client(pargs, host):
             port = config.get("client", "krbport")
         else:
             port = config.get("client", "sslport")
-    # cli options win
-    #if not pargs.server:
-    pargs.server = server
-    #if not pargs.port:
-    pargs.port = port
-    if not (pargs.server and pargs.port):
+    pargs.pdb_hostname = server
+    pargs.pdb_port = port
+    if not (pargs.pdb_hostname and pargs.pdb_port):
         sys.stderr.write("need server and port defined")  # TODO:  ab it more specific please
         sys.exit(3)
-    roger = teigi.rogerclient.RogerClient(pargs.server, int(pargs.port))
+    roger = teigi.rogerclient.RogerClient(pargs.pdb_hostname, int(pargs.pdb_port))
     url = roger.state_url(host)
     try:
         answer = roger.open_url(url)
@@ -111,7 +103,7 @@ def host_main(pargs):
     hostname = fqdnify(pargs.hostname)
     host_endpoint = "/v3/nodes/%s" % hostname
 
-    host_info = do_request(pargs.server, pargs.port, host_endpoint, pargs.show_urls)
+    host_info = do_request(pargs.pdb_hostname, pargs.pdb_port, host_endpoint, pargs.show_urls)
     if not host_info:
         sys.stderr.write('Host not found in PuppetDB!')
         sys.exit(1)
@@ -123,23 +115,18 @@ def host_main(pargs):
         sys.exit(2)
 
     facts_endpoint = "/v3/nodes/%s/facts" % hostname
-    facts = do_request(pargs.server, pargs.port, facts_endpoint, pargs.show_urls)
+    facts = do_request(pargs.pdb_hostname, pargs.pdb_port, facts_endpoint, pargs.show_urls)
     facts = dict([ (f['name'], f['value']) for f in facts ])
 
-    json_landbsets = do_request(pargs.server, pargs.port,
+    json_landbsets = do_request(pargs.pdb_hostname, pargs.pdb_port,
                 "/v3/nodes/%s/resources/Cernfw::Landbset" % hostname, pargs.show_urls)
     landbsets = ', '.join([ j['title'] for j in json_landbsets ]) or '-'
 
-    json_lbaliases = do_request(pargs.server, pargs.port,
+    json_lbaliases = do_request(pargs.pdb_hostname, pargs.pdb_port,
                 "/v3/nodes/%s/resources/Lbd::Client" % hostname, pargs.show_urls)
     lbaliases = ', '.join([ j['parameters']['lbalias'] for j in json_lbaliases ]) or '-'
 
     roger = get_roger_client(pargs, hostname)
-
-    #print json.dumps(roger, sort_keys=True, indent=5, separators=(',', ': '))
-
-
-
 
     ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['catalog_timestamp'])
 
@@ -176,21 +163,13 @@ def host_main(pargs):
         print "App state:\t\t[not yet registered in Roger]"
         print "Alarm state:\t[not yet registered in Roger]"
 
-
-    if ago > datetime.timedelta(hours=24):
-        pdbsync = ""
-    else:
-        pdbsync = "synced ok"
     print
-    print "Last Puppet report: %s (%s)" % ( humanize.naturaltime(ago), pdbsync )
+    print "Last Puppet report: %s" % ( humanize.naturaltime(ago) )
 
 
 def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
-    parser.add_argument("-s", "--server", metavar="HOSTNAME", dest="server",
-                        default="judy.cern.ch", help="server running puppetdb proxy")
-    parser.add_argument("-p", "--port", metavar="PORT", dest="port", default="9081",
-                        help="port for puppetdb proxy")
+    add_common_puppetdb_args(parser)
     parser.add_argument("--show_url", action="store_true", default=False, dest="show_urls",
                         help="show REST urls")
     parser.add_argument("hostname", metavar="HOST", help="hostname to dump")
