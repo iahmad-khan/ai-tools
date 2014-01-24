@@ -18,6 +18,7 @@ import argcomplete
 from argparse import ArgumentParser
 from aitools.common import fqdnify
 from aitools.common import add_common_puppetdb_args
+from aitools.common import add_common_foreman_args
 from urllib2_kerberos import HTTPKerberosAuthHandler
 from aitools.completer import ForemanCompleter
 from aitools.completer import NovaCompleter
@@ -217,6 +218,7 @@ def host_main(pargs):
 def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
     add_common_puppetdb_args(parser)
+    add_common_foreman_args(parser)
     parser.add_argument("--show_url", action="store_true", default=False, dest="show_urls",
                         help="show REST urls")
     parser.add_argument("--json", action="store_true", default=False, dest="print_json",
