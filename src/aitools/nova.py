@@ -5,9 +5,6 @@ import re
 import logging
 import novaclient.exceptions
 import requests
-# Ugly hack, but seems that OS-192 is being totally ignored.
-import warnings
-warnings.filterwarnings('ignore', '', UserWarning, "novaclient.client")
 from novaclient.v1_1 import client
 
 from aitools.errors import AiToolsNovaError
