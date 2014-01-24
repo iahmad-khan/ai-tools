@@ -13,11 +13,14 @@ import pytz
 import humanize
 import teigi.rogerclient
 import prettytable
+import argcomplete
 
 from argparse import ArgumentParser
 from aitools.common import fqdnify
 from aitools.common import add_common_puppetdb_args
 from urllib2_kerberos import HTTPKerberosAuthHandler
+from aitools.completer import ForemanCompleter
+from aitools.completer import NovaCompleter
 
 from ConfigParser import SafeConfigParser
 
@@ -218,7 +221,8 @@ def main():
                         help="show REST urls")
     parser.add_argument("--json", action="store_true", default=False, dest="print_json",
                         help="output in JSON format")
-    parser.add_argument("hostname", metavar="HOST", help="hostname to dump")
+    parser.add_argument("hostname", metavar="HOST", help="hostname to dump").completer = ForemanCompleter()
+    argcomplete.autocomplete(parser)
     parser.set_defaults(func=host_main)
 
     pargs = parser.parse_args()

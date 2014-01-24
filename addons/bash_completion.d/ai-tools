@@ -10,3 +10,5 @@ complete -o default -F _python_argcomplete ai-kill-vm
 complete -o default -F _python_argcomplete ai-remote-power-control
 complete -o default -F _python_argcomplete ai-hiera
 complete -o default -F _python_argcomplete ai-bs-vm
+complete -o default -F _python_argcomplete ai-dump
+
