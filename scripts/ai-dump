@@ -106,13 +106,13 @@ def host_main(pargs):
 
     host_info = do_request(pargs.pdb_hostname, pargs.pdb_port, host_endpoint, pargs.show_urls)
     if not host_info:
-        sys.stderr.write('Host not found in PuppetDB!')
+        sys.stderr.write('Host not found in PuppetDB!\n')
         sys.exit(1)
     deactivated = host_info['deactivated']
     if deactivated:
-        sys.stderr.write("This host was deactivated in PupeptDB at %s (%s)" % (deactivated,
+        sys.stderr.write("This host was deactivated in PupeptDB at %s (%s)\n" % (deactivated,
                pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['deactivated'])))
-        print "Either the host was deleted or it hasn't been running Puppet for some time."
+        sys.stderr.write("Either the host was deleted or it hasn't been running Puppet for some time.\n")
         sys.exit(2)
 
     facts_endpoint = "/v3/nodes/%s/facts" % hostname
