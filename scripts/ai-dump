@@ -136,52 +136,88 @@ def host_main(pargs):
     else:
         vtype = "physical"
 
-    t = prettytable.PrettyTable(["Item","Value"])
-    t.add_row(["Hostname:", "%s   (uptime: %s)" % (hostname, facts['uptime'])])
     disks = len(facts['disks'].split(","))
-    t.add_row(["Hardware:", "%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
-                                                           facts['memorysize'], facts['swapsize'], disks )] )
-    t.add_row(["Hostgroup:", facts['hostgroup']])
-    t.add_row(["Responsible:", facts['landb_responsible_email']])
-    t.add_row(["OS:", "%s %s %s (%s)" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'], facts['configured_kernel'])])
-    if facts['is_virtual'] == 'true':
-        t.add_row(["VM Flavour:", facts['ec2_instance_type']])
-        t.add_row(["Avail zone:", facts['ec2_placement_availability_zone']])
+
+    if pargs.print_json:
+        # Dump as JSON
+
+        hardware = {"cores": facts['processorcount'], "memory": facts['memorysize'], "swap": facts['swapsize'],
+                    "disks": disks, "type": vtype}
+        jj = {  "hostname": hostname, "hardware": hardware, "hostgroup": facts['hostgroup'],
+                "responsible": facts['landb_responsible_email'], "os": facts['operatingsystem'],
+                "lsbdistrelease": facts['lsbdistrelease'], "arch": facts['architecture'],
+                "kernel": facts['configured_kernel'], "landbsets": landbsets, "lbaliases": lbaliases,
+                "ipaddress": facts['ipaddress'], "ipdomain": facts['landb_network_domain'],
+                "uptime": facts['uptime'], "lastreport": host_info['catalog_timestamp'],
+                "aidump_recordversion": 1}
+
+        if roger:
+            rogga = {"appstate": roger['appstate'],
+                     "hw_alarmed": roger['hw_alarmed'],
+                     "os_alarmed": roger['os_alarmed'],
+                     "app_alarmed": roger['app_alarmed'],
+                     "nc_alarmed": roger['nc_alarmed'] }
+            jj.update(rogga)
+
+        if facts['is_virtual'] == 'true':
+            jj['flavour'] = facts['ec2_instance_type']
+            jj['availability_zone'] = facts['ec2_placement_availability_zone']
+        else:
+            jj['landb_location'] = facts['landb_location']
+            jj['location_name'] = location_name(facts['landb_location'])
+
+        print json.dumps([jj], sort_keys=True,
+                             indent=4, separators=(',', ': '))
+
     else:
-        location = location_name(facts['landb_location'])
-        t.add_row(["LanDB Location:", "%s %s" % (facts['landb_location'], location)])
+        # Text output
 
-    t.add_row(["LANDBsets:", landbsets])
-    t.add_row(["LB aliases:", lbaliases])
-    t.add_row(["IP:", "%s (%s)" % (facts['ipaddress'], facts['landb_network_domain'])])
+        t = prettytable.PrettyTable(["Item","Value"])
+        t.add_row(["Hostname:", "%s   (uptime: %s)" % (hostname, facts['uptime'])])
+        t.add_row(["Hardware:", "%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
+                                                                                facts['memorysize'], facts['swapsize'], disks )] )
+        t.add_row(["Hostgroup:", facts['hostgroup']])
+        t.add_row(["Responsible:", facts['landb_responsible_email']])
+        t.add_row(["OS:", "%s %s %s (%s)" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'], facts['configured_kernel'])])
+        if facts['is_virtual'] == 'true':
+            t.add_row(["VM Flavour:", facts['ec2_instance_type']])
+            t.add_row(["Avail zone:", facts['ec2_placement_availability_zone']])
+        else:
+            location = location_name(facts['landb_location'])
+            t.add_row(["LanDB Location:", "%s %s" % (facts['landb_location'], location)])
 
-    if roger:
-        t.add_row(["App state:", roger['appstate']])
-        rh = roger['hw_alarmed'] and 'Y' or 'N'
-        ro = roger['os_alarmed'] and 'Y' or 'N'
-        ra = roger['app_alarmed'] and 'Y' or 'N'
-        rn = roger['nc_alarmed'] and 'Y' or 'N'
-        t.add_row(["Alarm state:", "Hardware(%s) OS(%s) App(%s) NoContact(%s)" %(rh, ro, ra, rn)])
-    else:
-        t.add_row(["App state:", "[not yet registered in Roger]"])
-        t.add_row(["Alarm state:", "[not yet registered in Roger]"])
+        t.add_row(["LANDBsets:", landbsets])
+        t.add_row(["LB aliases:", lbaliases])
+        t.add_row(["IP:", "%s (%s)" % (facts['ipaddress'], facts['landb_network_domain'])])
 
-    t.add_row(["",""])
-    t.add_row(["Last Puppet report:", humanize.naturaltime(ago)])
+        if roger:
+            t.add_row(["App state:", roger['appstate']])
+            rh = roger['hw_alarmed'] and 'Y' or 'N'
+            ro = roger['os_alarmed'] and 'Y' or 'N'
+            ra = roger['app_alarmed'] and 'Y' or 'N'
+            rn = roger['nc_alarmed'] and 'Y' or 'N'
+            t.add_row(["Alarm state:", "Hardware(%s) OS(%s) App(%s) NoContact(%s)" %(rh, ro, ra, rn)])
+        else:
+            t.add_row(["App state:", "[not yet registered in Roger]"])
+            t.add_row(["Alarm state:", "[not yet registered in Roger]"])
 
-    t.border=True
-    t.header=False
-    t.align["Item"] = 'r'
-    t.align["Value"] = 'l'
+        t.add_row(["",""])
+        t.add_row(["Last Puppet report:", humanize.naturaltime(ago)])
 
-    print t
+        t.border=True
+        t.header=False
+        t.align["Item"] = 'r'
+        t.align["Value"] = 'l'
 
+        print t
 
 def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
     add_common_puppetdb_args(parser)
     parser.add_argument("--show_url", action="store_true", default=False, dest="show_urls",
                         help="show REST urls")
+    parser.add_argument("--json", action="store_true", default=False, dest="print_json",
+                        help="output in JSON format")
     parser.add_argument("hostname", metavar="HOST", help="hostname to dump")
     parser.set_defaults(func=host_main)
 
