@@ -12,6 +12,7 @@ import datetime
 import pytz
 import humanize
 import teigi.rogerclient
+import prettytable
 
 from argparse import ArgumentParser
 from aitools.common import fqdnify
@@ -134,37 +135,46 @@ def host_main(pargs):
         vtype = "virtual"
     else:
         vtype = "physical"
-    print "Hostname: \t\t%s   (uptime: %s)" % (hostname, facts['uptime'])
+
+    t = prettytable.PrettyTable(["Item","Value"])
+    t.add_row(["Hostname:", "%s   (uptime: %s)" % (hostname, facts['uptime'])])
     disks = len(facts['disks'].split(","))
-    print "Hardware:\t\t%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
-                                                           facts['memorysize'], facts['swapsize'], disks )
-    print "Hostgroup: \t\t%s" % facts['hostgroup']
-    print "Responsible: \t%s" % facts['landb_responsible_email']
-    print "OS: \t\t\t%s %s %s (%s)" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'], facts['configured_kernel'])
+    t.add_row(["Hardware:", "%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
+                                                           facts['memorysize'], facts['swapsize'], disks )] )
+    t.add_row(["Hostgroup:", facts['hostgroup']])
+    t.add_row(["Responsible:", facts['landb_responsible_email']])
+    t.add_row(["OS:", "%s %s %s (%s)" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'], facts['configured_kernel'])])
     if facts['is_virtual'] == 'true':
-        print "VM Flavour: \t%s" % facts['ec2_instance_type']
-        print "Avail zone: \t%s" % facts['ec2_placement_availability_zone']
+        t.add_row(["VM Flavour:", facts['ec2_instance_type']])
+        t.add_row(["Avail zone:", facts['ec2_placement_availability_zone']])
     else:
         location = location_name(facts['landb_location'])
-        print "LanDB Location:\t%s %s" % (facts['landb_location'], location)
+        t.add_row(["LanDB Location:", "%s %s" % (facts['landb_location'], location)])
 
-    print "LANDBsets:\t\t%s" % landbsets
-    print "LB aliases: \t%s" % lbaliases
-    print "IP:\t\t\t\t%s (%s)" % (facts['ipaddress'], facts['landb_network_domain'])
+    t.add_row(["LANDBsets:", landbsets])
+    t.add_row(["LB aliases:", lbaliases])
+    t.add_row(["IP:", "%s (%s)" % (facts['ipaddress'], facts['landb_network_domain'])])
 
     if roger:
-        print "App state:\t\t%s" % roger['appstate']
+        t.add_row(["App state:", roger['appstate']])
         rh = roger['hw_alarmed'] and 'Y' or 'N'
         ro = roger['os_alarmed'] and 'Y' or 'N'
         ra = roger['app_alarmed'] and 'Y' or 'N'
         rn = roger['nc_alarmed'] and 'Y' or 'N'
-        print "Alarm state:\tHardware(%s) OS(%s) App(%s) NoContact(%s)" %(rh, ro, ra, rn)
+        t.add_row(["Alarm state:", "Hardware(%s) OS(%s) App(%s) NoContact(%s)" %(rh, ro, ra, rn)])
     else:
-        print "App state:\t\t[not yet registered in Roger]"
-        print "Alarm state:\t[not yet registered in Roger]"
+        t.add_row(["App state:", "[not yet registered in Roger]"])
+        t.add_row(["Alarm state:", "[not yet registered in Roger]"])
 
-    print
-    print "Last Puppet report: %s" % ( humanize.naturaltime(ago) )
+    t.add_row(["",""])
+    t.add_row(["Last Puppet report:", humanize.naturaltime(ago)])
+
+    t.border=True
+    t.header=False
+    t.align["Item"] = 'r'
+    t.align["Value"] = 'l'
+
+    print t
 
 
 def main():
