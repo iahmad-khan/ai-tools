@@ -5,6 +5,7 @@ import glob
 import os
 
 from aitools.foreman import ForemanClient
+from aitools.foreman import AiToolsForemanError
 from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
 from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
 from aitools.foreman import DEFAULT_FOREMAN_PORT
@@ -30,8 +31,12 @@ class ForemanCompleter(object):
            query = ''
         else:
            query = "%s~%s" % (self.item, prefix)
-        response = foreman.search_query(self.model,query)   
-   
+        try:
+           response = foreman.search_query(self.model,query)
+        except AiToolsForemanError:
+            warn("Tab completion could not connect to Foreman")
+            return
+
         return [item[self.name][self.item] for item in response if item[self.name][self.item].startswith(prefix) ]
 
 class NovaCompleter(object):
