@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.15
+Version: 5.16
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -67,10 +67,15 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Jan 27 2014 Gavin McCance <gavin.mccance@cern.ch> - 5.16-0
+- (Added comment and env, added command completion) to ai-dump
+
 * Fri Jan 24 2014 Gavin McCance <gavin.mccance@cern.ch> - 5.15-0
 - Added JSON formatter, cleaned up formatting
+
 * Thu Jan 23 2014 Gavin McCance <gavin.mccance@cern.ch> - 5.14-0
 - Initial version of ai-dump
+
 * Mon Jan 20 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 5.13-0
 - [ai-bs-vm] Use aiX-qa if --foreman-environment qa
 

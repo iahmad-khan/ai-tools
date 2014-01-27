@@ -241,7 +241,7 @@ def host_main(pargs):
             ro = roger['os_alarmed'] and 'Y' or 'N'
             ra = roger['app_alarmed'] and 'Y' or 'N'
             rn = roger['nc_alarmed'] and 'Y' or 'N'
-            t.add_row(["Alarm state:", "Hardware(%s) OS(%s) App(%s) NoContact(%s)" %(rh, ro, ra, rn)])
+            t.add_row(["Alarm mask:", "Hardware(%s) OS(%s) App(%s) NoContact(%s)" %(rh, ro, ra, rn)])
         else:
             t.add_row(["App state:", "[not yet registered in Roger]"])
             t.add_row(["Alarm state:", "[not yet registered in Roger]"])
