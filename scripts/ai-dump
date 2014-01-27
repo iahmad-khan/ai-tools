@@ -4,6 +4,7 @@ try:
     import simplejson as json
 except ImportError:
     import json
+import yaml
 import os
 import sys
 import urllib2
@@ -21,7 +22,6 @@ from aitools.common import add_common_puppetdb_args
 from aitools.common import add_common_foreman_args
 from urllib2_kerberos import HTTPKerberosAuthHandler
 from aitools.completer import ForemanCompleter
-from aitools.completer import NovaCompleter
 
 from ConfigParser import SafeConfigParser
 
@@ -56,6 +56,38 @@ def do_request(server, port, endpoint, show_url=False, data=False):
 
     j = json.loads(resp)
     return j
+
+def do_request_yaml(server, port, endpoint, show_url=False, data=False):
+    url = "https://%s:%s/%s" % (server, port, endpoint)
+    if show_url:
+        print url
+    opener = urllib2.build_opener()
+    opener.add_handler(HTTPKerberosAuthHandler())
+    if data:
+        headers = {"Content-type": "application/yaml"}
+    else:
+        headers = {"Accept": "application/yaml"}
+    request = urllib2.Request(url, headers=headers)
+    try:
+        resp = opener.open(request)
+        resp = resp.read()
+    except urllib2.HTTPError, e:
+        # python 2.4 is dumb
+        if e.code >= 200 and e.code < 300:
+            # it's a success you ninny
+            resp = e.read()
+        else:
+            if e.code == 404:
+                # we're expecting things to be missing
+                return None
+            sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
+            return None
+    except urllib2.URLError, e:
+        sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
+        return None
+
+    y = yaml.load(resp)
+    return y
 
 def location_name(lan_dblocation):
     room = lan_dblocation.split(' ')[0]
@@ -104,6 +136,10 @@ def get_roger_client(pargs, host):
     return answer
 
 
+def get_enc_data(pargs, hostname):
+    enc = do_request_yaml(pargs.foreman_hostname, 8007, "node/%s?format=yml" % (hostname))
+    return enc
+
 def host_main(pargs):
     hostname = fqdnify(pargs.hostname)
     host_endpoint = "/v3/nodes/%s" % hostname
@@ -141,6 +177,8 @@ def host_main(pargs):
         vtype = "physical"
 
     disks = len(facts['disks'].split(","))
+
+    enc = get_enc_data(pargs, hostname)
 
     if pargs.print_json:
         # Dump as JSON
@@ -181,6 +219,8 @@ def host_main(pargs):
         t.add_row(["Hardware:", "%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
                                                                                 facts['memorysize'], facts['swapsize'], disks )] )
         t.add_row(["Hostgroup:", facts['hostgroup']])
+        t.add_row(["Comment:",enc["parameters"]["comment"]])
+        t.add_row(["Environment:",enc['environment']])
         t.add_row(["Responsible:", facts['landb_responsible_email']])
         t.add_row(["OS:", "%s %s %s (%s)" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'], facts['configured_kernel'])])
         if facts['is_virtual'] == 'true':
