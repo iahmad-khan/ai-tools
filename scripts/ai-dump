@@ -191,6 +191,7 @@ def host_main(pargs):
                 "kernel": facts['configured_kernel'], "landbsets": landbsets, "lbaliases": lbaliases,
                 "ipaddress": facts['ipaddress'], "ipdomain": facts['landb_network_domain'],
                 "uptime": facts['uptime'], "lastreport": host_info['catalog_timestamp'],
+                "environment": enc["environment"], "comment": enc["parameters"]["comment"],
                 "aidump_recordversion": 1}
 
         if roger:
