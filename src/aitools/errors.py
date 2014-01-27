@@ -10,6 +10,9 @@ class AiToolsHTTPClientError(AiToolsError):
 class AiToolsForemanError(AiToolsHTTPClientError):
     pass
 
+class AiToolsPdbError(AiToolsHTTPClientError):
+    pass
+
 class AiToolsCertmgrError(AiToolsHTTPClientError):
     pass
 

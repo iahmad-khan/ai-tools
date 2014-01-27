@@ -22,6 +22,7 @@ from aitools.common import add_common_puppetdb_args
 from aitools.common import add_common_foreman_args
 from urllib2_kerberos import HTTPKerberosAuthHandler
 from aitools.completer import ForemanCompleter
+from aitools.pdb import PdbClient
 
 from ConfigParser import SafeConfigParser
 
@@ -142,9 +143,10 @@ def get_enc_data(pargs, hostname):
 
 def host_main(pargs):
     hostname = fqdnify(pargs.hostname)
-    host_endpoint = "/v3/nodes/%s" % hostname
 
-    host_info = do_request(pargs.pdb_hostname, pargs.pdb_port, host_endpoint, pargs.show_urls)
+    pdb = PdbClient(pargs.pdb_hostname, pargs.pdb_port, pargs.pdb_timeout)
+
+    host_info = pdb.get_host(hostname)
     if not host_info:
         sys.stderr.write('Host not found in PuppetDB!\n')
         sys.exit(1)
@@ -155,12 +157,10 @@ def host_main(pargs):
         sys.stderr.write("Either the host was deleted or it hasn't been running Puppet for some time.\n")
         sys.exit(2)
 
-    facts_endpoint = "/v3/nodes/%s/facts" % hostname
-    facts = do_request(pargs.pdb_hostname, pargs.pdb_port, facts_endpoint, pargs.show_urls)
+    facts = pdb.get_facts(hostname)
     facts = dict([ (f['name'], f['value']) for f in facts ])
 
-    json_landbsets = do_request(pargs.pdb_hostname, pargs.pdb_port,
-                "/v3/nodes/%s/resources/Cernfw::Landbset" % hostname, pargs.show_urls)
+    json_landbsets = pdb.get_landb(hostname)
     landbsets = ', '.join([ j['title'] for j in json_landbsets ]) or '-'
 
     json_lbaliases = do_request(pargs.pdb_hostname, pargs.pdb_port,
