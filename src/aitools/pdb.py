@@ -31,6 +31,12 @@ class PdbClient(HTTPClient):
         #todo: handle errors
         return dict([ (f['name'], f['value']) for f in body ])
 
+    def get_resources(self, hostname, resource):
+        host_endpoint = "v3/nodes/%s/resources/%s" % (hostname, resource)
+        (code, body) = self.__do_api_request("get", host_endpoint)
+        #todo: handle errors
+        return body
+
     def get_landbsets(self, hostname):
         json_landbsets = self.get_resources(hostname, "Cernfw::Landbset")
         return [ j['title'] for j in json_landbsets ]
@@ -38,12 +44,6 @@ class PdbClient(HTTPClient):
     def get_lbaliases(self, hostname):
         json_lb = self.get_resources(hostname, "Lbd::Client")
         return [ l['parameters']['lbalias'] for l in json_lb ]
-
-    def get_resources(self, hostname, resource):
-        host_endpoint = "v3/nodes/%s/resources/%s" % (hostname, resource)
-        (code, body) = self.__do_api_request("get", host_endpoint)
-        #todo: handle errors
-        return body
 
     def raw_request(self, url):
         return self.__do_api_request("get", url)
