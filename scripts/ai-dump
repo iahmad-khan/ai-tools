@@ -167,7 +167,14 @@ def host_main(pargs):
                 "/v3/nodes/%s/resources/Lbd::Client" % hostname, pargs.show_urls)
     lbaliases = ', '.join([ j['parameters']['lbalias'] for j in json_lbaliases ]) or '-'
 
+
     roger = get_roger_client(pargs, hostname)
+
+    cnames = facts.get('landb_ip_aliases',None)
+    if cnames:
+        cnaliases = ', '.join([ '%s.cern.ch' % c for c in cnames.lower().split(',')])
+    else:
+        cnaliases = '-'
 
     ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['catalog_timestamp'])
 
@@ -192,6 +199,7 @@ def host_main(pargs):
                 "ipaddress": facts['ipaddress'], "ipdomain": facts['landb_network_domain'],
                 "uptime": facts['uptime'], "lastreport": host_info['catalog_timestamp'],
                 "environment": enc["environment"], "comment": enc["parameters"]["comment"],
+                "cnames": cnaliases, "landb_service_name": facts.get('landb_service_name', '-'),
                 "aidump_recordversion": 1}
 
         if roger:
@@ -233,7 +241,8 @@ def host_main(pargs):
 
         t.add_row(["LANDBsets:", landbsets])
         t.add_row(["LB aliases:", lbaliases])
-        t.add_row(["IP:", "%s (%s)" % (facts['ipaddress'], facts['landb_network_domain'])])
+        t.add_row(["CNAME aliases:",cnaliases])
+        t.add_row(["IP:", "%s (%s) (%s)" % (facts['ipaddress'], facts['landb_network_domain'], facts.get('landb_service_name', '-'))])
 
         if roger:
             t.add_row(["App state:", roger['appstate']])
