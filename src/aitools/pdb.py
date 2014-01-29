@@ -11,11 +11,12 @@ import re
 
 class PdbClient(HTTPClient):
 
-    def __init__(self, host, port, timeout, dryrun=False):
+    def __init__(self, host, port, timeout, show_url=False, dryrun=False):
         self.host = host
         self.port = port
         self.timeout = timeout
         self.dryrun = dryrun
+        self.show_url = show_url
         self.cache = {}
 
     def get_host(self, hostname):
@@ -44,12 +45,17 @@ class PdbClient(HTTPClient):
         #todo: handle errors
         return body
 
+    def raw_request(self, url):
+        return self.__do_api_request("get", url)
+
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/%s" % \
             (self.host, self.port, url)
         headers = {'Accept': 'application/json',
                    'Accept-Encoding': 'deflate'}
 
+        if self.show_url:
+            print url
         try:
             code, response = super(PdbClient, self).do_request(method, url, headers, data)
             body = response.text

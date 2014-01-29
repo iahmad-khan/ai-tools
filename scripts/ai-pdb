@@ -12,39 +12,8 @@ try:
     import simplejson as json
 except ImportError:
     import json
-
-
-def do_request(server, port, endpoint, show_url=False, data=False):
-    url = "https://%s:%s/%s" % (server, port, endpoint)
-    opener = urllib2.build_opener()
-    opener.add_handler(HTTPKerberosAuthHandler())
-    headers = {"Accept": "application/json"}
-    if data:
-        url = url + "?" + data
-    if show_url:
-        print url
-    request = urllib2.Request(url, headers=headers)
-        
-    try:
-        resp = opener.open(request)
-        resp = resp.read()
-    except urllib2.HTTPError, e:
-        # python 2.4 is dumb
-        if e.code >= 200 and e.code < 300:
-            # it's a success you ninny
-            resp = e.read()
-        else:
-            if e.code == 404:
-                # we're expecting things to be missing
-                return False
-            sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
-            return None
-    except urllib2.URLError, e:
-        sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
-        return None
-
-    j = json.loads(resp)
-    return j
+from aitools.pdb import PdbClient
+from aitools.common import add_common_puppetdb_args
 
 
 def raw_main(pargs):
@@ -59,7 +28,14 @@ def raw_main(pargs):
         if not q.endswith("["):
             q += "]"
         query = urlencode({"query": q})
-    j = do_request(pargs.server, pargs.port, pargs.endpoint, pargs.show_urls, data=query)
+
+    pdb = PdbClient(pargs.pdb_hostname, pargs.pdb_port, pargs.pdb_timeout, pargs.show_url)
+    if query:
+        path = "%s?%s" % (pargs.endpoint, query)
+    else:
+        path = "%s" % pargs.endpoint
+    (code, j) = pdb.raw_request(path)
+
     print json.dumps(j, sort_keys=True, indent=5, separators=(',', ': '))
 
 
@@ -71,8 +47,11 @@ def hg_main(pargs):
     else:
         op = "="
         hg = pargs.hostgroup
-    data = urlencode({"query": '["%s", "value", "%s"]' % (op, hg)})
-    j = do_request(pargs.server, pargs.port, endpoint, pargs.show_urls, data)
+    query = urlencode({"query": '["%s", "value", "%s"]' % (op, hg)})
+
+    pdb = PdbClient(pargs.pdb_hostname, pargs.pdb_port, pargs.pdb_timeout, pargs.show_url)
+    (code, j) = pdb.raw_request("%s?%s" % (endpoint,query))
+
     res = list()
     for entry in j:
         entry["hostgroup"] = entry.pop("value")
@@ -83,11 +62,8 @@ def hg_main(pargs):
 
 def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
-    parser.add_argument("-s", "--server", metavar="HOSTNAME", dest="server",
-                        default="judy.cern.ch", help="server running puppetdb proxy")
-    parser.add_argument("-p", "--port", metavar="PORT", dest="port", default="9081",
-                        help="port for puppetdb proxy")
-    parser.add_argument("--show_url", action="store_true", default=False, dest="show_urls",
+    add_common_puppetdb_args(parser)
+    parser.add_argument("--show_url", action="store_true", default=False, dest="show_url",
                         help="show REST urls")
     subparsers = parser.add_subparsers()
     raw_parser = subparsers.add_parser("raw", help="raw puppetdb queries")
