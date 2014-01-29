@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from aitools.foreman import add_common_foreman_args
 
 try:
     import simplejson as json
@@ -18,11 +19,9 @@ import argcomplete
 
 from argparse import ArgumentParser
 from aitools.common import fqdnify
-from aitools.common import add_common_puppetdb_args
-from aitools.common import add_common_foreman_args
 from urllib2_kerberos import HTTPKerberosAuthHandler
 from aitools.completer import ForemanCompleter
-from aitools.pdb import PdbClient
+from aitools.pdb import PdbClient, add_common_puppetdb_args
 
 from ConfigParser import SafeConfigParser
 

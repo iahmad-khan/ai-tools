@@ -12,8 +12,7 @@ try:
     import simplejson as json
 except ImportError:
     import json
-from aitools.pdb import PdbClient
-from aitools.common import add_common_puppetdb_args
+from aitools.pdb import PdbClient, add_common_puppetdb_args
 
 
 def raw_main(pargs):

@@ -195,3 +195,16 @@ class ForemanClient(HTTPClient):
             return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsForemanError(error)
+
+
+def add_common_foreman_args(parser):
+    parser.add_argument('--foreman-timeout', type=int,
+        help="Timeout for Foreman operations (default: %s seconds)" % \
+        DEFAULT_FOREMAN_TIMEOUT,
+        default = DEFAULT_FOREMAN_TIMEOUT)
+    parser.add_argument('--foreman-hostname',
+        help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
+        default=DEFAULT_FOREMAN_HOSTNAME)
+    parser.add_argument('--foreman-port', type=int,
+        help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
+        default=DEFAULT_FOREMAN_PORT)

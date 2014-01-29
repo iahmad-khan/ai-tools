@@ -27,9 +27,8 @@ import multiprocessing
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
-from aitools.common import add_common_foreman_args
 
-from aitools.foreman import ForemanClient
+from aitools.foreman import ForemanClient, add_common_foreman_args
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 

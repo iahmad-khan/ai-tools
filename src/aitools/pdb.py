@@ -64,3 +64,16 @@ class PdbClient(HTTPClient):
             return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsPdbError(error)
+
+
+def add_common_puppetdb_args(parser):
+    parser.add_argument('--pdb-timeout', type=int,
+        help="Timeout for PuppetDB operations (default: %s seconds)" % \
+        DEFAULT_PUPPETDB_TIMEOUT,
+        default = DEFAULT_PUPPETDB_TIMEOUT)
+    parser.add_argument('--pdb-hostname',
+        help="PuppetDB hostname (default: %s)" % DEFAULT_PUPPETDB_HOSTNAME,
+        default=DEFAULT_PUPPETDB_HOSTNAME)
+    parser.add_argument('--pdb-port', type=int,
+        help="PuppetDB port (default: %s)" % DEFAULT_PUPPETDB_PORT,
+        default=DEFAULT_PUPPETDB_PORT)
