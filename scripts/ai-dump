@@ -26,38 +26,6 @@ from aitools.pdb import PdbClient
 
 from ConfigParser import SafeConfigParser
 
-def do_request(server, port, endpoint, show_url=False, data=False):
-    url = "https://%s:%s/%s" % (server, port, endpoint)
-    if show_url:
-        print url
-    opener = urllib2.build_opener()
-    opener.add_handler(HTTPKerberosAuthHandler())
-    if data:
-        headers = {"Content-type": "application/json"}
-    else:
-        headers = {"Accept": "application/json"}
-    request = urllib2.Request(url, headers=headers)
-    try:
-        resp = opener.open(request)
-        resp = resp.read()
-    except urllib2.HTTPError, e:
-        # python 2.4 is dumb
-        if e.code >= 200 and e.code < 300:
-            # it's a success you ninny
-            resp = e.read()
-        else:
-            if e.code == 404:
-                # we're expecting things to be missing
-                return None
-            sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
-            return None
-    except urllib2.URLError, e:
-        sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
-        return None
-
-    j = json.loads(resp)
-    return j
-
 def do_request_yaml(server, port, endpoint, show_url=False, data=False):
     url = "https://%s:%s/%s" % (server, port, endpoint)
     if show_url:
@@ -158,15 +126,12 @@ def host_main(pargs):
         sys.exit(2)
 
     facts = pdb.get_facts(hostname)
-    facts = dict([ (f['name'], f['value']) for f in facts ])
 
-    json_landbsets = pdb.get_landb(hostname)
-    landbsets = ', '.join([ j['title'] for j in json_landbsets ]) or '-'
+    l = pdb.get_landbsets(hostname) or '-'
+    landbsets = ', '.join(l)
 
-    json_lbaliases = do_request(pargs.pdb_hostname, pargs.pdb_port,
-                "/v3/nodes/%s/resources/Lbd::Client" % hostname, pargs.show_urls)
-    lbaliases = ', '.join([ j['parameters']['lbalias'] for j in json_lbaliases ]) or '-'
-
+    lb = pdb.get_lbaliases(hostname) or '-'
+    lbaliases  = ', '.join(lb)
 
     roger = get_roger_client(pargs, hostname)
 
