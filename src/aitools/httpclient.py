@@ -1,6 +1,6 @@
 import logging
 import requests
-from requests_kerberos import HTTPKerberosAuth
+from requests_kerberos import HTTPKerberosAuth, OPTIONAL
 
 from aitools.params import CERN_CA_BUNDLE
 from aitools.errors import AiToolsHTTPClientError

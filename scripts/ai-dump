@@ -22,40 +22,10 @@ from aitools.common import fqdnify
 from urllib2_kerberos import HTTPKerberosAuthHandler
 from aitools.completer import ForemanCompleter
 from aitools.pdb import PdbClient, add_common_puppetdb_args
+from aitools.enc import EncClient, add_common_enc_args
 
 from ConfigParser import SafeConfigParser
 
-def do_request_yaml(server, port, endpoint, show_url=False, data=False):
-    url = "https://%s:%s/%s" % (server, port, endpoint)
-    if show_url:
-        print url
-    opener = urllib2.build_opener()
-    opener.add_handler(HTTPKerberosAuthHandler())
-    if data:
-        headers = {"Content-type": "application/yaml"}
-    else:
-        headers = {"Accept": "application/yaml"}
-    request = urllib2.Request(url, headers=headers)
-    try:
-        resp = opener.open(request)
-        resp = resp.read()
-    except urllib2.HTTPError, e:
-        # python 2.4 is dumb
-        if e.code >= 200 and e.code < 300:
-            # it's a success you ninny
-            resp = e.read()
-        else:
-            if e.code == 404:
-                # we're expecting things to be missing
-                return None
-            sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
-            return None
-    except urllib2.URLError, e:
-        sys.stderr.write("Error: failed to open '%s': '%s'" % (url, e))
-        return None
-
-    y = yaml.load(resp)
-    return y
 
 def location_name(lan_dblocation):
     room = lan_dblocation.split(' ')[0]
@@ -104,10 +74,6 @@ def get_roger_client(pargs, host):
     return answer
 
 
-def get_enc_data(pargs, hostname):
-    enc = do_request_yaml(pargs.foreman_hostname, 8007, "node/%s?format=yml" % (hostname))
-    return enc
-
 def host_main(pargs):
     hostname = fqdnify(pargs.hostname)
 
@@ -149,7 +115,8 @@ def host_main(pargs):
 
     disks = len(facts['disks'].split(","))
 
-    enc = get_enc_data(pargs, hostname)
+    encclient = EncClient(pargs.enc_hostname, pargs.enc_port, pargs.enc_timeout)
+    (code, enc) = encclient.get_node_enc(hostname)
 
     if pargs.print_json:
         # Dump as JSON
@@ -233,6 +200,7 @@ def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
     add_common_puppetdb_args(parser)
     add_common_foreman_args(parser)
+    add_common_enc_args(parser)
     parser.add_argument("--show_url", action="store_true", default=False, dest="show_urls",
                         help="show REST urls")
     parser.add_argument("--json", action="store_true", default=False, dest="print_json",

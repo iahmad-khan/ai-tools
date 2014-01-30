@@ -24,3 +24,6 @@ class AiToolsRogerError(AiToolsHTTPClientError):
 
 class AiToolsHieraError(AiToolsHTTPClientError):
     pass
+
+class AiToolsEncError(AiToolsHTTPClientError):
+    pass
