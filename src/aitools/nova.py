@@ -6,20 +6,20 @@ import logging
 import novaclient.exceptions
 import requests
 from novaclient.v1_1 import client
+from aitools.config import NovaConfig
 
 from aitools.errors import AiToolsNovaError
-
-DEFAULT_NOVA_TIMEOUT = 15
 
 class NovaClient():
     def __init__(self, auth_url, username, password,
             tenant_name, cacert, timeout, dryrun):
+        novaconfig = NovaConfig()
         self.auth_url = auth_url
         self.username = username
         self.password = password
         self.tenant_name = tenant_name
         self.cacert = cacert
-        self.timeout = timeout
+        self.timeout = int(timeout or novaclient.nova_timeout)
         self.dryrun = dryrun
 
     def boot(self, fqdn, flavor, image, userdata, meta,

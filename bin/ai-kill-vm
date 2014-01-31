@@ -18,7 +18,7 @@ import sys
 import logging
 import argparse
 import argcomplete
-from aitools.config import ForemanConfig
+from aitools.config import ForemanConfig, NovaConfig
 
 from aitools.foreman import ForemanClient
 from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
@@ -51,10 +51,7 @@ def parse_cmdline_args():
     ##
     ## Nova options
     ##
-    parser.add_argument('--nova-timeout', type=int,
-        help="Timeout for OpenStack operations (default: %s seconds)" % \
-        DEFAULT_NOVA_TIMEOUT,
-        default = DEFAULT_NOVA_TIMEOUT)
+    NovaConfig.add_standard_args(parser)
 
     ##
     ## Foreman options
@@ -101,8 +98,7 @@ def main():
     foreman = ForemanClient(dryrun=args.dryrun)
     nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
         os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
-        os.environ.get('OS_CACERT', None),
-        args.nova_timeout, args.dryrun)
+        os.environ.get('OS_CACERT', None), dryrun=args.dryrun)
 
     try:
         nova.delete(fqdn)

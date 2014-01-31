@@ -21,12 +21,11 @@ import logging
 import argparse
 import argcomplete
 import re
-from aitools.config import ForemanConfig, CertmgrConfig
+from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig
 
 from aitools.foreman import ForemanClient
 from aitools.certmgr import CertmgrClient
 from aitools.nova import NovaClient
-from aitools.nova import DEFAULT_NOVA_TIMEOUT
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
@@ -89,16 +88,13 @@ def parse_cmdline_args():
     ##
     parser.add_argument('--caserver-disable', action="store_true",
         help="Disable Certmgr actions")
-    CertmgrConfig.add_standard_args()
+    CertmgrConfig.add_standard_args(parser)
     ##
     ## Nova options
     ##
     parser.add_argument('--nova-disable', action="store_true",
         help="Disable Nova actions")
-    parser.add_argument('--nova-timeout', type=int,
-        help="Timeout for OpenStack operations (default: %s seconds)" % \
-        DEFAULT_NOVA_TIMEOUT,
-        default = DEFAULT_NOVA_TIMEOUT)
+    NovaConfig.add_standard_args(parser)
     parser.add_argument('--nova-sshkey', type=str,
         help="OpenStack SSH key name",
         default=os.environ.get('AIBS_SSHKEY_NAME', None)
