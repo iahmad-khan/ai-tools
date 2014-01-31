@@ -24,10 +24,13 @@ class AiConfig(object):
         self.pargs = vars(pargs)
 
     def __getattr__(self, key):
-        val = self._get_from_cli(key)
-        if not val:
-            val = self._get_from_configfile(key)
-        return val
+        try:
+            val = self._get_from_cli(key)
+            if not val:
+                val = self._get_from_configfile(key)
+            return val
+        except:
+            raise AttributeError("'%s' configuration object has no attribute '%s'" % (self.__class__.__name__, key))
 
     def _get_from_configfile(self, key):
         return self.parser.get("main", key)
@@ -39,7 +42,7 @@ class AiConfig(object):
     def add_configfile_args(parser):
         try:
             parser.add_argument('--config', help="Configuration file",
-                                default="/etc/ai.conf")
+                                default="/etc/aitools.conf")
         except ArgumentError:
             pass
 
