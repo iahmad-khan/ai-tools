@@ -21,12 +21,8 @@ import argcomplete
 from aitools.config import ForemanConfig, NovaConfig
 
 from aitools.foreman import ForemanClient
-from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
-from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
-from aitools.foreman import DEFAULT_FOREMAN_PORT
 from aitools.completer import ForemanCompleter
 from aitools.nova import NovaClient
-from aitools.nova import DEFAULT_NOVA_TIMEOUT
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
 from aitools.common import verify_openstack_environment
