@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 5.16
+Version: 5.17
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -67,6 +67,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Fri Jan 31 2014 Gavin McCance <gavin.mccance@cern.ch> - 5.17-0
+- Added CNAME, servicename, environemnt to ai-dump
+
 * Mon Jan 27 2014 Gavin McCance <gavin.mccance@cern.ch> - 5.16-0
 - (Added comment and env, added command completion) to ai-dump
 
