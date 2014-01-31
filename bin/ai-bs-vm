@@ -21,12 +21,9 @@ import logging
 import argparse
 import argcomplete
 import re
-from aitools.config import ForemanConfig
+from aitools.config import ForemanConfig, CertmgrConfig
 
 from aitools.foreman import ForemanClient
-from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
-from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
-from aitools.foreman import DEFAULT_FOREMAN_PORT
 from aitools.certmgr import CertmgrClient
 from aitools.nova import NovaClient
 from aitools.nova import DEFAULT_NOVA_TIMEOUT
@@ -51,8 +48,6 @@ DEFAULT_OPENSTACK_SECUTIRYGROUPS="default"
 DEFAULT_FOREMAN_ENVIRONMENT = 'production'
 
 DEFAULT_PUPPETMASTER_HOSTNAME = "it-puppet-masters-public.cern.ch"
-DEFAULT_CASERVER_HOSTNAME = "baby01.cern.ch"
-DEFAULT_CASERVER_PORT = 8008
 
 DEFAULT_PUPPETINIT_PATH = "/usr/share/ai-tools/userdata/puppetinit"
 DEFAULT_PREFIX = "vm"
@@ -94,14 +89,7 @@ def parse_cmdline_args():
     ##
     parser.add_argument('--caserver-disable', action="store_true",
         help="Disable Certmgr actions")
-    parser.add_argument('--caserver-hostname', type=str,
-        help="Hostname of the certmgr server used to retrieve the host certificate (default: '%s')" % \
-        DEFAULT_CASERVER_HOSTNAME,
-        default=os.environ.get('AIBS_CASERVER_HOSTNAME', DEFAULT_CASERVER_HOSTNAME))
-    parser.add_argument('--caserver-port', type=str,
-        help="Port of the certmgr server used to retrieve the host certificate (default: '%s')" % \
-        DEFAULT_CASERVER_PORT,
-        default=DEFAULT_CASERVER_PORT)
+    CertmgrConfig.add_standard_args()
     ##
     ## Nova options
     ##
@@ -240,8 +228,7 @@ def main():
 
     if not args.caserver_disable:
         try:
-            certmgr = CertmgrClient(args.caserver_hostname, args.caserver_port,
-                args.foreman_timeout, args.dryrun)
+            certmgr = CertmgrClient(dryrun=args.dryrun)
             certmgr.stage(fqdn)
         except AiToolsCertmgrError, error:
             logging.error("Couldn't stage host (%s). VM not started." % error)

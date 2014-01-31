@@ -94,3 +94,15 @@ class RogerConfig(AiConfig):
         parser.add_argument('--roger-hostname', help="Roger hostname")
         parser.add_argument('--roger-port', type=int, help="Roger port")
         AiConfig.add_configfile_args(parser)
+
+class CertmgrConfig(AiConfig):
+
+    def _get_from_configfile(self, key):
+        return self.parser.get("certmgr", key)
+
+    @staticmethod
+    def add_standard_args(parser):
+        parser.add_argument('--certmgr-timeout', type=int, help="Timeout for Cert manager operations")
+        parser.add_argument('--certmgr-hostname', help="Certmanager hostname")
+        parser.add_argument('--certmgr-port', type=int, help="Certmanager port")
+        AiConfig.add_configfile_args(parser)

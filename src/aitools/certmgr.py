@@ -9,8 +9,18 @@ import requests
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsCertmgrError
 from aitools.httpclient import HTTPClient
+from aitools.config import CertmgrConfig
 
 class CertmgrClient(HTTPClient):
+
+    def __init__(self, host=None, port=None, timeout=None, dryrun=False):
+        certmgrconf = CertmgrConfig()
+        self.host = host or certmgrconf.certmgr_hostname
+        self.port = int(port or certmgrconf.certmgr_port)
+        self.timeout = int(timeout or certmgrconf.certmgr_timeout)
+        self.dryrun = dryrun
+        self.cache = {}
+
     def stage(self, fqdn):
         logging.info("Staging host '%s' on Certmgr..." % fqdn)
         payload = {'hostname': fqdn}
