@@ -18,8 +18,9 @@ import sys
 import logging
 import argparse
 import argcomplete
+from aitools.config import ForemanConfig
 
-from aitools.foreman import ForemanClient, add_common_foreman_args
+from aitools.foreman import ForemanClient
 from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
 from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
 from aitools.foreman import DEFAULT_FOREMAN_PORT
@@ -58,7 +59,7 @@ def parse_cmdline_args():
     ##
     ## Foreman options
     ##
-    add_common_foreman_args(parser)
+    ForemanConfig.add_standard_args(parser)
     parser.add_argument('hostname', nargs=1, default=None,
         help="Hostname (qualified or not)").completer = ForemanCompleter()
     argcomplete.autocomplete(parser)
@@ -73,6 +74,9 @@ def main():
     except AiToolsInitError, error:
         sys.stdout.write("Wrong command line arguments (%s)\n" % error)
         return 2
+
+    fconfig = ForemanConfig()
+    fconfig.read_config_and_override_with_pargs(args)
 
     configure_logging(args)
 
@@ -94,8 +98,7 @@ def main():
         logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
         return 5
 
-    foreman = ForemanClient(args.foreman_hostname, args.foreman_port,
-        args.foreman_timeout, args.dryrun)
+    foreman = ForemanClient(dryrun=args.dryrun)
     nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
         os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
         os.environ.get('OS_CACERT', None),

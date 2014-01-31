@@ -6,12 +6,9 @@ from aitools.params import CERN_CA_BUNDLE
 from aitools.errors import AiToolsHTTPClientError
 
 class HTTPClient(object):
-    def __init__(self, host, port, timeout, dryrun=False):
-        self.host = host
-        self.port = port
-        self.timeout = timeout
-        self.dryrun = dryrun
-        self.cache = {}
+
+    def __init__(self):
+        assert False  # subclass it
 
     def do_request(self, method, url, headers, data=None):
         logging.debug("Issuing %s on %s" % (method, url))

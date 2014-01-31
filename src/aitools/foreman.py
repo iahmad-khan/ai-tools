@@ -2,21 +2,28 @@
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
 
 import logging
-import socket
 import json
-import requests
 import urllib
+
 import re
+
+import requests
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
 from aitools.httpclient import HTTPClient
-
-DEFAULT_FOREMAN_TIMEOUT = 15
-DEFAULT_FOREMAN_HOSTNAME = "judy.cern.ch"
-DEFAULT_FOREMAN_PORT = 8443
+from aitools.config import ForemanConfig
 
 class ForemanClient(HTTPClient):
+
+    def __init__(self, host=None, port=None, timeout=None, dryrun=False):
+        fmconfig = ForemanConfig()
+        self.host = host or fmconfig.foreman_hostname
+        self.port = int(port or fmconfig.foreman_port)
+        self.timeout = int(timeout or fmconfig.foreman_timeout)
+        self.dryrun = dryrun
+        self.cache = {}
+
     def addhost(self, fqdn, environment, hostgroup, owner):
         logging.info("Adding host '%s' to Foreman..." % fqdn)
         payload = {'managed': False, 'name': fqdn}
@@ -163,7 +170,7 @@ class ForemanClient(HTTPClient):
                 self.cache[cache_key] = body
                 return body
             elif code == requests.codes.not_found:
-                raise AiToolsForemanError("Model not found in Foreman)" % fqdn)
+                raise AiToolsForemanError("Model not found in Foreman)" % modelname)
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['host']['full_messages'])
                 raise AiToolsForemanError("__resolve_model_name call failed (%s)" % error)
@@ -197,14 +204,3 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanError(error)
 
 
-def add_common_foreman_args(parser):
-    parser.add_argument('--foreman-timeout', type=int,
-        help="Timeout for Foreman operations (default: %s seconds)" % \
-        DEFAULT_FOREMAN_TIMEOUT,
-        default = DEFAULT_FOREMAN_TIMEOUT)
-    parser.add_argument('--foreman-hostname',
-        help="Foreman hostname (default: %s)" % DEFAULT_FOREMAN_HOSTNAME,
-        default=DEFAULT_FOREMAN_HOSTNAME)
-    parser.add_argument('--foreman-port', type=int,
-        help="Foreman Kerberos port (default: %s)" % DEFAULT_FOREMAN_PORT,
-        default=DEFAULT_FOREMAN_PORT)

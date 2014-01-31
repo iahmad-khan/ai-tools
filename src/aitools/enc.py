@@ -1,21 +1,18 @@
 __author__ = 'mccance'
 
-DEFAULT_ENC_TIMEOUT = 15
-DEFAULT_ENC_HOSTNAME = "judy.cern.ch"
-DEFAULT_ENC_PORT = 8443
-
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsEncError
 from aitools.httpclient import HTTPClient
-import re
+from aitools.config import EncConfig
 import yaml
 
 class EncClient(HTTPClient):
 
-    def __init__(self, host, port, timeout, dryrun=False):
-        self.host = host
-        self.port = port
-        self.timeout = timeout
+    def __init__(self, host=None, port=None, timeout=None, dryrun=False):
+        encconf = EncConfig()
+        self.host = host or encconf.enc_hostname
+        self.port = int(port or encconf.enc_port)
+        self.timeout = int(timeout or encconf.enc_timeout)
         self.dryrun = dryrun
         self.cache = {}
 
@@ -34,16 +31,3 @@ class EncClient(HTTPClient):
             return (code, yam)
         except AiToolsHTTPClientError, error:
             raise AiToolsEncError(error)
-
-
-def add_common_enc_args(parser):
-    parser.add_argument('--enc-timeout', type=int,
-        help="Timeout for ENC operations (default: %s seconds)" % \
-        DEFAULT_ENC_TIMEOUT,
-        default = DEFAULT_ENC_TIMEOUT)
-    parser.add_argument('--enc-hostname',
-        help="ENC hostname (default: %s)" % DEFAULT_ENC_HOSTNAME,
-        default=DEFAULT_ENC_HOSTNAME)
-    parser.add_argument('--enc-port', type=int,
-        help="ENC  port (default: %s)" % DEFAULT_ENC_PORT,
-        default=DEFAULT_ENC_PORT)

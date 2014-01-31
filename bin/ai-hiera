@@ -95,6 +95,9 @@ def print_summary(args, fqdn):
 def main():
     """Application entrypoint"""
     args = parse_cmdline_args()
+    fconfig = ForemanConfig()
+    fconfig.read_config_and_override_with_pargs(args)
+
     configure_logging(args)
 
     try:
@@ -111,8 +114,7 @@ def main():
 
     print_summary(args, fqdn)
 
-    foreman = ForemanClient(args.foreman_hostname, args.foreman_port,
-        args.foreman_timeout, dryrun=False)
+    foreman = ForemanClient(dryrun=False)
 
     try:
         host = foreman.gethost(fqdn=fqdn)

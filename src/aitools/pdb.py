@@ -1,20 +1,19 @@
 __author__ = 'mccance'
 
-DEFAULT_PUPPETDB_TIMEOUT = 15
-DEFAULT_PUPPETDB_HOSTNAME = "judy.cern.ch"
-DEFAULT_PUPPETDB_PORT = 9081
+import re
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsPdbError
 from aitools.httpclient import HTTPClient
-import re
+from aitools.config import PdbConfig
 
 class PdbClient(HTTPClient):
 
-    def __init__(self, host, port, timeout, show_url=False, dryrun=False):
-        self.host = host
-        self.port = port
-        self.timeout = timeout
+    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False):
+        pdbcondfig = PdbConfig()
+        self.host = host or pdbcondfig.pdb_hostname
+        self.port = int(port or pdbcondfig.pdb_port)
+        self.timeout = int(timeout or pdbcondfig.pdb_timeout)
         self.dryrun = dryrun
         self.show_url = show_url
         self.cache = {}
@@ -66,14 +65,3 @@ class PdbClient(HTTPClient):
             raise AiToolsPdbError(error)
 
 
-def add_common_puppetdb_args(parser):
-    parser.add_argument('--pdb-timeout', type=int,
-        help="Timeout for PuppetDB operations (default: %s seconds)" % \
-        DEFAULT_PUPPETDB_TIMEOUT,
-        default = DEFAULT_PUPPETDB_TIMEOUT)
-    parser.add_argument('--pdb-hostname',
-        help="PuppetDB hostname (default: %s)" % DEFAULT_PUPPETDB_HOSTNAME,
-        default=DEFAULT_PUPPETDB_HOSTNAME)
-    parser.add_argument('--pdb-port', type=int,
-        help="PuppetDB port (default: %s)" % DEFAULT_PUPPETDB_PORT,
-        default=DEFAULT_PUPPETDB_PORT)

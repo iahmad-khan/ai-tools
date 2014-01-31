@@ -21,8 +21,9 @@ import logging
 import argparse
 import argcomplete
 import re
+from aitools.config import ForemanConfig
 
-from aitools.foreman import ForemanClient, add_common_foreman_args
+from aitools.foreman import ForemanClient
 from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
 from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
 from aitools.foreman import DEFAULT_FOREMAN_PORT
@@ -133,7 +134,7 @@ def parse_cmdline_args():
     ##
     parser.add_argument('--foreman-disable', action="store_true",
         help="Disable Foreman actions")
-    add_common_foreman_args(parser)
+    ForemanConfig.add_standard_args(parser)
     parser.add_argument('--foreman-environment', type=str,
         help="Foreman environment (default: %s)" % DEFAULT_FOREMAN_ENVIRONMENT,
         default=os.environ.get('AIBS_ENVIRONMENT_NAME', DEFAULT_FOREMAN_ENVIRONMENT)
@@ -189,6 +190,9 @@ def print_summary(args, fqdn):
 def main():
     """Application entrypoint"""
     args = parse_cmdline_args()
+    fconfig = ForemanConfig()
+    fconfig.read_config_and_override_with_pargs(args)
+
     configure_logging(args)
 
     try:
@@ -220,8 +224,7 @@ def main():
         logging.error("Failed to generate userdata (%s). Exiting..." % error)
         return 6
 
-    foreman = ForemanClient(args.foreman_hostname, args.foreman_port,
-        args.foreman_timeout, args.dryrun)
+    foreman = ForemanClient(dryrun=args.dryrun)
 
     if not args.foreman_disable:
         try:

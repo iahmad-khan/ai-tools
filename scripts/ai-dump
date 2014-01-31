@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from aitools.foreman import add_common_foreman_args
 
 try:
     import simplejson as json
@@ -21,11 +20,9 @@ from argparse import ArgumentParser
 from aitools.common import fqdnify
 from urllib2_kerberos import HTTPKerberosAuthHandler
 from aitools.completer import ForemanCompleter
-from aitools.pdb import PdbClient, add_common_puppetdb_args
-from aitools.enc import EncClient, add_common_enc_args
-
-from ConfigParser import SafeConfigParser
-
+from aitools.config import ForemanConfig, PdbConfig, EncConfig, AiConfig, RogerConfig
+from aitools.pdb import PdbClient
+from aitools.enc import EncClient
 
 def location_name(lan_dblocation):
     room = lan_dblocation.split(' ')[0]
@@ -38,47 +35,34 @@ def location_name(lan_dblocation):
     else:
         return ""
 
-def get_roger_client(pargs, host):
-    config = SafeConfigParser()
-    server = None
-    port = None
-    confloc = "/etc/roger.conf" #TODO: pargs.configfile
-    use_kerberos = True
-    if not confloc:
-        confloc = os.environ.get("ROGERCONF", "/etc/roger.conf")
-    if confloc and os.path.isfile(confloc):
-        config.read(confloc)
-        server = config.get("client", "server")
-        if use_kerberos:
-            port = config.get("client", "krbport")
-        else:
-            port = config.get("client", "sslport")
-    pargs.pdb_hostname = server
-    pargs.pdb_port = port
-    if not (pargs.pdb_hostname and pargs.pdb_port):
-        sys.stderr.write("need server and port defined")  # TODO:  ab it more specific please
-        sys.exit(3)
-    roger = teigi.rogerclient.RogerClient(pargs.pdb_hostname, int(pargs.pdb_port))
+def get_roger_client(host):
+
+    rogerconf = RogerConfig()
+    roger = teigi.rogerclient.RogerClient(rogerconf.roger_hostname, int(rogerconf.roger_port))
+
     url = roger.state_url(host)
     try:
         answer = roger.open_url(url)
     except urllib2.HTTPError, e:
         if e.code == 401:
-            sys.stderr.write("Not authorized to view '%s'" % host)
+            sys.stderr.write("Not authorized to view '%s' in Roger" % host)
             sys.exit(3)
         elif e.code == 404:
             return None
     except urllib2.URLError, e:
-        sys.stderr.write("Cannot open url '%s': '%s'" % (url, e))
+        sys.stderr.write("Cannot open url '%s' for Roger: '%s'" % (url, e))
         sys.exit(3)
     return answer
 
 
 def host_main(pargs):
+
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
     hostname = fqdnify(pargs.hostname)
 
-    pdb = PdbClient(pargs.pdb_hostname, pargs.pdb_port, pargs.pdb_timeout)
-
+    pdb = PdbClient()
     host_info = pdb.get_host(hostname)
     if not host_info:
         sys.stderr.write('Host not found in PuppetDB!\n')
@@ -98,9 +82,9 @@ def host_main(pargs):
     lb = pdb.get_lbaliases(hostname) or '-'
     lbaliases  = ', '.join(lb)
 
-    roger = get_roger_client(pargs, hostname)
+    roger = get_roger_client(hostname)
 
-    cnames = facts.get('landb_ip_aliases',None)
+    cnames = facts.get('landb_ip_aliases', None)
     if cnames:
         cnaliases = ', '.join([ '%s.cern.ch' % c for c in cnames.lower().split(',')])
     else:
@@ -113,16 +97,16 @@ def host_main(pargs):
     else:
         vtype = "physical"
 
-    disks = len(facts['disks'].split(","))
+    num_disks = len(facts['disks'].split(","))
 
-    encclient = EncClient(pargs.enc_hostname, pargs.enc_port, pargs.enc_timeout)
+    encclient = EncClient()
     (code, enc) = encclient.get_node_enc(hostname)
 
     if pargs.print_json:
         # Dump as JSON
 
         hardware = {"cores": facts['processorcount'], "memory": facts['memorysize'], "swap": facts['swapsize'],
-                    "disks": disks, "type": vtype}
+                    "disks": num_disks, "type": vtype}
         jj = {  "hostname": hostname, "hardware": hardware, "hostgroup": facts['hostgroup'],
                 "responsible": facts['landb_responsible_email'], "os": facts['operatingsystem'],
                 "lsbdistrelease": facts['lsbdistrelease'], "arch": facts['architecture'],
@@ -157,7 +141,7 @@ def host_main(pargs):
         t = prettytable.PrettyTable(["Item","Value"])
         t.add_row(["Hostname:", "%s   (uptime: %s)" % (hostname, facts['uptime'])])
         t.add_row(["Hardware:", "%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
-                                                                                facts['memorysize'], facts['swapsize'], disks )] )
+                                                                                facts['memorysize'], facts['swapsize'], num_disks )] )
         t.add_row(["Hostgroup:", facts['hostgroup']])
         t.add_row(["Comment:",enc["parameters"]["comment"]])
         t.add_row(["Environment:",enc['environment']])
@@ -197,10 +181,12 @@ def host_main(pargs):
         print t
 
 def main():
-    parser = ArgumentParser(description="wrap puppetdb commands")
-    add_common_puppetdb_args(parser)
-    add_common_foreman_args(parser)
-    add_common_enc_args(parser)
+    parser = ArgumentParser(description="Dump information about a host")
+
+    ForemanConfig.add_standard_args(parser)
+    PdbConfig.add_standard_args(parser)
+    EncConfig.add_standard_args(parser)
+
     parser.add_argument("--show_url", action="store_true", default=False, dest="show_urls",
                         help="show REST urls")
     parser.add_argument("--json", action="store_true", default=False, dest="print_json",
@@ -211,6 +197,9 @@ def main():
 
     pargs = parser.parse_args()
     pargs.func(pargs)
+
+    sys.exit()
+
 
 if __name__ == "__main__":
     main()

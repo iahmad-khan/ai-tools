@@ -1,21 +1,24 @@
 #!/usr/bin/python
 
 from argparse import ArgumentParser
-from argparse import ArgumentError
 import os
-import sys
-import re
+
 from urllib import urlencode
-import urllib2
-from urllib2_kerberos import HTTPKerberosAuthHandler
+
+
 try:
     import simplejson as json
 except ImportError:
     import json
-from aitools.pdb import PdbClient, add_common_puppetdb_args
+from aitools.pdb import PdbClient
+from aitools.config import PdbConfig, AiConfig
 
 
 def raw_main(pargs):
+
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
     query = None
     if pargs.query:
         if pargs.query.startswith("query="):
@@ -28,7 +31,7 @@ def raw_main(pargs):
             q += "]"
         query = urlencode({"query": q})
 
-    pdb = PdbClient(pargs.pdb_hostname, pargs.pdb_port, pargs.pdb_timeout, pargs.show_url)
+    pdb = PdbClient(show_url=pargs.show_url)
     if query:
         path = "%s?%s" % (pargs.endpoint, query)
     else:
@@ -39,6 +42,10 @@ def raw_main(pargs):
 
 
 def hg_main(pargs):
+
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
     endpoint = "/v3/facts/hostgroup"
     if pargs.subgroups:
         op = "~"
@@ -48,7 +55,7 @@ def hg_main(pargs):
         hg = pargs.hostgroup
     query = urlencode({"query": '["%s", "value", "%s"]' % (op, hg)})
 
-    pdb = PdbClient(pargs.pdb_hostname, pargs.pdb_port, pargs.pdb_timeout, pargs.show_url)
+    pdb = PdbClient(show_url=pargs.show_url)
     (code, j) = pdb.raw_request("%s?%s" % (endpoint,query))
 
     res = list()
@@ -61,7 +68,9 @@ def hg_main(pargs):
 
 def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
-    add_common_puppetdb_args(parser)
+
+    PdbConfig.add_standard_args(parser)
+
     parser.add_argument("--show_url", action="store_true", default=False, dest="show_url",
                         help="show REST urls")
     subparsers = parser.add_subparsers()

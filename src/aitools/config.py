@@ -1,0 +1,93 @@
+from ConfigParser import ConfigParser
+
+# Monostate pattern, Borg impl
+from argparse import ArgumentError
+from aitools.errors import AiToolsError
+
+class AiConfig(object):
+
+    __monostate = {}
+
+    def __new__(cls, *a, **k):
+        obj = super(AiConfig, cls).__new__(cls, *a, **k)
+        obj.__dict__ = cls.__monostate
+        return obj
+
+    def read_config_and_override_with_pargs(self, pargs):
+        self.parser = ConfigParser()
+        config_file = pargs.config
+        try:
+            with open(config_file) as f:
+                self.parser.readfp(f)
+        except IOError:
+            raise AiToolsError("Config file (%s) could not be opened" % config_file)
+        self.pargs = vars(pargs)
+
+    def __getattr__(self, key):
+        val = self._get_from_cli(key)
+        if not val:
+            val = self._get_from_configfile(key)
+        return val
+
+    def _get_from_configfile(self, key):
+        return self.parser.get("main", key)
+
+    def _get_from_cli(self, key):
+        return self.pargs.get(key, None)
+
+    @staticmethod
+    def add_configfile_args(parser):
+        try:
+            parser.add_argument('--config', help="Configuration file",
+                                default="/etc/ai.conf")
+        except ArgumentError:
+            pass
+
+
+class ForemanConfig(AiConfig):
+
+    def _get_from_configfile(self, key):
+        return self.parser.get("foreman", key)
+
+    @staticmethod
+    def add_standard_args(parser):
+        parser.add_argument('--foreman-timeout', type=int, help="Timeout for Foreman operations")
+        parser.add_argument('--foreman-hostname', help="Foreman hostname")
+        parser.add_argument('--foreman-port', type=int, help="Foreman port")
+        AiConfig.add_configfile_args(parser)
+
+class PdbConfig(AiConfig):
+
+    def _get_from_configfile(self, key):
+        return self.parser.get("pdb", key)
+
+    @staticmethod
+    def add_standard_args(parser):
+        parser.add_argument('--pdb-timeout', type=int, help="Timeout for PuppetDB operations")
+        parser.add_argument('--pdb-hostname', help="PuppetDB hostname")
+        parser.add_argument('--pdb-port', type=int, help="PuppetDB port")
+        AiConfig.add_configfile_args(parser)
+
+class EncConfig(AiConfig):
+
+    def _get_from_configfile(self, key):
+        return self.parser.get("enc", key)
+
+    @staticmethod
+    def add_standard_args(parser):
+        parser.add_argument('--enc-timeout', type=int, help="Timeout for ENC operations")
+        parser.add_argument('--enc-hostname', help="ENC hostname")
+        parser.add_argument('--enc-port', type=int, help="ENC port")
+        AiConfig.add_configfile_args(parser)
+
+class RogerConfig(AiConfig):
+
+    def _get_from_configfile(self, key):
+        return self.parser.get("roger", key)
+
+    @staticmethod
+    def add_standard_args(parser):
+        parser.add_argument('--roger-timeout', type=int, help="Timeout for Roger operations")
+        parser.add_argument('--roger-hostname', help="Roger hostname")
+        parser.add_argument('--roger-port', type=int, help="Roger port")
+        AiConfig.add_configfile_args(parser)

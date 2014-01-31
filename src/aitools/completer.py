@@ -6,9 +6,6 @@ import os
 
 from aitools.foreman import ForemanClient
 from aitools.foreman import AiToolsForemanError
-from aitools.foreman import DEFAULT_FOREMAN_TIMEOUT
-from aitools.foreman import DEFAULT_FOREMAN_HOSTNAME
-from aitools.foreman import DEFAULT_FOREMAN_PORT
 from argcomplete import warn
 
 # Use as bash argcomplete to foreman
@@ -25,8 +22,7 @@ class ForemanCompleter(object):
         self.item = item
 
     def __call__(self, prefix, parsed_args, **kwargs):
-        foreman = ForemanClient(parsed_args.foreman_hostname, parsed_args.foreman_port,
-            parsed_args.foreman_timeout, dryrun=True)
+        foreman = ForemanClient(dryrun=True)
         if prefix == '':
            query = ''
         else:
