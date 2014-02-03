@@ -16,6 +16,7 @@ from aitools.params import FQDN_VALIDATION_RE
 from aitools.params import HASHLEN
 from aitools.params import DEFAULT_LOGGING_LEVEL
 from aitools.errors import AiToolsInitError
+from aitools.config import CertmgrConfig
 
 
 def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
@@ -63,6 +64,7 @@ def shortify(h):
     return fqdn.split('.')[0]
 
 def generate_userdata(args):
+    certmgrconf = CertmgrConfig()
     logging.info("Preparing dynamic user data...")
     logging.info("Using '%s' as userdata script template to init Puppet" % \
         args.puppetinit_path)
@@ -70,8 +72,8 @@ def generate_userdata(args):
         script = Template(open(args.puppetinit_path).read())
     except IOError, error:
         raise AiToolsInitError(error)
-    values = {'CASERVER_HOSTNAME': args.caserver_hostname,
-        'CASERVER_PORT': args.caserver_port,
+    values = {'CASERVER_HOSTNAME': certmgrconf.certmgr_hostname,
+        'CASERVER_PORT': certmgrconf.certmgr_port,
         'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
         'FOREMAN_ENVIRONMENT': args.foreman_environment}
     userdata = MIMEMultipart()
