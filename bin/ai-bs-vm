@@ -168,8 +168,8 @@ def print_summary(args, fqdn):
     if args.foreman_parameter:
         logging.info("Foreman parameters: %s" % ', '.join(args.foreman_parameter))
     logging.info("Puppet master: %s" % args.puppetmaster_hostname)
-    logging.info("CA server: %s" % args.caserver_hostname)
-    logging.info("CA port: %s" % args.caserver_port)
+    logging.info("CA server: %s" % args.certmgr_hostname)
+    logging.info("CA port: %s" % args.certmgr_port)
 
 def main():
     """Application entrypoint"""
