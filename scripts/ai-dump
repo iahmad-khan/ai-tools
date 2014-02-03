@@ -24,6 +24,7 @@ from aitools.completer import ForemanCompleter
 from aitools.config import ForemanConfig, PdbConfig, EncConfig, AiConfig, RogerConfig
 from aitools.pdb import PdbClient
 from aitools.enc import EncClient
+from aitools.errors import AiToolsPdbError
 
 def location_name(lan_dblocation):
     room = lan_dblocation.split(' ')[0]
@@ -62,11 +63,16 @@ def host_main(pargs):
     config.read_config_and_override_with_pargs(pargs)
 
     hostname = fqdnify(pargs.hostname)
+    if not hostname:
+        sys.stderr.write("Host %s not found in DNS\n" % pargs.hostname)
+        sys.exit(1)
 
     pdb = PdbClient()
-    host_info = pdb.get_host(hostname)
-    if not host_info:
-        sys.stderr.write('Host not found in PuppetDB!\n')
+
+    try:
+        host_info = pdb.get_host(hostname)
+    except AiToolsPdbError:
+        sys.stderr.write('Host %s not found in PuppetDB!\n' % hostname)
         sys.exit(1)
     deactivated = host_info['deactivated']
     if deactivated:

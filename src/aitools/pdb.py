@@ -6,6 +6,7 @@ from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsPdbError
 from aitools.httpclient import HTTPClient
 from aitools.config import PdbConfig
+import requests
 
 class PdbClient(HTTPClient):
 
@@ -21,19 +22,22 @@ class PdbClient(HTTPClient):
     def get_host(self, hostname):
         host_endpoint = "v3/nodes/%s" % hostname
         (code, body) = self.__do_api_request("get", host_endpoint)
-        #todo: handle errors
+        if code == requests.codes.not_found:
+            raise AiToolsPdbError("Host %s not found in PuppetDB" % hostname)
         return body
 
     def get_facts(self, hostname):
         host_endpoint = "v3/nodes/%s/facts" % hostname
         (code, body) = self.__do_api_request("get", host_endpoint)
-        #todo: handle errors
+        if code == requests.codes.not_found:
+            raise AiToolsPdbError("Host %s not found in PuppetDB" % hostname)
         return dict([ (f['name'], f['value']) for f in body ])
 
     def get_resources(self, hostname, resource):
         host_endpoint = "v3/nodes/%s/resources/%s" % (hostname, resource)
         (code, body) = self.__do_api_request("get", host_endpoint)
-        #todo: handle errors
+        if code == requests.codes.not_found:
+            raise AiToolsPdbError("Resource %s for host %s not found in PuppetDB" % (resource, hostname))
         return body
 
     def get_landbsets(self, hostname):
