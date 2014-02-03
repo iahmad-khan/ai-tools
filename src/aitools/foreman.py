@@ -32,6 +32,15 @@ class ForemanClient(HTTPClient):
         self.cache = {}
 
     def addhost(self, fqdn, environment, hostgroup, owner):
+        """
+        Add a host entry to Foreman.
+
+        :param fqdn: the hostname to add
+        :param environment: the initial environment for the host
+        :param hostgroup: the initial hostgroup for the host
+        :param owner:  the initial owner of the host though will be quickly overriden by the value in LANDB
+        :raise AiToolsForemanError: in case the host addition fails
+        """
         logging.info("Adding host '%s' to Foreman..." % fqdn)
         payload = {'managed': False, 'name': fqdn}
         payload['environment_id'] = self.__resolve_environment_id(environment)
@@ -51,6 +60,13 @@ class ForemanClient(HTTPClient):
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
 
     def gethost(self, fqdn):
+        """
+        Get basic information about a host.
+
+        :param fqdn: the hostname to query
+        :return: a parsed JSON dictionary record
+        :raise AiToolsForemanError: if the query call failed or the host could not be found
+        """
         logging.info("Getting host '%s' from Foreman..." % fqdn)
 
         (code, body) = self.__do_api_request("get", "hosts/%s" % fqdn)
@@ -64,7 +80,17 @@ class ForemanClient(HTTPClient):
             error = ','.join(body['host']['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)
 
+
     def getfacts(self, fqdn):
+        """
+        Get the facts for a host, as seen by Foreman.
+
+        Usage: it is suggested for normal use to fetch the facts from PuppetDB.
+
+        :param fqdn: the hostname to query
+        :return: a parsed JSON dictionary of facts
+        :raise AiToolsForemanError: if the call failed or the host could not be found
+        """
         logging.info("Getting facts for host '%s' from Foreman..." % fqdn)
 
         (code, body) = self.__do_api_request("get", "hosts/%s/facts/?per_page=500" % fqdn)
@@ -77,6 +103,12 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanError("getfacts call failed (%s)" % error)
 
     def delhost(self, fqdn):
+        """
+        Delete the specified host in Foreman.
+
+        :param fqdn: the hostname to delete
+        :raise AiToolsForemanError: if the deletion call failed or if the host was not found
+        """
         logging.info("Deleting host '%s' from Foreman" % fqdn)
 
         if not self.dryrun:
@@ -89,6 +121,14 @@ class ForemanClient(HTTPClient):
             logging.info("Host '%s' not deleted because dryrun is enabled" % fqdn)
 
     def addhostparameter(self, fqdn, name, value):
+        """
+        Add a name,value parameter to the specified host in Foreman.
+
+        :param fqdn: the hostanme to add the parameter to.
+        :param name: the name of the parameter to add
+        :param value: the value of the parameter
+        :raise AiToolsForemanError: if the parameter-set call failed or if the host was not found
+        """
         logging.info("Adding parameter '%s' to host '%s' with value '%s'..."
                         % (name, fqdn, value))
         payload = {'parameter': {'name' : name, 'value': value}}
@@ -105,6 +145,21 @@ class ForemanClient(HTTPClient):
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
     def power_operation(self, fqdn, operation):
+        """
+        Send an IPMI power command to the host via the Foreman BMC proxy.
+
+        Allowed values are:
+
+         - 'on' or 'start' - power up the node
+         - 'off; or 'stop' - power down the node
+         - 'soft' or 'reboot' - ACPI soft reboot
+         - 'cycle' or 'reset' - Hard power cycle
+         - 'state' or 'status' - Return the power status
+
+        :param fqdn: host to send the command to.
+        :param operation: operation to send.
+        :return: the current power status
+        """
         logging.info("Executing '%s' on host '%s'" % (operation, fqdn))
         payload = {'power_action': operation}
         logging.debug("With payload: %s" % payload)

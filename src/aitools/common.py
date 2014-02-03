@@ -29,13 +29,27 @@ def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
     if logging_level > logging.DEBUG:
         logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+
 def verify_openstack_environment():
+    """
+    Verify the user has the basic **OS_** environment variables set for Openstack.
+    Returns nothing but raises an exception if these are not defined. It does not
+    validate the correctness of these environment variables.
+
+    :raise AiToolsInitError: User doesn't have the basic environments set.
+    """
     for variable in ("OS_USERNAME", "OS_PASSWORD", \
            "OS_TENANT_NAME", "OS_AUTH_URL"):
         if variable not in os.environ:
             raise AiToolsInitError("%s not set (openrc not (or partially) sourced?)" % variable)
 
 def verify_kerberos_environment():
+    """
+    Verify the user has a valid Kerberos token and associated environment.
+
+    :return: the Kerberos principal name
+    :raise AiToolsInitError: if the user has no valid Kerberos token
+    """
     context = krbV.default_context()
     ccache = context.default_ccache()
     try:
@@ -44,15 +58,33 @@ def verify_kerberos_environment():
         raise AiToolsInitError("Kerberos principal not found")
 
 def generate_random_fqdn(prefix):
+    """
+    Generate a random CERN hostname.
+
+    :param prefix: prefix for the hostname
+    :return: the generated hostname
+    """
     hash = hashlib.sha1()
     hash.update(str(time.time()))
     return "%s%s.cern.ch" % (prefix.lower() if prefix else "",
         hash.hexdigest()[:HASHLEN])
 
 def validate_fqdn(fqdn):
+    """
+    Return whether the string is an FQDN or not
+    :param fqdn: the string to test
+    :return: tests True if the string is an FQDN otherwise tests False
+    """
     return re.match(FQDN_VALIDATION_RE, fqdn)
 
 def fqdnify(h):
+    """
+    Return the FQDN for the given host. Validates the host and returns None if the host is not found in DNS.
+    Aliases are resolved to first valid A record.
+
+    :param h: short or otherwise name fo host to return FQDN for
+    :return: the FQDN or None if host fails DNS lookup
+    """
     try:
         ip = socket.gethostbyname(h)
     except socket.gaierror:
@@ -60,6 +92,12 @@ def fqdnify(h):
     return socket.getfqdn(h)
 
 def shortify(h):
+    """
+    Return the shortname for the given host. Validates the host and returns None if the host is not found in DNS.
+
+    :param h: hostname of host to return the short name for
+    :return: the short name or None if host fails DNS lookup
+    """
     fqdn = fqdnify(h)
     return fqdn.split('.')[0]
 
@@ -93,7 +131,7 @@ def generate_userdata(args):
             raise AiToolsInitError(error)
     return userdata.as_string()
 
-def append_domain(hostname):
+def append_domain(hostname):  # todo: replace by fqndify
     if hostname is not None:
         hostname = "%s.cern.ch" % hostname.split('.')[0].lower()
     return hostname
