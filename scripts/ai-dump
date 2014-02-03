@@ -112,7 +112,7 @@ def host_main(pargs):
                 "lsbdistrelease": facts['lsbdistrelease'], "arch": facts['architecture'],
                 "kernel": facts['configured_kernel'], "landbsets": landbsets, "lbaliases": lbaliases,
                 "ipaddress": facts['ipaddress'], "ipdomain": facts['landb_network_domain'],
-                "uptime": facts['uptime'], "lastreport": host_info['catalog_timestamp'],
+                "lastreport": host_info['catalog_timestamp'],
                 "environment": enc["environment"], "comment": enc["parameters"]["comment"],
                 "cnames": cnaliases, "landb_service_name": facts.get('landb_service_name', '-'),
                 "aidump_recordversion": 1}
@@ -139,7 +139,7 @@ def host_main(pargs):
         # Text output
 
         t = prettytable.PrettyTable(["Item","Value"])
-        t.add_row(["Hostname:", "%s   (uptime: %s)" % (hostname, facts['uptime'])])
+        t.add_row(["Hostname:", "%s" % (hostname,)])
         t.add_row(["Hardware:", "%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
                                                                                 facts['memorysize'], facts['swapsize'], num_disks )] )
         t.add_row(["Hostgroup:", facts['hostgroup']])
