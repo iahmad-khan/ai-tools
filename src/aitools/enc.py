@@ -26,6 +26,8 @@ class EncClient(HTTPClient):
 
         try:
             code, response = super(EncClient, self).do_request(method, url, headers, data)
+            if code == requests.codes.not_found:
+                raise AiToolsEncError("Could not find node in ENC")
             body = response.text
             yam = yaml.load(body)
             return (code, yam)
