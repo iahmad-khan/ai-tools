@@ -15,6 +15,7 @@ import humanize
 import teigi.rogerclient
 import prettytable
 import argcomplete
+import textwrap
 
 from argparse import ArgumentParser
 from aitools.common import fqdnify
@@ -143,7 +144,8 @@ def host_main(pargs):
         t.add_row(["Hardware:", "%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
                                                                                 facts['memorysize'], facts['swapsize'], num_disks )] )
         t.add_row(["Hostgroup:", facts['hostgroup']])
-        t.add_row(["Comment:",enc["parameters"]["comment"]])
+        comment80 = "\n".join(textwrap.wrap(enc["parameters"]["comment"], 80))
+        t.add_row(["Comment:", comment80 ])
         t.add_row(["Environment:",enc['environment']])
         t.add_row(["Responsible:", facts['landb_responsible_email']])
         t.add_row(["OS:", "%s %s %s (%s)" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'], facts['configured_kernel'])])
