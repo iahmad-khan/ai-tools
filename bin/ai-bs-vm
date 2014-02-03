@@ -237,8 +237,7 @@ def main():
         try:
             nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
                 os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
-                os.environ.get('OS_CACERT', None),
-                args.nova_timeout, args.dryrun)
+                os.environ.get('OS_CACERT', None), dryrun=args.dryrun)
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
             if args.landb_responsible:
                 meta['landb-responsible'] = args.landb_responsible

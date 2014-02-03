@@ -12,7 +12,7 @@ from aitools.errors import AiToolsNovaError
 
 class NovaClient():
     def __init__(self, auth_url, username, password,
-            tenant_name, cacert, timeout, dryrun):
+            tenant_name, cacert, timeout=None, dryrun=False):
         novaconfig = NovaConfig()
         self.auth_url = auth_url
         self.username = username
