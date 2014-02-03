@@ -148,10 +148,10 @@ def host_main(pargs):
         t = prettytable.PrettyTable(["Item","Value"])
         t.add_row(["Hostname:", "%s" % (hostname,)])
         hardware80 = "\n".join(textwrap.wrap("%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
-                                                                                facts['memorysize'], facts['swapsize'], num_disks ), 54))
+                                                                                facts['memorysize'], facts['swapsize'], num_disks ), 62))
         t.add_row(["Hardware:", hardware80 ] )
         t.add_row(["Hostgroup:", facts['hostgroup']])
-        comment80 = "\n".join(textwrap.wrap(enc["parameters"]["comment"], 54))
+        comment80 = "\n".join(textwrap.wrap(enc["parameters"]["comment"], 62))
         t.add_row(["Comment:", comment80 ])
         t.add_row(["Environment:",enc['environment']])
         t.add_row(["Responsible:", facts['landb_responsible_email']])
@@ -180,7 +180,7 @@ def host_main(pargs):
             t.add_row(["Alarm state:", "[not yet registered in Roger]"])
 
         t.add_row(["",""])
-        t.add_row(["Last Puppet report:", humanize.naturaltime(ago)])
+        t.add_row(["Last report:", humanize.naturaltime(ago)])
 
         t.border=True
         t.header=False
