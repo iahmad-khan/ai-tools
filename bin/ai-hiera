@@ -22,7 +22,7 @@ from aitools.hiera import HieraClient
 
 from aitools.hiera import DEFAULT_HIERA_CONF_PATH
 
-from aitools.common import add_common_foreman_args
+from aitools.config import ForemanConfig
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
 from aitools.common import validate_fqdn
@@ -68,7 +68,7 @@ def parse_cmdline_args():
     ##
     ## Foreman options
     ##
-    add_common_foreman_args(parser)
+    ForemanConfig.add_standard_args(parser)
     parser.add_argument('--foreman-environment', type=str,
         default=None, help="Override Foreman environment"
         ).completer = ForemanCompleter(model='environments')
