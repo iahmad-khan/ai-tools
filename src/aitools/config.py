@@ -3,6 +3,7 @@ from ConfigParser import ConfigParser
 # Monostate pattern, Borg impl
 from argparse import ArgumentError
 from aitools.errors import AiToolsError
+import sys
 
 class AiConfig(object):
 
@@ -20,7 +21,8 @@ class AiConfig(object):
             with open(config_file) as f:
                 self.parser.readfp(f)
         except IOError:
-            raise AiToolsError("Config file (%s) could not be opened" % config_file)
+            sys.stderr.write("Config file (%s) could not be opened\n" % config_file)
+            sys.exit(1)
         self.pargs = vars(pargs)
 
     def __getattr__(self, key):
@@ -42,10 +44,9 @@ class AiConfig(object):
     def add_configfile_args(parser):
         try:
             parser.add_argument('--config', help="Configuration file",
-                                default="/etc/ai.conf")
+                                default="/etc/ai/ai.conf")
         except ArgumentError:
             pass
-
 
 class ForemanConfig(AiConfig):
 
