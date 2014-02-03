@@ -14,6 +14,15 @@ from aitools.config import CertmgrConfig
 class CertmgrClient(HTTPClient):
 
     def __init__(self, host=None, port=None, timeout=None, dryrun=False):
+        """
+        Basic client to communicate with the Certificate Manager service. Autoconfigures via the
+        AiConfig class.
+
+        :param host: override the auto-configured cert manager host
+        :param port: override the auto-configured cert manager port
+        :param timeout: override the auto-configured cert manager timeout
+        :param dryrun: make a dummy client
+        """
         certmgrconf = CertmgrConfig()
         self.host = host or certmgrconf.certmgr_hostname
         self.port = int(port or certmgrconf.certmgr_port)
@@ -22,6 +31,12 @@ class CertmgrClient(HTTPClient):
         self.cache = {}
 
     def stage(self, fqdn):
+        """
+        Stage the specified host in the Certificate Manager service.
+
+        :param fqdn: the host to stage
+        :raise AiToolsCertmgrError: if the staging action cannot be accomplished
+        """
         logging.info("Staging host '%s' on Certmgr..." % fqdn)
         payload = {'hostname': fqdn}
         logging.debug("With payload: %s" % payload)

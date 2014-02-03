@@ -2,11 +2,37 @@ from ConfigParser import ConfigParser
 
 # Monostate pattern, Borg impl
 from argparse import ArgumentError
-from aitools.errors import AiToolsError
 import sys
 
 class AiConfig(object):
+    """
+    Borg class holding the contents of the AI config dile, munged with eponymous CLI options.
+    The CLI options, if specified, override the config file. Being a monostate, all instances of the class
+    (including subclasses) share the configuration data. The AiConfig class refernces the "main" section,
+    the subclasses represent their own section (e.g. ForemanConfig answers for the [foreman] section of the config
+    file).
 
+    Use as::
+
+       parser = argparse.ArgumentParser()
+
+       ForemanConfig.add_standard_args(parser)  # adds standard Foreman CLI options, as needed
+       PdbConfig.add_standard_args(parser)      # adds standard Foreman PDB options, as needed
+
+       parser.parse_args()                      # the standard --conf option is added automatically
+
+       config = AiConfig()
+       config.read_config_and_override_with_pargs(pargs)
+
+       print config.config        # location of the c onfig file
+       f = ForemanConfig()
+       p = PdbConfig()
+
+       # Access the config values directly as attributes
+       print f.foreman_hostname
+       print p.pdb_timeout
+
+    """
     __monostate = {}
 
     def __new__(cls, *a, **k):
@@ -15,6 +41,12 @@ class AiConfig(object):
         return obj
 
     def read_config_and_override_with_pargs(self, pargs):
+        """
+        Read the config file and override with the supplied pargs.
+        The config file is found using the "--conf" option of the argparser.
+
+        :param pargs: the parser arguments of argparser.
+        """
         self.parser = ConfigParser()
         config_file = pargs.config
         try:

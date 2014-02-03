@@ -1,14 +1,25 @@
 __author__ = 'mccance'
 
+import yaml
+import requests
+
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsEncError
 from aitools.httpclient import HTTPClient
 from aitools.config import EncConfig
-import yaml
 
 class EncClient(HTTPClient):
 
     def __init__(self, host=None, port=None, timeout=None, dryrun=False):
+        """
+        ENC client for interacting with the ENC service. Autoconfigures via the AiConfig
+        object.
+
+        :param host: override the auto-configured ENC host
+        :param port: override the auto-configured ENC port
+        :param timeout: override the auto-configured ENC timeout
+        :param dryrun: create a dummy client
+        """
         encconf = EncConfig()
         self.host = host or encconf.enc_hostname
         self.port = int(port or encconf.enc_port)
@@ -17,6 +28,12 @@ class EncClient(HTTPClient):
         self.cache = {}
 
     def get_node_enc(self, hostname):
+        """
+        Return the specified node's ENC data.
+
+        :param hostname: the node to query
+        :return: the parsed YAML of the node's ENC
+        """
         return self.__do_api_request("get", "node/%s?format=yml" % (hostname,))
 
     def __do_api_request(self, method, url, data=None):

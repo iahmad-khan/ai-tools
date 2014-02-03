@@ -4,9 +4,7 @@
 import logging
 import json
 import urllib
-
 import re
-
 import requests
 
 from aitools.errors import AiToolsHTTPClientError
@@ -17,6 +15,15 @@ from aitools.config import ForemanConfig
 class ForemanClient(HTTPClient):
 
     def __init__(self, host=None, port=None, timeout=None, dryrun=False):
+        """
+        Foreman client for interacting with the Foreman service. Autoconfigures via the AiConfig
+        object.
+
+        :param host: override the auto-configured Foreman host
+        :param port: override the auto-configured Foreman port
+        :param timeout: override the auto-configured Foreman timeout
+        :param dryrun: create a dummy client
+        """
         fmconfig = ForemanConfig()
         self.host = host or fmconfig.foreman_hostname
         self.port = int(port or fmconfig.foreman_port)

@@ -14,12 +14,33 @@ HIERA_HOSTGROUP_DEPTH = 5
 
 class HieraClient():
     def __init__(self, config, trace=False, hash=False, array=False):
+        """
+        Tool for looking up hiera keys
+
+        :param config: location of the Hiera config file
+        :param trace: trace how the keys were looked up and print the trace to sys.stdout
+        :param hash: look up in hash mode
+        :param array: look up in array mode
+        """
         self.config = config
         self.trace = trace
         self.hash = hash
         self.array = array
 
+
     def lookupkey(self, key, fqdn, environment, hostgroup, facts, module=None):
+        """
+        Lookup a hiera key and returns its value.
+
+        :param key: the Hiera key to look up
+        :param fqdn: the hostname to look it up for
+        :param environment: the environment to do the lookup for
+        :param hostgroup: the hostgroup to do the lookup for
+        :param facts: dictionary of the 'operatingsystemmajorrelease', 'osfamily', 'cern_hwvendor' facts
+        :param module: search also for this module
+        :return: a (possibly empty) list of values
+        :raise AiToolsHieraError: in the case the Hiera call failed
+        """
         hiera_cmd = [HIERA_BINARY_PATH, "-c", self.config, key]
         if self.trace:
             hiera_cmd.append("-d")

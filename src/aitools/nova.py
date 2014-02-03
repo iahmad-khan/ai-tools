@@ -13,6 +13,17 @@ from aitools.errors import AiToolsNovaError
 class NovaClient():
     def __init__(self, auth_url, username, password,
             tenant_name, cacert, timeout=None, dryrun=False):
+        """
+        Nova client for interacting with the Openstack Nova service. Autoconfigures via the AiConfig
+        object and the standard **_OS** environment variables.
+
+        :param auth_url: override the environment variable configured Keystone URL
+        :param username: override the environment variable configured username
+        :param username: override the environment variable configured password
+        :param cacert: override the environment variable configured CA certificate bundle
+        :param timeout: override the auto-configured Nova timeout
+        :param dryrun: create a dummy client
+        """
         novaconfig = NovaConfig()
         self.auth_url = auth_url
         self.username = username
@@ -24,6 +35,18 @@ class NovaClient():
 
     def boot(self, fqdn, flavor, image, userdata, meta,
             key_name=None, availability_zone=None):
+        """
+        Execute the Nova boot api call to create and start a VM.
+
+        :param fqdn: the hostname to create
+        :param flavor: the flavor used to create the node
+        :param image: the image name used to create the node
+        :param userdata: the userdata to append
+        :param meta: the metadata to append
+        :param key_name: the named SSH key to use
+        :param availability_zone: the availability zone to create the node in
+        :raise AiToolsNovaError: in case the API call fails
+        """
         vmname = self.__vmname_from_fqdn(fqdn)
         logging.info("Creating virtual machine '%s'..." % vmname)
         tenant = self.__init_client()
@@ -51,6 +74,12 @@ class NovaClient():
             raise AiToolsNovaError(error)
 
     def delete(self, fqdn):
+        """
+        Execute the Nova delete API call to delete a VM.
+
+        :param fqdn: the hostname of the VM to be deleted.
+        :raise AiToolsNovaError: in case the deletion API call fails
+        """
         vmname = self.__vmname_from_fqdn(fqdn)
         logging.info("Deleting virtual machine '%s'..." % vmname)
         tenant = self.__init_client()

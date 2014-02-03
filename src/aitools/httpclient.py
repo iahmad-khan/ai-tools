@@ -8,6 +8,9 @@ from aitools.errors import AiToolsHTTPClientError
 class HTTPClient(object):
 
     def __init__(self):
+        """
+        Abstract; do not instantiate this class directly, subclass it.
+        """
         assert False  # subclass it
 
     def do_request(self, method, url, headers, data=None):
