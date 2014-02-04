@@ -54,7 +54,7 @@ class AiConfig(object):
                 self.parser.readfp(f)
         except IOError:
             sys.stderr.write("Config file (%s) could not be opened\n" % config_file)
-            sys.exit(1)
+            sys.exit(10)
         self.pargs = vars(pargs)
 
     def __getattr__(self, key):
