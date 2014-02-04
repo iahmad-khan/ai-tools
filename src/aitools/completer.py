@@ -22,7 +22,7 @@ class ForemanCompleter(object):
         self.item = item
 
     def __call__(self, prefix, parsed_args, **kwargs):
-        foreman = ForemanClient(dryrun=True)
+        foreman = ForemanClient(host="judy.cern.ch", port=8443, timeout=15, dryrun=True)
         if prefix == '':
            query = ''
         else:
