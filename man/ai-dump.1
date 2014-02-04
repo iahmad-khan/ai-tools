@@ -25,8 +25,14 @@ Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
 .B --config
 Path to the config file (default /etc/ai/ai.conf).
 .TP
-.B -d, --json
+.B --json
 Output in JSON format.
+.TP
+.B --facts
+Print out the specified extra facts (comma separated list)
+.TP
+.B --enc
+Print out the specified extra ENC parameters (comma separated list)
 .TP
 .B -h, --help
 Display usage and exit.
@@ -95,6 +101,10 @@ $ ai-dump foo1.cern.ch
 .TP
 .B Dump info about foo1.cern.ch in JSON
 $ ai-dump --json foo1.cern.ch
+
+.TP
+.B Dump info about foo1.cern.ch and its serial number
+$ ai-dump --facts serialnumber foo1.cern.ch
 
 .SH BUGS
 Any problem or feature requests? Open a support call on Jira

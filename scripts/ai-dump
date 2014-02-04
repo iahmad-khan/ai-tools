@@ -109,6 +109,18 @@ def host_main(pargs):
     encclient = EncClient()
     (code, enc) = encclient.get_node_enc(hostname)
 
+    extrafacts={}
+    if pargs.facts:
+        ef = pargs.facts.split(',')
+        for f in ef:
+            extrafacts[f.strip()] = facts.get(f.strip(), None)
+
+    extraenc={}
+    if pargs.enc:
+        en = pargs.enc.split(',')
+        for e in en:
+            extraenc[e.strip()] = enc['parameters'].get(e.strip(), None)
+
     if pargs.print_json:
         # Dump as JSON
 
@@ -138,6 +150,9 @@ def host_main(pargs):
         else:
             jj['landb_location'] = facts['landb_location']
             jj['location_name'] = location_name(facts['landb_location'])
+
+        jj.update(extrafacts)
+        jj.update(extraenc)
 
         print json.dumps([jj], sort_keys=True,
                              indent=4, separators=(',', ': '))
@@ -179,6 +194,16 @@ def host_main(pargs):
             t.add_row(["App state:", "[not yet registered in Roger]"])
             t.add_row(["Alarm state:", "[not yet registered in Roger]"])
 
+        if extrafacts:
+            t.add_row(["",""])
+            for factoid in extrafacts:
+                t.add_row(["%s:" % factoid, extrafacts[factoid] or "[not found]"])
+
+        if extraenc:
+            t.add_row(["",""])
+            for encoid in extraenc:
+                t.add_row(["%s:" % encoid, extraenc[encoid] or "[not found]"])
+
         t.add_row(["",""])
         t.add_row(["Last report:", humanize.naturaltime(ago)])
 
@@ -199,6 +224,8 @@ def main():
 
     parser.add_argument("--json", action="store_true", default=False, dest="print_json",
                         help="output in JSON format")
+    parser.add_argument("--facts", help="extra facts to print (comma separated)", default=None)
+    parser.add_argument("--enc", help="extra ENC parameters to print (comma separated)", default=None)
     parser.add_argument("hostname", metavar="HOST", help="hostname to dump").completer = ForemanCompleter()
     argcomplete.autocomplete(parser)
     parser.set_defaults(func=host_main)
