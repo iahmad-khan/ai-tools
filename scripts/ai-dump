@@ -195,9 +195,8 @@ def main():
     ForemanConfig.add_standard_args(parser)
     PdbConfig.add_standard_args(parser)
     EncConfig.add_standard_args(parser)
+    RogerConfig.add_standard_args(parser)
 
-    parser.add_argument("--show_url", action="store_true", default=False, dest="show_urls",
-                        help="show REST urls")
     parser.add_argument("--json", action="store_true", default=False, dest="print_json",
                         help="output in JSON format")
     parser.add_argument("hostname", metavar="HOST", help="hostname to dump").completer = ForemanCompleter()
