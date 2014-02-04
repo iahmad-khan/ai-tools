@@ -58,6 +58,9 @@ the corresponding environment variables.
 .LP
 .I Optional parameters:
 .TP
+.B --config
+Path to the config file (default /etc/ai/aitools.conf).
+.TP
 .B --foreman-environment (AIBS_ENVIRONMENT_NAME)
 Name of the Foreman environment you want your new virtual
 machine to join (defaults to "production").
@@ -97,26 +100,29 @@ Prefix to prepend to the randomly generated hostname (defaults to "vm").
 .TP
 The following parameters are for advanced users and debugging.
 .TP
-.B --caserver-hostname (AIBS_CASERVER_HOSTNAME)
-Hostname of the CA server the virtual machine will request a certificate
-from (defaults to "baby01.cern.ch").
+.B --certmgr-hostname (AIBS_CASERVER_HOSTNAME)
+Hostname of the Cert Manager server that the virtual machine will request a certificate from
+from.
 .TP
-.B --caserver-port
-Port of the CA server the virtual machine will request a certificate
-from (defaults to 8008).
+.B --certmgr-port
+Port of the Cert Manager server that the virtual machine will request a certificate from
+from.
+.TP
+.B --certmgr-timeout
+Timeout (in seconds) for Cert Manager operations.
 .TP
 .B -d, --dryrun
 Don't do the requests that alter data (Foreman registration, host staging
 and VM creation request).
 .TP
 .B --foreman-hostname
-FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
+FQDN of the Foreman instance to use.
 .TP
 .B --foreman-port
-Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
+Port of the Foreman instance to use -- must support Kerberos.
 .TP
 .B --foreman-timeout
-Timeout (in seconds) for Foreman operations (default: 15).
+Timeout (in seconds) for Foreman operations.
 .TP
 .B --nova-parameter
 Parameter to be passed to Nova as metaparameter (format: key=value,
@@ -135,7 +141,7 @@ environment that will be part of the userdata
 sent to the virtual machine (defaults to "/usr/share/ai-tools/userdata/puppetinit").
 .TP
 .B --nova-timeout
-Timeout (in seconds) for Openstack operations (default: 15).
+Timeout (in seconds) for Openstack operations.
 .TP
 .B --userdata-dir
 Directory containing fragments that will be attached to the userdata.

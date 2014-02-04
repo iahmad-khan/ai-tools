@@ -142,6 +142,21 @@ It has a \*(L"raw\*(R" subcommand which expects a puppetdb \s-1REST\s0 endpoint,
 version, and an optional \*(L"query\*(R" string. The endpoints and the query language
 can be found in the official puppetlabs documentation at [1].
 .PP
+.SH "OPTIONS"
+.IX Header "OPTIONS"
+.B --config
+Path to the config file (default /etc/ai/ai.conf).
+.TP
+.B --pdb-hostname
+FQDN of the PuppetDB instance to use.
+.TP
+.B --pdb-port
+Port of the PuppetDB instance to use.
+.TP
+.B --pdb-timeout
+Timeout (in seconds) for PuppetDB operations.
+.SH "SUBCOMMANDS"
+.IX Header "SUBCOMMANDS"
 There are also subcommands for common use cases, the first being hostgroup 
 membership.
 .PP

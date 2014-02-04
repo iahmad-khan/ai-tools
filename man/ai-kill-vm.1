@@ -29,6 +29,9 @@ Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
 
 .SH OPTIONS
 .TP
+.B --config
+Path to the config file (default /etc/ai/ai.conf).
+.TP
 .B -h, --help
 Display usage and exit.
 .TP
@@ -42,16 +45,16 @@ The following parameters are for advanced users and debugging.
 
 .TP
 \fB\-\-nova-timeout\fR INT
-Timeout (in seconds) for Nova operations (default: 15)
+Timeout (in seconds) for Nova operations.
 .TP
 \fB\-\-foreman-hostname\fR FQDN
-FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
+FQDN of the Foreman instance to use.
 .TP
 \fB\-\-foreman-port\fR PORT
-Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
+Port of the Foreman instance to use.
 .TP
 \fB\-\-foreman-timeout\fR INT
-Timeout (in seconds) for Foreman operations (default: 15)
+Timeout (in seconds) for Foreman operations.
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
 Enable debug messages.
