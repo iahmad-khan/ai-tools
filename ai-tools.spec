@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 6.0
+Version: 6.1
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -67,6 +67,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Fri Jan 31 2014 Gavin McCance <gavin.mccance@cern.ch> - 6.1-0
+- Fix command completion
+
 * Fri Jan 31 2014 Gavin McCance <gavin.mccance@cern.ch> - 6.0-0
 - Regularise options on all clients and use common config file
 
