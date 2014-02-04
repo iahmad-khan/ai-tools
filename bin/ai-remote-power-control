@@ -74,7 +74,7 @@ def foreman_power_operation(client, fqdn):
         if code == requests.codes.ok:
             outcome = msg["power"]
             if args.operation == "status":
-                return (True, outcome.upper())
+                return (True, outcome.upper() if outcome else "Unknown")
             else:
                 if outcome is False:
                     return (False, "Failed to send IPMI power operation")
