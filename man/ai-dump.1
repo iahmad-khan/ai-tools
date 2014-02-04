@@ -1,0 +1,107 @@
+.TH AI-DUMP "1" "February 2013" "ai-dump" "User Commands"
+.SH NAME
+ai-dump \- Dump information about a host
+
+.SH SYNOPSIS
+.B "ai-dump [OPTION]... HOSTNAME"
+
+.SH DESCRIPTION
+ai-dump is a tool to print common information about a host. The information is retrieved from
+PuppetDB, Roger, the ENC and Foreman.
+.LP
+Apart from some of the options described below, the user has to
+provide a hostname or a fully qualified domain name.
+When necessary, this tool resolves the FQDN of the passed hostnames based on
+the configuration of the local DNS resolver library (/etc/resolv.conf).
+.LP
+.I Prerequisites:
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+.SH OPTIONS
+.TP
+.B --config
+Path to the config file (default /etc/ai/ai.conf).
+.TP
+.B -d, --json
+Output in JSON format.
+.TP
+.B -h, --help
+Display usage and exit.
+.LP
+.I Advanced options:
+.TP
+The following parameters are for advanced users and debugging.
+.TP
+\fB\-\-foreman-hostname\fR FQDN
+FQDN of the Foreman instance to use.
+.TP
+\fB\-\-foreman-port\fR PORT
+Port of the Foreman instance to use.
+.TP
+\fB\-\-foreman-timeout\fR INT
+Timeout (in seconds) for Foreman operations.
+.TP
+.B --pdb-hostname
+FQDN of the PuppetDB instance to use.
+.TP
+.B --pdb-port
+Port of the PuppetDB instance to use.
+.TP
+.B --pdb-timeout
+Timeout (in seconds) for PuppetDB operations.
+.TP
+.B --roger-hostname
+Hostname of the Roger server
+.TP
+.B --roger-port
+Port of the Roger server
+from.
+.TP
+.B --roger-timeout
+Timeout (in seconds) for the Roger server
+.TP
+.B --enc-hostname
+Hostname of the ENC server
+from.
+.TP
+.B --enc-port
+Port of the ENC server
+from.
+.TP
+.B --enc-timeout
+Timeout (in seconds) for the ENC server
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Enable debug messages.
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 1
+Bad command line.
+.TP
+.B 10
+Error loading config file.
+
+.SH EXAMPLES
+.TP
+.B Dump info about foo1.cern.ch
+$ ai-dump foo1.cern.ch
+
+.TP
+.B Dump info about foo1.cern.ch in JSON
+$ ai-dump --json foo1.cern.ch
+
+.SH BUGS
+Any problem or feature requests? Open a support call on Jira
+(https://its.cern.ch/jira/) project "Agile Infrastructure".
+
+.SH AUTHOR
+Gavin McCance <gavin.mccance@cern.ch>
+
+.SH SEE ALSO
+ai-pdb (1)
