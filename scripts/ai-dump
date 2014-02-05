@@ -27,6 +27,8 @@ from aitools.enc import EncClient
 from aitools.errors import AiToolsPdbError
 
 def location_name(lan_dblocation):
+    if not lan_dblocation:
+        return None
     room = lan_dblocation.split(' ')[0]
     if room == '0513':
         return "(Meyrin CC)"
@@ -104,7 +106,7 @@ def host_main(pargs):
     else:
         vtype = "physical"
 
-    num_disks = len(facts['disks'].split(","))
+    num_disks = len(facts.get('disks','').split(","))
 
     encclient = EncClient()
     (code, enc) = encclient.get_node_enc(hostname)
@@ -124,16 +126,17 @@ def host_main(pargs):
     if pargs.print_json:
         # Dump as JSON
 
-        hardware = {"cores": facts['processorcount'], "memory": facts['memorysize'], "swap": facts['swapsize'],
+        hardware = {"cores": facts.get('processorcount', None), "memory": facts.get('memorysize', None),
+                    "swap": facts.get('swapsize', None),
                     "disks": num_disks, "type": vtype}
-        jj = {  "hostname": hostname, "hardware": hardware, "hostgroup": facts['hostgroup'],
-                "responsible": facts['landb_responsible_email'], "os": facts['operatingsystem'],
-                "lsbdistrelease": facts['lsbdistrelease'], "arch": facts['architecture'],
-                "kernel": facts['configured_kernel'], "landbsets": landbsets, "lbaliases": lbaliases,
-                "ipaddress": facts['ipaddress'], "ipdomain": facts['landb_network_domain'],
+        jj = {  "hostname": hostname, "hardware": hardware, "hostgroup": facts.get('hostgroup', None),
+                "responsible": facts.get('landb_responsible_email', None), "os": facts.get('operatingsystem', None),
+                "lsbdistrelease": facts.get('lsbdistrelease', None), "arch": facts.get('architecture', None),
+                "kernel": facts.get('configured_kernel', None), "landbsets": landbsets, "lbaliases": lbaliases,
+                "ipaddress": facts.get('ipaddress', None), "ipdomain": facts.get('landb_network_domain', None),
                 "lastreport": host_info['catalog_timestamp'],
                 "environment": enc["environment"], "comment": enc["parameters"]["comment"],
-                "cnames": cnaliases, "landb_service_name": facts.get('landb_service_name', '-'),
+                "cnames": cnaliases, "landb_service_name": facts.get('landb_service_name', None),
                 "aidump_recordversion": 1}
 
         if roger:
@@ -145,11 +148,11 @@ def host_main(pargs):
             jj.update(rogga)
 
         if facts['is_virtual'] == 'true':
-            jj['flavour'] = facts['ec2_instance_type']
-            jj['availability_zone'] = facts['ec2_placement_availability_zone']
+            jj['flavour'] = facts.get('ec2_instance_type', None)
+            jj['availability_zone'] = facts.get('ec2_placement_availability_zone', None)
         else:
-            jj['landb_location'] = facts['landb_location']
-            jj['location_name'] = location_name(facts['landb_location'])
+            jj['landb_location'] = facts.get('landb_location', None)
+            jj['location_name'] = location_name(facts.get('landb_location', None))
             jj['landb_rackname'] = facts.get("landb_rackname", None)
 
         jj.update(extrafacts)
@@ -163,26 +166,26 @@ def host_main(pargs):
 
         t = prettytable.PrettyTable(["Item","Value"])
         t.add_row(["Hostname:", "%s" % (hostname,)])
-        hardware80 = "\n".join(textwrap.wrap("%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts['processorcount'],
-                                                                                facts['memorysize'], facts['swapsize'], num_disks ), 62))
+        hardware80 = "\n".join(textwrap.wrap("%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts.get('processorcount'),
+                                                                                facts.get('memorysize'), facts.get('swapsize', '-'), num_disks ), 62))
         t.add_row(["Hardware:", hardware80 ] )
-        t.add_row(["Hostgroup:", facts['hostgroup']])
+        t.add_row(["Hostgroup:", facts.get('hostgroup', '-')])
         comment80 = "\n".join(textwrap.wrap(enc["parameters"]["comment"], 62))
         t.add_row(["Comment:", comment80 ])
         t.add_row(["Environment:",enc['environment']])
-        t.add_row(["Responsible:", facts['landb_responsible_email']])
-        t.add_row(["OS:", "%s %s %s (%s)" % (facts['operatingsystem'], facts['lsbdistrelease'], facts['architecture'], facts['configured_kernel'])])
-        if facts['is_virtual'] == 'true':
-            t.add_row(["VM Flavour:", facts['ec2_instance_type']])
-            t.add_row(["Avail zone:", facts['ec2_placement_availability_zone']])
+        t.add_row(["Responsible:", facts.get('landb_responsible_email', '-')])
+        t.add_row(["OS:", "%s %s %s (%s)" % (facts.get('operatingsystem', '-'), facts.get('lsbdistrelease', '-'), facts.get('architecture', '-'), facts.get('configured_kernel', '-'))])
+        if facts.get('is_virtual') == 'true':
+            t.add_row(["VM Flavour:", facts.get('ec2_instance_type', '-')])
+            t.add_row(["Avail zone:", facts.get('ec2_placement_availability_zone', '-')])
         else:
-            location = location_name(facts['landb_location'])
-            t.add_row(["LanDB Location:", "%s %s   Rack: %s" % (facts['landb_location'], location, facts.get("landb_rackname", "-"))])
+            location = location_name(facts.get('landb_location', '-'))
+            t.add_row(["LanDB Location:", "%s %s   Rack: %s" % (facts.get('landb_location', '-'), location, facts.get("landb_rackname", "-"))])
 
         t.add_row(["LANDBsets:", landbsets])
         t.add_row(["LB aliases:", lbaliases])
         t.add_row(["CNAME aliases:",cnaliases])
-        t.add_row(["IP:", "%s (%s) (%s)" % (facts['ipaddress'], facts['landb_network_domain'], facts.get('landb_service_name', '-'))])
+        t.add_row(["IP:", "%s (%s) (%s)" % (facts.get('ipaddress', '-'), facts.get('landb_network_domain', '-'), facts.get('landb_service_name', '-'))])
 
         if roger:
             t.add_row(["App state:", roger['appstate']])
