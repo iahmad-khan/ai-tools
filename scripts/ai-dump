@@ -150,6 +150,7 @@ def host_main(pargs):
         else:
             jj['landb_location'] = facts['landb_location']
             jj['location_name'] = location_name(facts['landb_location'])
+            jj['landb_rackname'] = facts.get("landb_rackname", None)
 
         jj.update(extrafacts)
         jj.update(extraenc)
@@ -176,7 +177,7 @@ def host_main(pargs):
             t.add_row(["Avail zone:", facts['ec2_placement_availability_zone']])
         else:
             location = location_name(facts['landb_location'])
-            t.add_row(["LanDB Location:", "%s %s" % (facts['landb_location'], location)])
+            t.add_row(["LanDB Location:", "%s %s   Rack: %s" % (facts['landb_location'], location, facts.get("landb_rackname", "-"))])
 
         t.add_row(["LANDBsets:", landbsets])
         t.add_row(["LB aliases:", lbaliases])
