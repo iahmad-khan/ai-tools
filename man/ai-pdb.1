@@ -157,7 +157,7 @@ Port of the PuppetDB instance to use.
 Timeout (in seconds) for PuppetDB operations.
 .SH "SUBCOMMANDS"
 .IX Header "SUBCOMMANDS"
-There are also subcommands for common use cases, the first being hostgroup 
+There are also subcommands for common use cases:
 membership.
 .PP
 1. http://docs.puppetlabs.com/puppetdb/latest/index.html
@@ -178,8 +178,16 @@ The hostgroup subcommand takes a hostgroup string, such as puppet/puppetdb/grove
 .IP "\fB\-\-subgroups\fR" 4
 .IX Item "--subgroups"
 With a supplied hostgroup string, will look for all subgroups
+.SS "facts"
+.IX Subsection "facts"
+The facts subcommand takes a hostname and returns a JSON list of facts for that host
+.IP "\fB\-\-facts\fR" 4
+.IX Item "--facts"
+Just return the single specified fact
 .SH "EXAMPLES"
 .IX Header "EXAMPLES"
+ai-pdb facts aiadm041.cern.ch
+
 ai-pdb raw /v2/nodes/benvm03.cern.ch
 ai-pdb raw /v2/facts/hostgroup \-\-query '[\*(L"~\*(R", \*(L"value\*(R", \*(L"punch/*\*(R"]'
 .PP

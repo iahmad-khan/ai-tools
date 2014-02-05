@@ -2,17 +2,17 @@
 
 from argparse import ArgumentParser
 import os
+import argcomplete
 
 from urllib import urlencode
-
-
 try:
     import simplejson as json
 except ImportError:
     import json
 from aitools.pdb import PdbClient
 from aitools.config import PdbConfig, AiConfig
-
+from aitools.completer import ForemanCompleter
+from aitools.common import fqdnify
 
 def raw_main(pargs):
 
@@ -66,6 +66,26 @@ def hg_main(pargs):
     res = sorted(res, key=lambda k: k["hostgroup"])
     print json.dumps(res, sort_keys=True, indent=5, separators=(',', ': '))
 
+
+def hg_facts(pargs):
+
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
+    fqdn = fqdnify(pargs.hostname)
+
+    if pargs.fact:
+        factoid = "/%s" % pargs.fact
+    else:
+        factoid = ""
+
+    endpoint = "/v3/nodes/%s/facts%s" % (fqdn, factoid)
+
+    pdb = PdbClient(show_url=pargs.show_url)
+    (code, j) = pdb.raw_request("%s?" % (endpoint,))
+
+    print json.dumps(j, sort_keys=True, indent=5, separators=(',', ': '))
+
 def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
 
@@ -74,16 +94,24 @@ def main():
     parser.add_argument("--show_url", action="store_true", default=False, dest="show_url",
                         help="show REST urls")
     subparsers = parser.add_subparsers()
+
     raw_parser = subparsers.add_parser("raw", help="raw puppetdb queries")
     raw_parser.add_argument("endpoint", metavar="URI", help="REST endpoint for puppetdb api (include version!)")
     raw_parser.add_argument("--query", metavar="QUERY", dest="query",
                             help="puppetdb query string")
     raw_parser.set_defaults(func=raw_main)
+
     hg_parser = subparsers.add_parser("hostgroup", help="get hostgroup members")
     hg_parser.add_argument("hostgroup", metavar="HG", help="hostgroup string")
     hg_parser.add_argument("--subgroups", action="store_true", default=False, dest="subgroups",
                             help="return nodes from subgroups")
     hg_parser.set_defaults(func=hg_main)
+
+    facts_parser = subparsers.add_parser("facts", help="get facts for a node")
+    facts_parser.add_argument("hostname", metavar="HOST", help="hostname to fetch facts for").completer = ForemanCompleter()
+    facts_parser.add_argument("--fact", help="specific fact to fetch", default=None)
+    argcomplete.autocomplete(parser)
+    facts_parser.set_defaults(func=hg_facts)
     pargs = parser.parse_args()
     pargs.func(pargs)
 
