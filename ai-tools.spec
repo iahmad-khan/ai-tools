@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 6.1
+Version: 6.2
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -68,6 +68,14 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Feb 06 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 6.2-0
+- [ai-bs-vm] Light Puppet run at init time to configure Yum repositories.
+- [ai-bs-vm] Run distro_sync if available.
+- [ai-bs-vm] Grow /dev/vdaX.
+- [ai-bs-vm] Reboot the VM to get a fresh kernel.
+- [ai-dump] Add manpage
+- [ai-dump] Add options --enc and --facts.
+
 * Fri Jan 31 2014 Gavin McCance <gavin.mccance@cern.ch> - 6.1-0
 - Fix command completion
 
