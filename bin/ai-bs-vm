@@ -50,6 +50,7 @@ DEFAULT_PUPPETMASTER_HOSTNAME = "it-puppet-masters-public.cern.ch"
 
 DEFAULT_PUPPETINIT_PATH = "/usr/share/ai-tools/userdata/puppetinit"
 DEFAULT_PREFIX = "vm"
+DEFAULT_GROW_PARTITION = 2
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -83,6 +84,16 @@ def parse_cmdline_args():
     parser.add_argument('--landb-responsible', type=str,
         help="LANDB responsible to be assigned to the virtual machine",
         default=os.environ.get('AIBS_LANDB_RESPONSIBLE', None))
+    parser.add_argument('--noreboot',
+        action="store_true",
+        help="Don't reboot after the Puppet initialization")
+    parser.add_argument('--nogrow',
+        action="store_true",
+        help="Don't grow the system disk after the Puppet initialization")
+    parser.add_argument('--grow-partition', type=int,
+        help="Partition of the system disk to grow (default: %d)" % \
+        DEFAULT_GROW_PARTITION,
+        default=DEFAULT_GROW_PARTITION)
     ##
     ## Certmgr options
     ##
@@ -275,7 +286,7 @@ def main():
         logging.info("  meantime, the Foreman owner will be the issuer of this command.")
         logging.info("  (%s)" % krb_principal)
     logging.info("* In case of problems, if you provided a SSH key when creating the VM")
-    logging.info("  use it to log into the box and take a look at /var/log/boot.log.")
+    logging.info("  use it to log into the box and take a look at /var/log/firstboot.log.")
     logging.info("  Console log can be retrieved by using 'nova console-log'.")
     logging.info("----------------------------------------------------------------------")
     return 0

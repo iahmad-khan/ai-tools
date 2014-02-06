@@ -113,7 +113,10 @@ def generate_userdata(args):
     values = {'CASERVER_HOSTNAME': certmgrconf.certmgr_hostname,
         'CASERVER_PORT': certmgrconf.certmgr_port,
         'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
-        'FOREMAN_ENVIRONMENT': args.foreman_environment}
+        'FOREMAN_ENVIRONMENT': args.foreman_environment,
+        'NO_GROW': 1 if args.nogrow else 0,
+        'GROWPART_VDA_PARTITION': args.grow_partition,
+        'NO_REBOOT': 1 if args.noreboot else 0}
     userdata = MIMEMultipart()
     puppetinit = MIMEText(script.safe_substitute(values), 'x-shellscript')
     puppetinit.add_header('Content-Disposition', 'attachment',

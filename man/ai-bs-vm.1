@@ -124,12 +124,24 @@ Port of the Foreman instance to use -- must support Kerberos.
 .B --foreman-timeout
 Timeout (in seconds) for Foreman operations.
 .TP
+.B --grow-partition
+Partition of the system disk to grow.
+.TP
+.B -h, --help
+Display usage and exit.
+.TP
+.B --nogrow
+Don't grow the system disk after the Puppet initialization.
+.TP
+.B --noreboot
+Don't reboot after the Puppet initialization.
+.TP
 .B --nova-parameter
 Parameter to be passed to Nova as metaparameter (format: key=value,
 example: network=23). This option can be specified several times.
 .TP
-.B -h, --help
-Display usage and exit.
+.B --nova-timeout
+Timeout (in seconds) for Openstack operations.
 .TP
 .B --puppetmaster-hostname (AIBS_PUPPETMASTER_HOSTNAME)
 Hostname of the Puppet master the virtual machine will request its
@@ -139,9 +151,6 @@ configuration from (defaults to "it-puppet-masters-public.cern.ch").
 Path to the template to generate the script to initialize the Puppet
 environment that will be part of the userdata
 sent to the virtual machine (defaults to "/usr/share/ai-tools/userdata/puppetinit").
-.TP
-.B --nova-timeout
-Timeout (in seconds) for Openstack operations.
 .TP
 .B --userdata-dir
 Directory containing fragments that will be attached to the userdata.

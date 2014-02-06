@@ -30,7 +30,7 @@ function unrecoverable_error {
   exit 1
 }
 
-LOCKFILE=/var/lock/puppetinit
+LOCKFILE=/var/lib/cloud/puppetinit.lock
 
 date
 [ -e "$$LOCKFILE" ] && echo "Puppet init has already run. Exiting." && exit 0
@@ -100,7 +100,7 @@ ignoreschedules = true
 certificate_revocation = false
 dynamicfacts = memorysize,memoryfree,swapsize,swapfree,uptime_seconds,uptime_hours
 configtimeout = 500
-runinterval = 1800
+runinterval = 600
 environment = $FOREMAN_ENVIRONMENT
 EOF
 
@@ -180,11 +180,30 @@ EOF
 # Turn puppet on for next boot.
 /sbin/chkconfig puppet on
 
-# And start it manually as the VM won't reboot
-service puppet start
-
 # Restart syslog to make sure it logs with new hostname
 service rsyslog restart
 
-echo "Done. Puppet is ready to run for the first time."
-date
+if [ $$OS_MAJOR_VERSION -ge 6 ]
+  then
+    date
+    echo "Waiting for a time slot to run Puppet (osrepos tag only)..."
+    /bin/sleep $(/bin/echo $RANDOM % 180 | bc)
+    echo "Running Puppet to configure only the YUM repositories"
+    /usr/bin/puppet agent -t --tags osrepos --masterport 8150 \
+        --ca_port 8140 --waitforcert 120 --color=FALSE
+    echo "Running yum distro-sync for the first time..."
+    [[ -x /usr/local/sbin/distro_sync.sh ]] \
+      && /usr/local/sbin/distro_sync.sh && cat /var/log/distro_sync.log \
+      || echo "Distro_sync.sh not found. Either disabled or Puppet failed to install it."
+    [[ $NO_GROW -eq 1 ]] \
+      || (echo "Growing /dev/vda$GROWPART_VDA_PARTITION to use all the available space..." \
+      && growpart /dev/vda $GROWPART_VDA_PARTITION)
+    [[ $NO_REBOOT -eq 1 ]] || (echo "The VM will now reboot" && /sbin/reboot)
+    [[ $NO_REBOOT -eq 1 ]] && /sbin/service puppet start
+    cp /var/log/boot.log /var/log/firstboot.log
+    date
+else
+    /sbin/service puppet start
+    echo "Done. Puppet is ready to run"
+    date
+fi
