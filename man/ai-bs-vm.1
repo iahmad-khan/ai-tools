@@ -1,4 +1,4 @@
-.TH AI-BS-VM "1" "October 2013" "ai-bs-vm" "User Commands"
+.TH AI-BS-VM "1" "February 2014" "ai-bs-vm" "User Commands"
 .SH NAME
 ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 
@@ -125,13 +125,13 @@ Port of the Foreman instance to use -- must support Kerberos.
 Timeout (in seconds) for Foreman operations.
 .TP
 .B --grow-partition
-Partition of the system disk to grow.
+Partition of the image disk (/dev/vda) to grow (default: 2).
 .TP
 .B -h, --help
 Display usage and exit.
 .TP
 .B --nogrow
-Don't grow the system disk after the Puppet initialization.
+Don't grow the image disk (/dev/vda) after the Puppet initialization.
 .TP
 .B --noreboot
 Don't reboot after the Puppet initialization.
