@@ -42,7 +42,7 @@ class RogerClient(HTTPClient):
         (code, body) = self.__do_api_request("get", host_endpoint)
         if code == requests.codes.not_found:
             raise AiToolsRogerError("Host %s not found in Roger" % hostname)
-        return bodys
+        return body
 
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/%s" % \

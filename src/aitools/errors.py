@@ -13,6 +13,9 @@ class AiToolsForemanError(AiToolsHTTPClientError):
 class AiToolsPdbError(AiToolsHTTPClientError):
     pass
 
+class AiToolsPdbNotFoundError(AiToolsPdbError):
+    pass
+
 class AiToolsCertmgrError(AiToolsHTTPClientError):
     pass
 
