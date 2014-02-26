@@ -9,6 +9,7 @@ import requests
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
+from aitools.errors import AiToolsForemanNotFoundError
 from aitools.httpclient import HTTPClient
 from aitools.config import ForemanConfig
 
@@ -75,7 +76,7 @@ class ForemanClient(HTTPClient):
                 body['host']['hostgroup_id'])
             return body
         elif code == requests.codes.not_found:
-            raise AiToolsForemanError("Host '%s' not found in Foreman" % fqdn)
+            raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
             error = ','.join(body['host']['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)
@@ -97,7 +98,7 @@ class ForemanClient(HTTPClient):
         if code == requests.codes.ok:
             return body
         elif code == requests.codes.not_found:
-            raise AiToolsForemanError("Host '%s' (or facts) not found in Foreman" % fqdn)
+            raise AiToolsForemanNotFoundError("Host '%s' (or facts) not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
             error = ','.join(body[fqdn]['full_messages'])
             raise AiToolsForemanError("getfacts call failed (%s)" % error)
@@ -116,7 +117,7 @@ class ForemanClient(HTTPClient):
             if code == requests.codes.ok:
                 logging.info("Host '%s' deleted from Foreman" % fqdn)
             elif code == requests.codes.not_found:
-                raise AiToolsForemanError("Host '%s' not found in Foreman" % fqdn)
+                raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
         else:
             logging.info("Host '%s' not deleted because dryrun is enabled" % fqdn)
 
@@ -140,7 +141,7 @@ class ForemanClient(HTTPClient):
             if code == requests.codes.ok:
                 logging.info("Parameter '%s' created in Foreman" % name)
             elif code == requests.codes.not_found:
-                raise AiToolsForemanError("Host '%s' not found in Foreman" % fqdn)
+                raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
@@ -182,7 +183,7 @@ class ForemanClient(HTTPClient):
             logging.debug("Found: %s" % body)
             return body[model]
         elif code == requests.codes.not_found:
-            raise AiToolsForemanError("%s '%s' not found in Foreman" % \
+            raise AiToolsForemanNotFoundError("%s '%s' not found in Foreman" % \
                     (model, name))
 
     def __resolve_environment_id(self, name):
@@ -212,7 +213,7 @@ class ForemanClient(HTTPClient):
             if results_filter:
                 results = results_filter(results)
             if not results:
-                raise AiToolsForemanError("%s '%s' not found" %
+                raise AiToolsForemanNotFoundError("%s '%s' not found" %
                     (modelname, value))
             if len(results) > 1:
                 raise AiToolsForemanError("Multiple choices for %s lookup" % modelname)
