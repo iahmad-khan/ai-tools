@@ -25,6 +25,9 @@ class AiToolsNovaError(AiToolsError):
 class AiToolsRogerError(AiToolsHTTPClientError):
     pass
 
+class AiToolsRogerNotFoundError(AiToolsRogerError):
+    pass
+
 class AiToolsHieraError(AiToolsHTTPClientError):
     pass
 

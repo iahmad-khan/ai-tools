@@ -4,10 +4,10 @@ import re
 import requests
 
 from aitools.errors import AiToolsHTTPClientError
+from aitools.errors import AiToolsRogerNotFoundError
 from aitools.errors import AiToolsRogerError
 from aitools.httpclient import HTTPClient
 from aitools.config import RogerConfig
-import teigi.rogerclient
 
 class RogerClient(HTTPClient):
 
@@ -41,7 +41,7 @@ class RogerClient(HTTPClient):
         host_endpoint = "/roger/v1/state/%s/" % hostname
         (code, body) = self.__do_api_request("get", host_endpoint)
         if code == requests.codes.not_found:
-            raise AiToolsRogerError("Host %s not found in Roger" % hostname)
+            raise AiToolsRogerNotFoundError("Host %s not found in Roger" % hostname)
         return body
 
     def __do_api_request(self, method, url, data=None):
