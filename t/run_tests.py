@@ -21,6 +21,6 @@ def main():
     unittest.TextTestRunner().run(suite)
 
 
-if __name__ == '__main__'():
+if __name__ == '__main__':
     main()
 
