@@ -6,6 +6,8 @@ import json
 import urllib
 import re
 import requests
+import pytz
+import datetime
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
@@ -120,6 +122,64 @@ class ForemanClient(HTTPClient):
                 raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
         else:
             logging.info("Host '%s' not deleted because dryrun is enabled" % fqdn)
+
+    def renamehost(self, oldfqdn, newfqdn):
+        """
+        Rename the specified host in Foreman.
+
+        :param oldfqdn: the current hostname
+        :param newfqdn: the new hostname
+        :raise AiToolsForemanError: if the rename call failed or if the host was not found
+        """
+        logging.info("Renaming host '%s' to '%s' in Foreman" % (oldfqdn,newfqdn))
+        payload = {"host": {"name": newfqdn}}
+        if not self.dryrun:
+            (code, body) = self.__do_api_request("put", "hosts/%s" % oldfqdn,
+                                data=json.dumps(payload))
+            if code == requests.codes.ok:
+                logging.info("Rename '%s' to '%s' OK in Foreman" % (oldfqdn,newfqdn))
+            elif code == requests.codes.not_found:
+                raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % oldfqdn)
+
+            # update the certname on the new host name to ensure we have at least one aufit record on the
+            # new host - needed to make YAML generation work
+            payload = {"host": {"certname": newfqdn}}
+            (code, body) = self.__do_api_request("put", "hosts/%s" % newfqdn,
+                                data=json.dumps(payload))
+            if code == requests.codes.ok:
+                logging.info("Updating certname record for new host %s" % (newfqdn))
+            else:
+                logging.warn("Could not update certname for new host %s" % (newfqdn))
+
+
+            # Now fetch and updated IPMI interface
+            (code, body) = self.__do_api_request("get", "hosts/%s/interfaces" % newfqdn)
+
+            if code == requests.codes.not_found:
+                logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
+                return
+            if len(body) == 0:
+                logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
+                return
+            if body[0]["interface"]["provider"] != "IPMI":
+                logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
+                return
+            interface_id = body[0]["interface"]["id"]
+            interface_name = body[0]["interface"]["name"]
+
+            new_interface_name = interface_name.replace(oldfqdn.split('.')[0], newfqdn.split('.')[0])
+
+            # Now update the IPMI interface
+            payload = {"interface": {"name": new_interface_name}}
+            (code, body) = self.__do_api_request("put", "hosts/%s/interfaces/%s" % (newfqdn, interface_id),
+                                data=json.dumps(payload))
+            if code == requests.codes.ok:
+                logging.info("Updated IPMI interface with new name: %s" % (new_interface_name))
+            else:
+                logging.warn("Could not update IPMI interface with new name: %s" % (new_interface_name))
+        else:
+            logging.info("Host '%s' not renamed to '%s' because dryrun is enabled" % (oldfqdn, newfqdn,))
+
 
     def addhostparameter(self, fqdn, name, value):
         """
