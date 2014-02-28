@@ -1,23 +1,11 @@
 #!/usr/bin/python
 
-__author__ = 'mccance'
-
 try:
     import simplejson as json
 except ImportError:
     import json
-import yaml
-import os
 import sys
-import urllib2
-import iso8601
-import datetime
-import pytz
-import humanize
-import teigi.rogerclient
-import prettytable
 import argcomplete
-import textwrap
 import getpass
 
 from suds import WebFault
@@ -105,9 +93,9 @@ def host_renane(pargs):
     sanity_check_for_foreman(foreman, oldhost)
 
     print "Please enter your CERN username and password for updating LANDB"
-    username = raw_input("Useranme: ")
+    username = raw_input("Username: ")
     password = getpass.getpass("Password: ")
-    print "Updating in LANDB..."
+    print "Renaming host in LANDB..."
     result = rename_in_landb(oldhost, pargs.newhostname, username, password)
     if not result:
         sys.stderr.write("The host %s could not be renamed to %s in LANDB.\n" % (oldhost, pargs.newhostname))
