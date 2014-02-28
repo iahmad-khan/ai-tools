@@ -42,7 +42,8 @@ def parse_cmdline_args():
     parser.add_argument('-d', '--dryrun',
         action="store_true",
         help="Do not send emails")
-    ForemanConfig.add_standard_args(parser)
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
     parser.add_argument('-e', '--environments', type=str,
         default=DEFAULT_ENVIRONMENTS_PATH,
         help="Clone of it-puppet-environments")

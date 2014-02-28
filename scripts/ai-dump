@@ -221,10 +221,14 @@ def host_main(pargs):
 def main():
     parser = ArgumentParser(description="Dump information about a host")
 
-    ForemanConfig.add_standard_args(parser)
-    PdbConfig.add_standard_args(parser)
-    EncConfig.add_standard_args(parser)
-    RogerConfig.add_standard_args(parser)
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+    pdb_config = PdbConfig()
+    pdb_config.add_standard_args(parser)
+    enc_config = EncConfig()
+    enc_config.add_standard_args(parser)
+    roger_config = RogerConfig()
+    roger_config.add_standard_args(parser)
 
     parser.add_argument("--json", action="store_true", default=False, dest="print_json",
                         help="output in JSON format")

@@ -85,9 +85,12 @@ if __name__ == "__main__":
 
     parser = ArgumentParser(description="Rename a host (destructively)")
 
-    ForemanConfig.add_standard_args(parser)
-    PdbConfig.add_standard_args(parser)
-    RogerConfig.add_standard_args(parser)
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+    pdb_config = PdbConfig()
+    pdb_config.add_standard_args(parser)
+    roger_config = RogerConfig()
+    roger_config.add_standard_args(parser)
 
     parser.add_argument("oldhostname", metavar="HOST", help="host to rename").completer = ForemanCompleter()
     parser.add_argument("newhostname", metavar="HOST", help="the new name for the host")

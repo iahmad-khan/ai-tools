@@ -92,7 +92,8 @@ def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
     parser = argparse.ArgumentParser()
 
-    ForemanConfig.add_standard_args(parser)
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
 
     parser.add_argument('-j', '--json',
         action="store_true",

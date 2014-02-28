@@ -99,13 +99,15 @@ def parse_cmdline_args():
     ##
     parser.add_argument('--caserver-disable', action="store_true",
         help="Disable Certmgr actions")
-    CertmgrConfig.add_standard_args(parser)
+    certmgr_config = CertmgrConfig()
+    certmgr_config.add_standard_args(parser)
     ##
     ## Nova options
     ##
     parser.add_argument('--nova-disable', action="store_true",
         help="Disable Nova actions")
-    NovaConfig.add_standard_args(parser)
+    nova_config = NovaConfig()
+    nova_config.add_standard_args(parser)
     parser.add_argument('--nova-sshkey', type=str,
         help="OpenStack SSH key name",
         default=os.environ.get('AIBS_SSHKEY_NAME', None)
@@ -129,7 +131,8 @@ def parse_cmdline_args():
     ##
     parser.add_argument('--foreman-disable', action="store_true",
         help="Disable Foreman actions")
-    ForemanConfig.add_standard_args(parser)
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
     parser.add_argument('--foreman-environment', type=str,
         help="Foreman environment (default: %s)" % DEFAULT_FOREMAN_ENVIRONMENT,
         default=os.environ.get('AIBS_ENVIRONMENT_NAME', DEFAULT_FOREMAN_ENVIRONMENT)

@@ -9,6 +9,7 @@ from aitools.errors import AiToolsRogerError
 from aitools.httpclient import HTTPClient
 from aitools.config import RogerConfig
 
+
 class RogerClient(HTTPClient):
 
     def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False):

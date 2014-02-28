@@ -89,7 +89,8 @@ def hg_facts(pargs):
 def main():
     parser = ArgumentParser(description="wrap puppetdb commands")
 
-    PdbConfig.add_standard_args(parser)
+    pdb_config = PdbConfig()
+    pdb_config.add_standard_args(parser)
 
     parser.add_argument("--show_url", action="store_true", default=False, dest="show_url",
                         help="show REST urls")
