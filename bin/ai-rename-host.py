@@ -18,6 +18,12 @@ import teigi.rogerclient
 import prettytable
 import argcomplete
 import textwrap
+import getpass
+
+from suds import WebFault
+from suds.client import Client
+from suds.sax.element import Element
+from suds.xsd.doctor import ImportDoctor, Import
 
 from argparse import ArgumentParser
 from aitools.pdb import PdbClient
@@ -26,30 +32,47 @@ from aitools.common import fqdnify
 from aitools.config import ForemanConfig, RogerConfig, PdbConfig, AiConfig
 from aitools.completer import ForemanCompleter
 from aitools.errors import AiToolsPdbNotFoundError
+from aitools.errors import AiToolsForemanNotFoundError
+from aitools.errors import AiToolsForemanError
+from aitools.errors import AiToolsRogerNotFoundError
+from aitools.foreman import ForemanClient
 
 def sanity_check_for_alarms(old_name):
-    roger = RogerClient()
-    state = roger.get_state(old_name)
+    try:
+        roger = RogerClient()
+        state = roger.get_state(old_name)
+    except AiToolsRogerNotFoundError:
+        return # ignore if the host can't be fund in Roger
     hwa = state['hw_alarmed']
     nca = state['nc_alarmed']
     osa = state['os_alarmed']
     appa = state['app_alarmed']
     appstate = state['appstate']
-    if (hwa == "True" or nca=="True" or osa == "True" or appa == True or appstate=="production"):
+    if (hwa or nca or osa or appa or appstate=="production"):
         sys.stderr.write("Renaming host is a destructive operation for the host. Please ensure that\n")
         sys.stderr.write("all alarms have been disabled in Roger and the application state of the nodes\n")
-        sys.stderr.write("is not production. To ignore this check, run this command with the --jfdi flag.")
+        sys.stderr.write("is not production. To ignore this check, run this command with the --jfdi flag.\n")
         sys.exit(3)
 
 def sanity_check_for_virtual_machine(oldhost):
     pdb = PdbClient()
     try:
         facts = pdb.get_facts(oldhost)
-        if facts["is_virtual"]:
+        if facts["is_virtual"] == u"true":
             sys.stderr.write("The host %s is a virtual machine and cannot be renamed with this tool.\n" % oldhost)
             sys.exit(4)
     except AiToolsPdbNotFoundError:
-        pass # assume it's a new host which has not run Puppet yet
+        pass # assume it's a new host which has not run Puppet yet - it'll fail on updating Foreman later
+    except KeyError:
+        pass # no is_virtual fact - assume it's OK and physical
+
+def sanity_check_for_foreman(foreman, oldhost):
+    try:
+        f = foreman.gethost(oldhost)
+    except AiToolsForemanNotFoundError:
+        sys.stderr.write("The host (%s) is not registered in Foreman. This tool is only suitable for hosts already\n" % oldhost)
+        sys.stderr.write("registered in the Puppet infrastructure.\n")
+        sys.exit(5)
 
 
 def host_renane(pargs):
@@ -57,14 +80,20 @@ def host_renane(pargs):
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
 
+    print pargs.oldhostname
     oldhost = fqdnify(pargs.oldhostname)
+
+    print "Renaming host '%s' to '%s'..." % (oldhost, pargs.newhostname)
+
+    print "Checking hostnames..."
+
     if oldhost == False:
-        sys.stderr.write("Error: the current host (%s) is not registered in DNS." % pargs.oldhostname)
+        sys.stderr.write("Error: the current host (%s) is not registered in DNS.\n" % pargs.oldhostname)
         sys.exit(1)
 
-    newhost = fqdnify(pargs.newhostname)
-    if newhost:
-        sys.stderr.write("Error: the new host name (%s) is already registered in DNS.")
+    test_for_newhost = fqdnify(pargs.newhostname)
+    if test_for_newhost:
+        sys.stderr.write("Error: the new host name (%s) is already registered in DNS.\n" % pargs.newhostname)
         sys.exit(2)
 
     sanity_check_for_virtual_machine(oldhost)
@@ -72,7 +101,51 @@ def host_renane(pargs):
     if not pargs.jfdi:
         sanity_check_for_alarms(oldhost)
 
-    print "sane"
+    foreman = ForemanClient()
+    sanity_check_for_foreman(foreman, oldhost)
+
+    print "Please enter your CERN username and password for updating LANDB"
+    username = raw_input("Useranme: ")
+    password = getpass.getpass("Password: ")
+    print "Updating in LANDB..."
+    result = rename_in_landb(oldhost, pargs.newhostname, username, password)
+    if not result:
+        sys.stderr.write("The host %s could not be renamed to %s in LANDB.\n" % (oldhost, pargs.newhostname))
+        sys.exit(6)
+
+    try:
+        print "Renaming host in Foreman..."
+        foreman.renamehost(oldhost, pargs.newhostname)
+    except AiToolsForemanError:
+        sys.stderr.write("ERROR: your host was renamed from '%s' to '%s' in DNS but could not be renamed in Foreman.\n" % (oldhost, pargs.newhostname))
+        sys.stderr.write("Please contact your Foreman support and have a nice day.\n")
+        sys.exit(7)
+
+    print "Host '%s' was successfully renamed as '%s'." %(oldhost, pargs.newhostname)
+    print "Please wait at least 1 hour before reinstalling the host to ensure all"
+    print "infrastructure services have synced the new name."
+
+
+def rename_in_landb(oldhost, newhost, username, password):
+    oldhostshort = oldhost.split('.')[0].upper()
+    newhostshort = newhost.split('.')[0].upper()
+    url = 'https://network.cern.ch/sc/soap/soap.fcgi?v=5&WSDL'
+
+    imp = Import('http://schemas.xmlsoap.org/soap/encoding/')
+    d = ImportDoctor(imp)
+    client = Client(url, doctor=d, cache=None)
+
+    token = client.service.getAuthToken(username,password,"NICE")
+    authTok = Element('token').setText(token)
+    authHeader = Element('Auth').insert(authTok)
+
+    client.set_options(soapheaders=authHeader)
+    try:
+        result = client.service.deviceGlobalRename(oldhostshort, newhostshort)
+        return result
+    except WebFault as soapytwank:
+        sys.stderr.write("%s\n" % soapytwank)
+        return False
 
 
 if __name__ == "__main__":
