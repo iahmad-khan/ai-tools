@@ -31,6 +31,15 @@ class AiToolsRogerError(AiToolsHTTPClientError):
 class AiToolsRogerNotFoundError(AiToolsRogerError):
     pass
 
+class AiToolsRogerNotAllowedError(AiToolsRogerError):
+    pass
+
+class AiToolsRogerNotImplementedError(AiToolsRogerError):
+    pass
+
+class AiToolsRogerInternalServerError(AiToolsRogerError):
+    pass
+
 class AiToolsHieraError(AiToolsHTTPClientError):
     pass
 

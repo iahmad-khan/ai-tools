@@ -2,10 +2,17 @@ __author__ = 'mccance'
 
 import re
 import requests
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsRogerNotFoundError
 from aitools.errors import AiToolsRogerError
+from aitools.errors import AiToolsRogerNotAllowedError
+from aitools.errors import AiToolsRogerInternalServerError
+from aitools.errors import AiToolsRogerNotImplementedError
 from aitools.httpclient import HTTPClient
 from aitools.config import RogerConfig
 
@@ -45,11 +52,45 @@ class RogerClient(HTTPClient):
             raise AiToolsRogerNotFoundError("Host %s not found in Roger" % hostname)
         return body
 
+    def put_state(self, hostname, appstate=False, message=None, **kwargs):
+        alarms = set(["nc_alarmed", "hw_alarmed", "os_alarmed", "app_alarmed"])
+        truth = set(["1", "true"])
+        untruth = set(["0", "false"])
+        data = dict()
+        data["hostname"] = hostname
+        host_endpoint = "/roger/v1/state/%s/" % hostname
+        if message:
+            data["message"] = message
+        for n, alarm in kwargs.items():
+            if not n in alarms:
+                continue
+            if str(alarm).lower() in truth:
+                data[n] = True
+            elif str(alarm).lower() in untruth:
+                data[n] = False
+            else:
+                raise ValueError("invalid value for '%s' ('%s')" % (n, alarm))
+        if appstate:
+            data["appstate"] = appstate
+        d = json.dumps(data)
+        (code, body) = self.__do_api_request("put", host_endpoint, data=d)
+        if code == requests.codes.not_found:
+            raise AiToolsRogerNotFoundError("Host %s not found in Roger" % hostname)
+        elif code == requests.codes.not_allowed:
+            raise AiToolsRogerNotAllowedError("Not allowed to put details for %s in Roger" % hostname)
+        elif code == requests.codes.not_implemented:
+            raise AiToolsRogerNotImplementedError("Not implemented when trying to put to %s" % host_endpoint)
+        elif code == requests.codes.internal_server_error:
+            raise AiToolsRogerInternalServerError("Received 500 when trying to put to %s" % host_endpoint)
+        return body
+
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/%s" % \
             (self.host, self.port, url)
         headers = {'Accept': 'application/json',
                    'Accept-Encoding': 'deflate'}
+        if data:
+            headers["Content-Type"] = "application/json"
 
         if self.show_url:
             print url
@@ -61,5 +102,6 @@ class RogerClient(HTTPClient):
             return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsRogerError(error)
+
 
 

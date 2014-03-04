@@ -80,6 +80,7 @@ class AiConfig(object):
                                 default=self.configfile)
         except ArgumentError:
             pass
+        self.parser = parser
 
 
 class ForemanConfig(AiConfig):
@@ -149,4 +150,4 @@ class NovaConfig(AiConfig):
 
     def add_standard_args(self, parser):
         parser.add_argument('--nova-timeout', type=int, help="Timeout for Nova operations")
-        self.add_configfile_args(self, parser)
+        self.add_configfile_args(parser)
