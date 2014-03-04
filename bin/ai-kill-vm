@@ -19,7 +19,7 @@ import sys
 import logging
 import argparse
 import argcomplete
-from aitools.config import ForemanConfig, NovaConfig
+from aitools.config import ForemanConfig, NovaConfig, RogerConfig
 
 from aitools.foreman import ForemanClient
 from aitools.completer import ForemanCompleter
@@ -33,6 +33,7 @@ from aitools.common import append_domain
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsNovaError
+from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotFoundError
 
 
 def parse_cmdline_args():
@@ -52,6 +53,12 @@ def parse_cmdline_args():
     ##
     nova_config = NovaConfig()
     nova_config.add_standard_args(parser)
+
+    ##
+    ## Roger options
+    ##
+    roger_config = RogerConfig()
+    roger_config.add_standard_args(parser)
 
     ##
     ## Foreman options
@@ -106,6 +113,16 @@ def main():
     except AiToolsNovaError, error:
         logging.error("Couldn't delete VM, Foreman entry remains intact (%s)" % error)
         return 10
+
+    roger_client = RogerClient()
+    # we need to turn off alarms
+    try:
+        state = roger_client.put_state(fqdn, appstate="disabled", nc_alarmed="false",
+                                   hw_alarmed="false", app_alarmed="false", os_alarmed="false")
+    except AiToolsRogerNotAllowedError, error:
+        logging.error("Couldn't switch off Roger alarms, not authorized (%s)" % error)
+    except AiToolsRogerNotFoundError, error:
+        logging.error("Couldn't find Roger entry to switch off alarms (%s)" % error)
 
     try:
         foreman.delhost(fqdn)

@@ -21,10 +21,11 @@ import logging
 import argparse
 import argcomplete
 import re
-from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig
+from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig, RogerConfig
 
 from aitools.foreman import ForemanClient
 from aitools.certmgr import CertmgrClient
+from aitools.roger import RogerClient
 from aitools.nova import NovaClient
 
 from aitools.common import configure_logging
@@ -37,6 +38,7 @@ from aitools.common import append_domain
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
+from aitools.errors import AiToolsRogerNotAllowedError
 
 from aitools.completer import ForemanCompleter
 from aitools.completer import NovaCompleter
@@ -102,6 +104,16 @@ def parse_cmdline_args():
     certmgr_config = CertmgrConfig()
     certmgr_config.add_standard_args(parser)
     ##
+    ## Roger options
+    ##
+    parser.add_argument('--roger-disable', action="store_true", default=False,
+                        help="Disable Roger actions")
+    parser.add_argument("--roger-appstate", help="Initial roger appstate",
+                        default="build")
+    roger_config = RogerConfig()
+    roger_config.add_standard_args(parser)
+
+    ##
     ## Nova options
     ##
     parser.add_argument('--nova-disable', action="store_true",
@@ -164,6 +176,7 @@ def parse_cmdline_args():
 
 def print_summary(args, fqdn):
     certmgrconf = CertmgrConfig()
+    roger_config = RogerConfig()
     logging.info("Trying to bootstrap '%s'..." % fqdn)
     logging.info("VM flavor: %s" % args.nova_flavor)
     logging.info("VM image: %s" % args.nova_image)
@@ -185,6 +198,8 @@ def print_summary(args, fqdn):
     logging.info("Puppet master: %s" % args.puppetmaster_hostname)
     logging.info("Certmgr server: %s" % certmgrconf.certmgr_hostname)
     logging.info("Certmgr port: %s" % certmgrconf.certmgr_port)
+    logging.info("Roger server: %s" % roger_config.roger_hostname)
+    logging.info("Roger port: %s" % str(roger_config.roger_port))
 
 def main():
     """Application entrypoint"""
@@ -269,6 +284,18 @@ def main():
             if not args.foreman_disable:
                 foreman.delhost(fqdn)
             return 30
+
+    if not args.roger_disable:
+        roger_client = RogerClient()
+        try:
+            # note default for alarms is false, but if already exists, won't touch
+            # probably what we want...
+            roger_client.update_or_create_state(fqdn, appstate=args.roger_appstate)
+        except AiToolsRogerNotAllowedError, e:
+            # new machines should be allowed, so this means you're trying to update
+            # something you shouldn't be updating
+            logging.error("Couldn't update roger, perhaps entry already exists? (%s)" % e)
+
 
     logging.info("----------------------------------------------------------------------")
     logging.info("* Your machine is booting and the network is being configured right now,")

@@ -37,6 +37,9 @@ class RogerClient(HTTPClient):
         self.dryrun = dryrun
         self.show_url = show_url
         self.cache = {}
+        self.alarm_fields = set(["nc_alarmed", "hw_alarmed", "os_alarmed", "app_alarmed"])
+        self.truth = set(["1", "true"])
+        self.untruth = set(["0", "false"])
 
     def get_state(self, hostname):
         """
@@ -52,26 +55,69 @@ class RogerClient(HTTPClient):
             raise AiToolsRogerNotFoundError("Host %s not found in Roger" % hostname)
         return body
 
+    def update_or_create_state(self, hostname, appstate=False, message=None, **kwargs):
+        try:
+            state = self.get_state(hostname)
+        except AiToolsRogerNotFoundError:
+            return self.create_state(hostname, appstate=appstate, message=message, **kwargs)
+
+    def _construct_alarm_data(self, data, **kwargs):
+        if not isinstance(data, dict):
+            raise ValueError("supplied data argument should be a dict")
+        for k, v in kwargs.items():
+            if not k in self.alarm_fields:
+                continue
+            if str(v).lower() in self.truth:
+                data[k] = True
+            elif str(v).lower() in self.untruth:
+                data[k] = False
+            else:
+                raise ValueError("invalid value for '%s' ('%s'" % (k, v))
+        return data
+
+    def create_state(self, hostname, appstate=False, message=None, **kwargs):
+        data = dict()
+        data["hostname"] = hostname
+        state_endpoint = "/roger/v1/state/"
+        if message:
+            data["message"] = message
+        if appstate:
+            data["appstate"] = appstate
+        data = self._construct_alarm_data(data, **kwargs)
+        d = json.dumps(data)
+        (code, body) = self.__do_api_request("post", state_endpoint, data=d)
+        if code == requests.codes.not_found:
+            raise AiToolsRogerNotFoundError("State endpoint '%s' not found in Roger" % state_endpoint)
+        elif code == requests.codes.not_allowed:
+            raise AiToolsRogerNotAllowedError("Not allowed to post '%s' to '%s'" % (hostname, state_endpoint))
+        elif code == requests.codes.not_implemented:
+            raise AiToolsRogerNotImplementedError("Not implemented trying to post to '%s'" % state_endpoint)
+        elif code == requests.codes.internal_server_error:
+            raise AiToolsRogerInternalServerError("Received 500 trying to post to '%s'" % state_endpoint)
+        return body
+
+    def delete_state(self, hostname):
+        host_endpoint = "/roger/v1/state/%s/" % hostname
+        (code, body) = self.__do_api_request("delete", host_endpoint)
+        if code == requests.codes.not_found:
+            raise AiToolsRogerNotFoundError("Host %s not found, can't delete" % hostname)
+        elif code == requests.codes.not_allowed:
+            raise AiToolsRogerNotAllowedError("Not allowed to delete host '%s'" % hostname)
+        elif code == requests.codes.not_implemented:
+            raise AiToolsRogerNotImplementedError("Not implemented trying to delete at '%s'" % host_endpoint)
+        elif code == requests.codes.internal_server_error:
+            raise AiToolsRogerInternalServerError("Received a 500 trying to delete at '%s'" % host_endpoint)
+        return body
+
     def put_state(self, hostname, appstate=False, message=None, **kwargs):
-        alarms = set(["nc_alarmed", "hw_alarmed", "os_alarmed", "app_alarmed"])
-        truth = set(["1", "true"])
-        untruth = set(["0", "false"])
         data = dict()
         data["hostname"] = hostname
         host_endpoint = "/roger/v1/state/%s/" % hostname
         if message:
             data["message"] = message
-        for n, alarm in kwargs.items():
-            if not n in alarms:
-                continue
-            if str(alarm).lower() in truth:
-                data[n] = True
-            elif str(alarm).lower() in untruth:
-                data[n] = False
-            else:
-                raise ValueError("invalid value for '%s' ('%s')" % (n, alarm))
         if appstate:
             data["appstate"] = appstate
+        data = self._construct_alarm_data(data, **kwargs)
         d = json.dumps(data)
         (code, body) = self.__do_api_request("put", host_endpoint, data=d)
         if code == requests.codes.not_found:
