@@ -33,7 +33,7 @@ def fe_set(pargs):
             entries = json.load(cachefile)
     except:
         sys.stderr.write("[ERROR]: Cannot open SNOW FE cache file: %s\n" % FECACHE)
-        sys.exit(1)
+        sys.exit(2)
 
     candidatefe = [ e for e in entries if pargs.FEname.lower() in e.lower()]
     if len(candidatefe) == 0:
@@ -48,7 +48,7 @@ def fe_set(pargs):
                 set_fe_for_hostgroup(pargs.hostgroup, pargs.FEname)
         else:
             sys.stderr.write("[ERROR]: Cannot match '%s' to any known SNOW functional element.\n" % pargs.FEname)
-            sys.exit(2)
+            sys.exit(3)
     elif len(candidatefe) == 1:
         if pargs.hostgroup == None:
             print "Matched SNOW functional element:"
