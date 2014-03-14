@@ -11,26 +11,25 @@
 # May 2013
 
 import sys
-import json
-import urllib
 import argparse
-import datetime
 import logging
 import requests
-from requests_kerberos import HTTPKerberosAuth
 
-CONFIG_PDB_HOST = "judy.cern.ch"
-CONFIG_PDB_PORT = "9081"
+from aitools.pdb import PdbClient
+from aitools.config import PdbConfig, AiConfig
+
 CONFIG_DEFAULT_DEBUG_LEVEL = logging.ERROR
-CONFIG_HTTPCONN_TIMEOUT = 500
-CERN_CA_BUNDLE = "/etc/ssl/certs/CERN-bundle.pem"
 HOSTGROUPS_BLACKLIST = ["training", "playground"]
+
+class AiToolsModuleTypeError(Exception):
+    pass
 
 def enum(**enums):
     return type('Enum', (), enums)
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    PdbConfig.add_standard_args(parser)
     parser.add_argument('--module', type=str, required=True, 
         help="Concerned module name")
     parser.add_argument('--verbose', '-v', action='store_true',
@@ -55,31 +54,32 @@ def get_toplevel_affected_hgs(modulename):
     logging.info("Getting count of top-level hostgroups using module '%s'..." % modulename)
     modulename = "%s%s" % (modulename[0].upper(), modulename[1:].lower())
 
+    pdb = PdbClient()
     query = """
 ["and",["=","name","hostgroup_0"], 
 ["in","certname",["extract","certname", 
 ["select-resources", ["and",["=", "type", "Class"],
-["~","title","\\\A%s$"]]]]]]
+["~","title","^%s"]]]]]]
 """ % modulename
     logging.debug(query)
 
-    url = "https://%s:%s/v2/facts" % (CONFIG_PDB_HOST, CONFIG_PDB_PORT)
-    params = {'query': query}
-    headers = {"Accept": "application/json",
-        "Content-type": "application/x-www-form-urlencoded"}
+    try:
+        code, body = pdb.raw_request("v3/facts", query)
+    except AiToolsPdbError, error:
+        raise AiToolsModuleTypeError("PuppetDB: %s" % error)
 
-    response = requests.get(url, data=urllib.urlencode(params),
-        headers=headers, auth=HTTPKerberosAuth(),
-        verify=CERN_CA_BUNDLE, allow_redirects=True)
-    if response.status_code == requests.codes.ok:
-        output = json.loads(response.text)
-        hostgroups = set(map(lambda x: x['value'], output))
+    if code == requests.codes.ok:
+        hostgroups = set(map(lambda x: x['value'], body))
         return hostgroups
     else:
-        raise Exception()
+        raise AiToolsModuleTypeError("PuppetDB didn't return 200 (%d)" % code)
+
 
 def main():
     args = parse_args()
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(args)
+
     configure_logging(args)
 
     try:
