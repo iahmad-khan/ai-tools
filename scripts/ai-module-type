@@ -16,6 +16,7 @@ import logging
 import requests
 
 from aitools.pdb import PdbClient
+from aitools.errors import AiToolsPdbError
 from aitools.config import PdbConfig, AiConfig
 
 CONFIG_DEFAULT_DEBUG_LEVEL = logging.ERROR
