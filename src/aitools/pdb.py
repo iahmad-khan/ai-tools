@@ -2,6 +2,7 @@ __author__ = 'mccance'
 
 import re
 import requests
+import urllib
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsPdbNotFoundError
@@ -96,7 +97,9 @@ class PdbClient(HTTPClient):
         json_lb = self.get_resources(hostname, "Lbd::Client")
         return [ l['parameters']['lbalias'] for l in json_lb ]
 
-    def raw_request(self, url):
+    def raw_request(self, url, query=None):
+        if query:
+            url = "%s?%s" % (url, urllib.urlencode({'query': query}))
         return self.__do_api_request("get", url)
 
     def __do_api_request(self, method, url, data=None):
