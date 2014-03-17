@@ -330,6 +330,78 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
+    def gethostgroupparameters(self, hostgroup):
+        """
+        Get all parameters for the given hostgroup.
+        :param hostgroup: the hostgroup to query
+        :return: a dictionary of parameters
+        """
+        logging.info("Getting hostgroup parameters for '%s' from Foreman..." % hostgroup)
+
+        logging.info("Resolving ID for hostgroup '%s'" % hostgroup)
+        hgid = self.__resolve_hostgroup_id(hostgroup)
+
+        (code, body) = self.__do_api_request("get", "hostgroups/%s/parameters" % hgid)
+        if code == requests.codes.ok:
+            params = body
+            return params
+        elif code == requests.codes.not_found:
+            raise AiToolsForemanNotFoundError("Hostgroup '%s' not found in Foreman" % hostgroup)
+        elif code == requests.codes.unprocessable_entity:
+            raise AiToolsForemanError("gethostgroupparamters call failed")
+
+    def addhostgroupparameter(self, hostgroup, name, value):
+        """
+        Add a name,value parameter to the specified host in Foreman.
+
+        :param hostgroup: the hostgroup to add the parameter to.
+        :param name: the name of the parameter to add
+        :param value: the value of the parameter
+        :raise AiToolsForemanNotFoundError: if the hostgroup was not found
+        :raise AiToolsForemanError: if the parameter-set call failed
+        """
+
+        logging.info("Resolving ID for hostgroup '%s'" % hostgroup)
+        hgid = self.__resolve_hostgroup_id(hostgroup)
+
+        logging.info("Checking for existing parameter '%s' on hostgroup '%s'" % (name, hostgroup))
+        params = self.gethostgroupparameters(hostgroup)
+        ids = [ (p['parameter']['id'], p['parameter']['value']) for p in params if p['parameter']['name'] == name ]
+
+        if ids:
+            # param exists, use PUT on that ID
+            logging.info("Updating parameter '%s' to hostgroup '%s' to value '%s' (old value: '%s')..."
+                            % (name, hostgroup, value, ids[0][1]))
+            payload = {'parameter': {'name' : name, 'value': value}}
+            logging.debug("With payload: %s" % payload)
+
+            if not self.dryrun:
+                (code, body) = self.__do_api_request("put", "hostgroups/%s/parameters/%s" % (hgid, ids[0][0]),
+                                    data=json.dumps(payload))
+                if code == requests.codes.ok:
+                    logging.info("Parameter '%s' updated in Foreman" % name)
+                elif code == requests.codes.not_found:
+                    raise AiToolsForemanNotFoundError("HostgroupID '%s' not found in Foreman" % hgid)
+            else:
+                logging.info("Parameter '%s' not added because dryrun is enabled" % name)
+
+        else:
+            # param does not exist, use new POST
+            logging.info("Adding parameter '%s' to hostgroup '%s' with value '%s'..."
+                            % (name, hostgroup, value))
+            payload = {'parameter': {'name' : name, 'value': value}}
+            logging.debug("With payload: %s" % payload)
+
+            if not self.dryrun:
+                (code, body) = self.__do_api_request("post", "hostgroups/%s/parameters" % hgid,
+                                    data=json.dumps(payload))
+                if code == requests.codes.ok:
+                    logging.info("Parameter '%s' created in Foreman" % name)
+                elif code == requests.codes.not_found:
+                    raise AiToolsForemanNotFoundError("HostgroupID '%s' not found in Foreman" % hgid)
+            else:
+                logging.info("Parameter '%s' not added because dryrun is enabled" % name)
+
     def power_operation(self, fqdn, operation):
         """
         Send an IPMI power command to the host via the Foreman BMC proxy.

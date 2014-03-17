@@ -131,6 +131,7 @@ def host_main(pargs):
                     "disks": num_disks, "type": vtype}
         jj = {  "hostname": hostname, "hardware": hardware, "hostgroup": facts.get('hostgroup', None),
                 "responsible": facts.get('landb_responsible_email', None), "os": facts.get('operatingsystem', None),
+                "fename": facts.get('fename', None),
                 "lsbdistrelease": facts.get('lsbdistrelease', None), "arch": facts.get('architecture', None),
                 "kernel": facts.get('configured_kernel', None), "landbsets": landbsets, "lbaliases": lbaliases,
                 "ipaddress": facts.get('ipaddress', None), "ipdomain": facts.get('landb_network_domain', None),
@@ -174,6 +175,7 @@ def host_main(pargs):
         t.add_row(["Comment:", comment80 ])
         t.add_row(["Environment:",enc['environment']])
         t.add_row(["Responsible:", facts.get('landb_responsible_email', '-')])
+        t.add_row(["FE Responsible:", facts.get('fename', '-')])
         t.add_row(["OS:", "%s %s %s (%s)" % (facts.get('operatingsystem', '-'), facts.get('lsbdistrelease', '-'), facts.get('architecture', '-'), facts.get('configured_kernel', '-'))])
         if facts.get('is_virtual') == 'true':
             t.add_row(["VM Flavour:", facts.get('ec2_instance_type', '-')])

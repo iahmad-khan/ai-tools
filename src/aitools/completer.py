@@ -7,12 +7,15 @@ import os
 from aitools.foreman import ForemanClient
 from aitools.foreman import AiToolsForemanError
 from argcomplete import warn
+import json
 
 # Use as bash argcomplete to foreman
 # e.g.
 # parser.add_argument('hostname', nargs=1, default=None,
 #       help="Hostname (qualified or not)").completer = ForemanCompleter('hosts')
 # The default will expand hosts.
+
+FECACHE = '/var/cache/femap/femap.json'
 
 class ForemanCompleter(object):
     """Completes item from within forman"""
@@ -49,3 +52,16 @@ class NovaCompleter(object):
             data +=  [line.strip() for line in open(name, 'r')]
         return [e for e in data if e.startswith(prefix) ]
 
+
+class FENameCompleter(object):
+    """Completes FE name from SNOW FE cache"""
+    def __init__(self):
+        self.entries = []
+        try:
+            with open(FECACHE, 'r') as cachefile:
+                self.entries = json.load(cachefile)
+        except:
+            pass
+
+    def __call__(self, prefix, parsed_args, **kwargs):
+        return [ e for e in self.entries if prefix.lower() in e.lower()]

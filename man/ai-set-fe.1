@@ -1,0 +1,98 @@
+.TH AI-SET-FE "1" "October 2013" "ai-set-fe" "User Commands"
+.SH NAME
+ai-set-fe \- Search for a SNOW functional element and set it for your hostgroup
+
+.SH SYNOPSIS
+.B "ai-set-fe [--hostgroup HG] FEname"
+
+.SH DESCRIPTION
+ai-set-fe searches for a SNOW functional element and sets it for your hostgroup
+.LP
+It will hunt for a known list of FEs from SNOW, and return any that match the specified FEname substring.
+If the substring returns a unique FE and the hostgroup is specified, it will set the 'fename'
+parameter on that hostgroup in Foreman. This is used by the alarm system to to identify the correct
+functional element when opening alarms. ai-dump also reports the value for hosts.
+.LP
+.I Prerequisites:
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+
+.SH ARGUMENTS
+.TP
+
+.TP
+.B FEname
+The FE name substring to match, or the full FE name to add in case of the --jfdi option. If needed, can be quoted.
+
+.SH OPTIONS
+.TP
+
+.TP
+.B -h, --help
+Display usage and exit.
+.TP
+.B --hostgroup
+The hostgroup to set the FE for. Both top-level and fully specified sub-hostgroup are allowed.
+.TP
+.B --jfdi
+Force the given FEname, and do not verify against the list returned by SNOW.
+
+.LP
+.I Advanced options:
+.TP
+The following parameters are for advanced users and debugging.
+
+.TP
+\fB\-\-foreman-hostname\fR FQDN
+FQDN of the Foreman instance to use.
+.TP
+\fB\-\-foreman-port\fR PORT
+Port of the Foreman instance to use.
+.TP
+\fB\-\-foreman-timeout\fR INT
+Timeout (in seconds) for Foreman operations.
+.TP
+.B --config
+Path to the config file (default /etc/ai/ai.conf).
+
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 1
+Bad command line.
+.TP
+.B 2
+Cannot open SNOW cache file.
+.TP
+.B 3
+Cannot match given FEname substring to any valid SNOW FE.
+.TP
+.B 4
+The supplied hostgroup was not found in Foreman.
+
+.SH EXAMPLES
+.TP
+.B Search for all FEs with the substring 'conf'
+$ ai-set-fe conf
+
+.TP
+.B Set the 'Configuration Management' FE for hostgroup 'punch/fore'.
+$ ai-set-fe config --hostgroup punch/fore
+
+.TP
+.B Set the 'Classic Shabba' FE for hostgroup 'punch/fore', ignoring the fact that there is no SNOW FE of that name (even though, clearly, there ought to be).
+$ ai-set-fe "Classic Shabba" --hostgroup punch/fore --jfdi
+
+
+.SH BUGS
+Any problem? Open a support call on Jira
+(https://its.cern.ch/jira/) project "Agile Infrastructure".
+
+.SH AUTHOR
+Gavin McCance <gavin.mccance@cern.ch>
+

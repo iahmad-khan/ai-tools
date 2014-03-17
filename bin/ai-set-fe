@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+
+__author__ = 'mccance'
+
+from argparse import ArgumentParser
+from aitools.config import ForemanConfig
+from aitools.completer import FENameCompleter
+from aitools.foreman import ForemanClient
+from aitools.errors import AiToolsForemanNotFoundError
+from aitools.errors import AiToolsForemanError
+from aitools.common import configure_logging
+import argcomplete
+import json
+import sys
+import logging
+
+FECACHE = '/var/cache/femap/femap.json'
+
+
+def set_fe_for_hostgroup(hostgroup, fe):
+    f = ForemanClient()
+    try:
+        f.addhostgroupparameter(hostgroup, "fename", fe)
+        logging.info("Successfully set '%s' for Foreman hostgroup '%s'" % (fe, hostgroup))
+    except AiToolsForemanNotFoundError as e:
+        logging.error("The hostgroup '%s' could not be found in Foreman." % hostgroup)
+        sys.exit(4)
+    except AiToolsForemanError as e:
+        logging.error("Problem setting parameter in Foreman.")
+        sys.exit(5)
+
+def fe_set(pargs):
+
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+
+    configure_logging(pargs)
+
+    entries = []
+    try:
+        with open(FECACHE, 'r') as cachefile:
+            entries = json.load(cachefile)
+    except:
+        logging.error("Cannot open SNOW FE cache file: %s" % FECACHE)
+        sys.exit(2)
+
+    if pargs.jfdi:
+        if pargs.hostgroup == None:
+            logging.warning("--jfdi specified, so would apply '%s' regardless" % pargs.FEname)
+            logging.error("Use option --hostgroup to set this for your hostgroup")
+            sys.exit(0)
+        else:
+            logging.warning("--jfdi specified, so will apply regardless")
+            set_fe_for_hostgroup(pargs.hostgroup, pargs.FEname)
+
+
+    candidatefe = [ e for e in entries if pargs.FEname.lower() in e.lower()]
+    if len(candidatefe) == 0:
+        logging.error("Cannot match '%s' to any known SNOW functional element." % pargs.FEname)
+        sys.exit(3)
+    elif len(candidatefe) == 1:
+        if pargs.hostgroup == None:
+            logging.info("Matched SNOW functional element:")
+            logging.info(" - %s" % candidatefe[0])
+            logging.info("Use option --hostgroup to set this for your hostgroup")
+            sys.exit(0)
+        else:
+            logging.info("Matched SNOW functional element:")
+            logging.info(" - %s" % candidatefe[0])
+            logging.info("Setting for hostgroup: %s" % pargs.hostgroup)
+            set_fe_for_hostgroup(pargs.hostgroup, candidatefe[0])
+    else:
+        logging.info("Possible SNOW functional elements:")
+        for f in candidatefe:
+            logging.info(" - %s" % f)
+        sys.exit(0)
+
+
+
+def main():
+    parser = ArgumentParser(description="Search for a SNOW functional element and set it for your hostgroup")
+
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+
+    parser.add_argument('-v', '--verbose', action="store_true", help="Be chatty")
+    parser.add_argument("--jfdi", action="store_true", default=False, dest="jfdi",
+                        help="Ignore checking of FE name against SNOW")
+    parser.add_argument("--hostgroup", default=None,
+                        help="Set the given FE as responsible for this hostgroup")
+    parser.add_argument("FEname", metavar="snowfe",
+                        help="FE name (can be a substring)").completer = FENameCompleter()
+    argcomplete.autocomplete(parser)
+    parser.set_defaults(func=fe_set)
+
+    pargs = parser.parse_args()
+    pargs.func(pargs)
+
+    sys.exit()
+
+
+if __name__ == "__main__":
+    main()
