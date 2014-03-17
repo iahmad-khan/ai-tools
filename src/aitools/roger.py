@@ -1,4 +1,4 @@
-__author__ = 'mccance'
+__author__ = 'bejones'
 
 import re
 import requests
@@ -6,7 +6,7 @@ try:
     import simplejson as json
 except ImportError:
     import json
-
+import logging
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsRogerNotFoundError
 from aitools.errors import AiToolsRogerError
@@ -15,6 +15,8 @@ from aitools.errors import AiToolsRogerInternalServerError
 from aitools.errors import AiToolsRogerNotImplementedError
 from aitools.httpclient import HTTPClient
 from aitools.config import RogerConfig
+
+logger = logging.getLogger(__name__)
 
 
 class RogerClient(HTTPClient):
@@ -57,9 +59,11 @@ class RogerClient(HTTPClient):
 
     def update_or_create_state(self, hostname, appstate=False, message=None, **kwargs):
         try:
-            state = self.get_state(hostname)
+            self.get_state(hostname)
         except AiToolsRogerNotFoundError:
             return self.create_state(hostname, appstate=appstate, message=message, **kwargs)
+        else:
+            return self.put_state(hostname, appstate=appstate, message=message, **kwargs)
 
     def _construct_alarm_data(self, data, **kwargs):
         if not isinstance(data, dict):
@@ -76,6 +80,9 @@ class RogerClient(HTTPClient):
         return data
 
     def create_state(self, hostname, appstate=False, message=None, **kwargs):
+        if self.dryrun:
+            logger.info("Not creating '%s' in roger as dryrun enabled" % hostname)
+            return True
         data = dict()
         data["hostname"] = hostname
         state_endpoint = "/roger/v1/state/"
@@ -97,6 +104,9 @@ class RogerClient(HTTPClient):
         return body
 
     def delete_state(self, hostname):
+        if self.dryrun:
+            logger.info("Not deleting '%s' from roger as dryrun selected" % hostname)
+            return True
         host_endpoint = "/roger/v1/state/%s/" % hostname
         (code, body) = self.__do_api_request("delete", host_endpoint)
         if code == requests.codes.not_found:
@@ -110,6 +120,9 @@ class RogerClient(HTTPClient):
         return body
 
     def put_state(self, hostname, appstate=False, message=None, **kwargs):
+        if self.dryrun:
+            logger.info("Not adding '%s' to roger as dryrun selected" % hostname)
+            return True
         data = dict()
         data["hostname"] = hostname
         host_endpoint = "/roger/v1/state/%s/" % hostname

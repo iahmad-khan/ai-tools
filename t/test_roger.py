@@ -3,7 +3,6 @@ import sys
 import os
 import re
 import string
-import re
 import random
 sys.path.insert(0, os.path.abspath("../src"))
 from aitools.config import RogerConfig

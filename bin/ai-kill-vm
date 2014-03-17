@@ -117,8 +117,9 @@ def main():
     roger_client = RogerClient()
     # we need to turn off alarms
     try:
-        state = roger_client.put_state(fqdn, appstate="disabled", nc_alarmed="false",
-                                   hw_alarmed="false", app_alarmed="false", os_alarmed="false")
+        state = roger_client.update_or_create_state(fqdn, appstate="disabled", nc_alarmed="false",
+                                   hw_alarmed="false", app_alarmed="false", os_alarmed="false",
+                                   message="alarms disabled by ai-kill-vm")
     except AiToolsRogerNotAllowedError, error:
         logging.error("Couldn't switch off Roger alarms, not authorized (%s)" % error)
     except AiToolsRogerNotFoundError, error:

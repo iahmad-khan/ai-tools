@@ -13,6 +13,9 @@ class AiToolsForemanError(AiToolsHTTPClientError):
 class AiToolsForemanNotFoundError(AiToolsForemanError):
     pass
 
+class AiToolsForemanNotAllowedError(AiToolsForemanError):
+    pass
+
 class AiToolsPdbError(AiToolsHTTPClientError):
     pass
 

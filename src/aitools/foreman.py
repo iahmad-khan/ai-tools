@@ -12,6 +12,7 @@ import datetime
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
+from aitools.errors import AiToolsForemanNotAllowedError
 from aitools.httpclient import HTTPClient
 from aitools.config import ForemanConfig
 
@@ -33,6 +34,108 @@ class ForemanClient(HTTPClient):
         self.timeout = int(timeout or fmconfig.foreman_timeout)
         self.dryrun = dryrun
         self.cache = {}
+        self._media = None
+        self._ptables = None
+        self._operatingsystems = None
+        self._architectures = None
+        self._models = None
+        self._hostgroups = None
+        self._environments = None
+        self._users = None
+        self._usergroups = None
+        self._domains = None
+        self._subnets = None
+
+    @property
+    def subnets(self):
+        if self._subnets:
+            return self._subnets
+        subnets = self.get_subnets()
+        self._subnets = dict((s["subnet"]["id"], s["subnet"]["name"]) for s in subnets)
+        return self._subnets
+
+    @property
+    def domains(self):
+        if self._domains:
+            return self._domains
+        domains = self.get_domains()
+        self._domains = dict((d["domain"]["id"], d["domain"]["name"]) for d in domains)
+        return self._domains
+
+    @property
+    def usergroups(self):
+        if self._usergroups:
+            return self._usergroups
+        usergroups = self.get_usergroups()
+        self._usergroups = dict((u["usergroup"]["id"], u["usergroup"]["name"]) for u in usergroups)
+        return self._usergroups
+
+    @property
+    def users(self):
+        if self._users:
+            return self._users
+        users = self.get_users()
+        self._users = dict((u["user"]["id"], u["user"]["login"]) for u in users)
+        return self._users
+
+    @property
+    def environments(self):
+        if self._environments:
+            return self._environments
+        environments = self.get_environments()
+        self._environments = dict((e["environment"]["id"], e["environment"]["name"]) for e in environments)
+        return self._environments
+
+    @property
+    def hostgroups(self):
+        if self._hostgroups:
+            return self._hostgroups
+        hostgroups = self.get_hostgroups()
+        self._hostgroups = dict((h["hostgroup"]["id"], h["hostgroup"]["label"]) for h in hostgroups)
+        return self._hostgroups
+
+    @property
+    def models(self):
+        if self._models:
+            return self._models
+        models = self.get_models()
+        self._models = dict((m["model"]["id"], m["model"]["name"]) for m in models)
+        return self._models
+
+    @property
+    def architectures(self):
+        if self._architectures:
+            return self._architectures
+        arches = self.get_architectures()
+        self._architectures = dict((a["architecture"]["id"], a["architecture"]["name"]) for a in arches)
+        return self._architectures
+
+    @property
+    def operatingsystems(self):
+        if self._operatingsystems:
+            return self._operatingsystems
+        oses = self.get_operatingsystems()
+        self._operatingsystems = dict((o["operatingsystem"]["id"],
+                                       o["operatingsystem"]["name"] + " " + o["operatingsystem"]["major"] + "." + o["operatingsystem"]["minor"])
+                                      for o in oses)
+        return self._operatingsystems
+
+    @property
+    def ptables(self):
+        if self._ptables:
+            return self._ptables
+        ptables = self.get_ptables()
+        self._ptables = dict((p["ptable"]["id"], p["ptable"]["name"]) for p in ptables)
+        return self._ptables
+
+    @property
+    def media(self):
+        # is this evil? what about exceptions in properties?
+        if self._media:
+            return self._media
+        media = self.get_media()
+        self._media = dict((m["medium"]["id"], m["medium"]["name"]) for m in media)
+        return self._media
 
     def addhost(self, fqdn, environment, hostgroup, owner):
         """
@@ -61,6 +164,28 @@ class ForemanClient(HTTPClient):
                 raise AiToolsForemanError("addhost call failed (%s)" % error)
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
+
+    def delhost(self, fqdn):
+        """
+        :param fqdn:
+        :raise AiToolsForemanNotFoundError: if try to delete machine that doesn't exist
+        :raise AiToolsForemanNotAllowedError: if try to delete machine and not allowed
+        :raise AiToolsForemanError: for any other error
+        """
+        if self.dryrun:
+            logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
+            return True
+        logging.info("Deleting host '%s' from Foreman..." % fqdn)
+        (code, body) = self.__do_api_request("delete", "hosts/%s" % fqdn)
+        if code == requests.codes.ok or code == requests.codes.accepted or code == requests.codes.no_content:
+            return body
+        elif code == requests.codes.not_found:
+            raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
+        elif code == requests.codes.unauthorized:
+            raise AiToolsForemanNotAllowedError("Not allowed to delete host '%s' in foreman" % fqdn)
+        else:
+            raise AiToolsForemanError("Error code '%i' received trying to delete '%s' from foreman" % (code, fqdn))
+
 
     def gethost(self, fqdn):
         """
@@ -307,6 +432,84 @@ class ForemanClient(HTTPClient):
         else:
             msg = "Foreman didn't return a controlled status code when looking up %s" \
                 % model
+            raise AiToolsForemanError(msg)
+
+    def get_subnets(self):
+        return self.get_toplevel("subnets")
+
+    def get_environments(self):
+        """
+        get raw envrionments info from foreman
+        :return list of all envrionments:
+        """
+        return self.get_toplevel("environments")
+
+    def get_users(self):
+        return self.get_toplevel("users")
+
+    def get_usergroups(self):
+        return self.get_toplevel("usergroups")
+
+    def get_domains(self):
+        return self.get_toplevel("domains")
+
+    def get_hostgroups(self):
+        """
+        get raw hostgroup info from foreman
+        :return list of all hostgroups:
+        """
+        return self.get_toplevel("hostgroups")
+
+    def get_models(self):
+        """
+        Get raw models info from foreman
+        :return list of all models:
+        """
+        return self.get_toplevel("models")
+
+    def get_architectures(self):
+        """
+        Get raw architecture info from foreman
+        :return list of install mediums:
+        """
+        return self.get_toplevel("architectures")
+
+    def get_media(self):
+        """
+        Get raw install media info from foreman
+        :return list of install mediums:
+        """
+        return self.get_toplevel("media")
+
+    def get_ptables(self):
+        """
+        Get raw partition tables from foreman
+        :return list of partition tables:
+        """
+        return self.get_toplevel("ptables")
+
+    def get_operatingsystems(self):
+        """
+        Get raw operatingsystem list from foreman
+        :return list of operatingsystems:
+        """
+        return self.get_toplevel("operatingsystems")
+
+    def get_toplevel(self, endpoint):
+        """
+        For top level api endpoints, ie /api/operatingsystems /api/media /api/ptables
+        :param endpoint:
+        :return list of endpoint type:
+        :raise AiToolsForemanNotFoundError: for 404
+        :raise AiToolsForemanError: for all others
+        """
+        (code, body) = self.__do_api_request("get", endpoint)
+        if code == requests.codes.ok:
+            return body
+        elif code == requests.codes.not_found:
+            raise AiToolsForemanNotFoundError("Endpoint /%s not found" % endpoint)
+        else:
+            msg = "Foreman didn't return a controlled status code when looking up %s, got error: '%i'" % (endpoint, code)
             raise AiToolsForemanError(msg)
 
     def __do_api_request(self, method, url, data=None):
