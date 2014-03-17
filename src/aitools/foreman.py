@@ -205,7 +205,7 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
-    def gethostgroupparamters(self, hostgroup):
+    def gethostgroupparameters(self, hostgroup):
         """
         Get all parameters for the given hostgroup.
         :param hostgroup: the hostgroup to query
@@ -240,7 +240,7 @@ class ForemanClient(HTTPClient):
         hgid = self.__resolve_hostgroup_id(hostgroup)
 
         logging.info("Checking for existing parameter '%s' on hostgroup '%s'" % (name, hostgroup))
-        params = self.gethostgroupparamters(hostgroup)
+        params = self.gethostgroupparameters(hostgroup)
         ids = [ (p['parameter']['id'], p['parameter']['value']) for p in params if p['parameter']['name'] == name ]
 
         if ids:
