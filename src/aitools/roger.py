@@ -51,7 +51,7 @@ class RogerClient(HTTPClient):
         :return: the parsed structure from the returned JSON
         :raise AiToolsPdbError: in case the hostname is not found
         """
-        host_endpoint = "/roger/v1/state/%s/" % hostname
+        host_endpoint = "roger/v1/state/%s/" % hostname
         (code, body) = self.__do_api_request("get", host_endpoint)
         if code == requests.codes.not_found:
             raise AiToolsRogerNotFoundError("Host %s not found in Roger" % hostname)
@@ -86,7 +86,7 @@ class RogerClient(HTTPClient):
         logger.info("Adding '%s' to Roger" % hostname)
         data = dict()
         data["hostname"] = hostname
-        state_endpoint = "/roger/v1/state/"
+        state_endpoint = "roger/v1/state/"
         if message:
             data["message"] = message
         if appstate:
@@ -108,7 +108,7 @@ class RogerClient(HTTPClient):
         if self.dryrun:
             logger.info("Not deleting '%s' from roger as dryrun selected" % hostname)
             return True
-        host_endpoint = "/roger/v1/state/%s/" % hostname
+        host_endpoint = "roger/v1/state/%s/" % hostname
         (code, body) = self.__do_api_request("delete", host_endpoint)
         if code == requests.codes.not_found:
             raise AiToolsRogerNotFoundError("Host %s not found, can't delete" % hostname)
@@ -126,7 +126,7 @@ class RogerClient(HTTPClient):
             return True
         data = dict()
         data["hostname"] = hostname
-        host_endpoint = "/roger/v1/state/%s/" % hostname
+        host_endpoint = "roger/v1/state/%s/" % hostname
         if message:
             data["message"] = message
         if appstate:

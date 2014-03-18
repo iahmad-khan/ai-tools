@@ -38,7 +38,8 @@ from aitools.common import append_domain
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
-from aitools.errors import AiToolsRogerNotAllowedError
+from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotImplementedError
+from aitools.errors import AiToolsRogerInternalServerError
 
 from aitools.completer import ForemanCompleter
 from aitools.completer import NovaCompleter
@@ -294,7 +295,15 @@ def main():
         except AiToolsRogerNotAllowedError, e:
             # new machines should be allowed, so this means you're trying to update
             # something you shouldn't be updating
-            logging.error("Couldn't update roger, perhaps entry already exists? (%s)" % e)
+            logging.error("Couldn't update roger due to permissions, perhaps entry already exists? (%s)" % e)
+        except AiToolsRogerInternalServerError:
+            logging.error("Received 500 trying to update roger")
+            logging.info("Please be aware alarm masking may not work till resolved")
+            logging.info("If this is important verify with 'roger show' and update with 'roger update'")
+        except Exception, e:
+            logging.error("Received unexpected error when trying to add to roger: '%s'" % e)
+            logging.info("Please be aware alarm masking may not work till resolved")
+            logging.info("If this is important verify with 'roger show' and update with 'roger update'")
 
 
     logging.info("----------------------------------------------------------------------")
