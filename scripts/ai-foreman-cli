@@ -38,6 +38,7 @@ sub HelpMessage(;$);
 sub HandleOptions();
 sub CheckAPIResponseStatus($);
 sub CertMgrStageHostname($);
+sub RogerModifyAlarms($$$);
 sub SetBuild(@);
 
 HelpMessage("No arguments given.") if not @ARGV;
@@ -281,6 +282,7 @@ sub DeleteHost($@){
 	    return 1;
 	} else {
 	    print STDOUT "Host '$host' deleted successfully.\n";
+            RogerModifyAlarms($host, "false", "machine deleted via ai-foreman-cli");
 	}
     }
     return 0;
@@ -756,6 +758,9 @@ sub UpdateHost($@){
      	if ($response->is_success){
 	    print STDOUT "[INFO] Successfully " . ( $action eq "addhost" ? "added" : "updated" ) . " $host\n";
 	    push(@done,$host);
+            if ($action eq "addhost") {
+                RogerModifyAlarms($host, "false", "Host installed / added via ai-foreman-cli");
+            }
 	}else{
      	    print STDERR "[ERROR] Cannot " . ( $action eq "addhost" ? "add" : "update" ) . " \"$host\": " . $response->status_line . " :: " . $response->content ."\n";
      	}
@@ -1309,6 +1314,26 @@ sub CertMgrStageHostname($) {
 	return 0;
     }
 
+    return system($cmdline);
+}
+
+################################################################################################
+##
+## RogerModifyAlarms(): switch alarms on or off for given host with optional message
+#
+sub RogerModifyAlarms($$$) {
+    my ($hostname, $alarm_state, $msg) = @_;
+    if ($alarm_state ne "true") && ($alarm_state ne "false") {
+        print STDERR "[ERROR] Received request to set roger --alarm_state to '$alarm_state' which is invalid\n";
+        return 1;
+    }
+    my $cmdline = "/usr/bin/roger update $hostname --all_alarms $alarm_state";
+    $cmdline .= " --message $msg" if $msg;
+    if ($dryrun) {
+        print STDOUT "[DRYRUN] so not executing '$cmdline'\n";
+        return 0;
+    }
+    print STDOUT "[DEBUG] modifying roger alarms for '$hostname' to '$alarm_state'\n";
     return system($cmdline);
 }
 
