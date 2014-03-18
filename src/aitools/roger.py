@@ -83,6 +83,7 @@ class RogerClient(HTTPClient):
         if self.dryrun:
             logger.info("Not creating '%s' in roger as dryrun enabled" % hostname)
             return True
+        logger.info("Adding '%s' to Roger" % hostname)
         data = dict()
         data["hostname"] = hostname
         state_endpoint = "/roger/v1/state/"
