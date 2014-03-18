@@ -152,6 +152,18 @@ Path to the template to generate the script to initialize the Puppet
 environment that will be part of the userdata
 sent to the virtual machine (defaults to "/usr/share/ai-tools/userdata/puppetinit").
 .TP
+.B --roger-appstate
+Initial Roger application state (defaults to "build").
+.TP
+.B --roger-hostname
+FQDN of the Roger instance to use.
+.TP
+.B --roger-port
+Port of the Roger instance to use.
+.TP
+.B --roger-timeout
+Timeout (in seconds) for Roger operations.
+.TP
 .B --userdata-dir
 Directory containing fragments that will be attached to the userdata.
 The name of the file will be used to set the Content-Type (see
