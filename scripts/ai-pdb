@@ -64,7 +64,11 @@ def hg_main(pargs):
         del(entry['name'])
         res.append(entry)
     res = sorted(res, key=lambda k: k["hostgroup"])
-    print json.dumps(res, sort_keys=True, indent=5, separators=(',', ': '))
+    if pargs.plain:
+        for h in res:
+            print h['certname']
+    else:
+        print json.dumps(res, sort_keys=True, indent=5, separators=(',', ': '))
 
 
 def hg_facts(pargs):
@@ -106,6 +110,8 @@ def main():
     hg_parser.add_argument("hostgroup", metavar="HG", help="hostgroup string")
     hg_parser.add_argument("--subgroups", action="store_true", default=False, dest="subgroups",
                             help="return nodes from subgroups")
+    hg_parser.add_argument("--plain", action="store_true", default=False, dest="plain",
+                            help="output a plain, unformatted list of hostnames")
     hg_parser.set_defaults(func=hg_main)
 
     facts_parser = subparsers.add_parser("facts", help="get facts for a node")

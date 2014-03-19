@@ -133,7 +133,10 @@ ai-pdb \- script to query puppetdb
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 ai-pdb raw <puppetdb \s-1REST\s0 endpoint> [ \-\-query <query> ]
-ai-pdb hostgroup <hostgroup_name> [ \-\-subgroups ]
+.PP
+ai-pdb hostgroup <hostgroup_name> [ \-\-subgroups \-\-plain ]
+.PP
+ai-pdb facts <hostname>
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
 ai-pdb is a simple script to query puppetdb using kerberos creds.
@@ -178,6 +181,9 @@ The hostgroup subcommand takes a hostgroup string, such as puppet/puppetdb/grove
 .IP "\fB\-\-subgroups\fR" 4
 .IX Item "--subgroups"
 With a supplied hostgroup string, will look for all subgroups
+.IP "\fB\-\-plain\fR" 4
+.IX Item "--plain"
+Output a plain list of hostnames rather than JSON.
 .SS "facts"
 .IX Subsection "facts"
 The facts subcommand takes a hostname and returns a JSON list of facts for that host
