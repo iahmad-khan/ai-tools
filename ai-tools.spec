@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 6.2
+Version: 6.3
 Release: 0%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -70,6 +70,14 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Fri Mar 21 2014 Gavin McCance <gavin.mccance@cern.ch> - 6.3-0
+- [ai-*] All tools integrate better with Roger now
+- [ai-rename-host] new tool to rename physical hosts
+- [ai-set-fe] new tool to set FE name for hosts
+- [ai-pdb] new facts subcommand and --llan option for hostgroups
+- Better unit test coverage
+- AITools library easier to configure
+
 * Thu Feb 06 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 6.2-0
 - [ai-bs-vm] Light Puppet run at init time to configure Yum repositories.
 - [ai-bs-vm] Run distro_sync if available.
