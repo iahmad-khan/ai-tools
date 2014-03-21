@@ -49,6 +49,7 @@ install -m 644 man/ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-pdb.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-dump.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-rename-host.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-set-fe.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-hiera.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-remote-power-control.1 $RPM_BUILD_ROOT/%{_mandir}/man1/

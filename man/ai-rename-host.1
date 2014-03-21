@@ -1,0 +1,93 @@
+.TH AI-RENAME-HOST "1" "February 2013" "AI-RENAME-HOST" "User Commands"
+.SH NAME
+ai-rename-host \- Rename a physical host before reinstall
+
+.SH SYNOPSIS
+.B "ai-rename-host [OPTION]... HOSTNAME"
+
+.SH DESCRIPTION
+ai-rename-host is a tool to rename a physical host before reinstalling it. It will not rename a host 'live', and the host
+must be immediately reinstalled after using the tool. It has no effect on virtual nodes.
+.LP
+Apart from some of the options described below, the user has to
+provide a hostname or a fully qualified domain name for the old hostname and the new hostname.
+.LP
+.I Prerequisites:
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+.SH OPTIONS
+.TP
+.B --config
+Path to the config file (default /etc/ai/ai.conf).
+.TP
+.B --jfdi
+Don't check alarmed state before renaming the host.
+.TP
+.B -h, --help
+Display usage and exit.
+.LP
+.I Advanced options:
+.TP
+The following parameters are for advanced users and debugging.
+.TP
+\fB\-\-foreman-hostname\fR FQDN
+FQDN of the Foreman instance to use.
+.TP
+\fB\-\-foreman-port\fR PORT
+Port of the Foreman instance to use.
+.TP
+\fB\-\-foreman-timeout\fR INT
+Timeout (in seconds) for Foreman operations.
+.TP
+.B --pdb-hostname
+FQDN of the PuppetDB instance to use.
+.TP
+.B --pdb-port
+Port of the PuppetDB instance to use.
+.TP
+.B --pdb-timeout
+Timeout (in seconds) for PuppetDB operations.
+.TP
+.B --roger-hostname
+Hostname of the Roger server
+.TP
+.B --roger-port
+Port of the Roger server
+from.
+.TP
+.B --roger-timeout
+Timeout (in seconds) for the Roger server
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Enable debug messages.
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 1
+Bad command line.
+.TP
+.B 10
+Error loading config file.
+
+.SH EXAMPLES
+.TP
+.B Rename host foo1.cern.ch to foo2.cern.ch
+$ ai-rename-host foo1.cern.ch foo2.cern.ch
+
+.TP
+.B Rename host foo1.cern.ch to foo2.cern.ch, and don't bother checking alarm states
+$ ai-rename-host --jfdi foo1.cern.ch foo2.cern.ch
+
+
+.SH BUGS
+Any problem or feature requests? Open a support call on Jira
+(https://its.cern.ch/jira/) project "Agile Infrastructure".
+
+.SH AUTHOR
+Gavin McCance <gavin.mccance@cern.ch>
+
