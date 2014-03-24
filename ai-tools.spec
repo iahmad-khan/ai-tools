@@ -4,7 +4,7 @@
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
 Version: 6.3
-Release: 0%{?dist}
+Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -70,6 +70,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Mar 24 2014 Gavin McCance <gavin.mccance@cern.ch> - 6.3-1
+- packaging bug, missing ai-set-fe, ai-rename-host
+
 * Fri Mar 21 2014 Gavin McCance <gavin.mccance@cern.ch> - 6.3-0
 - [ai-*] All tools integrate better with Roger now
 - [ai-rename-host] new tool to rename physical hosts
