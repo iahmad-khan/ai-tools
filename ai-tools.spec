@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 6.3
+Version: 6.4
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -70,6 +70,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Mar 27 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 6.4-1
+- Add support for configuration snapshots
+
 * Mon Mar 24 2014 Gavin McCance <gavin.mccance@cern.ch> - 6.3-1
 - packaging bug, missing ai-set-fe, ai-rename-host
 
