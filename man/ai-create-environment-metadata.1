@@ -1,4 +1,4 @@
-.TH AI-CREATE-ENVIRONMENT-METADATA "1" "August 2013" "ai-create-environment-metadata" "User Commands"
+.TH AI-CREATE-ENVIRONMENT-METADATA "1" "March 2014" "ai-create-environment-metadata" "User Commands"
 .SH NAME
 ai-create-environment-metadata \- Helper tool to create Puppet environment definitions
 
@@ -12,9 +12,11 @@ Puppet environment definitions to be consumed by the Puppet masters.
 With it you can basically define what is the default branch and add
 overrides for modules and top-level hostgroups. The output is a YAML
 file ready to be added, committed and pushed. After some minutes, the
-new environment will show up in Foreman.
+new environment will show up in Foreman. Snapshots (static environments)
+are also supported.
 .LP
-More information: http://cern.ch/go/l9Nr ("Environments" section)
+More information: http://cern.ch/go/NF9S
+
 .TP
 .I Prerequisites:
 .TP
@@ -28,19 +30,28 @@ Name of the environment to be created (must contain only alphanumeric
 characters and underscore).
 .TP
 \fB\-n\fR, \fB\-\-notifications EMAIL\fR
-Email address to sent notifications to in case of badly defined overrides (for
-instance, if the specified branch does not exist).
+Email address to sent notifications to in case of necessity.
 
 .SH OPTIONS
 .TP
+\fB\-d\fR, \fB\-\-default NAME\fR
+Use NAME as default branch (defaults to 'master') for
+dynamic environments.
+.TP
 \fB\-m\fR, \fB\-\-module MODULE:BRANCH\fR
-Adds an override for module MODULE to use branch BRANCH.
+Add an override for module MODULE to use branch BRANCH.
 .TP
 \fB\-g\fR, \fB\-\-hostgroup HOSTGROUP:BRANCH\fR
-Adds an override for top-level hostgroup HOSTGROUP to use branch BRANCH.
+Add an override for top-level hostgroup HOSTGROUP to use branch BRANCH.
+.TP
+\fB\-s\fR, \fB\-\-snapshot BASE\fR
+Create a snapshot (static environment) based on BASE environment.
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
 Enable debug messages.
+
+.TP
+Bear in mind that --default and --snapshot are mutually exclusive.
 
 .SH EXIT CODES
 .TP
@@ -67,18 +78,24 @@ One or more invalid hostgroup overrides.
 .TP
 .B 8
 Couldn't open the output file for writing.
+.TP
+.B 9
+Couldn't find the environment to base the snapshot on
 
 .SH EXAMPLES
 .TP
-Create environment \fBafs_ai123\fR overriding module \fBafs\fR:
+Create dynamic environment \fBafs_ai123\fR overriding module \fBafs\fR:
 $ ai-create-environment-metadata -e afs_ai123 -n afs-admins@cern.ch -m afs:ai123
 .TP
-Create environment \fBbi_afs_ai123\fR overriding module \fBafs\fR and hostgroup \fBbi\fR:
+Create dynamic environment \fBbi_afs_ai123\fR overriding module \fBafs\fR and hostgroup \fBbi\fR:
 $ ai-create-environment-metadata -e bi_afs_ai123 -n batch-operations@cern.ch -m afs:ai123 -g bi:ai123
+.TP
+Create snapshot (static environment) \fBsuperfrozen\fR based on environment \fBqa\fR:
+$ ai-create-environment-metadata -e superfrozen -n batch-operations@cern.ch -s qa
 
 .SH BUGS
-Any problem? Open a support call on Jira
-(https://its.cern.ch/jira/) project "Agile Infrastructure".
+Any problem? Open a support call on SNOW
+(Functional Element "Configuration Management").
 
 .SH AUTHOR
 Nacho Barrientos <nacho.barrientos@cern.ch>
