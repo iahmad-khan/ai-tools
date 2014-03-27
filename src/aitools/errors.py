@@ -48,3 +48,6 @@ class AiToolsHieraError(AiToolsHTTPClientError):
 
 class AiToolsEncError(AiToolsHTTPClientError):
     pass
+
+class AiToolsGitError(AiToolsError):
+    pass

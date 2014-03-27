@@ -14,11 +14,12 @@ import argparse
 import logging
 import yaml
 import re
+import datetime
+
+from aitools.git import GitClient
 
 DEFAULT_LOGGING_LEVEL = logging.INFO
-
-class CmdlineError(Exception):
-    pass
+ENVIRONMENTS_PATH = '/mnt/puppetnfsdir/environments'
 
 class OverrideError(Exception):
     pass
@@ -26,26 +27,23 @@ class OverrideError(Exception):
 def parse_cmdline_args():
     """Parses command line parameters."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('-e', '--environment',
+    group = parser.add_mutually_exclusive_group()
+    parser.add_argument('-e', '--environment', required=True,
         help="Name of the new environment")
-    parser.add_argument('-n', '--notifications',
+    parser.add_argument('-n', '--notifications', required=True,
         help="Email address to notify problems with the environment")
     parser.add_argument('-m', '--module', action="append",
         help="Overrides a module (syntax module:branch)")
     parser.add_argument('-g', '--hostgroup', action="append",
         help="Overrides a hostgroup (syntax hostgroup:branch)")
-    parser.add_argument('-d', '--default',
-        help="Default branch (defaults to master)",
+    group.add_argument('-d', '--default',
+        help="Default branch (defaults to master).",
         default="master")
+    group.add_argument('-s', '--snapshot',
+        help="Creates snapshot based on the specified environment")
     parser.add_argument("-v", action="store_true", default=False, \
         dest="verbose", help="Enable debug messages")
     opts = parser.parse_args()
-    if opts.environment is None:
-        parser.print_usage()
-        raise CmdlineError("Environment (-e) not specified")
-    if opts.notifications is None:
-        parser.print_usage()
-        raise CmdlineError("Notifications email (-n) not specified")
     return opts
 
 def configure_logging(verbose):
@@ -63,13 +61,41 @@ def split_override(override):
         raise OverrideError(override)
     return (split.group("element"), split.group("branch"))
 
+def fill_snapshot(base, environment):
+    git = GitClient()
+    for module in os.listdir('%s/modules' % base):
+        repository_path = '%s/modules/%s' % (base, module)
+        if os.path.exists(repository_path):
+            repository_path = "%s/../.git" % os.path.realpath(repository_path)
+            environment['overrides']['modules'][module] = \
+                format_commit_hash(git, repository_path)
+
+    for hostgroup in os.listdir('%s/hostgroups' % base):
+        hostgroup_name = hostgroup.replace('hg_', '')
+        repository_path = '%s/hostgroups/%s' % (base, hostgroup)
+        if os.path.exists(repository_path):
+            repository_path = "%s/../.git" % os.path.realpath(repository_path)
+            environment['overrides']['hostgroups'][hostgroup_name] = \
+                format_commit_hash(git, repository_path)
+
+    repository_path = '%s/site' % base
+    if os.path.exists(repository_path):
+        repository_path = "%s/../.git" % os.path.realpath(repository_path)
+        environment['overrides']['common']['site'] = \
+            format_commit_hash(git, repository_path)
+
+    repository_path = '%s/hieradata/environments' % base
+    if os.path.exists(repository_path):
+        repository_path = "%s/../../.git" % os.path.realpath(repository_path)
+        environment['overrides']['common']['hieradata'] = \
+            format_commit_hash(git, repository_path)
+
+def format_commit_hash(git, repository_path):
+    return "commit/%s" % git.get_head(repository_path)
+
 def main():
     """Application entrypoint."""
-    try:
-        opts = parse_cmdline_args()
-    except CmdlineError, error:
-        logging.error("Wrong command line: %s\n" % error)
-        return 2
+    opts = parse_cmdline_args()
 
     configure_logging(opts.verbose)
 
@@ -93,8 +119,20 @@ characters and underscore")
     opts.environment = opts.environment.lower()
     logging.info("Creating environment '%s'..." % opts.environment)
 
-    environment = {'default': opts.default,
-        'notifications': opts.notifications}
+    environment = {'notifications': opts.notifications}
+
+    if not opts.snapshot:
+        environment['default'] = opts.default
+
+    if opts.snapshot:
+        logging.info("This environment seems to be a snapshot (this may take a while).")
+        base = "%s/%s" % (ENVIRONMENTS_PATH, opts.snapshot)
+        if not os.path.isdir(base):
+            logging.error("Base environment '%s' not found. Stopping :(" \
+                % opts.snapshot)
+            return 9
+        environment['overrides'] = {'modules': {}, 'hostgroups': {}, 'common': {}}
+        fill_snapshot(base, environment)
 
     if opts.module:
         if not 'overrides' in environment:
@@ -125,12 +163,15 @@ characters and underscore")
             opts.environment + ".yaml")
         return 8
 
+    if opts.snapshot:
+        environment_file.write("# Snapshot created on %s based on %s\n" %
+            (datetime.datetime.now(), opts.snapshot))
     environment_file.write("---\n")
     yaml.dump(environment, environment_file, default_flow_style=False)
 
     environment_file.close()
 
-    logging.info("Done")
+    logging.info("Done.")
     logging.info("To publish it just execute:")
     logging.info("\tgit add %s.yaml && git commit -m \"Add environment %s\"" % \
         (opts.environment, opts.environment))
@@ -142,11 +183,15 @@ some modules/hostgroups.")
         logging.info("Make sure that the specified branches \
 exist in the corresponding repositories before pushing the new environment.")
 
-    if opts.default not in ("master", "testing"):
+    if opts.default is not None and opts.default not in ("master", "qa"):
         logging.info("IMPORTANT: You're using an unconventional \
-environment as default ('%s')." % opts.default)
+branch as default ('%s')." % opts.default)
         logging.info("Make sure that all modules and hostgroups \
-have that branch")
+have that branch.")
+
+    if opts.snapshot is not None and opts.snapshot not in ('production', 'qa'):
+        logging.info("IMPORTANT: You're basing your snapshot on a unconventional \
+environment ('%s')." % opts.snapshot)
 
 if __name__ == '__main__':
     sys.exit(main())
