@@ -1323,7 +1323,7 @@ sub CertMgrStageHostname($) {
 #
 sub RogerModifyAlarms($$$) {
     my ($hostname, $alarm_state, $msg) = @_;
-    if ($alarm_state ne "true") && ($alarm_state ne "false") {
+    if (($alarm_state ne "true") && ($alarm_state ne "false")) {
         print STDERR "[ERROR] Received request to set roger --alarm_state to '$alarm_state' which is invalid\n";
         return 1;
     }
