@@ -5,23 +5,30 @@ import os
 import argcomplete
 
 from urllib import urlencode
+from aitools.errors import AiToolsTrustedBagError
+
 try:
     import simplejson as json
 except ImportError:
     import json
+import logging
+import sys
 from aitools.trustedbag import TrustedBagClient
 from aitools.config import TrustedBagConfig, AiConfig
 from aitools.completer import ForemanCompleter
 from aitools.common import fqdnify
+from aitools.common import configure_logging
 
+logger = logging.getLogger(__name__)
 
 def extract_entity(pargs):
     # mutual exclusion already handled by argparse
-    if pargs['host']:
-        entity = pargs['host']
+    if 'host' in pargs:
+        host = pargs.host
+        entity = fqdnify(host)
         scope = 'host'
-    elif pargs['hg']:
-        entity = pargs['hg']
+    elif 'hg' in pargs:
+        entity = pargs.hg
         scope = 'hostgroup'
     else:
         parser.error('Either --host or --hg must be specified.')
@@ -31,37 +38,68 @@ def add_main(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
 
     (entity, scope) = extract_entity(pargs)
 
+    try:
+        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
+        tbag.add_key(entity, scope, pargs.key, pargs.value)
+        logging.info("Key '%s' successfully added to %s '%s'" % (pargs.key, scope, entity))
+    except AiToolsTrustedBagError as e:
+        logging.error(e.message)
+        sys.exit(2)
 
 
 def delete_main(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
 
     (entity, scope) = extract_entity(pargs)
 
+    try:
+        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
+        tbag.delete_key(entity, scope, pargs.key)
+        logging.info("Key '%s' successfully deleted from %s '%s'" % (pargs.key, scope, entity))
+    except AiToolsTrustedBagError as e:
+        logging.error(e.message)
+        sys.exit(2)
 
 
 def show_main(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
 
     (entity, scope) = extract_entity(pargs)
 
+    try:
+        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
+        secret = tbag.get_key(entity, )
+        print json.dumps(secret, sort_keys=True, indent=5, separators=(',', ': '))
+    except AiToolsTrustedBagError as e:
+        logging.error(e.message)
+        sys.exit(2)
 
 
 def showkeys_main(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
 
     (entity, scope) = extract_entity(pargs)
 
-
+    try:
+        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
+        keys = tbag.get_keys(entity, scope)
+        print json.dumps(keys, sort_keys=True, indent=5, separators=(',', ': '))
+    except AiToolsTrustedBagError as e:
+        logging.error(e.message)
+        sys.exit(2)
 
 
 def main():
@@ -102,6 +140,7 @@ def main():
                             help="the host to query").completer = ForemanCompleter()
     shhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to query")
+    # TODO: add 'file' opt for writing data from a file
     show_parser.add_argument("key", metavar="KEY", help="Name of the key to show")
     show_parser.set_defaults(func=show_main)
 
@@ -113,6 +152,13 @@ def main():
     skhhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to query")
     showkeys_parser.set_defaults(func=showkeys_main)
+
+    parser.add_argument("--show_url", action="store_true", default=False, dest="show_url",
+                    help="show REST urls")
+    parser.add_argument('-v', '--verbose',
+                        action="store_true", help="Be chatty")
+    parser.add_argument('-d', '--dryrun',
+                        action="store_true", help="Don't do the requests that alter data")
 
     argcomplete.autocomplete(parser)
 
