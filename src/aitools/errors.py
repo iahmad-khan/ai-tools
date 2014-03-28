@@ -55,14 +55,14 @@ class AiToolsGitError(AiToolsError):
 class AiToolsTrustedBagError(AiToolsHTTPClientError):
     pass
 
-class AiToolsTrustedBagNotFoundError(AiToolsRogerError):
+class AiToolsTrustedBagNotFoundError(AiToolsTrustedBagError):
     pass
 
-class AiToolsTrustedBagNotAllowedError(AiToolsRogerError):
+class AiToolsTrustedBagNotAllowedError(AiToolsTrustedBagError):
     pass
 
-class AiToolsTrustedBagNotImplementedError(AiToolsRogerError):
+class AiToolsTrustedBagNotImplementedError(AiToolsTrustedBagError):
     pass
 
-class AiToolsTrustedBagInternalServerError(AiToolsRogerError):
+class AiToolsTrustedBagInternalServerError(AiToolsTrustedBagError):
     pass
