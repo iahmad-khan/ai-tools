@@ -15,6 +15,7 @@ from aitools.errors import AiToolsTrustedBagInternalServerError
 from aitools.errors import AiToolsTrustedBagNotImplementedError
 from aitools.httpclient import HTTPClient
 from aitools.config import TrustedBagConfig
+from urllib import quote_plus
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class TrustedBagClient(HTTPClient):
         if scope == 'host':
             tbag_endpoint = "tbag/v1/host/%s/" % (entity,)
         elif scope == 'hostgroup':
-            tbag_endpoint = "tbag/v1/hostgroup/%s/" % (entity,)
+            tbag_endpoint =  quote_plus("tbag/v1/hostgroup/%s/" % (entity,))
         else:
             raise AttributeError("scope must be either 'host' or 'hostgroup'")
         return tbag_endpoint
@@ -66,7 +67,7 @@ class TrustedBagClient(HTTPClient):
         if scope == 'host':
             tbag_endpoint = "tbag/v1/host/%s/secret/%s" % (entity, key)
         elif scope == 'hostgroup':
-            tbag_endpoint = "tbag/v1/hostgroup/%s/secret/%s" % (entity, key)
+            tbag_endpoint = quote_plus("tbag/v1/hostgroup/%s/secret/%s" % (entity, key))
         else:
             raise AttributeError("scope must be either 'host' or 'hostgroup'")
         return tbag_endpoint
