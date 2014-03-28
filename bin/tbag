@@ -1,0 +1,97 @@
+#!/usr/bin/python
+
+from argparse import ArgumentParser
+import os
+import argcomplete
+
+from urllib import urlencode
+try:
+    import simplejson as json
+except ImportError:
+    import json
+from aitools.trustedbag import TrustedBagClient
+from aitools.config import TrustedBagConfig, AiConfig
+from aitools.completer import ForemanCompleter
+from aitools.common import fqdnify
+
+def add_main(pargs):
+
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
+
+
+
+def delete_main(pargs):
+
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
+
+
+
+def show_main(pargs):
+
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
+
+
+def showkeys_main(pargs):
+
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
+
+
+
+def main():
+    parser = ArgumentParser(description="Tool for secrets handling")
+
+    tbag_config = TrustedBagConfig()
+    tbag_config.add_standard_args(parser)
+
+    subparsers = parser.add_subparsers()
+
+    add_parser = subparsers.add_parser("add", help="Add a secret to the store")
+    add_parser.add_argument("--host", metavar="HOSTNAME", dest="host",
+                            help="the host to add to").completer = ForemanCompleter()
+    add_parser.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+                            help="the hostgroup to add to")
+    add_parser.add_argument("key", metavar="KEY", help="Name of the key to add")
+    add_parser.add_argument("value", metavar="VALUE", help="Value to add")
+    add_parser.set_defaults(func=add_main)
+
+
+    delete_parser = subparsers.add_parser("delete", help="Delete a secret from the store")
+    delete_parser.add_argument("--host", metavar="HOSTNAME", dest="host",
+                            help="the host to delete from").completer = ForemanCompleter()
+    delete_parser.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+                            help="the hostgroup to delete from")
+    delete_parser.add_argument("key", metavar="KEY", help="Name of the key to delete")
+    add_parser.set_defaults(func=delete_main)
+
+
+    show_parser = subparsers.add_parser("show", help="Show a secret from the store")
+    show_parser.add_argument("--host", metavar="HOSTNAME", dest="host",
+                            help="the host to query").completer = ForemanCompleter()
+    show_parser.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+                            help="the hostgroup to query")
+    show_parser.add_argument("key", metavar="KEY", help="Name of the key to show")
+    show_parser.set_defaults(func=show_main)
+
+
+    showkeys_parser = subparsers.add_parser("show", help="Show all keys for the given host or hostgroup")
+    showkeys_parser.add_argument("--host", metavar="HOSTNAME", dest="host",
+                            help="the host to query").completer = ForemanCompleter()
+    showkeys_parser.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+                            help="the hostgroup to query")
+    showkeys_parser.set_defaults(func=showkeys_main)
+
+    argcomplete.autocomplete(parser)
+
+    pargs = parser.parse_args()
+    pargs.func(pargs)
+
+if __name__ == "__main__":
+    main()
