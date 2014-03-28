@@ -23,12 +23,12 @@ logger = logging.getLogger(__name__)
 
 def extract_entity(pargs):
     # mutual exclusion already handled by argparse
-    if 'host' in pargs:
+    if pargs.host:
         host = pargs.host
         entity = fqdnify(host)
         scope = 'host'
-    elif 'hg' in pargs:
-        entity = pargs.hg
+    elif pargs.hostgroup:
+        entity = pargs.hostgroup
         scope = 'hostgroup'
     else:
         parser.error('Either --host or --hg must be specified.')
@@ -47,7 +47,7 @@ def add_main(pargs):
         tbag.add_key(entity, scope, pargs.key, pargs.value)
         logging.info("Key '%s' successfully added to %s '%s'" % (pargs.key, scope, entity))
     except AiToolsTrustedBagError as e:
-        logging.error(e.message)
+        logging.error(e)
         sys.exit(2)
 
 
@@ -64,7 +64,7 @@ def delete_main(pargs):
         tbag.delete_key(entity, scope, pargs.key)
         logging.info("Key '%s' successfully deleted from %s '%s'" % (pargs.key, scope, entity))
     except AiToolsTrustedBagError as e:
-        logging.error(e.message)
+        logging.error(e)
         sys.exit(2)
 
 
@@ -81,7 +81,7 @@ def show_main(pargs):
         secret = tbag.get_key(entity, )
         print json.dumps(secret, sort_keys=True, indent=5, separators=(',', ': '))
     except AiToolsTrustedBagError as e:
-        logging.error(e.message)
+        logging.error(e)
         sys.exit(2)
 
 
@@ -98,7 +98,7 @@ def showkeys_main(pargs):
         keys = tbag.get_keys(entity, scope)
         print json.dumps(keys, sort_keys=True, indent=5, separators=(',', ': '))
     except AiToolsTrustedBagError as e:
-        logging.error(e.message)
+        logging.error(e)
         sys.exit(2)
 
 
@@ -118,6 +118,7 @@ def main():
                             help="the host to add to").completer = ForemanCompleter()
     ahhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to add to")
+    add_parser.add_argument('--file', metavar="FILENAME", help="read secret blob from file")
     add_parser.add_argument("key", metavar="KEY", help="Name of the key to add")
     add_parser.add_argument("value", metavar="VALUE", help="Value to add")
     # TODO: add 'file' opt for accepting data from a file
@@ -131,7 +132,7 @@ def main():
     dhhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to delete from")
     delete_parser.add_argument("key", metavar="KEY", help="Name of the key to delete")
-    add_parser.set_defaults(func=delete_main)
+    delete_parser.set_defaults(func=delete_main)
 
 
     show_parser = subparsers.add_parser("show", help="Show a secret from the store")
@@ -140,7 +141,7 @@ def main():
                             help="the host to query").completer = ForemanCompleter()
     shhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to query")
-    # TODO: add 'file' opt for writing data from a file
+    show_parser.add_argument('--file', metavar="FILENAME", help="write secret blob to file")
     show_parser.add_argument("key", metavar="KEY", help="Name of the key to show")
     show_parser.set_defaults(func=show_main)
 

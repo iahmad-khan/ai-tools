@@ -35,7 +35,7 @@ class TrustedBagClient(HTTPClient):
         """
         tbag = TrustedBagConfig()
         self.host = host or tbag.tbag_hostname
-        self.port = int(port or tbag.rtbag_port)
+        self.port = int(port or tbag.tbag_port)
         self.timeout = int(timeout or tbag.tbag_timeout)
         self.dryrun = dryrun
         self.show_url = show_url
@@ -44,7 +44,7 @@ class TrustedBagClient(HTTPClient):
         tbag_endpoint = self.fetch_keys_endpoint(entity, scope)
         (code, body) = self.__do_api_request("get", tbag_endpoint)
         if code == requests.codes.not_found:
-            raise AiToolsTrustedBagNotFoundError("%s '%s' not found in tbag" % (scope, entity))
+            raise AiToolsTrustedBagNotFoundError("%s '%s' not found in tbag" % (scope.capitalize(), entity))
         return body
 
     def get_key(self, entity, scope, key):
@@ -76,7 +76,7 @@ class TrustedBagClient(HTTPClient):
         if self.dryrun:
             logger.info("Not creating key '%s' on '%s' in tbag as dryrun enabled" % (key, entity))
             return True
-        logger.info("Adding key '%s' to tbag for %s '%s'" % (entity, scope, key))
+        logger.info("Adding key '%s' to tbag for %s '%s'" % (key, scope, entity))
         data = dict()
         data["secret"] = secret
         tbag_endpoint = self.fetch_secrets_endpoint(entity, key, scope)
@@ -84,7 +84,7 @@ class TrustedBagClient(HTTPClient):
         d = json.dumps(data)
         (code, body) = self.__do_api_request("post", tbag_endpoint, data=d)
         if code == requests.codes.not_found:
-            raise AiToolsTrustedBagNotFoundError("%s '%s' not found in tbag" % (scope, entity))
+            raise AiToolsTrustedBagNotFoundError("%s '%s' not found in tbag" % (scope.capitalize(), entity))
         elif code == requests.codes.not_allowed:
             raise AiToolsTrustedBagNotAllowedError("Not allowed to post key '%s' to '%s'" % (key, tbag_endpoint))
         elif code == requests.codes.not_implemented:
@@ -123,8 +123,9 @@ class TrustedBagClient(HTTPClient):
         try:
             code, response = super(TrustedBagClient, self).do_request(method, url, headers, data)
             body = response.text
-            if re.match('application/json', response.headers['content-type']):
-                body = response.json()
+            if code == requests.codes.ok:
+                if re.match('application/json', response.headers['content-type']):
+                    body = response.json()
             return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsTrustedBagError(error)
