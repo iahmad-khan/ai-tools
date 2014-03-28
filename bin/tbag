@@ -14,11 +14,25 @@ from aitools.config import TrustedBagConfig, AiConfig
 from aitools.completer import ForemanCompleter
 from aitools.common import fqdnify
 
+
+def extract_entity(pargs):
+    # mutual exclusion already handled by argparse
+    if pargs['host']:
+        entity = pargs['host']
+        scope = 'host'
+    elif pargs['hg']:
+        entity = pargs['hg']
+        scope = 'hostgroup'
+    else:
+        parser.error('Either --host or --hg must be specified.')
+    return (entity, scope)
+
 def add_main(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
 
+    (entity, scope) = extract_entity(pargs)
 
 
 
@@ -27,6 +41,7 @@ def delete_main(pargs):
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
 
+    (entity, scope) = extract_entity(pargs)
 
 
 
@@ -35,6 +50,8 @@ def show_main(pargs):
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
 
+    (entity, scope) = extract_entity(pargs)
+
 
 
 def showkeys_main(pargs):
@@ -42,10 +59,14 @@ def showkeys_main(pargs):
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
 
+    (entity, scope) = extract_entity(pargs)
+
 
 
 
 def main():
+
+    global parser # weeeeellll....
     parser = ArgumentParser(description="Tool for secrets handling")
 
     tbag_config = TrustedBagConfig()
@@ -54,37 +75,42 @@ def main():
     subparsers = parser.add_subparsers()
 
     add_parser = subparsers.add_parser("add", help="Add a secret to the store")
-    add_parser.add_argument("--host", metavar="HOSTNAME", dest="host",
+    ahhg = add_parser.add_mutually_exclusive_group()
+    ahhg.add_argument("--host", metavar="HOSTNAME", dest="host",
                             help="the host to add to").completer = ForemanCompleter()
-    add_parser.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+    ahhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to add to")
     add_parser.add_argument("key", metavar="KEY", help="Name of the key to add")
     add_parser.add_argument("value", metavar="VALUE", help="Value to add")
+    # TODO: add 'file' opt for accepting data from a file
     add_parser.set_defaults(func=add_main)
 
 
     delete_parser = subparsers.add_parser("delete", help="Delete a secret from the store")
-    delete_parser.add_argument("--host", metavar="HOSTNAME", dest="host",
+    dhhg = delete_parser.add_mutually_exclusive_group()
+    dhhg.add_argument("--host", metavar="HOSTNAME", dest="host",
                             help="the host to delete from").completer = ForemanCompleter()
-    delete_parser.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+    dhhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to delete from")
     delete_parser.add_argument("key", metavar="KEY", help="Name of the key to delete")
     add_parser.set_defaults(func=delete_main)
 
 
     show_parser = subparsers.add_parser("show", help="Show a secret from the store")
-    show_parser.add_argument("--host", metavar="HOSTNAME", dest="host",
+    shhg = show_parser.add_mutually_exclusive_group()
+    shhg.add_argument("--host", metavar="HOSTNAME", dest="host",
                             help="the host to query").completer = ForemanCompleter()
-    show_parser.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+    shhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to query")
     show_parser.add_argument("key", metavar="KEY", help="Name of the key to show")
     show_parser.set_defaults(func=show_main)
 
 
     showkeys_parser = subparsers.add_parser("show", help="Show all keys for the given host or hostgroup")
-    showkeys_parser.add_argument("--host", metavar="HOSTNAME", dest="host",
+    skhhg = showkeys_parser.add_mutually_exclusive_group()
+    skhhg.add_argument("--host", metavar="HOSTNAME", dest="host",
                             help="the host to query").completer = ForemanCompleter()
-    showkeys_parser.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+    skhhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to query")
     showkeys_parser.set_defaults(func=showkeys_main)
 
