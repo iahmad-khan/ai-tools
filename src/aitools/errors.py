@@ -51,3 +51,18 @@ class AiToolsEncError(AiToolsHTTPClientError):
 
 class AiToolsGitError(AiToolsError):
     pass
+
+class AiToolsTrustedBagError(AiToolsHTTPClientError):
+    pass
+
+class AiToolsTrustedBagNotFoundError(AiToolsRogerError):
+    pass
+
+class AiToolsTrustedBagNotAllowedError(AiToolsRogerError):
+    pass
+
+class AiToolsTrustedBagNotImplementedError(AiToolsRogerError):
+    pass
+
+class AiToolsTrustedBagInternalServerError(AiToolsRogerError):
+    pass
