@@ -30,7 +30,8 @@ def enum(**enums):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    PdbConfig.add_standard_args(parser)
+    pdb_config = PdbConfig()
+    pdb_config.add_standard_args(parser)
     parser.add_argument('--module', type=str, required=True, 
         help="Concerned module name")
     parser.add_argument('--verbose', '-v', action='store_true',
