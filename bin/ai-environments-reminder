@@ -62,10 +62,7 @@ process slower. If you don't need the environment anymore (because for
 instance you're done developing your new feature or your bugfix) please
 get rid of it by following this procedure:
 
-    http://cern.ch/go/6M6P
-
-Don't forget to also remove all the referenced branches living in the
-repositories that have overrides.
+    http://cern.ch/go/8mcT
 
 Thanks!
 
