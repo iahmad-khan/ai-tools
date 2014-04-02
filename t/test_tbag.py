@@ -38,21 +38,29 @@ class TestTrustedBag(unittest.TestCase):
         result = tbag.get_key(hostname, "host", key)
         self.assertEqual(expected_value, result['secret'])
 
-    def test_03_tbag_del_host_key(self):
+    def test_03_tbag_list_host_keys(self):
+        tbag = TrustedBagClient()
+        hostname = "aiadm047.cern.ch"
+        key = "testsecret"
+        res = tbag.get_keys(hostname, "host")
+        self.assertEqual(hostname, res["hostname"])
+        self.assertTrue(key in res["secrets"])
+
+    def test_04_tbag_del_host_key(self):
         tbag = TrustedBagClient()
         hostname = "aiadm047.cern.ch"
         key = "testsecret"
         result = tbag.delete_key(hostname, "host", key)
         self.assertRaises(AiToolsTrustedBagNotFoundError, tbag.get_key, hostname, "host", key)
 
-    def test_04_tbag_add_hg_key(self):
+    def test_05_tbag_add_hg_key(self):
         tbag = TrustedBagClient()
         hg = "punch/puppet/master/panic"
         key = "testsecret"
         value = "hgsecretstring"
         tbag.add_key(hg, "hostgroup", key, value)
 
-    def test_05_tbag_get_hg_key(self):
+    def test_06_tbag_get_hg_key(self):
         tbag = TrustedBagClient()
         hg = "punch/puppet/master/panic"
         key = "testsecret"
@@ -60,7 +68,15 @@ class TestTrustedBag(unittest.TestCase):
         result = tbag.get_key(hg, "hostgroup", key)
         self.assertEqual(expected_value, result['secret'])
 
-    def test_06_tbag_del_hg_key(self):
+    def test_07_tbag_list_hg_keys(self):
+        tbag = TrustedBagClient()
+        hg = "punch/puppet/master/panic"
+        key = "testsecret"
+        res = tbag.get_keys(hg, "hostgroup")
+        self.assertEqual(hg, res["hostgroup"])
+        self.assertTrue(key in res["secrets"])
+
+    def test_08_tbag_del_hg_key(self):
         tbag = TrustedBagClient()
         hg = "punch/puppet/master/panic"
         key = "testsecret"
