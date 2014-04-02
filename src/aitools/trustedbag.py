@@ -48,7 +48,7 @@ class TrustedBagClient(HTTPClient):
         return body
 
     def get_key(self, entity, scope, key):
-        tbag_endpoint = self.fetch_secrets_endpoint(entity, key, scope)
+        tbag_endpoint = self.fetch_secret_endpoint(entity, key, scope)
         (code, body) = self.__do_api_request("get", tbag_endpoint)
         if code == requests.codes.not_found:
             raise AiToolsTrustedBagNotFoundError("Key '%s' not found for %s '%s' in tbag" % (key, scope, entity))
@@ -58,16 +58,16 @@ class TrustedBagClient(HTTPClient):
         if scope == 'host':
             tbag_endpoint = "tbag/v1/host/%s/" % (entity,)
         elif scope == 'hostgroup':
-            tbag_endpoint =  quote_plus("tbag/v1/hostgroup/%s/" % (entity,))
+            tbag_endpoint = "tbag/v1/hostgroup/%s/" % entity.replace("/", "-")
         else:
             raise AttributeError("scope must be either 'host' or 'hostgroup'")
         return tbag_endpoint
 
-    def fetch_secrets_endpoint(self, entity, key, scope):
+    def fetch_secret_endpoint(self, entity, key, scope):
         if scope == 'host':
-            tbag_endpoint = "tbag/v1/host/%s/secret/%s" % (entity, key)
+            tbag_endpoint = "tbag/v1/host/%s/secret/%s/" % (entity, key)
         elif scope == 'hostgroup':
-            tbag_endpoint = quote_plus("tbag/v1/hostgroup/%s/secret/%s" % (entity, key))
+            tbag_endpoint = "tbag/v1/hostgroup/%s/secret/%s/" % (entity.replace("/", "-"), key)
         else:
             raise AttributeError("scope must be either 'host' or 'hostgroup'")
         return tbag_endpoint
@@ -79,7 +79,7 @@ class TrustedBagClient(HTTPClient):
         logger.info("Adding key '%s' to tbag for %s '%s'" % (key, scope, entity))
         data = dict()
         data["secret"] = secret
-        tbag_endpoint = self.fetch_secrets_endpoint(entity, key, scope)
+        tbag_endpoint = self.fetch_secret_endpoint(entity, key, scope)
 
         d = json.dumps(data)
         (code, body) = self.__do_api_request("post", tbag_endpoint, data=d)
@@ -97,7 +97,7 @@ class TrustedBagClient(HTTPClient):
         if self.dryrun:
             logger.info("Not deleting key '%s' from '%s' in tbag as dryrun selected" % (key, entity))
             return True
-        tbag_endpoint = self.fetch_secrets_endpoint(entity, key, scope)
+        tbag_endpoint = self.fetch_secret_endpoint(entity, key, scope)
 
         (code, body) = self.__do_api_request("delete", tbag_endpoint)
         if code == requests.codes.not_found:
