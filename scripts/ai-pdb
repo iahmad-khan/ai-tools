@@ -49,7 +49,7 @@ def hg_main(pargs):
     endpoint = "/v3/facts/hostgroup"
     if pargs.subgroups:
         op = "~"
-        hg = os.path.join(pargs.hostgroup, "*")
+        hg = "^(?=%s)(?=%s/.*)" % (pargs.hostgroup, pargs.hostgroup)
     else:
         op = "="
         hg = pargs.hostgroup
