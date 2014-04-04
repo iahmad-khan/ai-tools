@@ -1328,7 +1328,7 @@ sub RogerModifyAlarms($$$) {
         return 1;
     }
     my $cmdline = "/usr/bin/roger update $hostname --all_alarms $alarm_state";
-    $cmdline .= " --message $msg" if $msg;
+    $cmdline .= " --message '$msg'" if $msg;
     if ($dryrun) {
         print STDOUT "[DRYRUN] so not executing '$cmdline'\n";
         return 0;
