@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 6.5
+Version: 6.6
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -70,7 +70,13 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Apr 07 2014 Ben Jones <ben.dylan.jones@cern.ch> - 6.6-1
+- initial tbag client
+- roger fixes
+
 * Thu Mar 27 2014 Ben Jones <ben.dylan.jones@cern.ch> - 6.5-1
+- roger updates
+
 * Thu Mar 27 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 6.4-1
 - Add support for configuration snapshots
 
