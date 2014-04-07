@@ -39,7 +39,7 @@ install -m 755 scripts/ai-gen-ssh-yaml    ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-pdb ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-dump ${RPM_BUILD_ROOT}/usr/bin
-install -m 755 scripts/ai-rmt-module-type ${RPM_BUILD_ROOT}/usr/bin
+install -m 755 scripts/ai-module-type ${RPM_BUILD_ROOT}/usr/bin
 install -Dm 755 userdata/puppetinit ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/puppetinit
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 man/ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
