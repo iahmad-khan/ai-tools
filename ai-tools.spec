@@ -3,8 +3,8 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 6.6
-Release: 2%{?dist}
+Version: 6.7
+Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
