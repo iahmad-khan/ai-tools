@@ -16,7 +16,7 @@ URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
 Requires: aims2-client, certmgr-client, python-novaclient, python-krbV, python-urllib2_kerberos
 Requires: perl-YAML-Syck, python-requests, python-requests-kerberos, python-argparse
-Requires: python-argcomplete
+Requires: python-argcomplete, python-humanize, teigi-client
 
 %description
 A collection of tools used by CERN/IT's Agile Infrastructure project
