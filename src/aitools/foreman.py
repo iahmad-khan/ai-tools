@@ -150,7 +150,7 @@ class ForemanClient(HTTPClient):
         logging.info("Adding host '%s' to Foreman..." % fqdn)
         payload = {'managed': False, 'name': fqdn}
         payload['environment_id'] = self.__resolve_environment_id(environment)
-        payload['hostgroup_id'] = self.__resolve_hostgroup_id(hostgroup)
+        payload['hostgroup_id'] = self.resolve_hostgroup_id(hostgroup)
         payload['owner_type'] = "User"
         payload['owner_id'] = self.__resolve_user_id(owner)
         logging.debug("With payload: %s" % payload)
@@ -339,7 +339,7 @@ class ForemanClient(HTTPClient):
         logging.info("Getting hostgroup parameters for '%s' from Foreman..." % hostgroup)
 
         logging.info("Resolving ID for hostgroup '%s'" % hostgroup)
-        hgid = self.__resolve_hostgroup_id(hostgroup)
+        hgid = self.resolve_hostgroup_id(hostgroup)
 
         (code, body) = self.__do_api_request("get", "hostgroups/%s/parameters" % hgid)
         if code == requests.codes.ok:
@@ -362,7 +362,7 @@ class ForemanClient(HTTPClient):
         """
 
         logging.info("Resolving ID for hostgroup '%s'" % hostgroup)
-        hgid = self.__resolve_hostgroup_id(hostgroup)
+        hgid = self.resolve_hostgroup_id(hostgroup)
 
         logging.info("Checking for existing parameter '%s' on hostgroup '%s'" % (name, hostgroup))
         params = self.gethostgroupparameters(hostgroup)
@@ -446,7 +446,7 @@ class ForemanClient(HTTPClient):
     def __resolve_environment_id(self, name):
         return self.__resolve_model_id('environment', name)
 
-    def __resolve_hostgroup_id(self, name):
+    def resolve_hostgroup_id(self, name):
         return self.__resolve_model_id('hostgroup', name, search_key='label')
 
     def __resolve_user_id(self, name):
@@ -477,15 +477,15 @@ class ForemanClient(HTTPClient):
             self.cache[cache_key] = results[0][modelname]['id']
             return results[0][modelname]['id']
 
-    def __resolve_model(self, modelname, id):
-        cache_key = '%s_%s' % (modelname, id)
+    def __resolve_model(self, modelname, model_id):
+        cache_key = '%s_%s' % (modelname, model_id)
         if cache_key in self.cache:
             logging.debug("'%s' found in cache" % cache_key)
             return self.cache[cache_key]
         else:
             logging.debug("Asking Foreman for %s with id '%s'" %
-                (modelname, id))
-            (code, body) = self.__do_api_request("get", "%ss/%s" % (modelname, id))
+                (modelname, model_id))
+            (code, body) = self.__do_api_request("get", "%ss/%s" % (modelname, model_id))
             if code == requests.codes.ok:
                 self.cache[cache_key] = body
                 return body
@@ -595,10 +595,11 @@ class ForemanClient(HTTPClient):
         try:
             code, response = super(ForemanClient, self).do_request(method, url, headers, data)
             body = response.text
+            if code == requests.codes.unauthorized or code == requests.codes.forbidden:
+                raise AiToolsForemanNotAllowedError("Unauthorized when trying '%s' on '%s'" % (method, url))
             if re.match('application/json', response.headers['content-type']):
                 body = response.json()
             return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsForemanError(error)
-
 

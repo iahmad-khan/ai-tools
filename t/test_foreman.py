@@ -198,3 +198,10 @@ class TestForeman(unittest.TestCase):
         res = foreman_client.subnets
         self.assertTrue(res)
         self.assertTrue((isinstance(res, dict)))
+
+    def test_resolve_hostgroup_id(self):
+        (pargs, _) = self.foreman_config.parser.parse_known_args()
+        self.foreman_config.read_config_and_override_with_pargs(pargs)
+        foreman_client = ForemanClient()
+        hid = foreman_client.resolve_hostgroup_id("punch/puppet/master/batch")
+        self.assertEqual(int(hid), 764)

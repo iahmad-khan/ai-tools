@@ -22,6 +22,9 @@ class AiToolsPdbError(AiToolsHTTPClientError):
 class AiToolsPdbNotFoundError(AiToolsPdbError):
     pass
 
+class AiToolsPdbNotAllowedError(AiToolsPdbError):
+    pass
+
 class AiToolsCertmgrError(AiToolsHTTPClientError):
     pass
 

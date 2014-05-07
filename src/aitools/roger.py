@@ -156,6 +156,8 @@ class RogerClient(HTTPClient):
             print url
         try:
             code, response = super(RogerClient, self).do_request(method, url, headers, data)
+            if code == requests.codes.unauthorized or code == requests.codes.forbidden:
+                raise AiToolsRogerNotAllowedError("Forbidden trying '%s' at '%s'" % (method, url))
             body = response.text
             if re.match('application/json', response.headers['content-type']):
                 body = response.json()

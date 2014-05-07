@@ -25,10 +25,10 @@ class HTTPClient(object):
                 data=data)
             logging.debug("Returned (%s) %s",
                             response.status_code, response.text)
-            if response.status_code == requests.codes.forbidden or \
-                response.status_code == requests.codes.unauthorized:
-                    raise AiToolsHTTPClientError("Authentication failed (expired or non-existent TGT?)")
-            elif response.status_code == requests.codes.internal_server_error:
+            # if response.status_code == requests.codes.forbidden or \
+            #     response.status_code == requests.codes.unauthorized:
+            #         raise AiToolsHTTPClientError("Authentication failed (expired or non-existent TGT?)")
+            if response.status_code == requests.codes.internal_server_error:
                 raise AiToolsHTTPClientError("Internal Server Error")
         except requests.exceptions.ConnectionError, error:
             raise AiToolsHTTPClientError("Connection error (%s)" % error)

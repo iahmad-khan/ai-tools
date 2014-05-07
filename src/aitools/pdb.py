@@ -6,6 +6,7 @@ import requests
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsPdbNotFoundError
 from aitools.errors import AiToolsPdbError
+from aitools.errors import AiToolsPdbNotAllowedError
 from aitools.httpclient import HTTPClient
 from aitools.config import PdbConfig
 
@@ -110,6 +111,8 @@ class PdbClient(HTTPClient):
         try:
             code, response = super(PdbClient, self).do_request(method, url, headers, data)
             body = response.text
+            if code == requests.codes.forbidden or code == requests.codes.unauthorized:
+                raise AiToolsPdbNotAllowedError("Unauthorized trying '%s' at '%s'" % (method, url))
             if re.match('application/json', response.headers['content-type']):
                 body = response.json()
             return (code, body)

@@ -54,6 +54,17 @@ class TrustedBagClient(HTTPClient):
             raise AiToolsTrustedBagNotFoundError("Key '%s' not found for %s '%s' in tbag" % (key, scope, entity))
         return body
 
+    def get_from_tree(self, hostname, key):
+        tbag_endpoint = self.fetch_secret_tree_endpoint(hostname, key)
+        (code, body) = self.__do_api_request("get", tbag_endpoint)
+        if code == requests.codes.not_found:
+            raise AiToolsTrustedBagNotFoundError("Key '%s' not found for '%s' in tbag tree" % (key, hostname))
+        return body
+
+    def fetch_secret_tree_endpoint(self, hostname, key):
+        tbag_endpoint = "tbag/v1/hosttree/%s/secret/%s/" % (hostname, key)
+        return tbag_endpoint
+
     def fetch_keys_endpoint(self, entity, scope):
         if scope == 'host':
             tbag_endpoint = "tbag/v1/host/%s/" % (entity,)
@@ -123,6 +134,8 @@ class TrustedBagClient(HTTPClient):
         try:
             code, response = super(TrustedBagClient, self).do_request(method, url, headers, data)
             body = response.text
+            if code == requests.codes.unauthorized or code == requests.codes.forbidden:
+                raise AiToolsTrustedBagNotAllowedError("Unauthorized trying '%s' at '%s'" % (method, url))
             if code == requests.codes.ok:
                 if re.match('application/json', response.headers['content-type']):
                     body = response.json()
