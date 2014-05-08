@@ -78,7 +78,7 @@ def show_main(pargs):
 
     try:
         tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
-        secret = tbag.get_key(entity, )
+        secret = tbag.get_key(entity, scope, pargs.key)
         print json.dumps(secret, sort_keys=True, indent=5, separators=(',', ': '))
     except AiToolsTrustedBagError as e:
         logging.error(e)
@@ -146,7 +146,7 @@ def main():
     show_parser.set_defaults(func=show_main)
 
 
-    showkeys_parser = subparsers.add_parser("show", help="Show all keys for the given host or hostgroup")
+    showkeys_parser = subparsers.add_parser("showkeys", help="Show all keys for the given host or hostgroup")
     skhhg = showkeys_parser.add_mutually_exclusive_group()
     skhhg.add_argument("--host", metavar="HOSTNAME", dest="host",
                             help="the host to query").completer = ForemanCompleter()
