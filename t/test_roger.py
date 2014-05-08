@@ -70,12 +70,12 @@ class TestRoger(unittest.TestCase):
         rogerclient = RogerClient()
         self.assertEqual(rogerclient.host, "teigitest.cern.ch")
         # need to add the damn thing first
-        newstate = rogerclient.update_or_create_state("aiadm047.cern.ch")
-        confirm_newstate = rogerclient.get_state("aiadm047.cern.ch")
+        newstate = rogerclient.update_or_create_state("aiadm049.cern.ch")
+        confirm_newstate = rogerclient.get_state("aiadm049.cern.ch")
         self.assertTrue(("hostname" in confirm_newstate))
-        delstate = rogerclient.delete_state("aiadm047.cern.ch")
+        delstate = rogerclient.delete_state("aiadm049.cern.ch")
         try:
-            rogerclient.get_state("aiadm047.cern.ch")
+            rogerclient.get_state("aiadm049.cern.ch")
         except Exception, e:
             self.assertTrue((isinstance(e, AiToolsRogerNotFoundError)))
 

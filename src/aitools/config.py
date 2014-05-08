@@ -151,3 +151,15 @@ class NovaConfig(AiConfig):
     def add_standard_args(self, parser):
         parser.add_argument('--nova-timeout', type=int, help="Timeout for Nova operations")
         self.add_configfile_args(parser)
+
+
+class TrustedBagConfig(AiConfig):
+
+    def _get_from_configfile(self, key):
+        return self.parser.get("tbag", key)
+
+    def add_standard_args(self, parser):
+        parser.add_argument('--tbag-timeout', type=int, help="Timeout for trusted bag operations")
+        parser.add_argument('--tbag-hostname', help="Trusted bag hostname")
+        parser.add_argument('--tbag-port', type=int, help="Trusted bag port")
+        self.add_configfile_args(parser)

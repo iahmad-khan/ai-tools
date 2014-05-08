@@ -22,6 +22,9 @@ class AiToolsPdbError(AiToolsHTTPClientError):
 class AiToolsPdbNotFoundError(AiToolsPdbError):
     pass
 
+class AiToolsPdbNotAllowedError(AiToolsPdbError):
+    pass
+
 class AiToolsCertmgrError(AiToolsHTTPClientError):
     pass
 
@@ -50,4 +53,19 @@ class AiToolsEncError(AiToolsHTTPClientError):
     pass
 
 class AiToolsGitError(AiToolsError):
+    pass
+
+class AiToolsTrustedBagError(AiToolsHTTPClientError):
+    pass
+
+class AiToolsTrustedBagNotFoundError(AiToolsTrustedBagError):
+    pass
+
+class AiToolsTrustedBagNotAllowedError(AiToolsTrustedBagError):
+    pass
+
+class AiToolsTrustedBagNotImplementedError(AiToolsTrustedBagError):
+    pass
+
+class AiToolsTrustedBagInternalServerError(AiToolsTrustedBagError):
     pass
