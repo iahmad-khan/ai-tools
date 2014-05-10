@@ -4,7 +4,7 @@
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
 Version: 6.9
-Release: 1%{?dist}
+Release: 2%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -65,6 +65,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %files
 %defattr (-, root, root)
 %{_bindir}/ai-*
+%{_bindir}/tbag
 %{python_sitelib}/*
 %{_mandir}/man1/*
 /usr/share/ai-tools/userdata/*
