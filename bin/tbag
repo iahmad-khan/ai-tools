@@ -112,17 +112,17 @@ def main():
 
     subparsers = parser.add_subparsers()
 
-    add_parser = subparsers.add_parser("add", help="Add a secret to the store")
-    ahhg = add_parser.add_mutually_exclusive_group()
+    set_parser = subparsers.add_parser("set", help="Set a secret in the store")
+    ahhg = set_parser.add_mutually_exclusive_group()
     ahhg.add_argument("--host", metavar="HOSTNAME", dest="host",
                             help="the host to add to").completer = ForemanCompleter()
     ahhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to add to")
-    add_parser.add_argument('--file', metavar="FILENAME", help="read secret blob from file")
-    add_parser.add_argument("key", metavar="KEY", help="Name of the key to add")
-    add_parser.add_argument("value", metavar="VALUE", help="Value to add")
+    set_parser.add_argument('--file', metavar="FILENAME", help="read secret blob from file")
+    set_parser.add_argument("key", metavar="KEY", help="Name of the key to set")
+    set_parser.add_argument("value", metavar="VALUE", help="Value to set")
     # TODO: add 'file' opt for accepting data from a file
-    add_parser.set_defaults(func=add_main)
+    set_parser.set_defaults(func=add_main)
 
 
     delete_parser = subparsers.add_parser("delete", help="Delete a secret from the store")

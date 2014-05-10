@@ -1,0 +1,136 @@
+.TH TBAG "1" "May 2014" "CERN" "User Commands"
+.SH NAME
+tbag \- tbag
+.SH DESCRIPTION
+usage: tbag [\-h] [\-\-tbag\-timeout TBAG_TIMEOUT] [\-\-tbag\-hostname TBAG_HOSTNAME]
+.IP
+[\-\-tbag\-port TBAG_PORT] [\-\-config CONFIG] [\-\-show_url] [\-v] [\-d]
+{add,delete,show,showkeys} ...
+.PP
+Tool for secrets handling
+.SS "positional arguments:"
+.IP
+{set,delete,show,showkeys}
+.TP
+set
+Add/update a secret to the store
+.TP
+delete
+Delete a secret from the store
+.TP
+show
+Show a secret from the store
+.TP
+showkeys
+Show all keys for the given host or hostgroup
+.SH COMMAND OVERVIEW
+.SS tbag set
+usage: tbag set [\-h] [\-\-host HOSTNAME | \fB\-\-hg\fR HOSTGROUP] [\-\-file FILENAME]
+.IP
+KEY VALUE
+.TP
+.B "positional arguments:"
+.TP
+KEY
+Name of the key to set
+.TP
+VALUE
+Value to set
+.TP
+.B "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-host\fR HOSTNAME
+the host to add to
+.TP
+\fB\-\-hg\fR HOSTGROUP
+the hostgroup to add to
+.TP
+\fB\-\-file\fR FILENAME
+read secret blob from file
+.SS tbag delete
+usage: tbag delete [\-h] [\-\-host HOSTNAME | \fB\-\-hg\fR HOSTGROUP] KEY
+.TP
+.B "positional arguments:"
+.TP
+KEY
+Name of the key to delete
+.TP
+.B "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-host\fR HOSTNAME
+the host to delete from
+.TP
+\fB\-\-hg\fR HOSTGROUP
+the hostgroup to delete from
+.SS tbag show
+usage: tbag show [\-h] [\-\-host HOSTNAME | \fB\-\-hg\fR HOSTGROUP] [\-\-file FILENAME] KEY
+.TP
+.B "positional arguments:"
+.TP
+KEY
+Name of the key to show
+.TP
+.B "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-host\fR HOSTNAME
+the host to query
+.TP
+\fB\-\-hg\fR HOSTGROUP
+the hostgroup to query
+.TP
+\fB\-\-file\fR FILENAME
+write secret blob to file
+.SS tbag showkeys
+usage: tbag showkeys [\-h] [\-\-host HOSTNAME | \fB\-\-hg\fR HOSTGROUP]
+.TP
+.B "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-host\fR HOSTNAME
+the host to query
+.TP
+\fB\-\-hg\fR HOSTGROUP
+the hostgroup to query
+.SH GLOBAL OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-tbag\-timeout\fR TBAG_TIMEOUT
+Timeout for trusted bag operations
+.TP
+\fB\-\-tbag\-hostname\fR TBAG_HOSTNAME
+Trusted bag hostname
+.TP
+\fB\-\-tbag\-port\fR TBAG_PORT
+Trusted bag port
+.TP
+\fB\-\-config\fR CONFIG
+Configuration file
+.TP
+\fB\-\-show_url\fR
+show REST urls
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Be chatty
+.TP
+\fB\-d\fR, \fB\-\-dryrun\fR
+Don't do the requests that alter data
+
+.SH BUGS
+Oh, almost certainly. Open a support call on Jira
+(https://its.cern.ch/jira/) project "Agile Infrastructure".
+
+.SH AUTHOR
+Ben Jones <ben.dylan.jones@cern.ch>
