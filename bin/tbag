@@ -34,13 +34,27 @@ def extract_entity(pargs):
         parser.error('Either --host or --hg must be specified.')
     return (entity, scope)
 
-def add_main(pargs):
+def set_main(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
 
     (entity, scope) = extract_entity(pargs)
+
+    if pargs.value and pargs.file:
+        logger.fatal("Both --file and value defined for secret - choose one or the other")
+        sys.exit(2)
+    if not pargs.value and not pargs.file:
+        logger.fatal("Please either choose --file with a secret, or add a string value")
+        sys.exit(2)
+    if pargs.file:
+        try:
+            fh = open(pargs.file)
+        except IOError, e:
+            logger.fatal("Could not open file '%s': '%s'" % (pargs.file, e))
+            sys.exit(2)
+        pargs.value = fh.read()
 
     try:
         tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
@@ -79,10 +93,23 @@ def show_main(pargs):
     try:
         tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
         secret = tbag.get_key(entity, scope, pargs.key)
-        print json.dumps(secret, sort_keys=True, indent=5, separators=(',', ': '))
     except AiToolsTrustedBagError as e:
         logging.error(e)
         sys.exit(2)
+
+    if pargs.file:
+        try:
+            fh = open(pargs.file, 'wb')
+        except IOError, e:
+            logger.fatal("Couldn't open '%s' for writing: '%s'" % (pargs.file, e))
+            sys.exit(2)
+        try:
+            fh.write(secret["secret"])
+        except IOError, e:
+            logger.fatal("Failed to write to '%s': '%s'" % (pargs.file, e))
+            sys.exit(2)
+        secret["secret"] = "Printed to '%s'" % pargs.file
+    print json.dumps(secret, sort_keys=True, indent=5, separators=(',', ': '))
 
 
 def showkeys_main(pargs):
@@ -120,9 +147,9 @@ def main():
                             help="the hostgroup to add to")
     set_parser.add_argument('--file', metavar="FILENAME", help="read secret blob from file")
     set_parser.add_argument("key", metavar="KEY", help="Name of the key to set")
-    set_parser.add_argument("value", metavar="VALUE", help="Value to set")
+    set_parser.add_argument("value", metavar="VALUE", nargs='?', help="Value to set")
     # TODO: add 'file' opt for accepting data from a file
-    set_parser.set_defaults(func=add_main)
+    set_parser.set_defaults(func=set_main)
 
 
     delete_parser = subparsers.add_parser("delete", help="Delete a secret from the store")
@@ -131,7 +158,7 @@ def main():
                             help="the host to delete from").completer = ForemanCompleter()
     dhhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to delete from")
-    delete_parser.add_argument("key", metavar="KEY", help="Name of the key to delete")
+    delete_parser.add_argument("key", metavar="KEY", nargs=1, help="Name of the key to delete")
     delete_parser.set_defaults(func=delete_main)
 
 
