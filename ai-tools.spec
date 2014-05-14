@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 7.0
+Version: 7.1
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
