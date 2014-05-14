@@ -13,7 +13,11 @@ class HTTPClient(object):
         """
         assert False  # subclass it
 
+
     def do_request(self, method, url, headers, data=None):
+        # turn off silly requests_kerberos errors
+        requests_log = logging.getLogger("requests_kerberos.kerberos_")
+        requests_log.setLevel(logging.CRITICAL)
         logging.debug("Issuing %s on %s" % (method, url))
         logging.debug("With headers: %s" % headers)
         if data:
