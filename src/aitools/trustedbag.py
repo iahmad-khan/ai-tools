@@ -15,6 +15,7 @@ from aitools.errors import AiToolsTrustedBagInternalServerError
 from aitools.errors import AiToolsTrustedBagNotImplementedError
 from aitools.httpclient import HTTPClient
 from aitools.config import TrustedBagConfig
+import base64
 from urllib import quote_plus
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,8 @@ class TrustedBagClient(HTTPClient):
         (code, body) = self.__do_api_request("get", tbag_endpoint)
         if code == requests.codes.not_found:
             raise AiToolsTrustedBagNotFoundError("Key '%s' not found for %s '%s' in tbag" % (key, scope, entity))
+        if body.has_key("encoding") and body["encoding"] == 'b64':
+            body["secret"] = base64.b64decode(body["secret"])
         return body
 
     def get_from_tree(self, hostname, key):
@@ -83,13 +86,15 @@ class TrustedBagClient(HTTPClient):
             raise AttributeError("scope must be either 'host' or 'hostgroup'")
         return tbag_endpoint
 
-    def add_key(self, entity, scope, key, secret):
+    def add_key(self, entity, scope, key, secret, b64_value=False):
         if self.dryrun:
             logger.info("Not creating key '%s' on '%s' in tbag as dryrun enabled" % (key, entity))
             return True
         logger.info("Adding key '%s' to tbag for %s '%s'" % (key, scope, entity))
         data = dict()
         data["secret"] = secret
+        if b64_value:
+            data["encoding"] = "b64"
         tbag_endpoint = self.fetch_secret_endpoint(entity, key, scope)
 
         d = json.dumps(data)
