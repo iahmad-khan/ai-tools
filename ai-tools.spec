@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 7.2
+Version: 7.3
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -72,6 +72,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon May 19 2014 Ben Jones <ben.dylan.jones@cern.ch> - 7.3-1
+- tbag binary file support
+
 * Mon Apr 07 2014 Ben Jones <ben.dylan.jones@cern.ch> - 6.6-1
 - initial tbag client
 - roger fixes
