@@ -34,7 +34,7 @@ class NovaClient():
         self.dryrun = dryrun
 
     def boot(self, fqdn, flavor, image, userdata, meta,
-            key_name=None, availability_zone=None):
+            key_name=None, availability_zone=None, block_device_mapping=None):
         """
         Execute the Nova boot api call to create and start a VM.
 
@@ -53,7 +53,7 @@ class NovaClient():
         try:
             flavor_id = self.__resolve_id(tenant.flavors.list(), flavor)
             logging.debug("Flavor '%s' has id '%s'" % (flavor, flavor_id))
-            image_id = self.__resolve_id(tenant.images.list(), image)
+            image_id = self.__resolve_id(tenant.images.list(), image) if image else None
             logging.debug("Image '%s' has id '%s'" % (image, image_id))
             if not self.dryrun:
                 tenant.servers.create(name=vmname,
@@ -62,7 +62,8 @@ class NovaClient():
                     userdata=userdata,
                     meta=meta,
                     key_name=key_name,
-                    availability_zone=availability_zone)
+                    availability_zone=availability_zone,
+                    block_device_mapping=block_device_mapping)
                 logging.info("Request to create VM '%s' sent" % vmname)
             else:
                 logging.info("VM '%s' not created because dryrun is enabled" % vmname)

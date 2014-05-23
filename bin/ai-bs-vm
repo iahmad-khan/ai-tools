@@ -137,6 +137,8 @@ def parse_cmdline_args():
         help="OpenStack image name",
         default=os.environ.get('AIBS_VMIMAGE_NAME', None)
     ).completer = NovaCompleter(cache='image')
+    parser.add_argument('--nova-block-device-mapping', type=str,
+        help="OpenStack block device mapping", default=None)
     parser.add_argument('--nova-parameter', type=str,
         help="Openstack metaparameter", action='append', default=[])
     ##
@@ -168,7 +170,10 @@ def parse_cmdline_args():
     # environment variables is dropped.
     if args.foreman_hostgroup is None:
         parser.error('Foreman hostgroup not specified.')
-    if args.nova_image is None:
+    if args.nova_block_device_mapping and not re.match(r'\S+=\S+:\S*:\S*:(0|1)$', args.nova_block_device_mapping):
+        parser.error("Invalid Nova block device mapping: (syntax: <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>])")
+    if args.nova_image is None and not args.nova_block_device_mapping:
+        # When booting from volume an image is not needed
         parser.error('Openstack image not specified (nova image-list)')
     for parameter in args.foreman_parameter + args.nova_parameter:
         if not re.match(r'\S+?=\S+?', parameter):
@@ -273,13 +278,16 @@ def main():
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:
                 meta['landb-mainuser'] = args.landb_mainuser
+            block_device = dict([args.nova_block_device_mapping.split('=')]) if args.nova_block_device_mapping \
+                                                                             else None
             nova.boot(fqdn,
                 flavor=args.nova_flavor,
                 image=args.nova_image,
                 userdata=userdata,
                 meta=meta,
                 key_name=args.nova_sshkey,
-                availability_zone=args.nova_availabilityzone)
+                availability_zone=args.nova_availabilityzone,
+                block_device_mapping=block_device)
         except AiToolsNovaError, error:
             logging.error("Couldn't create VM (%s)" % error)
             if not args.foreman_disable:
