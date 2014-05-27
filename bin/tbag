@@ -14,13 +14,15 @@ except ImportError:
 import logging
 import sys
 from aitools.trustedbag import TrustedBagClient
-from aitools.config import TrustedBagConfig, AiConfig
+from aitools.config import TrustedBagConfig, AiConfig, PdbConfig
+from aitools.pdb import PdbClient
 from aitools.completer import ForemanCompleter
 from aitools.common import fqdnify
 from aitools.common import configure_logging
 import base64
 
 logger = logging.getLogger(__name__)
+
 
 def extract_entity(pargs):
     # mutual exclusion already handled by argparse
@@ -136,13 +138,46 @@ def showkeys_main(pargs):
 
     (entity, scope) = extract_entity(pargs)
 
+    tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
+
+    rtn = dict()
+
     try:
-        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
-        keys = tbag.get_keys(entity, scope)
-        print json.dumps(keys, sort_keys=True, indent=5, separators=(',', ': '))
+        thislevel_keys = tbag.get_keys(entity, scope)
+        for k in thislevel_keys["secrets"]:
+            rtn[k] = {scope: [entity]}
     except AiToolsTrustedBagError as e:
         logging.error(e)
         sys.exit(2)
+
+    if not pargs.show_tree:
+        print json.dumps(thislevel_keys["secrets"], sort_keys=True, indent=5, separators=(',', ': '))
+    else:
+        if scope == "hostgroup":
+            hg = entity
+        else:
+            pdb_client = PdbClient()
+            facts = pdb_client.get_facts(entity)
+            hg = facts["hostgroup"]
+        hg_elems = hg.split("/")
+        while hg_elems:
+            hostgroup = "/".join(hg_elems)
+            try:
+                hg_keys = tbag.get_keys(hostgroup, "hostgroup")
+                for k in hg_keys["secrets"]:
+                    if pargs.show_all:
+                        if not k in rtn:
+                            rtn[k] = {"hostgroup": [hostgroup]}
+                        else:
+                            if "hostgroup" in rtn[k]:
+                                rtn[k]["hostgroup"].append(hostgroup)
+                            else:
+                                rtn[k]["hostgroup"] = [hostgroup]
+            except AiToolsTrustedBagError as e:
+                logging.error(e)
+                sys.exit(2)
+            hg_elems.pop()
+        print json.dumps(rtn, sort_keys=True, indent=5, separators=(',', ': '))
 
 
 def main():
@@ -152,6 +187,8 @@ def main():
 
     tbag_config = TrustedBagConfig()
     tbag_config.add_standard_args(parser)
+    pdb_config = PdbConfig()
+    pdb_config.add_standard_args(parser)
 
     subparsers = parser.add_subparsers()
 
@@ -186,12 +223,15 @@ def main():
     shhg.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
                             help="the hostgroup to query")
     show_parser.add_argument('--file', metavar="FILENAME", help="write secret blob to file")
-    show_parser.add_argument('--force', help="force potentially terminal breaking secret to be printed")
     show_parser.add_argument("key", metavar="KEY", help="Name of the key to show")
     show_parser.set_defaults(func=show_main)
 
 
     showkeys_parser = subparsers.add_parser("showkeys", help="Show all keys for the given host or hostgroup")
+    showkeys_parser.add_argument("--tree", action="store_true", default=False, dest="show_tree",
+                                 help="show the keys in the tree for the given host or hostgroup")
+    showkeys_parser.add_argument('--all', action="store_true", default=False, dest="show_all",
+                                 help="show all keys in the tree even if masked by more specific members of the hierarchy")
     skhhg = showkeys_parser.add_mutually_exclusive_group()
     skhhg.add_argument("--host", metavar="HOSTNAME", dest="host",
                             help="the host to query").completer = ForemanCompleter()
