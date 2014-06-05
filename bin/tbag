@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from argparse import ArgumentParser
-import os
+import re
 import argcomplete
 
 from urllib import urlencode
@@ -37,6 +37,7 @@ def extract_entity(pargs):
         parser.error('Either --host or --hg must be specified.')
     return (entity, scope)
 
+
 def set_main(pargs):
 
     config = AiConfig()
@@ -45,6 +46,9 @@ def set_main(pargs):
 
     (entity, scope) = extract_entity(pargs)
 
+    if not re.match("^\w+$", pargs.key):
+        logger.fatal("Invalid secret key. Must match normal word characters ('^\w+$\)")
+        sys.exit(2)
     if pargs.value and pargs.file:
         logger.fatal("Both --file and value defined for secret - choose one or the other")
         sys.exit(2)

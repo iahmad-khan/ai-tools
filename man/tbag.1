@@ -90,12 +90,19 @@ the hostgroup to query
 \fB\-\-file\fR FILENAME
 write secret blob to file
 .SS tbag showkeys
-usage: tbag showkeys [\-h] [\-\-host HOSTNAME | \fB\-\-hg\fR HOSTGROUP]
+usage: tbag showkeys [\-h] [\-\-tree] [\-\-all] [\-\-host HOSTNAME | \fB\-\-hg\fR HOSTGROUP]
 .TP
 .B "optional arguments:"
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 show this help message and exit
+.%P
+.TP
+\fB\-\-tree\fR
+show the keys in the tree for the given host or hostgroup
+.TP
+\fB\-\-all\fR
+show all keys in the tree even if masked by more specific members of the hierarchy
 .TP
 \fB\-\-host\fR HOSTNAME
 the host to query
