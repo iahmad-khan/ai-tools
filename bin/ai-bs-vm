@@ -274,12 +274,15 @@ def main():
                 os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
                 os.environ.get('OS_CACERT', None), dryrun=args.dryrun)
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
+            meta['tenant-name'] = os.environ["OS_TENANT_NAME"]
             if args.landb_responsible:
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:
                 meta['landb-mainuser'] = args.landb_mainuser
-            block_device = dict([args.nova_block_device_mapping.split('=')]) if args.nova_block_device_mapping \
-                                                                             else None
+            if args.nova_block_device_mapping:
+                block_device = dict([args.nova_block_device_mapping.split('=')])
+            else:
+                block_device = None
             nova.boot(fqdn,
                 flavor=args.nova_flavor,
                 image=args.nova_image,

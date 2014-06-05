@@ -10,6 +10,7 @@ from aitools.config import NovaConfig
 
 from aitools.errors import AiToolsNovaError
 
+
 class NovaClient():
     def __init__(self, auth_url, username, password,
             tenant_name, cacert, timeout=None, dryrun=False):
