@@ -54,19 +54,23 @@ def send_email_environment_empty(environment, addr):
     subject = "Information about your environment '%s'" % environment
     template = Template("""Hi,
 
-We believe that the Puppet environment '$environment' is not being used,
-given that according to Foreman it has no hosts associated to it.
+We believe that the Puppet environment '$environment' is not being 
+used, given that according to Foreman it has no hosts associated to it.
 
-Unused environments waste space in the Puppet masters and make the sync
-process slower. If you don't need the environment anymore (because for
-instance you're done developing your new feature or your bugfix) please
-get rid of it by following this procedure:
+Unused environments (especially snapshots) waste space in the Puppet
+masters and make the sync process slower, introducing unnecessary
+delays between new code is pushed and the changes are visible by 
+the Puppet masters (affecting not just you, but all AI users).
+
+If you don't need the environment anymore (because for instance you're 
+done developing your new feature or your bugfix) please get rid of 
+it by following this procedure:
 
     http://cern.ch/go/8mcT
 
 Thanks!
 
-Jens (CERN's Puppet librarian)""")
+AI config team <ai-config-team@cern.ch>.""")
     logging.info("Sending email about environment '%s' to '%s'" % \
         (environment, addr))
     body = template.substitute(environment=environment)
