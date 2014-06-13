@@ -20,7 +20,6 @@ import sys
 import logging
 import argparse
 import argcomplete
-import re
 import tempfile
 
 from aitools.config import ForemanConfig, CertmgrConfig, EncConfig, RogerConfig
@@ -37,9 +36,9 @@ from aitools.common import validate_fqdn, append_domain
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
 from aitools.errors import AiToolsCertmgrError
-from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotImplementedError
+from aitools.errors import AiToolsRogerNotAllowedError
 from aitools.errors import AiToolsRogerInternalServerError
-from aitools.errors import AiToolsAimsError
+from aitools.errors import AiToolsAimsError, AiToolsEncError
 
 from aitools.completer import ForemanCompleter
 
