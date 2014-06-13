@@ -1,0 +1,267 @@
+#!/usr/bin/env python
+# This program prepares AIMS to trigger a reinstallation
+# of a physical host.
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
+# Exit codes:
+#   0 all operations succeeded
+#   2 bad command line
+#   3 bad user environment
+#   4 Kerberos TGT not found or expired
+#   5 FQDN is invalid
+#  10 Foreman failure
+#  20 ENC failure
+#  30 CA server failure
+#  40 AIMS failure
+
+import os
+import sys
+import logging
+import argparse
+import argcomplete
+import re
+import tempfile
+
+from aitools.config import ForemanConfig, CertmgrConfig, EncConfig, RogerConfig
+from aitools.foreman import ForemanClient
+from aitools.certmgr import CertmgrClient
+from aitools.enc import EncClient
+from aitools.roger import RogerClient
+from aitools.aims import AimsClient
+
+from aitools.common import configure_logging
+from aitools.common import verify_kerberos_environment
+from aitools.common import validate_fqdn, append_domain
+
+from aitools.errors import AiToolsInitError, AiToolsForemanError
+from aitools.errors import AiToolsForemanNotFoundError
+from aitools.errors import AiToolsCertmgrError
+from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotImplementedError
+from aitools.errors import AiToolsRogerInternalServerError
+from aitools.errors import AiToolsAimsError
+
+from aitools.completer import ForemanCompleter
+
+DEFAULT_AIMS_ATTEMPTS = 12
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser()
+
+    ##
+    ## Internal options
+    ##
+    parser.add_argument('-v', '--verbose',
+        action="store_true",
+        help="Be chatty")
+    parser.add_argument('-d', '--dryrun',
+        action="store_true",
+        help="Don't do the requests that alter data")
+
+    ##
+    ## Certmgr options
+    ##
+
+    parser.add_argument('--caserver-disable', action="store_true",
+        help="Disable Certmgr actions")
+    certmgr_config = CertmgrConfig()
+    certmgr_config.add_standard_args(parser)
+
+    ##
+    ## Roger options
+    ##
+    parser.add_argument('--roger-disable', action="store_true", default=False,
+                        help="Disable Roger actions")
+    parser.add_argument("--roger-appstate", help="Initial roger appstate",
+                        default="build")
+    roger_config = RogerConfig()
+    roger_config.add_standard_args(parser)
+
+    ##
+    ## Foreman options
+    ##
+
+    parser.add_argument('--foreman-disable', action="store_true",
+        help="Disable Foreman actions")
+    parser.add_argument('--foreman-printks', action="store_true",
+        help="Print the KS file to stdout")
+    foreman_config = ForemanConfig()
+
+    ##
+    ## AIMS options
+    ##
+
+    parser.add_argument('--aims-kopts', type=str,
+        help="Extra arguments that will be passed to Kickstart/Anaconda")
+    parser.add_argument('--aims-attempts', type=int,
+        help="Number of attempts to check if the boot is synced (default: '%s')" % \
+        DEFAULT_AIMS_ATTEMPTS,
+        default=DEFAULT_AIMS_ATTEMPTS)
+
+    ##
+    ## Positional
+    ##
+
+    parser.add_argument('hostname', nargs=1, default=None,
+        help="Hostname (qualified or not)"
+        ).completer = ForemanCompleter()
+    argcomplete.autocomplete(parser)
+    args = parser.parse_args()
+    return args
+
+def print_summary(args, fqdn):
+    certmgrconf = CertmgrConfig()
+    roger_config = RogerConfig()
+    enc_config = EncConfig()
+    logging.info("Installation requested for '%s'..." % fqdn)
+    logging.info("Certmgr server: %s" % certmgrconf.certmgr_hostname)
+    logging.info("Certmgr port: %s" % certmgrconf.certmgr_port)
+    logging.info("Roger server: %s" % roger_config.roger_hostname)
+    logging.info("Roger port: %s" % str(roger_config.roger_port))
+
+def write_ks_to_disk(ks):
+    try:
+        ksfilefd, ksfilepath = tempfile.mkstemp()
+        ksfile = os.fdopen(ksfilefd, 'w')
+        logging.info("Writing KS to temporary file '%s'" % ksfilepath)
+        ksfile.write(ks)
+        ksfile.close()
+        return ksfilepath
+    except OSError, error:
+        logging.error("Couldn't dump KS to a temporary file on disk.")
+        return 40
+
+def delete_ks_from_disk(ksfilepath):
+    try:
+        logging.debug("Removing temporary KS file")
+        os.remove(ksfilepath)
+    except OSError, error:
+        logging.error("Couldn't delete temporary KS from %s." % ksfilepath)
+        return 50
+
+def main():
+    """Application entrypoint"""
+    args = parse_cmdline_args()
+    fconfig = ForemanConfig()
+    fconfig.read_config_and_override_with_pargs(args)
+
+    configure_logging(args)
+
+    try:
+        krb_principal = verify_kerberos_environment()
+    except AiToolsInitError, error:
+        logging.error("TGT not found or expired. Exiting...")
+        return 4
+
+    fqdn = append_domain(args.hostname[0])
+
+    if not validate_fqdn(fqdn):
+        logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
+        return 5
+
+    print_summary(args, fqdn)
+
+    foreman = ForemanClient(dryrun=args.dryrun)
+    try:
+        host = foreman.gethost(fqdn=fqdn)
+    except AiToolsForemanNotFoundError, error:
+        logging.error("Couldn't find Foreman entry (%s). Installation cancelled." % error)
+        return 10
+    except AiToolsForemanError, error:
+        logging.error("Couldn't get Foreman entry (%s). Installation cancelled." % error)
+        return 10
+
+    host = host['host']
+    if host['managed'] == False:
+        logging.error("Host is unmanaged, and therefore uninstallable. Aborted.")
+        return 11
+
+    try:
+        ks = foreman.getks(host['ip'])
+        ks = ks.replace("{$USER}", krb_principal.replace("@CERN.CH", ""))
+        # TODO: After migrating to this guy, this replaces should be
+        # erased and the KS templates on Foreman fixed.
+        ks = ks.replace("\\{", '{')
+        ks = ks.replace("\\}", '}')
+    except AiToolsForemanNotFoundError, error:
+        logging.error("%s. Installation cancelled." % error)
+        return 12
+    except AiToolsForemanError, error: #FIXME
+        logging.error("Couldn't get Foreman entry (%s). Installation cancelled." % error)
+        return 12
+
+    if args.foreman_printks:
+        logging.info(ks)
+
+    ksfilepath = write_ks_to_disk(ks)
+
+    try:
+        enc = EncClient()
+        (code, encdata) = enc.get_node_enc(fqdn)
+    except AiToolsEncError, error:
+        delete_ks_from_disk(ksfilepath)
+        logging.error("Couldn't get ENC entry (%s). Installation cancelled." % error)
+        return 20
+
+    aims = AimsClient(dryrun=args.dryrun)
+
+    if not args.roger_disable:
+        roger_client = RogerClient(dryrun=args.dryrun)
+        try:
+            # note default for alarms is false, but if already exists, won't touch
+            # probably what we want...
+            roger_client.update_or_create_state(fqdn, appstate=args.roger_appstate)
+        except AiToolsRogerNotAllowedError, e:
+            # new machines should be allowed, so this means you're trying to update
+            # something you shouldn't be updating
+            logging.error("Couldn't update roger due to permissions, perhaps entry already exists? (%s)" % e)
+        except AiToolsRogerInternalServerError:
+            logging.error("Received 500 trying to update roger")
+            logging.info("Please be aware alarm masking may not work till resolved")
+            logging.info("If this is important verify with 'roger show' and update with 'roger update'")
+        except Exception, e:
+            logging.error("Received unexpected error when trying to add to roger: '%s'" % e)
+            logging.info("Please be aware alarm masking may not work till resolved")
+            logging.info("If this is important verify with 'roger show' and update with 'roger update'")
+
+    if not args.caserver_disable:
+        try:
+            certmgr = CertmgrClient(dryrun=args.dryrun)
+            certmgr.stage(fqdn)
+        except AiToolsCertmgrError, error:
+            delete_ks_from_disk(ksfilepath)
+            logging.error("Couldn't stage host (%s). Installation cancelled." % error)
+            return 30
+
+    try:
+        pxetarget = aims.addhost(fqdn=fqdn,
+            os=host['operatingsystem']['operatingsystem'],
+            architecture=host['architecture']['architecture'],
+            enc=encdata['parameters'],
+            ksfilepath=ksfilepath,
+            user_kopts=args.aims_kopts)
+        aims.pxeon(fqdn=fqdn,
+            pxetarget=pxetarget)
+        aims.wait_for_readiness(fqdn=fqdn,
+            attempts=args.aims_attempts)
+    except AiToolsAimsError, error:
+        delete_ks_from_disk(ksfilepath)
+        logging.error("AIMS failure: %s" % error)
+        logging.error("Installation cancelled.")
+        return 40
+
+    if not args.dryrun:
+        if args.aims_attempts > 0:
+            logging.info("AIMS seems ready and your machine should PXEboot")
+        else:
+            logging.warn("AIMS sync status was not checked, AIMS may not be ready")
+        logging.info("Reboot the host to start the installation:")
+        logging.info("\tssh root@%s shutdown -r now" % fqdn)
+        logging.info("or:")
+        logging.info("\tai-remote-power-control cycle %s" % fqdn)
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
