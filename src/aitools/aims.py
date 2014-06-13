@@ -39,7 +39,7 @@ class AimsClient(object):
 
         logging.info("Kernel options: %s" % " ".join(kopts))
 
-        target = self._translate_to_target(os, architecture)
+        target = self._translate_foreman_os_to_target(os, architecture)
 
         args = ["addhost", "--pxe",
             "--hostname", shortify(fqdn),
@@ -97,7 +97,7 @@ class AimsClient(object):
                 logging.info("Sync status not Y for all interfaces. Sleeping for %d seconds..." % waittime)
                 time.sleep(waittime)
 
-    def _translate_to_target(self, os, architecture):
+    def _translate_foreman_os_to_target(self, os, architecture):
         if 'name' not in os:
             raise AiToolsAimsError("Unable to find OS name")
         if 'name' not in architecture:
