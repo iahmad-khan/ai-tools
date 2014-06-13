@@ -201,6 +201,10 @@ class ForemanClient(HTTPClient):
         if code == requests.codes.ok:
             body['host']['hostgroup'] = self.__resolve_model('hostgroup',
                 body['host']['hostgroup_id'])
+            body['host']['operatingsystem'] = self.__resolve_model('operatingsystem',
+                body['host']['operatingsystem_id'])
+            body['host']['architecture'] = self.__resolve_model('architecture',
+                body['host']['architecture_id'])
             return body
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
@@ -208,6 +212,25 @@ class ForemanClient(HTTPClient):
             error = ','.join(body['host']['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)
 
+    def getks(self, ip_address):
+        """
+        Get the Kickstart file for a given IP address.
+
+        :param ip_address: the IP address to query
+        :return: the KS itself
+        :raise AiToolsForemanError: if the query call failed or the host could not be found
+        """
+        logging.info("Getting Kickstart for host with IP '%s' from Foreman..."
+            % ip_address)
+
+        (code, body) = self.__do_api_request("get",
+            "unattended/provision?spoof=%s" % ip_address, prefix='')
+        if code == requests.codes.ok:
+            return body
+        elif code == requests.codes.not_found:
+            raise AiToolsForemanNotFoundError("Kickstart for host with IP '%s'\
+not found in Foreman" % ip_address)
+        # Verify other HTTP status codes TODO
 
     def getfacts(self, fqdn):
         """
@@ -584,9 +607,9 @@ class ForemanClient(HTTPClient):
             msg = "Foreman didn't return a controlled status code when looking up %s, got error: '%i'" % (endpoint, code)
             raise AiToolsForemanError(msg)
 
-    def __do_api_request(self, method, url, data=None):
-        url="https://%s:%u/api/%s" % \
-            (self.host, self.port, url)
+    def __do_api_request(self, method, url, data=None, prefix="api/"):
+        url="https://%s:%u/%s%s" % \
+            (self.host, self.port, prefix, url)
         # Yes, Foreman is stupid
         headers = {'User-Agent': 'ai-tools',
             'Content-type': 'application/json',
