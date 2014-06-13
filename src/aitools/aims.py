@@ -37,7 +37,7 @@ class AimsClient(object):
 
         kopts.extend(AIMS_DEFAULT_KOPTS)
 
-        logging.debug("Final kopts: %s" % kopts)
+        logging.info("Kernel options: %s" % " ".join(kopts))
 
         target = self._translate_to_target(os, architecture)
 
