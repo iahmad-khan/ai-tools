@@ -254,6 +254,8 @@ def main():
         logging.error("Installation cancelled.")
         return 40
 
+    delete_ks_from_disk(ksfilepath)
+
     if not args.dryrun:
         if args.aims_attempts > 0:
             logging.info("AIMS seems ready and your machine should PXEboot")
