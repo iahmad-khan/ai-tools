@@ -88,13 +88,13 @@ class AimsClient(object):
                     statuses.append(match.group('status'))
 
             if re.match(r"^[yY]+$", "".join(statuses)):
-                logging.info("Sync status set to Y on all interfaces")
+                logging.info("Sync status is set to Y on all interfaces :)")
                 return
             elif attempt == attempts-1:
                 logging.error(hoststatus.strip())
-                raise AiToolsAimsError("Sync status not Y after all the attempts :(")
+                raise AiToolsAimsError("Sync status is not Y after all the attempts :(")
             else:
-                logging.info("Sync status not Y for all interfaces. Sleeping for %d seconds..." % waittime)
+                logging.info("Sync status is not Y for all interfaces. Sleeping for %d seconds..." % waittime)
                 time.sleep(waittime)
 
     def _translate_foreman_os_to_target(self, os, architecture):
