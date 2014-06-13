@@ -118,6 +118,9 @@ def print_summary(args, fqdn):
     logging.info("Certmgr port: %s" % certmgrconf.certmgr_port)
     logging.info("Roger server: %s" % roger_config.roger_hostname)
     logging.info("Roger port: %s" % str(roger_config.roger_port))
+    logging.info("AIMS attempts: %d" % args.aims_attempts)
+    if args.aims_kopts:
+        logging.info("AIMS user kopts: %s" % args.aims_kopts)
 
 def write_ks_to_disk(ks):
     try:
