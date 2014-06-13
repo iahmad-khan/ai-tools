@@ -131,15 +131,16 @@ def write_ks_to_disk(ks):
         ksfile.close()
         return ksfilepath
     except OSError, error:
-        logging.error("Couldn't dump KS to a temporary file on disk.")
+        logging.error("Couldn't dump KS to a temporary file on disk (%s)." % error)
         return 40
 
 def delete_ks_from_disk(ksfilepath):
     try:
-        logging.debug("Removing temporary KS file")
+        logging.info("Removing temporary KS file (%s)" % ksfilepath)
         os.remove(ksfilepath)
     except OSError, error:
-        logging.error("Couldn't delete temporary KS from %s." % ksfilepath)
+        logging.error("Couldn't delete temporary KS from %s (%s)." %
+            (ksfilepath, error))
         return 50
 
 def main():
