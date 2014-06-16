@@ -21,6 +21,8 @@ import logging
 import argparse
 import argcomplete
 import tempfile
+import multiprocessing
+from prettytable import PrettyTable
 
 from aitools.config import ForemanConfig, CertmgrConfig, EncConfig, RogerConfig
 from aitools.foreman import ForemanClient
@@ -35,7 +37,7 @@ from aitools.common import validate_fqdn, append_domain
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
-from aitools.errors import AiToolsCertmgrError
+from aitools.errors import AiToolsCertmgrError, AiToolsError
 from aitools.errors import AiToolsRogerNotAllowedError
 from aitools.errors import AiToolsRogerInternalServerError
 from aitools.errors import AiToolsAimsError, AiToolsEncError
@@ -57,6 +59,13 @@ def parse_cmdline_args():
     parser.add_argument('-d', '--dryrun',
         action="store_true",
         help="Don't do the requests that alter data")
+    parser.add_argument('-t', '--threads', type=int,
+        choices=xrange(1, (multiprocessing.cpu_count()*2)+1),
+        help="Number of threads (default: #cores) (max: #cores*2)",
+        default=multiprocessing.cpu_count())
+    parser.add_argument('-k', '--keepks',
+        action="store_true",
+        help="Don't delete the temporary file where the KS lives")
 
     ##
     ## Certmgr options
@@ -80,17 +89,13 @@ def parse_cmdline_args():
     ##
     ## Foreman options
     ##
-
     parser.add_argument('--foreman-disable', action="store_true",
         help="Disable Foreman actions")
-    parser.add_argument('--foreman-printks', action="store_true",
-        help="Print the KS file to stdout")
     foreman_config = ForemanConfig()
 
     ##
     ## AIMS options
     ##
-
     parser.add_argument('--aims-kopts', type=str,
         help="Extra arguments that will be passed to Kickstart/Anaconda")
     parser.add_argument('--aims-attempts', type=int,
@@ -101,113 +106,119 @@ def parse_cmdline_args():
     ##
     ## Positional
     ##
-
-    parser.add_argument('hostname', nargs=1, default=None,
+    parser.add_argument('hostname', nargs='+', default=None,
         help="Hostname (qualified or not)"
         ).completer = ForemanCompleter()
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
     return args
 
-def print_summary(args, fqdn):
+def print_input_table(fqdns):
     certmgrconf = CertmgrConfig()
     roger_config = RogerConfig()
     enc_config = EncConfig()
-    logging.info("Installation requested for '%s'..." % fqdn)
+    logging.info("Installation requested for:")
+    for fqdn in fqdns:
+        logging.info(" * %s" % fqdn)
     logging.info("Certmgr server: %s" % certmgrconf.certmgr_hostname)
     logging.info("Certmgr port: %s" % certmgrconf.certmgr_port)
     logging.info("Roger server: %s" % roger_config.roger_hostname)
     logging.info("Roger port: %s" % str(roger_config.roger_port))
     logging.info("AIMS attempts: %d" % args.aims_attempts)
+    logging.info("Maximum parallelism level: %d" % args.threads)
     if args.aims_kopts:
         logging.info("AIMS user kopts: %s" % args.aims_kopts)
+    logging.info("Keep Kickstarts on disk: %s" % args.keepks)
 
-def write_ks_to_disk(ks):
+def write_ks_to_disk(ks, fqdn):
     try:
-        ksfilefd, ksfilepath = tempfile.mkstemp()
+        ksfilefd, ksfilepath = tempfile.mkstemp(prefix='ks.%s' % fqdn)
         ksfile = os.fdopen(ksfilefd, 'w')
-        logging.info("Writing KS to temporary file '%s'" % ksfilepath)
+        logging.debug("Writing KS to temporary file '%s'" % ksfilepath)
         ksfile.write(ks)
         ksfile.close()
         return ksfilepath
     except OSError, error:
-        logging.error("Couldn't dump KS to a temporary file on disk (%s)." % error)
-        return 40
+        raise AiToolsError("Couldn't dump KS to a temporary file on disk (%s)." % error)
 
 def delete_ks_from_disk(ksfilepath):
+    if args.keepks:
+        logging.info("KS file kept in %s" % ksfilepath)
+        return
+
     try:
-        logging.info("Removing temporary KS file (%s)" % ksfilepath)
+        logging.debug("Removing temporary KS file (%s)" % ksfilepath)
         os.remove(ksfilepath)
     except OSError, error:
-        logging.error("Couldn't delete temporary KS from %s (%s)." %
+        raise AiToolsError("Couldn't delete temporary KS from %s (%s)." %
             (ksfilepath, error))
-        return 50
 
-def main():
-    """Application entrypoint"""
-    args = parse_cmdline_args()
-    fconfig = ForemanConfig()
-    fconfig.read_config_and_override_with_pargs(args)
+def format_result(fqdn, code, msg):
+    return {'fqdn': fqdn, 'code': code, 'msg': msg}
 
-    configure_logging(args)
+def format_summary(rawdata):
+    table = PrettyTable(['FQDN', 'BS', 'Details'])
+    table.align = 'l'
+    table.align['BS'] = 'c'
+    table.sortby = 'BS'
+    successful_fqdns = []
+    for operation in rawdata:
+        if operation['code'] == 0:
+            successful_fqdns.append(operation['fqdn'])
+        table.add_row([operation['fqdn'],
+            'OK' if operation['code'] == 0 else 'KO',
+            operation['msg']])
+    logging.info(table)
+    return successful_fqdns
 
-    try:
-        krb_principal = verify_kerberos_environment()
-    except AiToolsInitError, error:
-        logging.error("TGT not found or expired. Exiting...")
-        return 4
-
-    fqdn = append_domain(args.hostname[0])
-
+def process_fqdn(fqdn):
     if not validate_fqdn(fqdn):
-        logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
-        return 5
-
-    print_summary(args, fqdn)
+        return format_result(fqdn, 5,
+            "FQDN '%s' is not valid. See RFC 1123." % fqdn)
 
     foreman = ForemanClient(dryrun=args.dryrun)
     try:
-        host = foreman.gethost(fqdn=fqdn)
+        host = foreman.gethost(fqdn=fqdn,
+            toexpand=['operatingsystem', 'architecture'])
     except AiToolsForemanNotFoundError, error:
-        logging.error("Couldn't find Foreman entry (%s). Installation cancelled." % error)
-        return 10
+        return format_result(fqdn, 10, error)
     except AiToolsForemanError, error:
-        logging.error("Couldn't get Foreman entry (%s). Installation cancelled." % error)
-        return 10
+        return format_result(fqdn, 11, error)
 
     host = host['host']
     if host['managed'] == False:
-        logging.error("Host is unmanaged, and therefore uninstallable. Aborted.")
-        return 11
+        return format_result(fqdn, 12,
+            "Host is unmanaged, and therefore uninstallable")
+    if not 'ip' in host:
+        return format_result(fqdn, 13,
+            "The Host does not have an IP address")
 
     try:
         ks = foreman.getks(host['ip'])
         ks = ks.replace("{$USER}", krb_principal.replace("@CERN.CH", ""))
         # TODO: After migrating to this guy, this replaces should be
         # erased and the KS templates on Foreman fixed.
-        ks = ks.replace("\\{", '{')
-        ks = ks.replace("\\}", '}')
-    except AiToolsForemanNotFoundError, error:
-        logging.error("%s. Installation cancelled." % error)
-        return 12
-    except AiToolsForemanError, error: #FIXME
-        logging.error("Couldn't get Foreman entry (%s). Installation cancelled." % error)
-        return 12
+        ks = ks.replace("\\{", '{').replace("\\}", '}')
+    except AiToolsForemanNotFoundError:
+        return format_result(fqdn, 15,
+            "Host's KS template not found in Foreman")
+    except AiToolsForemanError, error:
+        return format_result(fqdn, 16,
+            "Error when getting the KS template (%s)" % error)
 
-    if args.foreman_printks:
-        logging.info(ks)
-
-    ksfilepath = write_ks_to_disk(ks)
+    try:
+        ksfilepath = write_ks_to_disk(ks, fqdn)
+    except AiToolsError, error:
+        return format_result(fqdn, 17, error)
 
     try:
         enc = EncClient()
         (code, encdata) = enc.get_node_enc(fqdn)
     except AiToolsEncError, error:
         delete_ks_from_disk(ksfilepath)
-        logging.error("Couldn't get ENC entry (%s). Installation cancelled." % error)
-        return 20
+        return format_result(fqdn, 20,
+            "Couldn't get ENC entry (%s)" % error)
 
-    aims = AimsClient(dryrun=args.dryrun)
 
     if not args.roger_disable:
         roger_client = RogerClient(dryrun=args.dryrun)
@@ -215,18 +226,16 @@ def main():
             # note default for alarms is false, but if already exists, won't touch
             # probably what we want...
             roger_client.update_or_create_state(fqdn, appstate=args.roger_appstate)
-        except AiToolsRogerNotAllowedError, e:
+        except AiToolsRogerNotAllowedError, error:
             # new machines should be allowed, so this means you're trying to update
             # something you shouldn't be updating
-            logging.error("Couldn't update roger due to permissions, perhaps entry already exists? (%s)" % e)
+            logging.warn("Roger: couldn't update roger on %s due to permissions (%s)" %
+                (fqdn, error))
         except AiToolsRogerInternalServerError:
-            logging.error("Received 500 trying to update roger")
-            logging.info("Please be aware alarm masking may not work till resolved")
-            logging.info("If this is important verify with 'roger show' and update with 'roger update'")
-        except Exception, e:
-            logging.error("Received unexpected error when trying to add to roger: '%s'" % e)
-            logging.info("Please be aware alarm masking may not work till resolved")
-            logging.info("If this is important verify with 'roger show' and update with 'roger update'")
+            logging.warn("Roger: ISE on %s. Call roger show/update by hand" % fqdn)
+        except Exception, error:
+            logging.warn("Roger: Unhandled error (%s) on %s. Call roger show/update by hand" %
+                (error, fqdn))
 
     if not args.caserver_disable:
         try:
@@ -234,9 +243,10 @@ def main():
             certmgr.stage(fqdn)
         except AiToolsCertmgrError, error:
             delete_ks_from_disk(ksfilepath)
-            logging.error("Couldn't stage host (%s). Installation cancelled." % error)
-            return 30
+            return format_result(fqdn, 40,
+                "Couldn't stage host (%s)" % error)
 
+    aims = AimsClient(dryrun=args.dryrun)
     try:
         pxetarget = aims.addhost(fqdn=fqdn,
             os=host['operatingsystem']['operatingsystem'],
@@ -250,21 +260,54 @@ def main():
             attempts=args.aims_attempts)
     except AiToolsAimsError, error:
         delete_ks_from_disk(ksfilepath)
-        logging.error("AIMS failure: %s" % error)
-        logging.error("Installation cancelled.")
-        return 40
+        return format_result(fqdn, 50, error)
 
-    delete_ks_from_disk(ksfilepath)
+    try:
+        ksfilepath = delete_ks_from_disk(ksfilepath)
+    except AiToolsError, error:
+        return format_result(fqdn, 18, error)
 
-    if not args.dryrun:
-        if args.aims_attempts > 0:
-            logging.info("AIMS seems ready and your machine should PXEboot")
-        else:
+    return format_result(fqdn, 0, "Ready to install")
+
+krb_principal = None
+args = None
+
+def main():
+    """Application entrypoint"""
+    global args
+    args = parse_cmdline_args()
+    fconfig = ForemanConfig()
+    fconfig.read_config_and_override_with_pargs(args)
+
+    configure_logging(args)
+
+    global krb_principal
+    try:
+        krb_principal = verify_kerberos_environment()
+    except AiToolsInitError, error:
+        logging.error("TGT not found or expired. Exiting...")
+        return 4
+
+    args.hostname = reduce(list.__add__, map(lambda x: x.split(','), \
+        args.hostname), [])
+    fqdns = set(map(append_domain, args.hostname))
+    print_input_table(fqdns)
+
+    pool = multiprocessing.Pool(processes=args.threads)
+    rawsummary = pool.map(process_fqdn, fqdns)
+    pool.close()
+    pool.join()
+
+    successful_fqdns = format_summary(rawsummary)
+
+    if not args.dryrun and len(successful_fqdns) > 0:
+        if args.aims_attempts == 0:
             logging.warn("AIMS sync status was not checked, AIMS may not be ready")
-        logging.info("Reboot the host to start the installation:")
-        logging.info("\tssh root@%s shutdown -r now" % fqdn)
-        logging.info("or:")
-        logging.info("\tai-remote-power-control cycle %s" % fqdn)
+        logging.info("AIMS ready for %d/%d machines:" %
+            (len(successful_fqdns), len(fqdns)))
+        logging.info("Reboot the hosts to start the installation:")
+        logging.info("ai-remote-power-control cycle %s" %
+            " ".join(successful_fqdns))
 
     return 0
 
