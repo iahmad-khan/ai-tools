@@ -187,7 +187,7 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanError("Error code '%i' received trying to delete '%s' from foreman" % (code, fqdn))
 
 
-    def gethost(self, fqdn):
+    def gethost(self, fqdn, toexpand=['hostgroup']):
         """
         Get basic information about a host.
 
@@ -199,12 +199,9 @@ class ForemanClient(HTTPClient):
 
         (code, body) = self.__do_api_request("get", "hosts/%s" % fqdn)
         if code == requests.codes.ok:
-            body['host']['hostgroup'] = self.__resolve_model('hostgroup',
-                body['host']['hostgroup_id'])
-            body['host']['operatingsystem'] = self.__resolve_model('operatingsystem',
-                body['host']['operatingsystem_id'])
-            body['host']['architecture'] = self.__resolve_model('architecture',
-                body['host']['architecture_id'])
+            for model in toexpand:
+                body['host'][model] = self.__resolve_model(model,
+                    body['host']["%s_id" % model])
             return body
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
