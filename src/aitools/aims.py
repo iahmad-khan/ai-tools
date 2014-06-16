@@ -73,6 +73,7 @@ class AimsClient(object):
         return out
 
     def wait_for_readiness(self, fqdn, attempts=12, waittime=10):
+        logging.info("Sync waiting loop for host '%s' started" % fqdn)
         if self.dryrun:
             logging.info("Nothing to wait for because dryrun is enabled")
             return True
@@ -87,13 +88,15 @@ class AimsClient(object):
                     statuses.append(match.group('status'))
 
             if re.match(r"^[yY]+$", "".join(statuses)):
-                logging.info("Sync status is set to Y on all interfaces :)")
+                logging.info("Sync status for '%s' is set to Y on all interfaces"
+                    % fqdn)
                 return
             elif attempt == attempts-1:
                 logging.error(hoststatus.strip())
-                raise AiToolsAimsError("Sync status is not Y after all the attempts :(")
+                raise AiToolsAimsError("Sync status is not Y after all the attempts")
             else:
-                logging.info("Sync status is not Y for all interfaces. Sleeping for %d seconds..." % waittime)
+                logging.debug("Sync status is not Y for all interfaces")
+                logging.debug("Sleeping for %d seconds..." % waittime)
                 time.sleep(waittime)
 
     def _translate_foreman_os_to_target(self, os, architecture):
