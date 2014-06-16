@@ -15,7 +15,7 @@ from aitools.common import shortify
 
 from aitools.errors import AiToolsAimsError
 
-AIMS2CCLIENTBINPATH = "/usr/bin/aims2client"
+A2C_BIN_PATH = "/usr/bin/aims2client"
 AIMS_DEFAULT_KOPTS = ['text','network','ks','ksdevice=bootif',
     'latefcload','nodmraid','console=tty0']
 
@@ -124,7 +124,7 @@ class AimsClient(object):
         return "%s_%s" % (target_os, architecture['name'].upper())
 
     def _exec(self, args):
-        args = [AIMS2CCLIENTBINPATH] + args
+        args = [A2C_BIN_PATH] + args
         logging.debug("Executing %s" % args)
         git = Popen(args, stdout = PIPE, stderr=PIPE)
         (details, err)  = git.communicate()
