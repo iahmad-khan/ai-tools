@@ -127,9 +127,9 @@ class AimsClient(object):
     def _exec(self, args):
         args = [A2C_BIN_PATH] + args
         logging.debug("Executing %s" % args)
-        git = Popen(args, stdout = PIPE, stderr=PIPE)
-        (details, err)  = git.communicate()
-        returncode = git.returncode
+        aims = Popen(args, stdout = PIPE, stderr=PIPE)
+        (details, err)  = aims.communicate()
+        returncode = aims.returncode
         if returncode != 0:
             raise AiToolsAimsError("%s returned non-zero status (%s)" % \
                 (args, err.strip()))
