@@ -138,6 +138,5 @@ class AimsClient(object):
             raise AiToolsAimsError("%s returned non-zero status (%s)" % \
                 (args, err.strip()))
         if len(err) > 0:
-            raise AiToolsAimsError("Aims2client returned errors (%s)" % err.strip())
-            
+            raise AiToolsAimsError("Aims2client failed (%s)" % err.strip())
         return (details, returncode)
