@@ -36,8 +36,7 @@ class AimsClient(object):
             kopts.extend(re.split(r'\s+', user_kopts))
 
         kopts.extend(AIMS_DEFAULT_KOPTS)
-
-        logging.info("Kernel options: %s" % " ".join(kopts))
+        logging.debug("Final kernel options: %s" % " ".join(kopts))
 
         target = self._translate_foreman_os_to_target(os, architecture)
 
