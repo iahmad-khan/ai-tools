@@ -2,6 +2,7 @@ __author__ = 'mccance'
 
 import yaml
 import requests
+import logging
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsEncError
@@ -34,6 +35,7 @@ class EncClient(HTTPClient):
         :param hostname: the node to query
         :return: the parsed YAML of the node's ENC
         """
+        logging.info("Getting host '%s' from the ENC..." % hostname)
         return self.__do_api_request("get", "node/%s?format=yml" % (hostname,))
 
     def __do_api_request(self, method, url, data=None):
