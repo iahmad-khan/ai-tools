@@ -93,6 +93,12 @@ strongly recommended to avoid it. Your new VM will have the Kerberos
 module enabled by default, use it to configure who has root access
 to the box. See http://cern.ch/go/7qW6
 .TP
+.B --nova-boot-from-existing-volume
+Cinder Volume UUID to boot from. In order to boot from an existing volume,
+it has to be bootable and available (it will fail in any other case).
+This parameter is mutually exclusive with 'nova-image', only one bootable
+element can be specified per VM. (see http://cern.ch/go/l9xP)
+.TP
 .B --prefix (AIBS_VMNAME_PREFIX)
 Prefix to prepend to the randomly generated hostname (defaults to "vm").
 .LP
@@ -200,6 +206,9 @@ Host staging failed.
 .TP
 .B 30
 Nova boot failed.
+.TP
+.B 40
+Cinder volume operation failed.
 
 .SH EXAMPLES
 .TP
@@ -218,6 +227,10 @@ ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]"
 .TP
 .B Create a VM with random hostname prefixed by "foo":
 ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --prefix foo
+
+.TP
+.B Create a VM booting from an existing volume:
+ai-bs-vm -g foo/bar -nova-boot-from-existing-volume 361a5315-aaa2-48dd-990b-235b660eb079
 
 .SH REPORTING BUGS
 If you experience any problem with the Foreman registration or the initial

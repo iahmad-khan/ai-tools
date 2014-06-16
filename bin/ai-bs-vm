@@ -14,6 +14,7 @@
 #  10 Foreman registration failed
 #  20 Host staging failed
 #  30 Nova boot failed
+#  40 Cinder volume operation failed
 
 import os
 import sys
@@ -21,12 +22,14 @@ import logging
 import argparse
 import argcomplete
 import re
+from uuid import UUID
 from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig, RogerConfig
 
 from aitools.foreman import ForemanClient
 from aitools.certmgr import CertmgrClient
 from aitools.roger import RogerClient
 from aitools.nova import NovaClient
+from aitools.cinder import CinderClient
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
@@ -40,6 +43,7 @@ from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
 from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotImplementedError
 from aitools.errors import AiToolsRogerInternalServerError
+from aitools.errors import AiToolsCinderError
 
 from aitools.completer import ForemanCompleter
 from aitools.completer import NovaCompleter
@@ -133,12 +137,14 @@ def parse_cmdline_args():
         help="Openstack flavor (default: %s)" % DEFAULT_OPENSTACK_FLAVOR,
         default=os.environ.get('AIBS_VMFLAVOR_NAME', DEFAULT_OPENSTACK_FLAVOR)
     ).completer = NovaCompleter(cache='flavor')
-    parser.add_argument('-i', '--nova-image', type=str,
+
+    bootable_elements = parser.add_mutually_exclusive_group(required=True)
+    bootable_elements.add_argument('-i', '--nova-image', type=str,
         help="OpenStack image name",
         default=os.environ.get('AIBS_VMIMAGE_NAME', None)
     ).completer = NovaCompleter(cache='image')
-    parser.add_argument('--nova-block-device-mapping', type=str,
-        help="OpenStack block device mapping", default=None)
+    bootable_elements.add_argument('--nova-boot-from-existing-volume',
+        type=str, help="Cinder Volume UUID to boot from", default=None)
     parser.add_argument('--nova-parameter', type=str,
         help="Openstack metaparameter", action='append', default=[])
     ##
@@ -170,11 +176,11 @@ def parse_cmdline_args():
     # environment variables is dropped.
     if args.foreman_hostgroup is None:
         parser.error('Foreman hostgroup not specified.')
-    if args.nova_block_device_mapping and not re.match(r'\S+=\S+:\S*:\S*:(0|1)$', args.nova_block_device_mapping):
-        parser.error("Invalid Nova block device mapping: (syntax: <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>])")
-    if args.nova_image is None and not args.nova_block_device_mapping:
-        # When booting from volume an image is not needed
-        parser.error('Openstack image not specified (nova image-list)')
+    if args.nova_boot_from_existing_volume:
+        try:
+            UUID(args.nova_boot_from_existing_volume, version=4)
+        except ValueError:
+            parser.error("--nova-boot-from-existing-volume must be a valid UUID4")
     for parameter in args.foreman_parameter + args.nova_parameter:
         if not re.match(r'\S+?=\S+?', parameter):
             parser.error("Invalid Foreman/Nova parameter '%s' (syntax: key=value)" % parameter)
@@ -185,7 +191,10 @@ def print_summary(args, fqdn):
     roger_config = RogerConfig()
     logging.info("Trying to bootstrap '%s'..." % fqdn)
     logging.info("VM flavor: %s" % args.nova_flavor)
-    logging.info("VM image: %s" % args.nova_image)
+    if args.nova_image:
+        logging.info("Booting from image: %s" % args.nova_image)
+    elif args.nova_boot_from_existing_volume:
+        logging.info("Booting from volume: %s" % args.nova_boot_from_existing_volume)
     logging.info("VM tenant: %s" % os.environ["OS_TENANT_NAME"])
     if args.nova_parameter:
         logging.info("VM metaparameters: %s" % ', '.join(args.nova_parameter))
@@ -206,6 +215,26 @@ def print_summary(args, fqdn):
     logging.info("Certmgr port: %s" % certmgrconf.certmgr_port)
     logging.info("Roger server: %s" % roger_config.roger_hostname)
     logging.info("Roger port: %s" % str(roger_config.roger_port))
+
+def _manage_volumes(cinder, image=None, volume_id=None):
+    volumes = {}
+    if volume_id:
+        if image:
+            # Turn image into a volume and boot using it
+            raise AiToolsCinderError("Booting from a new Volume is not supported yet")
+        else:
+            # Boot from existing volume
+            volume = cinder.get(volume_id)
+            logging.info("Volume '{0}' has status: '{1}' and is {2}bootable"
+                .format(volume_id, volume.status,
+                ('NOT ' if volume.bootable == 'false' else '')))
+            if cinder.is_ready_to_boot(volume):
+                logging.info("Booting from volume: '%s'" % volume_id)
+                volumes['vda'] = "%s:::0" % volume_id
+            else:
+                logging.info("Error booting from volume '%s'" % volume_id)
+                raise AiToolsCinderError("Volume must be 'available' and bootable")
+    return volumes
 
 def main():
     """Application entrypoint"""
@@ -244,6 +273,21 @@ def main():
         logging.error("Failed to generate userdata (%s). Exiting..." % error)
         return 6
 
+    try:
+        cinder = CinderClient(os.environ["OS_USERNAME"],
+                              os.environ["OS_PASSWORD"],
+                              os.environ["OS_TENANT_ID"],
+                              os.environ["OS_AUTH_URL"],
+                              os.environ.get('OS_CACERT', None),
+                              dryrun=args.dryrun)
+
+        volumes = _manage_volumes(cinder=cinder,
+                                  image=args.nova_image,
+                                  volume_id=args.nova_boot_from_existing_volume)
+    except AiToolsCinderError, error:
+        logging.error("Cinder operation failed (%s)" % error)
+        return 40
+
     foreman = ForemanClient(dryrun=args.dryrun)
 
     if not args.foreman_disable:
@@ -273,16 +317,14 @@ def main():
             nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
                 os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
                 os.environ.get('OS_CACERT', None), dryrun=args.dryrun)
+
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
             meta['tenant-name'] = os.environ["OS_TENANT_NAME"]
             if args.landb_responsible:
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:
                 meta['landb-mainuser'] = args.landb_mainuser
-            if args.nova_block_device_mapping:
-                block_device = dict([args.nova_block_device_mapping.split('=')])
-            else:
-                block_device = None
+
             nova.boot(fqdn,
                 flavor=args.nova_flavor,
                 image=args.nova_image,
@@ -290,7 +332,7 @@ def main():
                 meta=meta,
                 key_name=args.nova_sshkey,
                 availability_zone=args.nova_availabilityzone,
-                block_device_mapping=block_device)
+                block_device_mapping=volumes)
         except AiToolsNovaError, error:
             logging.error("Couldn't create VM (%s)" % error)
             if not args.foreman_disable:
