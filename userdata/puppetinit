@@ -84,7 +84,8 @@ function set_slc_for_rhel_repositories {
     test -f /etc/pki/rpm-gpg/$${gpgkey} || exit 1
   done
 }
-[ "$${OS_DISTRIBUTOR_ID}" == "RedHatEnterpriseServer" ] && ( execute_shell_block set_slc_for_rhel_repositories 60 5 || unrecoverable_error "slc-rhel-repository" )
+[ "$${OS_DISTRIBUTOR_ID}" == "RedHatEnterpriseServer" ] && \
+  ( execute_shell_block set_slc_for_rhel_repositories 60 5 || unrecoverable_error "slc-rhel-repository" )
 
 DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
 
