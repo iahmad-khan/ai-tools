@@ -510,7 +510,7 @@ not found in Foreman" % ip_address)
                 self.cache[cache_key] = body
                 return body
             elif code == requests.codes.not_found:
-                raise AiToolsForemanError("Model not found in Foreman)" % modelname)
+                raise AiToolsForemanError("Model '%s' not found in Foreman" % modelname)
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['host']['full_messages'])
                 raise AiToolsForemanError("__resolve_model_name call failed (%s)" % error)
