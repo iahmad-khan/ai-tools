@@ -121,7 +121,8 @@ class AimsClient(object):
         elif os['name'] == "Fedora":
             target_os = "FEDORA%s" % major
         else:
-            raise AiToolsAimsError("There's no PXE target for this OS")
+            raise AiToolsAimsError("There's no PXE target for '%s'"
+                % os['name'])
 
         pxetarget = "%s_%s" % (target_os, architecture['name'].upper())
         logging.debug("%s translated into %s" % (os, pxetarget))
