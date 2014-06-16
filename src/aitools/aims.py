@@ -121,7 +121,9 @@ class AimsClient(object):
         else:
             raise AiToolsAimsError("There's no PXE target for this OS")
 
-        return "%s_%s" % (target_os, architecture['name'].upper())
+        pxetarget = "%s_%s" % (target_os, architecture['name'].upper())
+        logging.debug("%s translated into %s" % (os, pxetarget))
+        return pxetarget
 
     def _exec(self, args):
         args = [A2C_BIN_PATH] + args
