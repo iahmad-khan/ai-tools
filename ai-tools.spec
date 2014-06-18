@@ -4,7 +4,7 @@
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
 Version: 7.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -72,12 +72,15 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
-* Mon Jun 16 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 7.4-1
+* Mon Jun 16 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 7.4-2
 - Tweak ai-environments-reminder's email template
 - [ai-bs-vm] Add support to boot from an existing volume
 - [ai-bs-wm] Add tenant name to the VM metadata
 - [tbag] New tree option
 - [tbag] add validation on key name
+
+* Mon Jun 16 2014 Ben Jones <ben.dylan.jones@cern.ch> - 7.4-1
+- Undeployed tag, please ignore
 
 * Mon May 19 2014 Ben Jones <ben.dylan.jones@cern.ch> - 7.3-1
 - tbag binary file support
