@@ -3,8 +3,8 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 7.4
-Release: 2%{?dist}
+Version: 7.5
+Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -72,6 +72,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Jun 16 2014 Gavin McCance <gavin.mccance@cern.ch> - 7.5-1
+- Allow again to specify an image using the env AIBS_VMIMAGE_NAME
+
 * Mon Jun 16 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 7.4-2
 - Tweak ai-environments-reminder's email template
 - [ai-bs-vm] Add support to boot from an existing volume
