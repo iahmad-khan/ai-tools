@@ -138,7 +138,7 @@ def parse_cmdline_args():
         default=os.environ.get('AIBS_VMFLAVOR_NAME', DEFAULT_OPENSTACK_FLAVOR)
     ).completer = NovaCompleter(cache='flavor')
 
-    bootable_elements = parser.add_mutually_exclusive_group(required=True)
+    bootable_elements = parser.add_mutually_exclusive_group(required=False)
     bootable_elements.add_argument('-i', '--nova-image', type=str,
         help="OpenStack image name",
         default=os.environ.get('AIBS_VMIMAGE_NAME', None)
@@ -176,6 +176,13 @@ def parse_cmdline_args():
     # environment variables is dropped.
     if args.foreman_hostgroup is None:
         parser.error('Foreman hostgroup not specified.')
+    if args.nova_image and args.nova_boot_from_existing_volume:
+        parser.error("More than one bootable element provided. "
+            "In case you just specify one, check the env variable 'AIBS_VMIMAGE_NAME'")
+    if not (args.nova_image or args.nova_boot_from_existing_volume):
+        parser.error("No bootable element provided. You can boot from:\n"
+            "\t- An image ('nova image-list')\n"
+            "\t- An existing bootable volume ('cinder-list')")
     if args.nova_boot_from_existing_volume:
         try:
             UUID(args.nova_boot_from_existing_volume, version=4)
