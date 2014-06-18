@@ -72,7 +72,7 @@ function set_slc_for_rhel_repositories {
   do
     echo "Copying $${repo}"
     cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${repo}.repo /etc/yum.repos.d/
-    test -f /etc/yum.repos.d/$${repo}.repo || exit 1
+    test -f /etc/yum.repos.d/$${repo}.repo || return 1
   done
 
   # install needed GPG Keys
@@ -81,7 +81,7 @@ function set_slc_for_rhel_repositories {
   do
     echo "Copying $${gpgkey}"
     cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${gpgkey} /etc/pki/rpm-gpg/
-    test -f /etc/pki/rpm-gpg/$${gpgkey} || exit 1
+    test -f /etc/pki/rpm-gpg/$${gpgkey} || return 1
   done
 }
 [ "$${OS_DISTRIBUTOR_ID}" == "RedHatEnterpriseServer" ] && \
