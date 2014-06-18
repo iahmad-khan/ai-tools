@@ -75,6 +75,9 @@ rm -rf ${RPM_BUILD_ROOT}
 * Mon Jun 16 2014 Nacho Barrientos <nacho.barrientos@cern.ch> - 7.4-1
 - Tweak ai-environments-reminder's email template
 - [ai-bs-vm] Add support to boot from an existing volume
+- [ai-bs-wm] Add tenant name to the VM metadata
+- [tbag] New tree option
+- [tbag] add validation on key name
 
 * Mon May 19 2014 Ben Jones <ben.dylan.jones@cern.ch> - 7.3-1
 - tbag binary file support
