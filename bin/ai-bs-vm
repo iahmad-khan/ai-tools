@@ -145,6 +145,9 @@ def parse_cmdline_args():
     ).completer = NovaCompleter(cache='image')
     bootable_elements.add_argument('--nova-boot-from-existing-volume',
         type=str, help="Cinder Volume UUID to boot from", default=None)
+    parser.add_argument('--nova-boot-from-new-volume', type=str,
+        help="Size (in GB or TB) of the cinder volume to be created (e.g. '100GB', '1TB' )",
+        default=None)
     parser.add_argument('--nova-parameter', type=str,
         help="Openstack metaparameter", action='append', default=[])
     ##
@@ -179,15 +182,30 @@ def parse_cmdline_args():
     if args.nova_image and args.nova_boot_from_existing_volume:
         parser.error("More than one bootable element provided. "
             "In case you just specify one, check the env variable 'AIBS_VMIMAGE_NAME'")
+
+    options_to_boot_from = """You can boot from:
+        - An image ('nova image-list')
+        - An existing bootable volume ('cinder-list')
+        - An image ('nova image-list') and the size of a volume to boot from"""
+
     if not (args.nova_image or args.nova_boot_from_existing_volume):
-        parser.error("No bootable element provided. You can boot from:\n"
-            "\t- An image ('nova image-list')\n"
-            "\t- An existing bootable volume ('cinder-list')")
+        parser.error("No bootable element provided. %s" % options_to_boot_from)
+
+    if args.nova_boot_from_existing_volume and args.nova_boot_from_new_volume:
+        parser.error("More than one bootable element provided. %s" % options_to_boot_from)
+
     if args.nova_boot_from_existing_volume:
         try:
             UUID(args.nova_boot_from_existing_volume, version=4)
         except ValueError:
             parser.error("--nova-boot-from-existing-volume must be a valid UUID4")
+
+    if args.nova_boot_from_new_volume:
+        if not args.nova_image:
+            parser.error("An image is needed for booting from a new volume")
+        elif not re.match(r'^[1-9][0-9]*(GB|TB)$', args.nova_boot_from_new_volume):
+            parser.error("--nova-boot-from-new-volume must be a valid size in "
+                "GB or TB (e.g. '100GB', '1TB' )")
     for parameter in args.foreman_parameter + args.nova_parameter:
         if not re.match(r'\S+?=\S+?', parameter):
             parser.error("Invalid Foreman/Nova parameter '%s' (syntax: key=value)" % parameter)
@@ -223,24 +241,17 @@ def print_summary(args, fqdn):
     logging.info("Roger server: %s" % roger_config.roger_hostname)
     logging.info("Roger port: %s" % str(roger_config.roger_port))
 
-def _manage_volumes(cinder, image=None, volume_id=None):
+def _manage_volumes(cinder, volume_id=None, image=None, volume_size=None):
     volumes = {}
+    if volume_size and image:
+        # Create volume if requested
+        volume = cinder.create(volume_size, imageRef=image)
+        volume_id = volume.id if volume else None
+
     if volume_id:
-        if image:
-            # Turn image into a volume and boot using it
-            raise AiToolsCinderError("Booting from a new Volume is not supported yet")
-        else:
-            # Boot from existing volume
-            volume = cinder.get(volume_id)
-            logging.info("Volume '{0}' has status: '{1}' and is {2}bootable"
-                .format(volume_id, volume.status,
-                ('NOT ' if volume.bootable == 'false' else '')))
-            if cinder.is_ready_to_boot(volume):
-                logging.info("Booting from volume: '%s'" % volume_id)
-                volumes['vda'] = "%s:::0" % volume_id
-            else:
-                logging.info("Error booting from volume '%s'" % volume_id)
-                raise AiToolsCinderError("Volume must be 'available' and bootable")
+        volume = cinder.is_ready_to_boot(volume_id, wait_until_ready=bool(volume_size and image))
+        logging.info("Booting from volume: '%s'" % volume.id)
+        volumes['vda'] = "%s:::0" % volume.id
     return volumes
 
 def main():
@@ -289,8 +300,9 @@ def main():
                               dryrun=args.dryrun)
 
         volumes = _manage_volumes(cinder=cinder,
+                                  volume_id=args.nova_boot_from_existing_volume,
                                   image=args.nova_image,
-                                  volume_id=args.nova_boot_from_existing_volume)
+                                  volume_size=args.nova_boot_from_new_volume)
     except AiToolsCinderError, error:
         logging.error("Cinder operation failed (%s)" % error)
         return 40
@@ -332,9 +344,16 @@ def main():
             if args.landb_mainuser:
                 meta['landb-mainuser'] = args.landb_mainuser
 
+            if args.nova_boot_from_new_volume or args.nova_boot_from_existing_volume:
+                # When booting from a volume, an image should not
+                # be provided to nova as it will try to boot from the image
+                image = None
+            else:
+                image = args.nova_image
+
             nova.boot(fqdn,
                 flavor=args.nova_flavor,
-                image=args.nova_image,
+                image=image,
                 userdata=userdata,
                 meta=meta,
                 key_name=args.nova_sshkey,
@@ -344,6 +363,11 @@ def main():
             logging.error("Couldn't create VM (%s)" % error)
             if not args.foreman_disable:
                 foreman.delhost(fqdn)
+            if args.nova_boot_from_new_volume and volumes and 'vda' in volumes:
+                volume_id = volumes['vda'].split(':')[0]
+                logging.error("Cinder volume '{0}' was created but booting failed. "
+                    "You can re-try to boot from it with option '--nova-boot-from-existing-volume {0}'"
+                    .format(volume_id))
             return 30
 
     if not args.roger_disable:
