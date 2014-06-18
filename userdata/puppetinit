@@ -62,9 +62,9 @@ function set_slc_for_rhel_repositories {
   # get sl-release RPM
   baseurl=http://linuxsoft.cern.ch/cern/slc$${OS_MAJOR_VERSION}X/updates/x86_64/SRPMS/
   slreleaserpm=`curl $${baseurl} | awk -F\" '/sl-release/ {print $$2}' | sort | tail -1`
-  rpm -ivh $${baseurl}/$${slreleaserpm}
+  rpm -ivh $${baseurl}/$${slreleaserpm} || return 1
   cd /tmp
-  tar xzvf /rpmbuild/SOURCES/slc-release-$${OS_MAJOR_VERSION}.tar.gz
+  tar xzvf /rpmbuild/SOURCES/slc-release-$${OS_MAJOR_VERSION}.tar.gz || return 1
 
   # install needed repos
   repos="slc$${OS_MAJOR_VERSION}-cernonly slc$${OS_MAJOR_VERSION}-os epel"
