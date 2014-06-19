@@ -6,7 +6,8 @@ ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 .B "ai-bs-vm"
 [OPTION]...
 \fI-g HOSTGROUP\fR
-\fI-i IMAGE\fR [VMNAME]
+\fI-i IMAGE\fR | \fI--nova-boot-from-existing-volume VOLUMEID\fR
+[VMNAME]
 
 .SH DESCRIPTION
 ai-bs-vm is a Python command line tool to create Puppet-managed
@@ -47,9 +48,16 @@ variables (in parenthesis):
 Name of the Foreman hostgroup where you want your new virtual
 machine to land (beware that you must be hostgroup manager of it).
 .TP
+.B --nova-boot-from-existing-volume
+Cinder Volume UUID to boot from. In order to boot from an existing volume,
+it has to be bootable and available (it will fail in any other case).
+This parameter is mutually exclusive with "--nova-image", as only one
+bootable element can be specified per VM. (see http://cern.ch/go/l9xP)
+.TP
 .B -i, --nova-image (AIBS_VMIMAGE_NAME)
 OpenStack image name of the virtual machine (get a list from
-nova image-list).
+nova image-list). This parameter is mutually exclusive with
+"--nova-boot-from-existing-volume".
 .LP
 Although the synopsis indicates that -g and -i are mandatory
 parameters, both will become optional if the values are passed via
@@ -92,12 +100,6 @@ disaster. Use Horizon or nova keypair-add to generate a new keypair
 strongly recommended to avoid it. Your new VM will have the Kerberos
 module enabled by default, use it to configure who has root access
 to the box. See http://cern.ch/go/7qW6
-.TP
-.B --nova-boot-from-existing-volume
-Cinder Volume UUID to boot from. In order to boot from an existing volume,
-it has to be bootable and available (it will fail in any other case).
-This parameter is mutually exclusive with 'nova-image', only one bootable
-element can be specified per VM. (see http://cern.ch/go/l9xP)
 .TP
 .B --prefix (AIBS_VMNAME_PREFIX)
 Prefix to prepend to the randomly generated hostname (defaults to "vm").
