@@ -2,8 +2,8 @@
 # Checks to see if the hosts are managed by AI or by Quattor.
 import sys
 import argparse
-import socket
-#import cx_ORaclese
+import cx_Oracle
+import json
 
 from aitools.config import PdbConfig, ForemanConfig
 from aitools.common import fqdnify
@@ -11,11 +11,10 @@ from aitools.pdb import PdbClient
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Checks to see if the hosts are managed by AI or by Quattor.")
     ##
     ## Internal options
     ##
-    
     parser.add_argument("--json", dest="json", action='store_true', help="output in JSON")
     
     ##
@@ -23,30 +22,74 @@ def parse_cmdline_args():
     ##
     pdbconf = PdbConfig()
     pdbconf.add_standard_args(parser)
-    #parser.add_argument("--pdb_server", metavar="SERVER", dest="puppetdb_server",
-    #                    default="judy.cern.ch", help="server running puppetdb")
-    #parser.add_argument("--pdb_port", metavar="PORT", dest="puppetdb_port",
-    #                    default=9081, type=int, help="port for puppetdb")
 
-    ##
-    ## Foreman options
-    ##
-    fconf = ForemanConfig()
-    fconf.add_standard_args(parser)
-    #parser.add_argument("--foreman_server", metavar="SERVER", dest="foreman_server",
-    #                    default="judy.cern.ch", help="server running foreman")
-    #parser.add_argument("--foreman_port", metavar="PORT", dest="foreman_port",
-    #                    default=8443, type=int, help="port for foreman")
-    
     parser.add_argument("hosts", metavar="HOST", nargs="+",
                         help="hostnames to query for quattor or AI")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+def get_cdb(h):
+    try:
+        conn = cx_Oracle.connect('aiorcdb/shabba8*@cdb')
+        try:
+            curs = conn.cursor()
+            curs.execute("select hostname from cdb.vwqai where hostname=:hostn and puppet_managed='false'", hostn=h)
+            rows = curs.fetchall()
+            if rows:
+                return True
+            else:
+                return False
+        finally:
+            curs.close()
+            conn.close()
+    except cx_Oracle.DatabaseError as e:
+        sys.stderr.write("Problems connecting to CDB: %s" %e)
+        sys.exit(1)
 
 def main():
     args = parse_cmdline_args()
+    output_in_json = True
     pdbconf = PdbConfig()
     pdbconf.read_config_and_override_with_pargs(args)
+    #fconf = ForemanConfig()
+    #fconf.read_config_and_override_with_pargs(args)
+    pdbclient = PdbClient()
+
+    json_output = {}
+    for host in args.hosts:
+        agile_status = "UNKOWN"
+        fqdn = fqdnify(host)
+        deactivated = None
+
+        if not fqdn:
+            agile_status = "NOT_FOUND_IN_DNS"
+        else:
+            pdb_status = pdbclient.get_host(fqdn)
+            cdb_status = get_cdb(host)
+            deactivated = pdb_status['deactivated'] if pdb_status else None
+            if pdb_status and cdb_status:
+                agile_status = "BOTH_IN_QUATTOR_AND_AI"
+            elif (pdb_status and deactivated == None):
+                agile_status = "AI"
+            elif (pdb_status and deactivated != None):
+                agile_status = "AI_STALE"
+            elif cdb_status:
+                agile_status = "QUATTOR"
+
+        if args.json:
+            jhost = {}
+            jhost['fqdn'] = fqdn
+            jhost['agile_status'] = agile_status
+            jhost['deactivated'] = deactivated
+            json_output[host] = jhost
+        else:
+            print "%s: %s" % (host,agile_status)
+
+
+    if args.json:
+        print json.dumps(json_output, indent=3)
+
+
 
 if __name__ == "__main__":
     main()

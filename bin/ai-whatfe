@@ -1,0 +1,167 @@
+#!/usr/bin/env python
+# Guesses the functional element for .
+import sys
+import argparse
+import cx_Oracle
+
+from aitools.config import PdbConfig
+from aitools.common import fqdnify
+from aitools.pdb import PdbClient
+
+from suds.client import Client
+from suds.sax.element import Element
+from suds.xsd.doctor import ImportDoctor, Import
+
+CONFIG = "Configuration Managemen:t"
+VIRTUAL = "Virtualisation"
+ELFMS = "ElfMs"
+STACKERS = "Cloud Infrastructure"
+
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser(description="Guesses the functional element for host.")
+    ##
+    ## Internal options
+    ##
+    parser.add_argument("--json", dest="json", action='store_true', help="output in JSON")
+
+    ##
+    ## PuppetDB options
+    ##
+    pdbconf = PdbConfig()
+    pdbconf.add_standard_args(parser)
+
+    parser.add_argument("host", metavar="HOST",
+                        help="hostnames to query for FE")
+
+    return parser.parse_args()
+
+
+def get_cdb(h):
+    try:
+        conn = cx_Oracle.connect('aiorcdb/shabba8*@cdb')
+        try:
+            curs = conn.cursor()
+            curs.execute("select hostname from cdb.vwqai where hostname=:hostn and puppet_managed='false'", hostn=h)
+            rows = curs.fetchall()
+            if rows:
+                return True
+            else:
+                return False
+        finally:
+            curs.close()
+            conn.close()
+    except cx_Oracle.DatabaseError as e:
+        sys.stderr.write("Problems connecting to CDB: %s" %e)
+        sys.exit(1)
+
+
+def print_service(service):
+    if service:
+        print "* For problems regarding the service that this node provides, the relevant service FE is: %s" % service
+    else:
+        print "* The system does not have any information to determine the service FE that this node belongs to."
+
+
+def dirtysoap(hostname):
+    url = 'https://network.cern.ch/sc/soap/soap.fcgi?v=5&WSDL'
+
+    imp = Import('http://schemas.xmlsoap.org/soap/encoding/')
+    d = ImportDoctor(imp)
+    client = Client(url, doctor=d, cache=None)
+
+    try :
+        result = client.service.getDeviceBasicInfo(hostname)
+    except Exception as e:
+        sys.stderr.write("Error: could not access LANDB: %r" % (e,))
+        sys.exit(3)
+    tag = result["Tag"]
+    building = result["Location"]["Building"]
+    return (tag, building)
+
+
+def main():
+    args = parse_cmdline_args()
+    output_in_json = True
+    pdbconf = PdbConfig()
+    pdbconf.read_config_and_override_with_pargs(args)
+    #fconf = ForemanConfig()
+    #fconf.read_config_and_override_with_pargs(args)
+    pdbclient = PdbClient()
+    host = args.host
+    json_output = {}
+    deactivated = None
+    fqdn = fqdnify(host)
+
+    # Not in DNS
+    if not fqdn:
+        print "%s is not in the CERN DNS server. Please try again in 30 minutes (it's possibly a synchronisation issue)." % host
+        print "If this message is still here in 30 minutes - please ask the user if he understands why the node is not in DNS."
+        print "Typically is means either the name is wrong or the node was deleted at some point."
+        sys.exit(0)
+    
+    shortname = fqdn.split('.')[0]
+    # Check status in PuppetDB and CDB
+    pdb_status = pdbclient.get_host(fqdn)
+    cdb_status = get_cdb(host)
+    if pdb_status:
+        # Get FE fact from PuppetDB
+        fename = pdbclient.get_facts(fqdn)['fename']
+        deactivated = pdb_status['deactivated']
+
+    if (pdb_status and deactivated):
+        print "%s is known by the Puppet infrastructure but has been deactivated in PuppetDB." % host
+        print "This typically means the node has been deleted or is not running Puppet."
+        print "* Please check the procedures of FE: " + CONFIG
+        print_service(fename)
+        sys.exit(0)
+
+    if (pdb_status and deactivated == None):
+        agile_status = "AI"
+        print "%s is known to the Puppet system."  % host
+    elif cdb_status:
+        agile_status = "QUATTOR"
+        print "%s is known to the Quattor system."  % host
+    else:
+        agile_status = "UNKNOWN"
+        print "%s is not known to either the Puppet or Quattor systems"  % host
+
+    # Check the LANDB entry
+    (tag, building) = dirtysoap(shortname)
+
+    # Print likely virtualisation status
+    if building != "0000":
+        print "Based on the building location (%s), we infer the machine is a PHYSICAL node." % building
+        if agile_status == "QUATTOR":
+            print "* For infrastructure problems, since the physical node is known to Quattor, please check the procedures of FE: " + ELFMS
+        elif agile_status == "AI":
+            print "* For infrastructure problems, since the physical node is known to Puppet, please check the procedures of FE: " + CONFIG
+        else:
+            print "* For infrastructure problems, since the physical node is not known to either system, please send the request to FE: Computer Operations"
+    else:
+        print "Based on the building location (%s), we infer the machine is a VIRTUAL node." % building
+        if tag=="CVI2":
+            print "Based on the LANDB Tag ('CVI2'), we infer the node is on the HyperV CVI service."
+            if agile_status == "QUATTOR":
+                print "* For infrastructure problems, since the virtual node is known to Quattor, please check the procedures of FE: " + ELFMS
+            elif agile_status == "AI":
+                print "* For infrastructure problems, since the virtual node is known to Puppet, please check the procedures of FE: " + CONFIG
+            else:
+                print "* For infrastructure problems, please check the procedures of FE: " + VIRTUAL
+        elif tag=="OPENSTACK VM":
+            print "Based on the LANDB Tag ('OPENSTACK VM'), we infer the node is on the Openstack service."
+            if agile_status == "QUATTOR":
+                print "* For infrastructure problems, since the virtual node is known to Quattor, please check the procedures of FE: " + ELFMS
+            elif agile_status == "AI":
+                print "* For infrastructure problems, since the virtual node is known to Puppet, please check the procedures of FE: " + CONFIG
+            else:
+                print "* For infrastructure problems, please check the procedures of FE: " + STACKERS
+        else: # bad tag
+            print "* The VM has a bad tag in LANDB - please check the procedures of FE: " + STACKERS
+
+    print_service(fename)
+
+
+if __name__ == "__main__":
+    main()
