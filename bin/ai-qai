@@ -3,7 +3,11 @@
 import sys
 import argparse
 import socket
-import cx_ORaclese
+#import cx_ORaclese
+
+from aitools.config import PdbConfig, ForemanConfig
+from aitools.common import fqdnify
+from aitools.pdb import PdbClient
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -11,18 +15,38 @@ def parse_cmdline_args():
     ##
     ## Internal options
     ##
-    parser.add_argument('-v', '--verbose',
-        action="store_true",
-        help="Be chatty")
+    
     parser.add_argument("--json", dest="json", action='store_true', help="output in JSON")
-    parser.add_argument("--pdb_server", metavar="SERVER", dest="puppetdb_server",
-                        default="judy.cern.ch", help="server running puppetdb")
-    parser.add_argument("--pdb_port", metavar="PORT", dest="puppetdb_port",
-                        default=9081, type=int, help="port for puppetdb")
-    parser.add_argument("--foreman_server", metavar="SERVER", dest="foreman_server",
-                        default="judy.cern.ch", help="server running foreman")
-    parser.add_argument("--foreman_port", metavar="PORT", dest="foreman_port",
-                        default=8443, type=int, help="port for foreman")
+    
+    ##
+    ## PuppetDB options
+    ##
+    pdbconf = PdbConfig()
+    pdbconf.add_standard_args(parser)
+    #parser.add_argument("--pdb_server", metavar="SERVER", dest="puppetdb_server",
+    #                    default="judy.cern.ch", help="server running puppetdb")
+    #parser.add_argument("--pdb_port", metavar="PORT", dest="puppetdb_port",
+    #                    default=9081, type=int, help="port for puppetdb")
+
+    ##
+    ## Foreman options
+    ##
+    fconf = ForemanConfig()
+    fconf.add_standard_args(parser)
+    #parser.add_argument("--foreman_server", metavar="SERVER", dest="foreman_server",
+    #                    default="judy.cern.ch", help="server running foreman")
+    #parser.add_argument("--foreman_port", metavar="PORT", dest="foreman_port",
+    #                    default=8443, type=int, help="port for foreman")
+    
     parser.add_argument("hosts", metavar="HOST", nargs="+",
                         help="hostnames to query for quattor or AI")
 
+    args = parser.parse_args()
+
+def main():
+    args = parse_cmdline_args()
+    pdbconf = PdbConfig()
+    pdbconf.read_config_and_override_with_pargs(args)
+
+if __name__ == "__main__":
+    main()
