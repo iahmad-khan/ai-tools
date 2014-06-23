@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+# Checks to see if the hosts are managed by AI or by Quattor.
+import sys
+import argparse
+import socket
+import cx_ORaclese
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser()
+    ##
+    ## Internal options
+    ##
+    parser.add_argument('-v', '--verbose',
+        action="store_true",
+        help="Be chatty")
+    parser.add_argument("--json", dest="json", action='store_true', help="output in JSON")
+    parser.add_argument("--pdb_server", metavar="SERVER", dest="puppetdb_server",
+                        default="judy.cern.ch", help="server running puppetdb")
+    parser.add_argument("--pdb_port", metavar="PORT", dest="puppetdb_port",
+                        default=9081, type=int, help="port for puppetdb")
+    parser.add_argument("--foreman_server", metavar="SERVER", dest="foreman_server",
+                        default="judy.cern.ch", help="server running foreman")
+    parser.add_argument("--foreman_port", metavar="PORT", dest="foreman_port",
+                        default=8443, type=int, help="port for foreman")
+    parser.add_argument("hosts", metavar="HOST", nargs="+",
+                        help="hostnames to query for quattor or AI")
+
