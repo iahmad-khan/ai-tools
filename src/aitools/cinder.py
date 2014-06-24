@@ -45,11 +45,19 @@ class CinderClient():
         :raise AiToolsCinderError: in case the API call fails
         """
         vol_name = display_name or ''
+        try:
+            size_in_GB = int(size)
+        except ValueError:
+            # size is in the format 'XGB' or 'XTB'
+            size_in_GB, unit = int(size[:-2]), size[-2:]
+            if unit == 'TB':
+                size_in_GB *= 1024
+
         logging.info("Creating volume %s ..." % vol_name)
         tenant = self.__init_client()
         try:
             if not self.dryrun:
-                return tenant.volumes.create(size=size,
+                return tenant.volumes.create(size=size_in_GB,
                     display_name=display_name,
                     display_description=display_description,
                     volume_type=volume_type,

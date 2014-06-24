@@ -99,7 +99,7 @@ class TestCinder(unittest.TestCase):
     def test_dry_run_in_cinder_create(self, mock_tenant):
         self.tenant.dryrun = True
         mock_tenant.return_value.volumes.create = Mock()
-        self.assertTrue(self.tenant.create(size=1) is None)
+        self.assertTrue(self.tenant.create(size='1GB') is None)
         mock_tenant.assert_called_once_with()
         self.assertFalse(mock_tenant.return_value.volumes.create.called)
 
@@ -122,9 +122,9 @@ class TestCinder(unittest.TestCase):
     @patch.object(CinderWrapper, '_CinderClient__init_client')
     def test_connection_error_in_cinder_create(self, mock_tenant):
         mock_tenant.return_value.volumes.create = Mock(side_effect=ConnectionError('error'))
-        self.assertRaises(AiToolsCinderError, self.tenant.create, size=1)
+        self.assertRaises(AiToolsCinderError, self.tenant.create, size='1TB')
         mock_tenant.assert_called_once_with()
-        mock_tenant.return_value.volumes.create.assert_called_once_with(size=1, volume_type=None,
+        mock_tenant.return_value.volumes.create.assert_called_once_with(size=1024, volume_type=None,
             display_name=None, imageRef=None, display_description=None)
 
     @patch.object(CinderWrapper, '_CinderClient__init_client')
@@ -144,9 +144,9 @@ class TestCinder(unittest.TestCase):
     @patch.object(CinderWrapper, '_CinderClient__init_client')
     def test_volume_created_in_cinder_create(self, mock_tenant):
         mock_tenant.return_value.volumes.create.return_value = Mock(spec=volumes.Volume)
-        volume = self.tenant.create(size=1)
+        volume = self.tenant.create(size='50GB')
         mock_tenant.assert_called_once_with()
-        mock_tenant.return_value.volumes.create.assert_called_once_with(size=1, volume_type=None,
+        mock_tenant.return_value.volumes.create.assert_called_once_with(size=50, volume_type=None,
             display_name=None, imageRef=None, display_description=None)
         self.assertTrue(isinstance(volume, volumes.Volume))
 
