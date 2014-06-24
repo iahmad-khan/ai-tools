@@ -51,8 +51,9 @@ machine to land (beware that you must be hostgroup manager of it).
 .B --nova-boot-from-existing-volume
 Cinder Volume UUID to boot from. In order to boot from an existing volume,
 it has to be bootable and available (it will fail in any other case).
-This parameter is mutually exclusive with "--nova-image", as only one
-bootable element can be specified per VM. (see http://cern.ch/go/l9xP)
+This parameter is mutually exclusive with "--nova-image" and
+"--nova-boot-from-new-volume" as only one bootable element can be specified
+per VM. (see http://cern.ch/go/l9xP)
 .TP
 .B -i, --nova-image (AIBS_VMIMAGE_NAME)
 OpenStack image name of the virtual machine (get a list from
@@ -89,6 +90,12 @@ only). Foreman owner will be set accordingly later on.
 .TP
 .B --nova-availabilityzone (AIBS_VMAVAILZONE_NAME)
 The desired availability zone for the VM (see http://cern.ch/go/7ttT).
+.TP
+.B --nova-boot-from-new-volume
+Size in the format "XGB" or "XTB" where X is an integer larger than 0.
+In order to create a bootable volume "--nova-image" must be specified.
+This parameter is mutually exclusive with "--nova-boot-from-existing-volume",
+as only one bootable element can be specified per VM. (see http://cern.ch/go/l9xP)
 .TP
 .B --nova-flavor (AIBS_VMFLAVOR_NAME)
 OpenStack flavor name of the virtual machine (defaults to "m1.small").
@@ -233,6 +240,10 @@ ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --prefix foo
 .TP
 .B Create a VM booting from an existing volume:
 ai-bs-vm -g foo/bar -nova-boot-from-existing-volume 361a5315-aaa2-48dd-990b-235b660eb079
+
+.TP
+.B Create a VM by creating a volume using an image and booting from it:
+ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-boot-from-new-volume 100GB higgsbox.cern.ch
 
 .SH REPORTING BUGS
 If you experience any problem with the Foreman registration or the initial
