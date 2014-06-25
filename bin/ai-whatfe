@@ -5,14 +5,14 @@ import argparse
 import cx_Oracle
 
 from aitools.config import PdbConfig
-from aitools.common import fqdnify
+from aitools.common import fqdnify, shortify
 from aitools.pdb import PdbClient
+from aitools.errors import AiToolsPdbNotFoundError
 
 from suds.client import Client
-from suds.sax.element import Element
 from suds.xsd.doctor import ImportDoctor, Import
 
-CONFIG = "Configuration Managemen:t"
+CONFIG = "Configuration Management"
 VIRTUAL = "Virtualisation"
 ELFMS = "ElfMs"
 STACKERS = "Cloud Infrastructure"
@@ -83,16 +83,16 @@ def dirtysoap(hostname):
 
 def main():
     args = parse_cmdline_args()
-    output_in_json = True
+
     pdbconf = PdbConfig()
     pdbconf.read_config_and_override_with_pargs(args)
-    #fconf = ForemanConfig()
-    #fconf.read_config_and_override_with_pargs(args)
+
     pdbclient = PdbClient()
     host = args.host
-    json_output = {}
+
     deactivated = None
     fqdn = fqdnify(host)
+    shortname = shortify(host)
 
     # Not in DNS
     if not fqdn:
@@ -100,11 +100,14 @@ def main():
         print "If this message is still here in 30 minutes - please ask the user if he understands why the node is not in DNS."
         print "Typically is means either the name is wrong or the node was deleted at some point."
         sys.exit(0)
-    
-    shortname = fqdn.split('.')[0]
+
     # Check status in PuppetDB and CDB
-    pdb_status = pdbclient.get_host(fqdn)
-    cdb_status = get_cdb(host)
+    try:
+        pdb_status = pdbclient.get_host(fqdn)
+    except AiToolsPdbNotFoundError:
+        pdb_status = None
+    cdb_status = get_cdb(shortname)
+    fename = None
     if pdb_status:
         # Get FE fact from PuppetDB
         fename = pdbclient.get_facts(fqdn)['fename']

@@ -6,7 +6,7 @@ import cx_Oracle
 import json
 
 from aitools.config import PdbConfig
-from aitools.common import fqdnify
+from aitools.common import fqdnify, shortify
 from aitools.pdb import PdbClient
 from aitools.errors import AiToolsPdbNotFoundError
 
@@ -59,16 +59,18 @@ def main():
     for host in args.hosts:
         agile_status = "UNKNOWN"
         fqdn = fqdnify(host)
+
         deactivated = None
 
         if not fqdn:
             agile_status = "NOT_FOUND_IN_DNS"
         else:
+            shortname = shortify(host)
             try:
                 pdb_status = pdbclient.get_host(fqdn)
             except AiToolsPdbNotFoundError:
                 pdb_status = None
-            cdb_status = get_cdb(host)
+            cdb_status = get_cdb(shortname)
             deactivated = pdb_status['deactivated'] if pdb_status else None
             if pdb_status and cdb_status:
                 agile_status = "BOTH_IN_QUATTOR_AND_AI"
