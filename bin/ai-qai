@@ -5,9 +5,10 @@ import argparse
 import cx_Oracle
 import json
 
-from aitools.config import PdbConfig, ForemanConfig
+from aitools.config import PdbConfig
 from aitools.common import fqdnify
 from aitools.pdb import PdbClient
+from aitools.errors import AiToolsPdbNotFoundError
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -48,23 +49,25 @@ def get_cdb(h):
 
 def main():
     args = parse_cmdline_args()
-    output_in_json = True
+
     pdbconf = PdbConfig()
     pdbconf.read_config_and_override_with_pargs(args)
-    #fconf = ForemanConfig()
-    #fconf.read_config_and_override_with_pargs(args)
+
     pdbclient = PdbClient()
 
     json_output = {}
     for host in args.hosts:
-        agile_status = "UNKOWN"
+        agile_status = "UNKNOWN"
         fqdn = fqdnify(host)
         deactivated = None
 
         if not fqdn:
             agile_status = "NOT_FOUND_IN_DNS"
         else:
-            pdb_status = pdbclient.get_host(fqdn)
+            try:
+                pdb_status = pdbclient.get_host(fqdn)
+            except AiToolsPdbNotFoundError:
+                pdb_status = None
             cdb_status = get_cdb(host)
             deactivated = pdb_status['deactivated'] if pdb_status else None
             if pdb_status and cdb_status:
