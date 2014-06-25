@@ -100,6 +100,10 @@ class NovaClient():
         except novaclient.exceptions.ConnectionRefused, error:
             raise AiToolsNovaError(error)
 
+    def find_image_by_name(self, name):
+        tenant = self.__init_client()
+        return self.__resolve_id(tenant.images.list(), name)
+
     def __init_client(self):
         try:
             return client.Client(self.username, self.password,
@@ -117,7 +121,7 @@ class NovaClient():
         return re.sub("\.cern\.ch$", "", fqdn)
 
     def __resolve_id(self, collection, name):
-        filtered = filter(lambda x: x.name == name, collection)
+        filtered = filter(lambda x: x.id == name or x.name == name, collection)
         if len(filtered) == 0:
             raise AiToolsNovaError("'%s' not found" % name)
         else:

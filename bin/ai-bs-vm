@@ -216,10 +216,12 @@ def print_summary(args, fqdn):
     roger_config = RogerConfig()
     logging.info("Trying to bootstrap '%s'..." % fqdn)
     logging.info("VM flavor: %s" % args.nova_flavor)
-    if args.nova_image:
+    if args.nova_image and not args.nova_boot_from_new_volume:
         logging.info("Booting from image: %s" % args.nova_image)
     elif args.nova_boot_from_existing_volume:
         logging.info("Booting from volume: %s" % args.nova_boot_from_existing_volume)
+    elif args.nova_boot_from_new_volume:
+        logging.info("Booting from a new volume created using image: %s" % args.nova_image)
     logging.info("VM tenant: %s" % os.environ["OS_TENANT_NAME"])
     if args.nova_parameter:
         logging.info("VM metaparameters: %s" % ', '.join(args.nova_parameter))
@@ -291,22 +293,6 @@ def main():
         logging.error("Failed to generate userdata (%s). Exiting..." % error)
         return 6
 
-    try:
-        cinder = CinderClient(os.environ["OS_USERNAME"],
-                              os.environ["OS_PASSWORD"],
-                              os.environ["OS_TENANT_ID"],
-                              os.environ["OS_AUTH_URL"],
-                              os.environ.get('OS_CACERT', None),
-                              dryrun=args.dryrun)
-
-        volumes = _manage_volumes(cinder=cinder,
-                                  volume_id=args.nova_boot_from_existing_volume,
-                                  image=args.nova_image,
-                                  volume_size=args.nova_boot_from_new_volume)
-    except AiToolsCinderError, error:
-        logging.error("Cinder operation failed (%s)" % error)
-        return 40
-
     foreman = ForemanClient(dryrun=args.dryrun)
 
     if not args.foreman_disable:
@@ -337,6 +323,10 @@ def main():
                 os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
                 os.environ.get('OS_CACERT', None), dryrun=args.dryrun)
 
+            cinder = CinderClient(os.environ["OS_USERNAME"], os.environ["OS_PASSWORD"],
+                os.environ["OS_TENANT_ID"], os.environ["OS_AUTH_URL"],
+                os.environ.get('OS_CACERT', None), dryrun=args.dryrun)
+
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
             meta['tenant-name'] = os.environ["OS_TENANT_NAME"]
             if args.landb_responsible:
@@ -344,12 +334,22 @@ def main():
             if args.landb_mainuser:
                 meta['landb-mainuser'] = args.landb_mainuser
 
+            image = args.nova_image
+            if image:
+                try:
+                    UUID(image, version=4)
+                except ValueError:
+                    image = nova.find_image_by_name(name=image)
+
+            volumes = _manage_volumes(cinder=cinder,
+                                  volume_id=args.nova_boot_from_existing_volume,
+                                  image=image,
+                                  volume_size=args.nova_boot_from_new_volume)
+
             if args.nova_boot_from_new_volume or args.nova_boot_from_existing_volume:
                 # When booting from a volume, an image should not
                 # be provided to nova as it will try to boot from the image
                 image = None
-            else:
-                image = args.nova_image
 
             nova.boot(fqdn,
                 flavor=args.nova_flavor,
@@ -369,6 +369,11 @@ def main():
                     "You can re-try to boot from it with option '--nova-boot-from-existing-volume {0}'"
                     .format(volume_id))
             return 30
+        except AiToolsCinderError, error:
+            logging.error("Cinder operation failed (%s)" % error)
+            if not args.foreman_disable:
+                foreman.delhost(fqdn)
+            return 40
 
     if not args.roger_disable:
         roger_client = RogerClient(dryrun=args.dryrun)
