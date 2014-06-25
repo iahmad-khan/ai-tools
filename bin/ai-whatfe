@@ -7,7 +7,7 @@ import cx_Oracle
 from aitools.config import PdbConfig
 from aitools.common import fqdnify, shortify
 from aitools.pdb import PdbClient
-from aitools.errors import AiToolsPdbNotFoundError
+from aitools.errors import AiToolsPdbNotFoundError, AiToolsPdbNotAllowedError, AiToolsPdbError
 
 from suds.client import Client
 from suds.xsd.doctor import ImportDoctor, Import
@@ -106,6 +106,9 @@ def main():
         pdb_status = pdbclient.get_host(fqdn)
     except AiToolsPdbNotFoundError:
         pdb_status = None
+    except (AiToolsPdbError, AiToolsPdbNotAllowedError) as e:
+        sys.stderr.write("Problems connecting to PuppetDB: %s" %e)
+        sys.exit(1)
     cdb_status = get_cdb(shortname)
     fename = None
     if pdb_status:

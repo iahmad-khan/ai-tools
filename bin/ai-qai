@@ -8,7 +8,7 @@ import json
 from aitools.config import PdbConfig
 from aitools.common import fqdnify, shortify
 from aitools.pdb import PdbClient
-from aitools.errors import AiToolsPdbNotFoundError
+from aitools.errors import AiToolsPdbNotFoundError, AiToolsPdbNotAllowedError, AiToolsPdbError
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -70,6 +70,10 @@ def main():
                 pdb_status = pdbclient.get_host(fqdn)
             except AiToolsPdbNotFoundError:
                 pdb_status = None
+            except (AiToolsPdbError, AiToolsPdbNotAllowedError) as e:
+                sys.stderr.write("Problems connecting to PuppetDB: %s" %e)
+                sys.exit(1)
+
             cdb_status = get_cdb(shortname)
             deactivated = pdb_status['deactivated'] if pdb_status else None
             if pdb_status and cdb_status:
