@@ -1,0 +1,56 @@
+
+.TH AI-WHATFE "1" "June 2014" "CERN AI" "User Commands"
+.SH NAME
+ai-whatfe \- IT support tool. Prints the most likely set of FE procedures to look at for a given host.
+.SH SYNOPSIS
+.B "ai-whatfe"
+[OPTION]...
+\fIHOST\fR
+.SH DESCRIPTION
+Usage: ai-whatfe [\-h] [\-\-pdb_timeout TIMEOUT]
+    [\-\-pdb_server SERVER] [\-\-pdb_port PORT]
+    [\-\-config CONFIG] HOST
+.IP
+.PP
+IT support tool. Prints the most likely set of FE procedures to look at for a given host. Outputs whether
+the host is managed by Puppet, Quattor or neither, and whether the host is virtual or physical. For virtual
+hosts, it looks at the LANDB tag and determines whether the host is managed by CVI/HyperV or Openstack.
+Based on these it suggest the most appropriate FE if the problem looks like an
+infrastructure problem. For host where the information can be determined, it also prints the FE name of the
+service that that host belongs to.
+.SH OPTIONS
+.SS "Positional arguments:"
+.TP
+HOST
+hostnames to query for quattor or AI
+.SS "Optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-pdb_timeout\fR TIMEOUT
+timeout for puppetdb operations
+.TP
+\fB\-\-pdb_server\fR SERVER
+server running puppetdb
+.TP
+\fB\-\-pdb_port\fR PORT
+port for puppetdb
+.TP
+\fB\-\-config\fR config
+configuration file
+
+.SH EXAMPLES
+.TP
+.B Check a host:
+ai-whatfe aiadm049
+.TP
+aiadm049 is known to the Puppet system.
+.TP
+Based on the building location (0000), we infer the machine is a VIRTUAL node.
+.TP
+Based on the LANDB Tag ('OPENSTACK VM'), we infer the node is on the Openstack service.
+.TP
+* For infrastructure problems, since the virtual node is known to Puppet, please check the procedures of FE: Configuration Management
+.TP
+* For problems regarding the service that this node provides, the relevant service FE is: LXADM
