@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+# Checks to see if the hosts are managed by AI or by Quattor.
+import sys
+import argparse
+import cx_Oracle
+import json
+
+from aitools.config import PdbConfig
+from aitools.common import fqdnify, shortify
+from aitools.pdb import PdbClient
+from aitools.errors import AiToolsPdbNotFoundError, AiToolsPdbNotAllowedError, AiToolsPdbError
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser(description="Checks to see if the hosts are managed by AI or by Quattor.")
+    ##
+    ## Internal options
+    ##
+    parser.add_argument("--json", dest="json", action='store_true', help="output in JSON")
+    
+    ##
+    ## PuppetDB options
+    ##
+    pdbconf = PdbConfig()
+    pdbconf.add_standard_args(parser)
+
+    parser.add_argument("hosts", metavar="HOST", nargs="+",
+                        help="hostnames to query for quattor or AI")
+
+    return parser.parse_args()
+
+def get_cdb(h):
+    try:
+        conn = cx_Oracle.connect('aiorcdb/shabba8*@cdb')
+        try:
+            curs = conn.cursor()
+            curs.execute("select hostname from cdb.vwqai where hostname=:hostn and puppet_managed='false'", hostn=h)
+            rows = curs.fetchall()
+            if rows:
+                return True
+            else:
+                return False
+        finally:
+            curs.close()
+            conn.close()
+    except cx_Oracle.DatabaseError as e:
+        sys.stderr.write("Problems connecting to CDB: %s" %e)
+        sys.exit(1)
+
+def main():
+    args = parse_cmdline_args()
+
+    pdbconf = PdbConfig()
+    pdbconf.read_config_and_override_with_pargs(args)
+
+    pdbclient = PdbClient()
+
+    json_output = {}
+    for host in args.hosts:
+        agile_status = "UNKNOWN"
+        fqdn = fqdnify(host)
+
+        deactivated = None
+
+        if not fqdn:
+            agile_status = "NOT_FOUND_IN_DNS"
+        else:
+            shortname = shortify(host)
+            try:
+                pdb_status = pdbclient.get_host(fqdn)
+            except AiToolsPdbNotFoundError:
+                pdb_status = None
+            except (AiToolsPdbError, AiToolsPdbNotAllowedError) as e:
+                sys.stderr.write("Problems connecting to PuppetDB: %s" %e)
+                sys.exit(1)
+
+            cdb_status = get_cdb(shortname)
+            deactivated = pdb_status['deactivated'] if pdb_status else None
+            if pdb_status and cdb_status:
+                agile_status = "BOTH_IN_QUATTOR_AND_AI"
+            elif (pdb_status and deactivated == None):
+                agile_status = "AI"
+            elif (pdb_status and deactivated != None):
+                agile_status = "AI_STALE"
+            elif cdb_status:
+                agile_status = "QUATTOR"
+
+        if args.json:
+            jhost = {}
+            jhost['fqdn'] = fqdn
+            jhost['agile_status'] = agile_status
+            jhost['deactivated'] = deactivated
+            json_output[host] = jhost
+        else:
+            print "%s: %s" % (host,agile_status)
+
+
+    if args.json:
+        print json.dumps(json_output, indent=3)
+
+
+
+if __name__ == "__main__":
+    main()
