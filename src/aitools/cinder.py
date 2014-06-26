@@ -44,7 +44,7 @@ class CinderClient():
         :param imageRef: the image to be turned into a volume
         :raise AiToolsCinderError: in case the API call fails
         """
-        vol_name = display_name or ''
+        vol_name = "'" + display_name + "' " if display_name else ''
         try:
             size_in_GB = int(size)
         except ValueError:
@@ -53,18 +53,19 @@ class CinderClient():
             if unit == 'TB':
                 size_in_GB *= 1024
 
-        logging.info("Creating volume %s ..." % vol_name)
+        logging.info("Creating volume %s..." % vol_name)
         tenant = self.__init_client()
         try:
             if not self.dryrun:
-                return tenant.volumes.create(size=size_in_GB,
+                volume = tenant.volumes.create(size=size_in_GB,
                     display_name=display_name,
                     display_description=display_description,
                     volume_type=volume_type,
                     imageRef=imageRef)
-                logging.info("Request to create volume %s sent" % vol_name)
+                logging.info("Request to create volume %ssent" % vol_name)
+                return volume
             else:
-                logging.info("Volume %s not created because dryrun is enabled" % vol_name)
+                logging.info("Volume %snot created because dryrun is enabled" % vol_name)
         except requests.exceptions.Timeout, error:
             raise AiToolsCinderError(error)
         except cinderclient.exceptions.ClientException, error:
