@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 7.5
+Version: 7.6
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -72,6 +72,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Jul 02 2014 Gavin McCance <gavin.mccance@cern.ch> - 7.6-1
+- ai-qai and ai-whatfe was merge into ai-tools (was separate before). Now they use the ai-tools PdbClient. Man pages included
+
 * Mon Jun 16 2014 Gavin McCance <gavin.mccance@cern.ch> - 7.5-1
 - Allow again to specify an image using the env AIBS_VMIMAGE_NAME
 
