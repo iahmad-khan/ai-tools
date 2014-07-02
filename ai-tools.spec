@@ -4,7 +4,7 @@
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
 Version: 7.6
-Release: 2%{?dist}
+Release: 3%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -50,6 +50,8 @@ install -m 644 man/ai-bs-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-kill-vm.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-pdb.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-dump.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-qai.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-whatfe.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-rename-host.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-set-fe.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-hiera.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
@@ -73,6 +75,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Jul 02 2014 Gavin McCance <gavin.mccance@cern.ch> - 7.6-3
+- ...and actually package the new qai tools in the RPM
+
 * Wed Jul 02 2014 Gavin McCance <gavin.mccance@cern.ch> - 7.6-2
 - correctly Obsoletes the qai package it replaces
 
