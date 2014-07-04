@@ -99,7 +99,7 @@ def shortify(h):
     :return: the short name or None if host fails DNS lookup
     """
     fqdn = fqdnify(h)
-    return fqdn.split('.')[0]
+    return fqdn.split('.')[0] if fqdn else None
 
 def generate_userdata(args):
     certmgrconf = CertmgrConfig()
