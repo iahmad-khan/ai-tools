@@ -92,7 +92,6 @@ def main():
 
     deactivated = None
     fqdn = fqdnify(host)
-    shortname = shortify(host)
 
     # Not in DNS
     if not fqdn:
@@ -100,6 +99,7 @@ def main():
         print "If this message is still here in 30 minutes - please ask the user if he understands why the node is not in DNS."
         print "Typically is means either the name is wrong or the node was deleted at some point."
         sys.exit(0)
+    shortname = shortify(host)
 
     # Check status in PuppetDB and CDB
     try:
