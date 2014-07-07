@@ -25,7 +25,7 @@ showkeys
 Show all keys for the given host or hostgroup
 .SH COMMAND OVERVIEW
 .SS tbag set
-usage: tbag set [\-h] [\-\-host HOSTNAME | \fB\-\-hg\fR HOSTGROUP] [\-\-file FILENAME]
+usage: tbag set [\-h] [\-\-host HOSTNAME | \fB\-\-hg\fR HOSTGROUP] [\-\-file FILENAME] [\-\-binary]
 .IP
 KEY
 .TP
@@ -47,6 +47,9 @@ the hostgroup to add to
 .TP
 \fB\-\-file\fR FILENAME
 read secret blob from file
+.TP
+\fB\-\-binary\fR
+the secret should be treated as binary and b64 encoded (note will try to detect for you)
 .SS tbag delete
 usage: tbag delete [\-h] [\-\-host HOSTNAME | \fB\-\-hg\fR HOSTGROUP] KEY
 .TP
