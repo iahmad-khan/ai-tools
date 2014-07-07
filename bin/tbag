@@ -57,7 +57,7 @@ def set_main(pargs):
         except IOError, e:
             logger.fatal("Could not open file '%s': '%s'" % (pargs.file, e))
             sys.exit(2)
-        pargs.value = fh.read()
+        value = fh.read()
     else:
         value = getpass.getpass("Enter Secret: ")
 
