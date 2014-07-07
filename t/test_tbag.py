@@ -86,7 +86,7 @@ class TestTrustedBag(unittest.TestCase):
     def test_09_tbag_host_tree(self):
         tbag = TrustedBagClient()
         hg = "punch/puppet/master/panic"
-        host = "lxfssm4301.cern.ch"
+        host = "lxbsp2702.cern.ch"
         key = "treesecret"
         hostvalue = "host_treesecretstring"
         upper_hg = "punch"

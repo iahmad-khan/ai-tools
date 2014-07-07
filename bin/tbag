@@ -20,6 +20,7 @@ from aitools.completer import ForemanCompleter
 from aitools.common import fqdnify
 from aitools.common import configure_logging
 import base64
+import getpass
 
 logger = logging.getLogger(__name__)
 
@@ -46,15 +47,10 @@ def set_main(pargs):
 
     (entity, scope) = extract_entity(pargs)
 
-    if not re.match("^\w+$", pargs.key):
-        logger.fatal("Invalid secret key. Must match normal word characters ('^\w+$\)")
+    if not re.match("^[\w\-\.]+$", pargs.key):
+        logger.fatal("Invalid secret key. Must match normal word characters ('^[\w\.\-]+$\)")
         sys.exit(2)
-    if pargs.value and pargs.file:
-        logger.fatal("Both --file and value defined for secret - choose one or the other")
-        sys.exit(2)
-    if not pargs.value and not pargs.file:
-        logger.fatal("Please either choose --file with a secret, or add a string value")
-        sys.exit(2)
+    value = None
     if pargs.file:
         try:
             fh = open(pargs.file)
@@ -62,21 +58,22 @@ def set_main(pargs):
             logger.fatal("Could not open file '%s': '%s'" % (pargs.file, e))
             sys.exit(2)
         pargs.value = fh.read()
+    else:
+        value = getpass.getpass("Enter Secret: ")
 
-    if not pargs.binary:
+    if pargs.binary:
+        value = base64.b16encode(value)
+    else:
         try:
-            _ = json.dumps(pargs.value)
+            _ = json.dumps(value)
         except UnicodeDecodeError:
             logger.info("supplied secret doesn't encode, maybe it's binary?\n" +
                         "encoding as base64")
             pargs.binary = True
 
-    if pargs.binary:
-        pargs.value = base64.b64encode(pargs.value)
-
     try:
         tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
-        tbag.add_key(entity, scope, pargs.key, pargs.value, b64_value=pargs.binary)
+        tbag.add_key(entity, scope, pargs.key, value, b64_value=pargs.binary)
         logging.info("Key '%s' successfully added to %s '%s'" % (pargs.key, scope, entity))
     except AiToolsTrustedBagError as e:
         logging.error(e)
@@ -205,8 +202,6 @@ def main():
     set_parser.add_argument('--file', metavar="FILENAME", help="read secret blob from file")
     set_parser.add_argument('--binary', action="store_true", default=False, help="force secret (presumably file) to be treated as binary")
     set_parser.add_argument("key", metavar="KEY", help="Name of the key to set")
-    set_parser.add_argument("value", metavar="VALUE", nargs='?', help="Value to set")
-    # TODO: add 'file' opt for accepting data from a file
     set_parser.set_defaults(func=set_main)
 
 
