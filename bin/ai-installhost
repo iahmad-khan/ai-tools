@@ -219,7 +219,6 @@ def process_fqdn(fqdn):
         return format_result(fqdn, 20,
             "Couldn't get ENC entry (%s)" % error)
 
-
     if not args.roger_disable:
         roger_client = RogerClient(dryrun=args.dryrun)
         try:
