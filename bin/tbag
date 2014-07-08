@@ -29,7 +29,12 @@ def extract_entity(pargs):
     # mutual exclusion already handled by argparse
     if pargs.host:
         host = pargs.host
-        entity = fqdnify(host)
+        fqdn = fqdnify(host)
+        if fqdn:
+            entity = fqdn
+        else:
+            entity = host
+            logger.warning("Could not resolve '%s', attempting to continue" % host)
         scope = 'host'
     elif pargs.hostgroup:
         entity = pargs.hostgroup
