@@ -224,7 +224,8 @@ def process_fqdn(fqdn):
         try:
             # note default for alarms is false, but if already exists, won't touch
             # probably what we want...
-            roger_client.update_or_create_state(fqdn, appstate=args.roger_appstate)
+            roger_client.update_or_create_state(fqdn, appstate=args.roger_appstate,
+                message="Installation triggered by ai-installhost")
         except AiToolsRogerNotAllowedError, error:
             # new machines should be allowed, so this means you're trying to update
             # something you shouldn't be updating
