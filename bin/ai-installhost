@@ -191,7 +191,7 @@ def process_fqdn(fqdn):
             "Host is unmanaged, and therefore uninstallable")
     if not 'ip' in host:
         return format_result(fqdn, 13,
-            "The Host does not have an IP address")
+            "The host does not have an IP address")
 
     try:
         ks = foreman.getks(host['ip'])
