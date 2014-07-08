@@ -3,9 +3,9 @@
 from distutils.core import setup
 
 setup(name='ai-tools',
-      version='7.6',
+      version='7.7',
       description='Tools for Agile Infrastructure project',
-      author='Nacho Barrientos',
+      author='AI Config Team',
       author_email='ai-config-team@cern.ch',
       url='http://www.cern.ch/ai',
       package_dir= {'': 'src'},

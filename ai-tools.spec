@@ -3,8 +3,8 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 7.6
-Release: 3%{?dist}
+Version: 7.7
+Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -75,6 +75,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Jul 08 2014 Ben Jones <ben.dylan.jones@cern.ch> 7.7-1
+- tbag hides secrets on command line
+- tbag allows dash and dot in secret key name
+- tbag fixes behaviour when host lookup fails
+
 * Wed Jul 02 2014 Gavin McCance <gavin.mccance@cern.ch> - 7.6-3
 - ...and actually package the new qai tools in the RPM
 
