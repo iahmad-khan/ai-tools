@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 7.7
+Version: 7.8
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -75,6 +75,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Jul 09 2014 Ben Jones <ben.dylan.jones@cern.ch> 7.8-1
+- echo secret to cmdline (still hides from ps)
+
 * Tue Jul 08 2014 Ben Jones <ben.dylan.jones@cern.ch> 7.7-1
 - tbag hides secrets on command line
 - tbag allows dash and dot in secret key name
