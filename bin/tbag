@@ -73,7 +73,7 @@ def set_main(pargs):
         except UnicodeDecodeError:
             logger.info("supplied secret doesn't encode, maybe it's binary?\n" +
                         "encoding as base64")
-            pargs.binary = True
+            value = base64.b16encode(value)
 
     try:
         tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
