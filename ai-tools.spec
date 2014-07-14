@@ -14,6 +14,7 @@ Vendor: CERN
 License: GPL+
 URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
+BuildRequires: python-devel
 Requires: aims2-client, certmgr-client, python-novaclient, python-krbV, python-urllib2_kerberos
 Requires: perl-YAML-Syck, python-requests, python-requests-kerberos, python-argparse
 Requires: python-argcomplete, python-humanize, teigi-client
