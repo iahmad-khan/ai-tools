@@ -7,6 +7,7 @@ import novaclient.exceptions
 import requests
 from novaclient.v1_1 import client
 from aitools.config import NovaConfig
+from aitools.common import is_valid_UUID
 
 from aitools.errors import AiToolsNovaError
 
@@ -120,9 +121,11 @@ class NovaClient():
     def __vmname_from_fqdn(self, fqdn):
         return re.sub("\.cern\.ch$", "", fqdn)
 
-    def __resolve_id(self, collection, name):
-        filtered = filter(lambda x: x.id == name or x.name == name, collection)
+    def __resolve_id(self, collection, resolvable):
+        if is_valid_UUID(resolvable):
+            return resolvable
+        filtered = filter(lambda x: x.name == resolvable, collection)
         if len(filtered) == 0:
-            raise AiToolsNovaError("'%s' not found" % name)
+            raise AiToolsNovaError("'%s' not found" % resolvable)
         else:
             return filtered[0].id

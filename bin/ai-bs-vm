@@ -22,7 +22,6 @@ import logging
 import argparse
 import argcomplete
 import re
-from uuid import UUID
 from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig, RogerConfig
 
 from aitools.foreman import ForemanClient
@@ -38,6 +37,7 @@ from aitools.common import generate_random_fqdn
 from aitools.common import generate_userdata
 from aitools.common import validate_fqdn
 from aitools.common import append_domain
+from aitools.common import is_valid_UUID
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
@@ -195,9 +195,7 @@ def parse_cmdline_args():
         parser.error("More than one bootable element provided. %s" % options_to_boot_from)
 
     if args.nova_boot_from_existing_volume:
-        try:
-            UUID(args.nova_boot_from_existing_volume, version=4)
-        except ValueError:
+        if not is_valid_UUID(args.nova_boot_from_existing_volume):
             parser.error("--nova-boot-from-existing-volume must be a valid UUID4")
 
     if args.nova_boot_from_new_volume:
@@ -335,11 +333,8 @@ def main():
                 meta['landb-mainuser'] = args.landb_mainuser
 
             image = args.nova_image
-            if image:
-                try:
-                    UUID(image, version=4)
-                except ValueError:
-                    image = nova.find_image_by_name(name=image)
+            if image and not is_valid_UUID(image):
+                image = nova.find_image_by_name(name=image)
 
             volumes = _manage_volumes(cinder=cinder,
                                   volume_id=args.nova_boot_from_existing_volume,
