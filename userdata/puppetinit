@@ -201,6 +201,7 @@ if [ $$OS_MAJOR_VERSION -ge 6 ]
     [[ $NO_REBOOT -eq 1 ]] || (echo "The VM will now reboot" && /sbin/reboot)
     [[ $NO_REBOOT -eq 1 ]] && /sbin/service puppet start
     cp /var/log/boot.log /var/log/firstboot.log
+    chmod 600 /var/log/firstboot.log
     date
 else
     /sbin/service puppet start
