@@ -10,6 +10,7 @@ import time
 from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from uuid import UUID
 
 import krbV
 from aitools.params import FQDN_VALIDATION_RE
@@ -144,3 +145,10 @@ def extract_fact(name, facts, fqdn):
     if fqdn in facts and name in facts[fqdn]:
         return facts[fqdn][name]
     return None
+
+def is_valid_UUID(value):
+    try:
+        UUID(value, version=4)
+        return True
+    except ValueError:
+        return False
