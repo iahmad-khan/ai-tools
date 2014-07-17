@@ -152,3 +152,35 @@ def is_valid_UUID(value):
         return True
     except ValueError:
         return False
+
+def generator_device_names():
+    """
+    Returns a generator of volume device names.
+
+    :return: a different volume device name each time,
+    starting with 'vdb' and following in alphabetical order
+    e.g. 'vdb', 'vdc', 'vdd', etc. When it reaches 'vdz' it
+    continues with 'vdaa'
+    """
+    # Starts with 'vdb' as 'vda' is used for booting
+    value ='b'
+    while True:
+        yield 'vd' + value
+
+        # All letters are 'z'
+        if value == 'z' * len(value):
+            value = 'a' * (len(value) + 1)
+        # At least ends with a 'z' but contains some other
+        # letters as well
+        elif re.search(r'z+$', value):
+            l_value = list(value)
+            for pos, char in reversed(list(enumerate(l_value))):
+                if char == 'z':
+                    l_value[pos] = 'a'
+                else:
+                    l_value[pos] = chr(ord(char) + 1)
+                    value = ''.join(l_value)
+                    break
+        # General case
+        else:
+            value = value[:-1] + chr(ord(value[-1]) + 1)

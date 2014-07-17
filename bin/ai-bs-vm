@@ -38,6 +38,7 @@ from aitools.common import generate_userdata
 from aitools.common import validate_fqdn
 from aitools.common import append_domain
 from aitools.common import is_valid_UUID
+from aitools.common import generator_device_names
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
@@ -224,6 +225,7 @@ def parse_cmdline_args():
             parser.error("The volume used to boot from cannot be attached at the same time")
 
     devices, volume_ids = zip(*[volume.split('=') for volume in args.nova_attach_existing_volume])
+    devices = [device for device in devices if device != 'auto']
     if len(devices) != len(set(devices)):
         parser.error("It is not possible to attach more than one volume to the same device")
     if len(volume_ids) != len(set(volume_ids)):
@@ -270,17 +272,29 @@ def print_summary(args, fqdn):
 
 def _manage_volumes(cinder, volume_id=None, image=None, volume_size=None, volumes_to_attach=None):
     volumes = {}
-
     # Attaching volumes
-    for volume_to_attach in volumes_to_attach:
-        device, volume_id = volume_to_attach.split('=')
-        volume = cinder.get(volume_id)
-        if volume.status == 'available':
-            volumes[device] = "%s:::0" % volume.id
-        else:
-            raise AiToolsCinderError("Volume '%s' can't be attached. Volume must be "
+    if volumes_to_attach:
+        # Move 'auto' volumes to the end of the list
+        for vol in list(volumes_to_attach):
+            if vol.startswith('auto='):
+                volumes_to_attach.remove(vol)
+                volumes_to_attach.append(vol)
+
+        device_names = generator_device_names()
+        for device, vol in (volume.split('=') for volume in volumes_to_attach):
+            volume = cinder.get(vol)
+            if volume.status == 'available':
+                if device == 'auto':
+                    device = device_names.next()
+                    while device in volumes:
+                        device = device_names.next()
+                volumes[device] = "%s:::0" % volume.id
+                logging.info("Attaching volume '%s' in device: '%s'" % (volume.id, device))
+            else:
+                raise AiToolsCinderError("Volume '%s' can't be attached. Volume must be "
                 "'available' but has status '%s'" % (volume.id, volume.status))
 
+    # Booting from volume
     if volume_size and image:
         # Create volume if requested
         volume = cinder.create(volume_size, imageRef=image)

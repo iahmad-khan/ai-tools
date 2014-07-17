@@ -1,7 +1,9 @@
 __author__ = 'Alberto Rodriguez Peon'
 
 import unittest
+import re
 from aitools.common import is_valid_UUID
+from aitools.common import generator_device_names
 
 class TestCommon(unittest.TestCase):
 
@@ -13,3 +15,21 @@ class TestCommon(unittest.TestCase):
 
 	def test_is_valid_UUID_true(self):
 		self.assertTrue(is_valid_UUID(value='94afe123-b1d4-4198-87fe-920d220d0f9a'))
+
+	def test_generator_device_names_first_5(self):
+		gen = generator_device_names()
+		self.assertTrue(gen.next() == 'vdb')
+		self.assertTrue(gen.next() == 'vdc')
+		self.assertTrue(gen.next() == 'vdd')
+		self.assertTrue(gen.next() == 'vde')
+		self.assertTrue(gen.next() == 'vdf')
+
+	def test_generator_device_names_no_vda_and_duplicates(self):
+		gen = generator_device_names()
+		names = set()
+		for i in range(5000):
+			device = gen.next()
+			self.assertTrue(device != 'vda')
+			self.assertTrue(device not in names)
+			self.assertTrue(re.match(r'^vd[a-z]+$', device))
+			names.add(device)
