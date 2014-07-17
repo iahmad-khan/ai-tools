@@ -148,6 +148,9 @@ def parse_cmdline_args():
     parser.add_argument('--nova-boot-from-new-volume', type=str,
         help="Size (in GB or TB) of the cinder volume to be created (e.g. '100GB', '1TB' )",
         default=None)
+    parser.add_argument('--nova-attach-existing-volume', type=str,
+        help="Cinder Volume UUID to attach to the new server",
+        action='append', default=[])
     parser.add_argument('--nova-parameter', type=str,
         help="Openstack metaparameter", action='append', default=[])
     ##
@@ -204,6 +207,28 @@ def parse_cmdline_args():
         elif not re.match(r'^[1-9][0-9]*(GB|TB)$', args.nova_boot_from_new_volume):
             parser.error("--nova-boot-from-new-volume must be a valid size in "
                 "GB or TB (e.g. '100GB', '1TB' )")
+
+    for volume in args.nova_attach_existing_volume:
+        if not re.match(r'\w+=\w+', volume):
+            parser.error("Bad format for volume to attach. The format should be '<device>=<UUID>' "
+                "i.e. 'vdc=94afe123-b1d4-4198-87fe-920d220d0f9a'")
+
+        device, volume_id = volume.split('=')
+        if not is_valid_UUID(volume_id):
+            parser.error("--nova-attach-existing-volume must be a valid UUID4")
+        elif device == 'vda':
+            parser.error("It is not possible to attach a volume in device 'vda' as this device is used "
+                "for booting. If you want to boot using this volume, please try again with option "
+                "--nova-boot-from-existing-volume %s" % volume_id)
+        elif volume_id == args.nova_boot_from_existing_volume:
+            parser.error("The volume used to boot from cannot be attached at the same time")
+
+    devices, volume_ids = zip(*[volume.split('=') for volume in args.nova_attach_existing_volume])
+    if len(devices) != len(set(devices)):
+        parser.error("It is not possible to attach more than one volume to the same device")
+    if len(volume_ids) != len(set(volume_ids)):
+        parser.error("It is not possible to attach the same volume more than once")
+
     for parameter in args.foreman_parameter + args.nova_parameter:
         if not re.match(r'\S+?=\S+?', parameter):
             parser.error("Invalid Foreman/Nova parameter '%s' (syntax: key=value)" % parameter)
@@ -221,6 +246,8 @@ def print_summary(args, fqdn):
     elif args.nova_boot_from_new_volume:
         logging.info("Booting from a new volume created using image: %s" % args.nova_image)
     logging.info("VM tenant: %s" % os.environ["OS_TENANT_NAME"])
+    for volume in args.nova_attach_existing_volume:
+        logging.info("Attaching volume: %s" % volume)
     if args.nova_parameter:
         logging.info("VM metaparameters: %s" % ', '.join(args.nova_parameter))
     if args.nova_sshkey:
@@ -241,8 +268,19 @@ def print_summary(args, fqdn):
     logging.info("Roger server: %s" % roger_config.roger_hostname)
     logging.info("Roger port: %s" % str(roger_config.roger_port))
 
-def _manage_volumes(cinder, volume_id=None, image=None, volume_size=None):
+def _manage_volumes(cinder, volume_id=None, image=None, volume_size=None, volumes_to_attach=None):
     volumes = {}
+
+    # Attaching volumes
+    for volume_to_attach in volumes_to_attach:
+        device, volume_id = volume_to_attach.split('=')
+        volume = cinder.get(volume_id)
+        if volume.status == 'available':
+            volumes[device] = "%s:::0" % volume.id
+        else:
+            raise AiToolsCinderError("Volume '%s' can't be attached. Volume must be "
+                "'available' but has status '%s'" % (volume.id, volume.status))
+
     if volume_size and image:
         # Create volume if requested
         volume = cinder.create(volume_size, imageRef=image)
@@ -339,7 +377,8 @@ def main():
             volumes = _manage_volumes(cinder=cinder,
                                   volume_id=args.nova_boot_from_existing_volume,
                                   image=image,
-                                  volume_size=args.nova_boot_from_new_volume)
+                                  volume_size=args.nova_boot_from_new_volume,
+                                  volumes_to_attach=args.nova_attach_existing_volume)
 
             if args.nova_boot_from_new_volume or args.nova_boot_from_existing_volume:
                 # When booting from a volume, an image should not
