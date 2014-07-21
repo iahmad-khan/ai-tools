@@ -309,9 +309,9 @@ def main():
     if not args.dryrun and len(successful_fqdns) > 0:
         if args.aims_attempts == 0:
             logging.warn("AIMS sync status was not checked, AIMS may not be ready")
-        logging.info("AIMS ready for %d/%d machines:" %
+        logging.info("AIMS ready for %d/%d machine(s)" %
             (len(successful_fqdns), len(fqdns)))
-        logging.info("Reboot the hosts to start the installation:")
+        logging.info("Please reboot the host(s) to start the installation:")
         logging.info("ai-remote-power-control cycle %s" %
             " ".join(successful_fqdns))
 
