@@ -22,6 +22,7 @@ import argparse
 import argcomplete
 import tempfile
 import multiprocessing
+import signal
 from prettytable import PrettyTable
 
 from aitools.config import ForemanConfig, CertmgrConfig, EncConfig, RogerConfig
@@ -299,10 +300,18 @@ def main():
     fqdns = set(map(append_domain, args.hostname))
     print_input_table(fqdns)
 
-    pool = multiprocessing.Pool(processes=args.threads)
-    rawsummary = pool.map(process_fqdn, fqdns)
-    pool.close()
-    pool.join()
+    pool = multiprocessing.Pool(processes=args.threads,
+        initializer=lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+
+    try:
+        rawsummary = pool.map(process_fqdn, fqdns)
+        pool.close()
+        pool.join()
+    except KeyboardInterrupt:
+        logging.error("Aborted")
+        pool.terminate()
+        pool.join()
+        return 2
 
     successful_fqdns = format_summary(rawsummary)
 
