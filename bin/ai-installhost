@@ -45,6 +45,7 @@ from aitools.errors import AiToolsAimsError, AiToolsEncError
 from aitools.completer import ForemanCompleter
 
 DEFAULT_AIMS_ATTEMPTS = 12
+GIGETH_PARAMETER_NAME = 'use_legacy_gigeth_pxeboot'
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -219,6 +220,10 @@ def process_fqdn(fqdn):
         delete_ks_from_disk(ksfilepath)
         return format_result(fqdn, 20,
             "Couldn't get ENC entry (%s)" % error)
+
+    if GIGETH_PARAMETER_NAME in encdata['parameters']:
+        return format_result(fqdn, 14,
+            "This host boots only from -gigeth, please use ai-foreman-cli")
 
     if not args.roger_disable:
         roger_client = RogerClient(dryrun=args.dryrun)
