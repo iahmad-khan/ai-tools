@@ -310,6 +310,8 @@ def main():
         logging.info("ai-remote-power-control cycle %s" %
             " ".join(successful_fqdns))
 
+    if len(successful_fqdns) != len(fqdns):
+        return 1
     return 0
 
 if __name__ == '__main__':
