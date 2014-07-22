@@ -34,7 +34,7 @@ from aitools.aims import AimsClient
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
-from aitools.common import validate_fqdn, append_domain
+from aitools.common import validate_fqdn, fqdnify
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
@@ -116,13 +116,10 @@ def parse_cmdline_args():
     args = parser.parse_args()
     return args
 
-def print_input_table(fqdns):
+def print_input_table():
     certmgrconf = CertmgrConfig()
     roger_config = RogerConfig()
     enc_config = EncConfig()
-    logging.info("Installation requested for:")
-    for fqdn in fqdns:
-        logging.info(" * %s" % fqdn)
     logging.info("Certmgr server: %s" % certmgrconf.certmgr_hostname)
     logging.info("Certmgr port: %s" % certmgrconf.certmgr_port)
     logging.info("Roger server: %s" % roger_config.roger_hostname)
@@ -160,24 +157,25 @@ def format_result(fqdn, code, msg):
     return {'fqdn': fqdn, 'code': code, 'msg': msg}
 
 def format_summary(rawdata):
-    table = PrettyTable(['FQDN', 'BS', 'Details'])
+    table = PrettyTable(['FQDN/Hostname', 'BS', 'Details'])
     table.align = 'l'
     table.align['BS'] = 'c'
     table.sortby = 'BS'
-    successful_fqdns = []
+    successful_operations = []
     for operation in rawdata:
         if operation['code'] == 0:
-            successful_fqdns.append(operation['fqdn'])
+            successful_operations.append(operation['fqdn'])
         table.add_row([operation['fqdn'],
             'OK' if operation['code'] == 0 else 'KO',
             operation['msg']])
     logging.info(table)
-    return successful_fqdns
+    return successful_operations
 
-def process_fqdn(fqdn):
-    if not validate_fqdn(fqdn):
-        return format_result(fqdn, 5,
-            "FQDN '%s' is not valid. See RFC 1123." % fqdn)
+def process_host(hostname):
+    fqdn = fqdnify(hostname)
+
+    if fqdn is False:
+        return format_result(hostname, 5, "No DNS entry")
 
     foreman = ForemanClient(dryrun=args.dryrun)
     try:
@@ -297,14 +295,13 @@ def main():
 
     args.hostname = reduce(list.__add__, map(lambda x: x.split(','), \
         args.hostname), [])
-    fqdns = set(map(append_domain, args.hostname))
-    print_input_table(fqdns)
+    print_input_table()
 
     pool = multiprocessing.Pool(processes=args.threads,
         initializer=lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
 
     try:
-        rawsummary = pool.map(process_fqdn, fqdns)
+        rawsummary = pool.map(process_host, args.hostname)
         pool.close()
         pool.join()
     except KeyboardInterrupt:
@@ -313,18 +310,18 @@ def main():
         pool.join()
         return 2
 
-    successful_fqdns = format_summary(rawsummary)
+    successful_ops = format_summary(rawsummary)
 
-    if not args.dryrun and len(successful_fqdns) > 0:
+    if not args.dryrun and len(successful_ops) > 0:
         if args.aims_attempts == 0:
             logging.warn("AIMS sync status was not checked, AIMS may not be ready")
         logging.info("AIMS ready for %d/%d machine(s)" %
-            (len(successful_fqdns), len(fqdns)))
+            (len(successful_ops), len(args.hostname)))
         logging.info("Please reboot the host(s) to start the installation:")
         logging.info("ai-remote-power-control cycle %s" %
-            " ".join(successful_fqdns))
+            " ".join(successful_ops))
 
-    if len(successful_fqdns) != len(fqdns):
+    if len(successful_ops) != len(args.hostname):
         return 1
     return 0
 
