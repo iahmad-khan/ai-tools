@@ -254,7 +254,7 @@ def process_host(hostname):
     aims = AimsClient(dryrun=args.dryrun)
     try:
         pxetarget = aims.addhost(fqdn=fqdn,
-            os=host['operatingsystem']['operatingsystem'],
+            operatingsystem=host['operatingsystem']['operatingsystem'],
             architecture=host['architecture']['architecture'],
             enc=encdata['parameters'],
             ksfilepath=ksfilepath,

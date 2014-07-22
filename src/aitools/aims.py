@@ -23,8 +23,8 @@ class AimsClient(object):
     def __init__(self, dryrun=False):
         self.dryrun = dryrun
 
-    def addhost(self, fqdn, os, architecture, enc, ksfilepath,
-            user_kopts=None):
+    def addhost(self, fqdn, operatingsystem, architecture,
+            enc, ksfilepath, user_kopts=None):
         kopts = []
         logging.info("Uploading KS for host '%s' to AIMS..." % fqdn)
 
@@ -38,7 +38,7 @@ class AimsClient(object):
         kopts.extend(AIMS_DEFAULT_KOPTS)
         logging.debug("Final kernel options: %s" % " ".join(kopts))
 
-        target = self._translate_foreman_os_to_target(os, architecture)
+        target = self._translate_foreman_os_to_target(operatingsystem, architecture)
 
         args = ["addhost", "--pxe",
             "--hostname", shortify(fqdn),
@@ -99,33 +99,33 @@ class AimsClient(object):
                 logging.debug("Sleeping for %d seconds..." % waittime)
                 time.sleep(waittime)
 
-    def _translate_foreman_os_to_target(self, os, architecture):
-        if 'name' not in os:
+    def _translate_foreman_os_to_target(self, operatingsystem, architecture):
+        if 'name' not in operatingsystem:
             raise AiToolsAimsError("Unable to find OS name")
         if 'name' not in architecture:
             raise AiToolsAimsError("Unable to find architecture name")
 
         try:
-            major = int(os['major'])
-            minor = int(os['minor'])
-        except (ValueError, KeyError), error:
+            major = int(operatingsystem['major'])
+            minor = int(operatingsystem['minor'])
+        except (ValueError, KeyError):
             raise AiToolsAimsError("OS major/minor not defined or bogus")
 
-        if os['name'] == "SLC":
+        if operatingsystem['name'] == "SLC":
             target_os = "SLC%s%s" % (major, minor)
-        elif os['name'] == "RedHat":
+        elif operatingsystem['name'] == "RedHat":
             if major == 5:
                 target_os = "RHES_5_U%s" % minor
             else:
                 target_os = "RHEL%s_U%s" % (major, minor)
-        elif os['name'] == "Fedora":
+        elif operatingsystem['name'] == "Fedora":
             target_os = "FEDORA%s" % major
         else:
             raise AiToolsAimsError("There's no PXE target for '%s'"
                 % os['name'])
 
         pxetarget = "%s_%s" % (target_os, architecture['name'].upper())
-        logging.debug("%s translated into %s" % (os, pxetarget))
+        logging.debug("%s translated into %s" % (operatingsystem, pxetarget))
         return pxetarget
 
     def _exec(self, args):
