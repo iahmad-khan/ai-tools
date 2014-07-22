@@ -38,7 +38,8 @@ class AimsClient(object):
         kopts.extend(AIMS_DEFAULT_KOPTS)
         logging.debug("Final kernel options: %s" % " ".join(kopts))
 
-        target = self._translate_foreman_os_to_target(operatingsystem, architecture)
+        target = self._translate_foreman_os_to_target(operatingsystem,
+            architecture)
 
         args = ["addhost", "--pxe",
             "--hostname", shortify(fqdn),
