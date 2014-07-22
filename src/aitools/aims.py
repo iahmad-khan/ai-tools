@@ -16,8 +16,8 @@ from aitools.common import shortify
 from aitools.errors import AiToolsAimsError
 
 A2C_BIN_PATH = "/usr/bin/aims2client"
-AIMS_DEFAULT_KOPTS = ['text','network','ks','ksdevice=bootif',
-    'latefcload','nodmraid','console=tty0']
+AIMS_DEFAULT_KOPTS = ['text', 'network', 'ks', 'ksdevice=bootif',
+    'latefcload', 'nodmraid', 'console=tty0']
 
 class AimsClient(object):
     def __init__(self, dryrun=False):
@@ -78,7 +78,7 @@ class AimsClient(object):
             logging.info("Nothing to wait for because dryrun is enabled")
             return True
 
-        for attempt in range(0,attempts):
+        for attempt in range(0, attempts):
             hoststatus = self.showhost(fqdn)
             statuses = []
             for line in hoststatus.splitlines():
