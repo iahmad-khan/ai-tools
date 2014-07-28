@@ -28,12 +28,14 @@ class TestCommon(unittest.TestCase):
 	def test_generator_device_names_no_vda_and_duplicates(self):
 		gen = generator_device_names()
 		names = set()
-		for i in range(5000):
+		for i in range(24):
 			device = gen.next()
 			self.assertTrue(device != 'vda')
 			self.assertTrue(device not in names)
-			self.assertTrue(re.match(r'^vd[a-z]+$', device))
+			self.assertTrue(re.match(r'^vd[a-z]$', device))
 			names.add(device)
+		self.assertTrue(gen.next() == 'vdz')
+		self.assertRaises(StopIteration, gen.next)
 
 	def test_is_valid_size_format_empty(self):
 		self.assertFalse(is_valid_size_format(''))
