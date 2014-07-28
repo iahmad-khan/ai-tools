@@ -95,14 +95,16 @@ class CinderClient():
         except cinderclient.exceptions.ConnectionError, error:
             raise AiToolsCinderError(error)
 
-    def is_ready_to_boot(self, volume_id, wait_until_ready=False, timeout=DEFAULT_TIMEOUT,
-        wait_time=60):
+    def is_ready(self, volume_id, needs_to_be_bootable=False,
+        wait_until_ready=False, timeout=DEFAULT_TIMEOUT, wait_time=60):
         """
-        Check if the volume is ready to boot i.e. its status is 'available' and
-        the bootable flag is 'True'. If it's ready, the volume is returned, if
-        not, 'None' instead.
+        Check if the volume is ready i.e. its status is 'available'.
+        If it's ready, the volume is returned, if not, an exception is
+        raised.
 
         :param volume_id: volume to be checked
+        :param needs_to_be_bootable: if True it will check that the volume's
+            bootable flag is True
         :param wait_until_ready: if True it will wait until the status is no
             longer 'creating' or 'downloading'. This is useful when the volume
             has been recently created and we are waiting to boot from it
@@ -125,10 +127,11 @@ class CinderClient():
                     time.sleep(wait_time)
                     logging.debug("Time elapsed: {0} seconds".format(time_elapsed))
                     volume = self.get(volume.id)
-            if volume.status == 'available' and volume.bootable == 'true':
-                return volume
+            if volume.status == 'available':
+                if not needs_to_be_bootable or volume.bootable == 'true':
+                    return volume
         raise AiToolsCinderError("Error booting from volume. Volume must be "
-            "'available' and bootable")
+            "'available'{0}".format(' and bootable' if needs_to_be_bootable else ''))
 
     def __init_client(self):
         try:
