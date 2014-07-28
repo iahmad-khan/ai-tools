@@ -98,6 +98,12 @@ it must be 'available'. This option can be specified several times but it is not
 possible to attach the same volume more than once nor attach several volumes to
 the same device.
 .TP
+.B --nova-attach-new-volume
+Create a volume to be attached during boot time. The format is '<device>=<size>',
+'size' in the format "XGB" or "XTB" where X is an integer larger than 0. The volume
+will be attached in '/dev/<device>'. This option can be specified several times but
+it is not possible to attach several volumes to the same device.
+.TP
 .B --nova-boot-from-new-volume
 Size in the format "XGB" or "XTB" where X is an integer larger than 0.
 In order to create a bootable volume "--nova-image" must be specified.
@@ -255,6 +261,10 @@ ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-boot-from-new-volu
 .TP
 .B Create a VM with an existing volume attached to /dev/vdb:
 ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-existing-volume vdb=8f7949d0-325d-4968-83b4-f12eb8b4619a higgsbox.cern.ch
+
+.TP
+.B Create a VM with a new volume of size 50GB attached to /dev/vdb:
+ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-new-volume vdb=50GB higgsbox.cern.ch
 
 .SH REPORTING BUGS
 If you experience any problem with the Foreman registration or the initial
