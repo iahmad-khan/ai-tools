@@ -4,6 +4,7 @@ import unittest
 import re
 from aitools.common import is_valid_UUID
 from aitools.common import generator_device_names
+from aitools.common import is_valid_size_format
 
 class TestCommon(unittest.TestCase):
 
@@ -33,3 +34,21 @@ class TestCommon(unittest.TestCase):
 			self.assertTrue(device not in names)
 			self.assertTrue(re.match(r'^vd[a-z]+$', device))
 			names.add(device)
+
+	def test_is_valid_size_format_empty(self):
+		self.assertFalse(is_valid_size_format(''))
+
+	def test_is_valid_size_format_number(self):
+		self.assertFalse(is_valid_size_format('10'))
+
+	def test_is_valid_size_format_0GB(self):
+		self.assertFalse(is_valid_size_format('0GB'))
+
+	def test_is_valid_size_format_0TB(self):
+		self.assertFalse(is_valid_size_format('0TB'))
+
+	def test_is_valid_size_format_GB(self):
+		self.assertTrue(is_valid_size_format('10GB'))
+
+	def test_is_valid_size_format_TB(self):
+		self.assertTrue(is_valid_size_format('10TB'))
