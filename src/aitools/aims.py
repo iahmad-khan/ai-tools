@@ -1,4 +1,4 @@
-# Nacho Barrientos <nacho.barrientos@gmail.com>
+# Nacho Barrientos <nacho.barrientos@cern.ch>
 #
 # Disclaimer: This is the ugliest code I've ever written.
 # AIMS does not have any Python API, and even worse,
