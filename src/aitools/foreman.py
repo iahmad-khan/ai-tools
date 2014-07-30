@@ -609,8 +609,7 @@ not found in Foreman" % ip_address)
             raise AiToolsForemanError(msg)
 
     def __do_api_request(self, method, url, data=None, prefix="api/"):
-        url="https://%s:%u/%s%s" % \
-            (self.host, self.port, prefix, url)
+        url = "https://%s:%u/%s%s" % (self.host, self.port, prefix, url)
         # Yes, Foreman is stupid
         headers = {'User-Agent': 'ai-tools',
             'Content-type': 'application/json',
