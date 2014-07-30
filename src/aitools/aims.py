@@ -132,7 +132,7 @@ class AimsClient(object):
     def _exec(self, args):
         args = [A2C_BIN_PATH] + args
         logging.debug("Executing %s" % args)
-        aims = Popen(args, stdout = PIPE, stderr=PIPE)
+        aims = Popen(args, stdout=PIPE, stderr=PIPE)
         (details, err)  = aims.communicate()
         returncode = aims.returncode
         if returncode != 0:
