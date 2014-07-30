@@ -92,13 +92,13 @@ class AimsClient(object):
                 logging.info("Sync status for '%s' is set to Y on all interfaces"
                     % fqdn)
                 return
-            elif attempt == attempts-1:
-                logging.error(hoststatus.strip())
-                raise AiToolsAimsError("Sync status is not Y after all the attempts")
             else:
                 logging.debug("Sync status is not Y for all interfaces")
                 logging.debug("Sleeping for %d seconds..." % waittime)
                 time.sleep(waittime)
+
+        logging.error(hoststatus.strip())
+        raise AiToolsAimsError("Sync status is not Y after all the attempts")
 
     def _translate_foreman_os_to_target(self, operatingsystem, architecture):
         if 'name' not in operatingsystem:
