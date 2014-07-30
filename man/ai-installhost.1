@@ -116,6 +116,16 @@ ai-installhost foo.cern.ch bar.cern.ch
 .B Same but keeping the autogenrated Kickstart files on disk
 ai-installhost -k foo.cern.ch bar.cern.ch
 
+.SH ROLLING BACK
+It is possible to undo the process of preparing a physical machine
+for installation using the 'aims2client' command.
+
+For instance, assuming that 'gijon01.cern.ch' was mistakenly processed
+by ai-installhost, deleting the node from AIMS should suffice
+to prevent it from PXE booting:
+
+aims2client delhost gijon01
+
 .SH KNOWN BUGS
 This tool does not support hosts that are unable to PXE boot
 from the main interface. For those cases, installations must
