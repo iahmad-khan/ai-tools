@@ -34,7 +34,7 @@ from aitools.aims import AimsClient
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
-from aitools.common import validate_fqdn, fqdnify
+from aitools.common import fqdnify
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
