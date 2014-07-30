@@ -225,13 +225,13 @@ class ForemanClient(HTTPClient):
         if code == requests.codes.ok:
             return body
         elif code == requests.codes.not_found:
-            raise AiToolsForemanNotFoundError("Kickstart for host with IP '%s'\
-not found in Foreman" % ip_address)
+            raise AiToolsForemanNotFoundError("Kickstart for host with IP '%s'"
+                " not found in Foreman" % ip_address)
         elif code == requests.codes.bad_request:
             # Not very accurate, but it's what Foreman spits out if no KS
             # can be resolved
-            raise AiToolsForemanNotFoundError("Kickstart for host with IP '%s'\
-not found in Foreman" % ip_address)
+            raise AiToolsForemanNotFoundError("Kickstart for host with IP '%s'"
+                " not found in Foreman" % ip_address)
 
     def getfacts(self, fqdn):
         """
