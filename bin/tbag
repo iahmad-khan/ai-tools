@@ -66,14 +66,14 @@ def set_main(pargs):
         value = raw_input("Enter Secret: ")
 
     if pargs.binary:
-        value = base64.b16encode(value)
+        value = base64.b64encode(value)
     else:
         try:
             _ = json.dumps(value)
         except UnicodeDecodeError:
             logger.info("supplied secret doesn't encode, maybe it's binary?\n" +
                         "encoding as base64")
-            value = base64.b16encode(value)
+            value = base64.b64encode(value)
             pargs.binary = True
 
     try:
