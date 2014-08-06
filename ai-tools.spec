@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.0
+Version: 8.1
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -76,6 +76,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Aug 07 2014 Ben Jones <ben.dylan.jones@cern.ch> 8.1-1
+- fixes for tbag binary encoding
+
 * Thu Jul 17 2014 Ben Jones <ben.dylan.jones@cern.ch> 8.0-1
 - support to boot from cinder volumes
 
