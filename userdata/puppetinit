@@ -39,6 +39,7 @@ touch $$LOCKFILE
 echo "Setting up Puppet for the initial run. Please wait..."
 
 OS_MAJOR_VERSION=`lsb_release -r | awk '{split($$2,a,"."); print a[1]}'`
+OS_DISTRIBUTOR_ID=`lsb_release -i | awk '{print $$3}'`
 
 FINALHOSTNAME=`curl http://169.254.169.254/1.0/meta-data/hostname -s -o -`
 echo "Setting hostname to $${FINALHOSTNAME}"
@@ -54,6 +55,38 @@ function set_repositories {
   test -f /etc/yum.repos.d/ai$$OS_MAJOR_VERSION.repo
 }
 execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
+
+function set_slc_for_rhel_repositories {
+  echo "Setting RHEL repository..."
+
+  # get sl-release RPM
+  baseurl=http://linuxsoft.cern.ch/cern/slc$${OS_MAJOR_VERSION}X/updates/x86_64/SRPMS/
+  slreleaserpm=`curl $${baseurl} | awk -F\" '/sl-release/ {print $$2}' | sort | tail -1`
+  rpm -ivh $${baseurl}/$${slreleaserpm} || return 1
+  cd /tmp
+  rm -rf slc-release-$${OS_MAJOR_VERSION}
+  tar xzvf /rpmbuild/SOURCES/slc-release-$${OS_MAJOR_VERSION}.tar.gz || return 1
+
+  # install needed repos
+  repos="slc$${OS_MAJOR_VERSION}-cernonly slc$${OS_MAJOR_VERSION}-os epel"
+  for repo in $${repos}
+  do
+    echo "Copying $${repo}"
+    cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${repo}.repo /etc/yum.repos.d/
+    test -f /etc/yum.repos.d/$${repo}.repo || return 1
+  done
+
+  # install needed GPG Keys
+  gpgkeys="RPM-GPG-KEY-cern RPM-GPG-KEY-EPEL-$${OS_MAJOR_VERSION}"
+  for gpgkey in $${gpgkeys}
+  do
+    echo "Copying $${gpgkey}"
+    cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${gpgkey} /etc/pki/rpm-gpg/
+    test -f /etc/pki/rpm-gpg/$${gpgkey} || return 1
+  done
+}
+[ "$${OS_DISTRIBUTOR_ID}" == "RedHatEnterpriseServer" ] && \
+  ( execute_shell_block set_slc_for_rhel_repositories 60 5 || unrecoverable_error "slc-rhel-repository" )
 
 DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
 
