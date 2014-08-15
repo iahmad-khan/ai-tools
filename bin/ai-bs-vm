@@ -32,7 +32,7 @@ from aitools.cinder import CinderClient
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
-from aitools.common import verify_openstack_environment
+from aitools.common import get_openstack_environment
 from aitools.common import generate_random_fqdn
 from aitools.common import generate_userdata
 from aitools.common import validate_fqdn
@@ -327,7 +327,8 @@ def main():
     configure_logging(args)
 
     try:
-        verify_openstack_environment()
+        openstackEnv = get_openstack_environment()
+        args.tenant_name = openstackEnv['tenant_name'] # for print_summary
     except AiToolsInitError, error:
         logging.error(error)
         return 3
@@ -381,16 +382,12 @@ def main():
 
     if not args.nova_disable:
         try:
-            nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
-                os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
-                os.environ.get('OS_CACERT', None), dryrun=args.dryrun)
-
-            cinder = CinderClient(os.environ["OS_USERNAME"], os.environ["OS_PASSWORD"],
-                os.environ["OS_TENANT_ID"], os.environ["OS_AUTH_URL"],
-                os.environ.get('OS_CACERT', None), dryrun=args.dryrun)
+            novaArgs = dict(openstackEnv)
+            novaArgs['dryrun'] = args.dryrun
+            nova = NovaClient(**novaArgs)
 
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
-            meta['tenant-name'] = os.environ["OS_TENANT_NAME"]
+            meta['tenant-name'] = openstackEnv['tenant_name']
             if args.landb_responsible:
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:

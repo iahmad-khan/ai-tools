@@ -7,6 +7,7 @@ import logging
 import hashlib
 import socket
 import time
+import getpass
 from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -31,19 +32,31 @@ def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
         logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-def verify_openstack_environment():
+def get_openstack_environment():
     """
-    Verify the user has the basic **OS_** environment variables set for Openstack.
-    Returns nothing but raises an exception if these are not defined. It does not
-    validate the correctness of these environment variables.
-
+    Verify the user has provided the needed environment for Openstack and returns
+    a dictionnary containing this environment with the following entries :
+       username, password, tenant_name, auth_url, cacert
+    The returned values are filled from the **OS_** environement variables when
+    present or asks the user. This function does not validate the correctness
+    of the returned values.
     :raise AiToolsInitError: User doesn't have the basic environments set.
     """
-    for variable in ("OS_USERNAME", "OS_PASSWORD", \
-           "OS_TENANT_NAME", "OS_AUTH_URL"):
+    entries = (("username", "OS_USERNAME", raw_input),
+               ("password", "OS_PASSWORD", getpass.getpass),
+               ("tenant_name", "OS_TENANT_NAME", raw_input),
+               ("auth_url", "OS_AUTH_URL", raw_input))
+    res = {}
+    for name, variable, method in entries:
         if variable not in os.environ:
-            raise AiToolsInitError("%s not set (openrc not (or partially) sourced?)" % variable)
-
+            res[name] = method("%s : " % name)
+        else:
+            res[name] = os.environ[variable]
+        if len(res[name]) == 0:
+            raise AiToolsInitError("%s not set" % variable)
+    res["cacert"] = os.environ.get('OS_CACERT', None)
+    return res
+        
 def verify_kerberos_environment():
     """
     Verify the user has a valid Kerberos token and associated environment.
