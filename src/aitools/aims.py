@@ -25,6 +25,13 @@ class AimsClient(object):
 
     def addhost(self, fqdn, operatingsystem, architecture,
             enc, ksfilepath, user_kopts=None):
+        """
+        Registers a host in AIMS for installation.
+
+        :param enc: Hash of host parameters coming from the ENC
+        :param ksfilepath: disk location of the KS file to be uploaded
+        :param user_kopts: Set of additional kernel options to be passed
+        """
         kopts = []
         logging.info("Uploading KS for host '%s' to AIMS..." % fqdn)
 
@@ -58,6 +65,11 @@ class AimsClient(object):
         return target
 
     def pxeon(self, fqdn, pxetarget):
+        """
+        Makes sure that the host has the PXE flag on in AIMS
+
+        :param pxetarget: Boot target for the concerning host (e.g. "SLC65")
+        """
         logging.info("Making sure PXE is ON for host '%s'..." % fqdn)
         args = ["pxeon", shortify(fqdn), pxetarget]
         if self.dryrun:
@@ -68,12 +80,18 @@ class AimsClient(object):
         logging.info(out.strip())
 
     def showhost(self, fqdn):
+        """ Gets what AIMS has to say about a given host. """
         logging.debug("Getting info for host '%s'..." % fqdn)
         args = ["showhost", shortify(fqdn), "--full"]
         out, returncode = self._exec(args)
         return out
 
     def wait_for_readiness(self, fqdn, attempts=12, waittime=10):
+        """
+        Waits a given number of attempts for the sync state to be
+        correct with a wait time in between.
+        """
+
         logging.info("Sync waiting loop for host '%s' started" % fqdn)
         if self.dryrun:
             logging.info("Nothing to wait for because dryrun is enabled")
@@ -101,6 +119,10 @@ class AimsClient(object):
         raise AiToolsAimsError("Sync status is not Y after all the attempts")
 
     def _translate_foreman_os_to_target(self, operatingsystem, architecture):
+        """
+        Translates OS information coming from foreman (OS name, major version
+        and minor version) into boot targets known to AIMS.
+        """
         if 'name' not in operatingsystem:
             raise AiToolsAimsError("Unable to find OS name")
         if 'name' not in architecture:
@@ -130,6 +152,7 @@ class AimsClient(object):
         return pxetarget
 
     def _exec(self, args):
+        """ This is the mega sophisticated interface to AIMS. """
         args = [A2C_BIN_PATH] + args
         logging.debug("Executing %s" % args)
         aims = Popen(args, stdout=PIPE, stderr=PIPE)
