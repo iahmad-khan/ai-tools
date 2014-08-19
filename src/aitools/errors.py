@@ -58,6 +58,9 @@ class AiToolsEncError(AiToolsHTTPClientError):
 class AiToolsGitError(AiToolsError):
     pass
 
+class AiToolsAimsError(AiToolsError):
+    pass
+
 class AiToolsTrustedBagError(AiToolsHTTPClientError):
     pass
 

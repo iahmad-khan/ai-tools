@@ -1,0 +1,139 @@
+.TH AI-INSTALLHOST "1" "July 2014" "ai-installhost" "User Commands"
+.SH NAME
+ai-installhost \- Command-line tool to prepare installations of physical
+machines
+
+.SH SYNOPSIS
+.B "ai-installhost"
+[OPTION]...
+\fIFQDN\fR [FQDN]...
+
+.SH DESCRIPTION
+ai-installhost is a command line utility to prepare physical machines
+for installation. The output is a summary table informing about which
+input hosts are ready to be rebooted.
+
+Several command line options can be completed automatically by pressing
+TAB when typing.
+
+.LP
+.I Prerequisites:
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+
+.SH OPTIONS
+The behaviour of the tool can be customized by the following
+parameters. 
+
+.LP
+.I Optional parameters:
+.TP
+.B --aims-kopts
+Blank separated list of kernel options to be passed to Anaconda (will be
+appended to the ones coming from HWDB).
+.TP
+.B -d, --dryrun
+Don't do the requests that alter data (Alarm state change, AIMS operations)
+.TP
+.B -h, --help
+Display usage and exit.
+.TP
+.B -k, --keepks
+Keeps all the generated Kickstart files on disk for further inspection
+afterwards.
+
+.LP
+.I Other optional parameters:
+.TP
+The following parameters are for advanced users and debugging.
+.TP
+.B --aims-attempts
+Number of times that the script will check is the boot status
+is correct before giving up.
+.TP
+.B --certmgr-hostname (AIBS_CASERVER_HOSTNAME)
+Hostname of the Cert Manager server that the virtual machine will request a certificate from
+from.
+.TP
+.B --certmgr-port
+Port of the Cert Manager server that the virtual machine will request a certificate from
+from.
+.TP
+.B --certmgr-timeout
+Timeout (in seconds) for Cert Manager operations.
+.TP
+.B --foreman-hostname
+FQDN of the Foreman instance to use (defaults to "judy.cern.ch").
+.TP
+.B --foreman-port
+Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
+.TP
+.B --foreman-timeout
+Timeout (in seconds) for Foreman operations (default: 15).
+.TP
+.B --roger-appstate
+Initial Roger application state (defaults to "build").
+.TP
+.B --roger-hostname
+FQDN of the Roger instance to use.
+.TP
+.B --roger-port
+Port of the Roger instance to use.
+.TP
+.B --roger-timeout
+Timeout (in seconds) for Roger operations.
+.TP
+.B -t, --threads
+Number of concurrent operations (defaults to the number of cores, with
+a maximum of twice the default value).
+.TP
+.B -v, --verbose
+Be chatty.
+
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 1
+Some hosts are not ready to be installed. Check summary table.
+.TP
+.B 2
+The command was CTRL-Ced
+.TP
+.B 4
+Kerberos TGT not found or expired.
+
+.SH EXAMPLES
+.TP
+.B Prepare foo.cern.ch and bar.cern.ch for installation
+ai-installhost foo.cern.ch bar.cern.ch
+
+.TP
+.B Same but keeping the autogenrated Kickstart files on disk
+ai-installhost -k foo.cern.ch bar.cern.ch
+
+.SH ROLLING BACK
+It is possible to undo the process of preparing a physical machine
+for installation using the 'aims2client' command.
+
+For instance, assuming that 'gijon01.cern.ch' was mistakenly processed
+by ai-installhost, deleting the node from AIMS should suffice
+to prevent it from PXE booting:
+
+aims2client delhost gijon01
+
+.SH KNOWN BUGS
+This tool does not support hosts that are unable to PXE boot
+from the main interface. For those cases, installations must
+be triggered via ai-foreman-cli instead.
+
+.SH REPORTING BUGS
+If you experience any problem with this tool, please open a support 
+call on SNOW (Functional Element "Configuration Management"). 
+
+.SH SEE ALSO
+ai-remote-power-control (1), ai-foreman-cli (1)

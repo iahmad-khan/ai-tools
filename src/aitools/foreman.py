@@ -187,7 +187,7 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanError("Error code '%i' received trying to delete '%s' from foreman" % (code, fqdn))
 
 
-    def gethost(self, fqdn):
+    def gethost(self, fqdn, toexpand=['hostgroup']):
         """
         Get basic information about a host.
 
@@ -199,8 +199,9 @@ class ForemanClient(HTTPClient):
 
         (code, body) = self.__do_api_request("get", "hosts/%s" % fqdn)
         if code == requests.codes.ok:
-            body['host']['hostgroup'] = self.__resolve_model('hostgroup',
-                body['host']['hostgroup_id'])
+            for model in toexpand:
+                body['host'][model] = self.__resolve_model(model,
+                    body['host']["%s_id" % model])
             return body
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
@@ -208,6 +209,29 @@ class ForemanClient(HTTPClient):
             error = ','.join(body['host']['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)
 
+    def getks(self, ip_address):
+        """
+        Get the Kickstart file for a given IP address.
+
+        :param ip_address: the IP address to query
+        :return: the KS itself
+        :raise AiToolsForemanError: if the query call failed or the host could not be found
+        """
+        logging.info("Getting Kickstart for host with IP '%s' from Foreman..."
+            % ip_address)
+
+        (code, body) = self.__do_api_request("get",
+            "unattended/provision?spoof=%s" % ip_address, prefix='')
+        if code == requests.codes.ok:
+            return body
+        elif code == requests.codes.not_found:
+            raise AiToolsForemanNotFoundError("Host with IP '%s'"
+                " not found in Foreman" % ip_address)
+        elif code == requests.codes.bad_request:
+            # Not very accurate, but it's what Foreman spits out if no KS
+            # can be resolved
+            raise AiToolsForemanError("Kickstart for host with IP '%s'"
+                " not found in Foreman" % ip_address)
 
     def getfacts(self, fqdn):
         """
@@ -490,7 +514,7 @@ class ForemanClient(HTTPClient):
                 self.cache[cache_key] = body
                 return body
             elif code == requests.codes.not_found:
-                raise AiToolsForemanError("Model not found in Foreman)" % modelname)
+                raise AiToolsForemanError("Model '%s' not found in Foreman" % modelname)
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['host']['full_messages'])
                 raise AiToolsForemanError("__resolve_model_name call failed (%s)" % error)
@@ -584,9 +608,8 @@ class ForemanClient(HTTPClient):
             msg = "Foreman didn't return a controlled status code when looking up %s, got error: '%i'" % (endpoint, code)
             raise AiToolsForemanError(msg)
 
-    def __do_api_request(self, method, url, data=None):
-        url="https://%s:%u/api/%s" % \
-            (self.host, self.port, url)
+    def __do_api_request(self, method, url, data=None, prefix="api/"):
+        url = "https://%s:%u/%s%s" % (self.host, self.port, prefix, url)
         # Yes, Foreman is stupid
         headers = {'User-Agent': 'ai-tools',
             'Content-type': 'application/json',
