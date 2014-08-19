@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.1
+Version: 8.2
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -58,6 +58,7 @@ install -m 644 man/ai-set-fe.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-hiera.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-remote-power-control.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/tbag.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-installhost.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/bash_completion.d
 install -m 0644 -p addons/bash_completion.d/ai-tools $RPM_BUILD_ROOT/%{_sysconfdir}/bash_completion.d
@@ -76,6 +77,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Aug 19 2014 Alberto Rodriguez Peon <alberto.rodriguez.peon@cern.ch> 8.2-1
+- [ai-installhost] Released
+- [ai-bs-vm] Fix puppetinit to allow instantiation of RHEL guests
+
 * Wed Aug 07 2014 Ben Jones <ben.dylan.jones@cern.ch> 8.1-1
 - fixes for tbag binary encoding
 

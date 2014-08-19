@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='ai-tools',
-      version='8.1',
+      version='8.2',
       description='Tools for Agile Infrastructure project',
       author='AI Config Team',
       author_email='ai-config-team@cern.ch',
@@ -13,5 +13,5 @@ setup(name='ai-tools',
       scripts=['bin/ai-bs-vm', 'bin/ai-kill-vm',
         'bin/ai-remote-power-control', 'bin/ai-hiera',
         'bin/ai-rename-host', 'bin/ai-set-fe', 'bin/tbag',
-        'bin/ai-qai', 'bin/ai-whatfe'],
+        'bin/ai-qai', 'bin/ai-whatfe', 'ai-installhost'],
      )
