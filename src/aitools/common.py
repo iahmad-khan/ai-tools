@@ -152,3 +152,24 @@ def is_valid_UUID(value):
         return True
     except ValueError:
         return False
+
+def is_valid_size_format(size):
+    """
+    Returns true if size has a human readable size format
+    specified in GB or TB i.e. '10GB' or '10TB'
+    """
+    return bool(re.match(r'^[1-9][0-9]*(GB|TB)$', size, re.IGNORECASE)) if size else False
+
+def generator_device_names():
+    """
+    Returns a generator of volume device names.
+
+    :return: a different volume device name each time,
+    starting with 'vdb' and following in alphabetical order
+    e.g. 'vdb', 'vdc', 'vdd', etc. The limit is 'vdz'
+    """
+    # Starts with 'vdb' as 'vda' is used for booting
+    value = 'b'
+    while ord(value) <= ord('z'):
+        yield 'vd' + value
+        value = chr(ord(value) + 1)

@@ -151,71 +151,91 @@ class TestCinder(unittest.TestCase):
         self.assertTrue(isinstance(volume, volumes.Volume))
 
     @patch.object(CinderWrapper, 'get')
-    def test_no_volume_is_ready_to_boot(self, mock_get):
-        self.assertRaises(AiToolsCinderError, self.tenant.is_ready_to_boot, volume_id=None)
+    def test_no_volume_is_ready(self, mock_get):
+        self.assertRaises(AiToolsCinderError, self.tenant.is_ready, volume_id=None)
         self.assertFalse(mock_get.called)
 
     @patch.object(CinderWrapper, 'get', return_value=Mock(spec=volumes.Volume, id=1,
         status='available', bootable='true'))
-    def test_no_wait_volume_ready_is_ready_to_boot(self, mock_get):
+    def test_no_wait_volume_ready_is_ready(self, mock_get):
         volume_id = 1
-        result_volume = self.tenant.is_ready_to_boot(volume_id, wait_until_ready=False)
+        result_volume = self.tenant.is_ready(volume_id, wait_until_ready=False)
         self.assertTrue(isinstance(result_volume, volumes.Volume))
         self.assertTrue(volume_id == result_volume.id)
         mock_get.assert_called_once_with(volume_id)
 
     @patch.object(CinderWrapper, 'get', return_value=Mock(spec=volumes.Volume, id=1,
         status='creating', bootable='false'))
-    def test_no_wait_volume_unavailable_is_ready_to_boot(self, mock_get):
+    def test_no_wait_volume_unavailable_is_ready(self, mock_get):
         volume_id = 1
-        self.assertRaises(AiToolsCinderError, self.tenant.is_ready_to_boot, volume_id,
+        self.assertRaises(AiToolsCinderError, self.tenant.is_ready, volume_id,
             wait_until_ready=False)
         mock_get.assert_called_once_with(volume_id)
 
     @patch.object(CinderWrapper, 'get', return_value=Mock(spec=volumes.Volume, id=1,
         status='available', bootable='false', size=1))
-    def test_no_wait_volume_nonbootable_is_ready_to_boot(self, mock_get):
+    def test_no_wait_volume_nonbootable_bootable_required_is_ready(self, mock_get):
         volume_id = 1
-        self.assertRaises(AiToolsCinderError, self.tenant.is_ready_to_boot, volume_id,
+        self.assertRaises(AiToolsCinderError, self.tenant.is_ready, volume_id,
+            needs_to_be_bootable=True,
             wait_until_ready=False)
         mock_get.assert_called_once_with(volume_id)
 
     @patch.object(CinderWrapper, 'get', return_value=Mock(spec=volumes.Volume, id=1,
-        status='available', bootable='true', size=1))
-    def test_wait_volume_ready_is_ready_to_boot(self, mock_get):
+        status='available', bootable='false', size=1))
+    def test_no_wait_volume_nonbootable_is_ready(self, mock_get):
         volume_id = 1
-        result_volume = self.tenant.is_ready_to_boot(volume_id, wait_until_ready=True)
+        result_volume = self.tenant.is_ready(volume_id, wait_until_ready=True)
+        self.assertTrue(isinstance(result_volume, volumes.Volume))
+        self.assertTrue(volume_id == result_volume.id)
+        mock_get.assert_called_once_with(volume_id)
+
+    @patch.object(CinderWrapper, 'get', return_value=Mock(spec=volumes.Volume, id=1,
+        status='available', bootable='true', size=1))
+    def test_wait_volume_ready_is_ready(self, mock_get):
+        volume_id = 1
+        result_volume = self.tenant.is_ready(volume_id, wait_until_ready=True)
         self.assertTrue(isinstance(result_volume, volumes.Volume))
         self.assertTrue(volume_id == result_volume.id)
         mock_get.assert_called_once_with(volume_id)
 
     @patch.object(CinderWrapper, 'get', return_value=Mock(spec=volumes.Volume, id=1,
         status='in-use', bootable='true', size=1))
-    def test_wait_volume_inuse_is_ready_to_boot(self, mock_get):
+    def test_wait_volume_inuse_is_ready(self, mock_get):
         volume_id = 1
-        self.assertRaises(AiToolsCinderError, self.tenant.is_ready_to_boot, volume_id,
+        self.assertRaises(AiToolsCinderError, self.tenant.is_ready, volume_id,
             wait_until_ready=True)
         mock_get.assert_called_once_with(volume_id)
 
     @patch.object(CinderWrapper, 'get', return_value=Mock(spec=volumes.Volume, id=1,
         status='available', bootable='false', size=1))
-    def test_wait_volume_nonbootable_is_ready_to_boot(self, mock_get):
+    def test_wait_volume_nonbootable_bootable_required_is_ready(self, mock_get):
         volume_id = 1
-        self.assertRaises(AiToolsCinderError, self.tenant.is_ready_to_boot, volume_id,
+        self.assertRaises(AiToolsCinderError, self.tenant.is_ready, volume_id,
+            needs_to_be_bootable=True,
             wait_until_ready=True)
+        mock_get.assert_called_once_with(volume_id)
+
+    @patch.object(CinderWrapper, 'get', return_value=Mock(spec=volumes.Volume, id=1,
+        status='available', bootable='false', size=1))
+    def test_wait_volume_nonbootable_is_ready(self, mock_get):
+        volume_id = 1
+        result_volume = self.tenant.is_ready(volume_id, wait_until_ready=True)
+        self.assertTrue(isinstance(result_volume, volumes.Volume))
+        self.assertTrue(volume_id == result_volume.id)
         mock_get.assert_called_once_with(volume_id)
 
     @patch.object(CinderWrapper, 'get', return_value=Mock(spec=volumes.Volume, id=1,
         status='downloading', size=1))
     def test_timeout_ready_to_boot(self, mock_get):
         volume_id = 1
-        self.assertRaises(AiToolsCinderError, self.tenant.is_ready_to_boot, volume_id,
+        self.assertRaises(AiToolsCinderError, self.tenant.is_ready, volume_id,
             wait_until_ready=True, timeout=1, wait_time=1)
 
     @patch.object(CinderWrapper, 'get', side_effect=AiToolsCinderError)
     def test_ai_tools_exception_ready_to_boot(self, mock_get):
         volume_id = 1
-        self.assertRaises(AiToolsCinderError, self.tenant.is_ready_to_boot, volume_id,
+        self.assertRaises(AiToolsCinderError, self.tenant.is_ready, volume_id,
             wait_until_ready=True, wait_time=1)
         mock_get.assert_called_once_with(volume_id)
 
@@ -223,7 +243,7 @@ class TestCinder(unittest.TestCase):
     def test_exception_ready_to_boot(self, mock_get):
         volume_id = 1
         try:
-            self.tenant.is_ready_to_boot(volume_id, wait_until_ready=True, wait_time=1)
+            self.tenant.is_ready(volume_id, wait_until_ready=True, wait_time=1)
         except AiToolsCinderError:
             self.fail("It shouldn't be an AiToolsCinderError")
         except Exception:
@@ -234,9 +254,9 @@ class TestCinder(unittest.TestCase):
     @patch.object(CinderWrapper, 'get', side_effect=[Mock(spec=volumes.Volume, id=1, status='creating',
         bootable='false', size=1), Mock(spec=volumes.Volume, id=1, status='downloading', bootable='false', size=1),
         Mock(spec=volumes.Volume, id=1, status='available', bootable='true', size=1)])
-    def test_wait_and_is_ready_to_boot(self, mock_get):
+    def test_wait_and_is_ready(self, mock_get):
         volume_id = 1
-        result_volume = self.tenant.is_ready_to_boot(volume_id, wait_until_ready=True, wait_time=1)
+        result_volume = self.tenant.is_ready(volume_id, wait_until_ready=True, wait_time=1)
         self.assertTrue(len(mock_get.mock_calls) == 3)
         self.assertTrue(isinstance(result_volume, volumes.Volume))
         self.assertTrue(result_volume.id == 1)
@@ -248,7 +268,7 @@ class TestCinder(unittest.TestCase):
         Mock(spec=volumes.Volume, id=1, status='in-use', bootable='true', size=1)])
     def test_wait_and_is_inuse_ready_to_boot(self, mock_get):
         volume_id = 1
-        self.assertRaises(AiToolsCinderError, self.tenant.is_ready_to_boot, volume_id,
+        self.assertRaises(AiToolsCinderError, self.tenant.is_ready, volume_id,
             wait_until_ready=True, wait_time=1)
         self.assertTrue(len(mock_get.mock_calls) == 3)
 

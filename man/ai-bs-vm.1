@@ -91,6 +91,19 @@ only). Foreman owner will be set accordingly later on.
 .B --nova-availabilityzone (AIBS_VMAVAILZONE_NAME)
 The desired availability zone for the VM (see http://cern.ch/go/7ttT).
 .TP
+.B --nova-attach-existing-volume
+Attach a volume during boot time. The format is '<device>=<volume UUID>'.
+The volume will be attached in '/dev/<device>'. In order to attach a volume
+it must be 'available'. This option can be specified several times but it is not
+possible to attach the same volume more than once nor attach several volumes to
+the same device.
+.TP
+.B --nova-attach-new-volume
+Create a volume to be attached during boot time. The format is '<device>=<size>',
+'size' in the format "XGB" or "XTB" where X is an integer larger than 0. The volume
+will be attached in '/dev/<device>'. This option can be specified several times but
+it is not possible to attach several volumes to the same device.
+.TP
 .B --nova-boot-from-new-volume
 Size in the format "XGB" or "XTB" where X is an integer larger than 0.
 In order to create a bootable volume "--nova-image" must be specified.
@@ -244,6 +257,14 @@ ai-bs-vm -g foo/bar -nova-boot-from-existing-volume 361a5315-aaa2-48dd-990b-235b
 .TP
 .B Create a VM by creating a volume using an image and booting from it:
 ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-boot-from-new-volume 100GB higgsbox.cern.ch
+
+.TP
+.B Create a VM with an existing volume attached to /dev/vdb:
+ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-existing-volume vdb=8f7949d0-325d-4968-83b4-f12eb8b4619a higgsbox.cern.ch
+
+.TP
+.B Create a VM with a new volume of size 50GB attached to /dev/vdb:
+ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-new-volume vdb=50GB higgsbox.cern.ch
 
 .SH REPORTING BUGS
 If you experience any problem with the Foreman registration or the initial
