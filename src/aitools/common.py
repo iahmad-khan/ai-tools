@@ -158,7 +158,7 @@ def is_valid_size_format(size):
     Returns true if size has a human readable size format
     specified in GB or TB i.e. '10GB' or '10TB'
     """
-    return bool(re.match(r'^[1-9][0-9]*(GB|TB)$', size)) if size else False
+    return bool(re.match(r'^[1-9][0-9]*(GB|TB)$', size, re.IGNORECASE)) if size else False
 
 def generator_device_names():
     """

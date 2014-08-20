@@ -54,3 +54,9 @@ class TestCommon(unittest.TestCase):
 
 	def test_is_valid_size_format_TB(self):
 		self.assertTrue(is_valid_size_format('10TB'))
+
+	def test_is_valid_size_format_gb(self):
+		self.assertTrue(is_valid_size_format('10gb'))
+
+	def test_is_valid_size_format_tb(self):
+		self.assertTrue(is_valid_size_format('10tb'))
