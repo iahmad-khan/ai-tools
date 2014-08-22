@@ -41,20 +41,33 @@ def get_openstack_environment():
     of the returned values.
     :raise AiToolsInitError: User doesn't have the basic environments set.
     """
-    entries = (("username", "OS_USERNAME", raw_input),
-               ("password", "OS_PASSWORD", getpass.getpass),
-               ("tenant_name", "OS_TENANT_NAME", raw_input),
-               ("tenant_id", "OS_TENANT_ID", raw_input),
-               ("auth_url", "OS_AUTH_URL", raw_input))
     res = {}
-    for name, variable, method in entries:
+
+    from_openrc = ["OS_USERNAME", "OS_TENANT_NAME",
+        "OS_TENANT_ID", "OS_AUTH_URL"]
+    for variable in from_openrc:
         if variable not in os.environ:
-            res[name] = method("Please, type your Openstack %s: " % name)
+            raise AiToolsInitError("%s is not set (did you source openrc?)"
+                % variable)
+        else:
+            res[re.sub(r'^OS_', '', variable).lower()] = os.environ[variable]
+
+    # The password is a special case, we give the user a chance to
+    # avoid storing it in an environment variable (this should disappear
+    # once Kerberos support arrives)
+    from_userinput = ["OS_PASSWORD"]
+    for variable in from_userinput:
+        name = re.sub(r'^OS_', '', variable).lower()
+        if variable not in os.environ or len(os.environ[variable]) == 0:
+            res[name] = getpass.getpass("Please, type your Openstack %s: " % name)
         else:
             res[name] = os.environ[variable]
         if len(res[name]) == 0:
-            raise AiToolsInitError("%s is not set" % variable)
+            raise AiToolsInitError("%s is not set or empty" % variable)
+
+    # We can continue if OS_CACERT is not defined
     res["cacert"] = os.environ.get('OS_CACERT', None)
+
     return res
 
 def verify_kerberos_environment():
