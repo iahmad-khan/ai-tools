@@ -103,7 +103,14 @@ class NovaClient():
 
     def find_image_by_name(self, name):
         tenant = self.__init_client()
-        return self.__resolve_id(tenant.images.list(), name)
+        try:
+            return self.__resolve_id(tenant.images.list(), name)
+        except requests.exceptions.Timeout, error:
+            raise AiToolsNovaError(error)
+        except novaclient.exceptions.ClientException, error:
+            raise AiToolsNovaError(error)
+        except novaclient.exceptions.ConnectionRefused, error:
+            raise AiToolsNovaError(error)
 
     def __init_client(self):
         try:
