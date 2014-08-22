@@ -85,7 +85,7 @@ def main():
     configure_logging(args)
 
     try:
-        openstackEnv = get_openstack_environment()
+        openstack_env = get_openstack_environment()
     except AiToolsInitError, error:
         logging.error(error)
         return 3
@@ -103,9 +103,10 @@ def main():
         return 5
 
     foreman = ForemanClient(dryrun=args.dryrun)
-    novaArgs = dict(openstackEnv)
-    novaArgs['dryrun'] = args.dryrun
-    nova = NovaClient(**novaArgs)
+
+    openstack_env['dryrun'] = args.dryrun
+    del openstack_env['tenant_id']
+    nova = NovaClient(**openstack_env)
 
     try:
         nova.delete(fqdn)

@@ -245,7 +245,7 @@ def parse_cmdline_args():
             parser.error("Invalid Foreman/Nova parameter '%s' (syntax: key=value)" % parameter)
     return args
 
-def print_summary(args, fqdn):
+def print_summary(args, fqdn, openstack_env):
     certmgrconf = CertmgrConfig()
     roger_config = RogerConfig()
     logging.info("Trying to bootstrap '%s'..." % fqdn)
@@ -256,7 +256,7 @@ def print_summary(args, fqdn):
         logging.info("Booting from volume: %s" % args.nova_boot_from_existing_volume)
     elif args.nova_boot_from_new_volume:
         logging.info("Booting from a new volume created using image: %s" % args.nova_image)
-    logging.info("VM tenant: %s" % os.environ["OS_TENANT_NAME"])
+    logging.info("VM tenant: %s" % openstack_env['tenant_name'])
     for volume in args.nova_attach_existing_volume:
         logging.info("Attaching volume: %s" % volume)
     for volume in args.nova_attach_new_volume:
@@ -327,8 +327,7 @@ def main():
     configure_logging(args)
 
     try:
-        openstackEnv = get_openstack_environment()
-        args.tenant_name = openstackEnv['tenant_name'] # for print_summary
+        openstack_env = get_openstack_environment()
     except AiToolsInitError, error:
         logging.error(error)
         return 3
@@ -347,7 +346,7 @@ def main():
         logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
         return 5
 
-    print_summary(args, fqdn)
+    print_summary(args, fqdn, openstack_env)
 
     try:
         userdata = generate_userdata(args)
@@ -382,12 +381,19 @@ def main():
 
     if not args.nova_disable:
         try:
-            novaArgs = dict(openstackEnv)
-            novaArgs['dryrun'] = args.dryrun
-            nova = NovaClient(**novaArgs)
+            os_clients_args = openstack_env.copy()
+            os_clients_args['dryrun'] = args.dryrun
+
+            nova_args = os_clients_args.copy()
+            del nova_args['tenant_id']
+            nova = NovaClient(**nova_args)
+
+            cinder_args = os_clients_args.copy()
+            del cinder_args['tenant_name']
+            cinder = CinderClient(**cinder_args)
 
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
-            meta['tenant-name'] = openstackEnv['tenant_name']
+            meta['tenant-name'] = openstack_env['tenant_name']
             if args.landb_responsible:
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:
