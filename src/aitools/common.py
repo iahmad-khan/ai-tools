@@ -7,6 +7,7 @@ import logging
 import hashlib
 import socket
 import time
+import getpass
 from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -30,19 +31,44 @@ def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
     if logging_level > logging.DEBUG:
         logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-
-def verify_openstack_environment():
+def get_openstack_environment():
     """
-    Verify the user has the basic **OS_** environment variables set for Openstack.
-    Returns nothing but raises an exception if these are not defined. It does not
-    validate the correctness of these environment variables.
-
+    Verify the user has provided the needed environment for Openstack and returns
+    a dictionary containing this environment with the following entries:
+       username, password, tenant_name, tenant_id, auth_url and cacert
+    The returned values are filled from the **OS_** environement variables when
+    present or asks the user. This function does not validate the correctness
+    of the returned values.
     :raise AiToolsInitError: User doesn't have the basic environments set.
     """
-    for variable in ("OS_USERNAME", "OS_PASSWORD", \
-           "OS_TENANT_NAME", "OS_AUTH_URL"):
+    res = {}
+
+    from_openrc = ["OS_USERNAME", "OS_TENANT_NAME",
+        "OS_TENANT_ID", "OS_AUTH_URL"]
+    for variable in from_openrc:
         if variable not in os.environ:
-            raise AiToolsInitError("%s not set (openrc not (or partially) sourced?)" % variable)
+            raise AiToolsInitError("%s is not set (did you source openrc?)"
+                % variable)
+        else:
+            res[re.sub(r'^OS_', '', variable).lower()] = os.environ[variable]
+
+    # The password is a special case, we give the user a chance to
+    # avoid storing it in an environment variable (this should disappear
+    # once Kerberos support arrives)
+    from_userinput = ["OS_PASSWORD"]
+    for variable in from_userinput:
+        name = re.sub(r'^OS_', '', variable).lower()
+        if variable not in os.environ or len(os.environ[variable]) == 0:
+            res[name] = getpass.getpass("Please, type your Openstack %s: " % name)
+        else:
+            res[name] = os.environ[variable]
+        if len(res[name]) == 0:
+            raise AiToolsInitError("%s is not set or empty" % variable)
+
+    # We can continue if OS_CACERT is not defined
+    res["cacert"] = os.environ.get('OS_CACERT', None)
+
+    return res
 
 def verify_kerberos_environment():
     """

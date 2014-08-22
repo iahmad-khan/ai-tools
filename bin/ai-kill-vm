@@ -27,7 +27,7 @@ from aitools.nova import NovaClient
 from aitools.roger import RogerClient
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
-from aitools.common import verify_openstack_environment
+from aitools.common import get_openstack_environment
 from aitools.common import validate_fqdn
 from aitools.common import append_domain
 
@@ -71,7 +71,6 @@ def parse_cmdline_args():
     args = parser.parse_args()
     return args
 
-
 def main():
     """Application entrypoint"""
     try:
@@ -86,7 +85,7 @@ def main():
     configure_logging(args)
 
     try:
-        verify_openstack_environment()
+        openstack_env = get_openstack_environment()
     except AiToolsInitError, error:
         logging.error(error)
         return 3
@@ -104,9 +103,10 @@ def main():
         return 5
 
     foreman = ForemanClient(dryrun=args.dryrun)
-    nova = NovaClient(os.environ["OS_AUTH_URL"], os.environ["OS_USERNAME"],
-        os.environ["OS_PASSWORD"], os.environ["OS_TENANT_NAME"],
-        os.environ.get('OS_CACERT', None), dryrun=args.dryrun)
+
+    openstack_env['dryrun'] = args.dryrun
+    del openstack_env['tenant_id']
+    nova = NovaClient(**openstack_env)
 
     try:
         nova.delete(fqdn)
