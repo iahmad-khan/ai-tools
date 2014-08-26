@@ -21,7 +21,7 @@ class HTTPClient(object):
         logging.debug("Issuing %s on %s" % (method, url))
         logging.debug("With headers: %s" % headers)
         if data:
-            logging.debug("With data: %s" % headers)
+            logging.debug("With data: %s" % data)
 
         try:
             caller = getattr(requests, method)
