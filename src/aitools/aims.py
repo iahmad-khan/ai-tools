@@ -34,8 +34,13 @@ class AimsClient(object):
             return
 
         out, returncode = self._exec(args)
-        logging.info(out.strip())
-        logging.info("Removed host '%s' from AIMS." % fqdn)
+        if out:
+            logging.info(out.strip())
+            if 'removed from aims2' in out.strip():
+                logging.info("Removed host '%s' from AIMS." % fqdn)
+                return
+        logging.error("Problem removing host from AIMS2 - please remove the host manually from AIMS using")
+        logging.error("aims2client before attempting to reinstall the host with its new name.")
 
     def addhost(self, fqdn, operatingsystem, architecture,
             enc, ksfilepath, user_kopts=None):
