@@ -38,8 +38,15 @@ touch $$LOCKFILE
 
 echo "Setting up Puppet for the initial run. Please wait..."
 
-OS_MAJOR_VERSION=`lsb_release -r | awk '{split($$2,a,"."); print a[1]}'`
-OS_DISTRIBUTOR_ID=`lsb_release -i | awk '{print $$3}'`
+# redhat > 7 and new debians seem to have this file.
+if [ -f /etc/os-release ] ; then
+  . /etc/os-release
+  OS_MAJOR_VERSION=$$VERSION_ID
+  OS_DISTRIBUTOR_ID=$$ID
+else
+  OS_MAJOR_VERSION=`lsb_release -r | awk '{split($$2,a,"."); print a[1]}'`
+  OS_DISTRIBUTOR_ID=`lsb_release -i | awk '{print $$3}'`
+fi
 
 FINALHOSTNAME=`curl http://169.254.169.254/1.0/meta-data/hostname -s -o -`
 echo "Setting hostname to $${FINALHOSTNAME}"
@@ -85,20 +92,25 @@ function set_slc_for_rhel_repositories {
     test -f /etc/pki/rpm-gpg/$${gpgkey} || return 1
   done
 }
-[ "$${OS_DISTRIBUTOR_ID}" == "RedHatEnterpriseServer" ] && \
+[[ "$${OS_DISTRIBUTOR_ID}" = "RedHatEnterpriseServer" || "$${OS_DISTRIBUTOR_ID}" = "rhel" ]] && \
   ( execute_shell_block set_slc_for_rhel_repositories 60 5 || unrecoverable_error "slc-rhel-repository" )
 
 DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
 
+[ "$$OS_MAJOR_VERSION" == "7" ] && DEPS="$$DEPS yum-plugin-priorities"
 [ "$$OS_MAJOR_VERSION" == "6" ] && DEPS="$$DEPS yum-plugin-priorities"
 [ "$$OS_MAJOR_VERSION" == "5" ] && DEPS="$$DEPS yum-priorities"
+
+[ "$$OS_MAJOR_VERSION" == "7" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS --enablerepo=epel-beta"
+[ "$$OS_MAJOR_VERSION" == "6" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS"
+[ "$$OS_MAJOR_VERSION" == "5" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS"
 
 AIREPO="ai$$OS_MAJOR_VERSION"
 [[ $$(echo $FOREMAN_ENVIRONMENT | tr '[:upper:]' '[:lower:]') == 'qa' ]] && AIREPO="$$AIREPO-qa"
 
 function install_dependencies {
   echo "Trying to install dependencies..."
-  yum install -y --enablerepo=$$AIREPO $$DEPS
+  yum install -y --enablerepo=$$AIREPO $$EXTRA_YUM_OPTS $$DEPS
   rpm -ql $$DEPS > /dev/null
 }
 execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependencies"
@@ -106,7 +118,7 @@ execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependenci
 function install_puppet {
   echo "Trying to install puppet from AI repositories..."
   yum remove -y puppet
-  yum install -y --enablerepo=$$AIREPO puppet
+  yum install -y --enablerepo=$$AIREPO $$EXTRA_YUM_OPTS puppet
   rpm -ql puppet > /dev/null
 }
 execute_shell_block install_puppet 60 5 || unrecoverable_error "puppet"
@@ -182,7 +194,7 @@ install -m 0755 -o puppet -d /var/lib/puppet/ssl/certs
 
 CERN_CA_BUNDLE_PATH=/var/lib/puppet/ssl/certs/ca.pem
 case $$OS_MAJOR_VERSION in
-  "6" )
+  "7"|"6" )
     cp -p /etc/pki/tls/certs/CERN-bundle.pem $$CERN_CA_BUNDLE_PATH
     ;;
   "5" )
@@ -220,7 +232,7 @@ if [ $$OS_MAJOR_VERSION -ge 6 ]
   then
     date
     echo "Waiting for a time slot to run Puppet (osrepos tag only)..."
-    /bin/sleep $(/bin/echo $RANDOM % 180 | bc)
+    /bin/sleep $(/usr/bin/expr $RANDOM % 180)
     echo "Running Puppet to configure only the YUM repositories"
     /usr/bin/puppet agent -t --tags osrepos --masterport 8150 \
         --ca_port 8140 --waitforcert 120 --color=FALSE
