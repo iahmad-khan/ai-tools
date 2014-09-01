@@ -23,6 +23,25 @@ class AimsClient(object):
     def __init__(self, dryrun=False):
         self.dryrun = dryrun
 
+    def delhost(self, fqdn):
+        logging.info("Removing host '%s' from AIMS..." % fqdn)
+
+        args = ["delhost", shortify(fqdn)]
+        logging.debug("Argument string to be sent to AIMS: %s" % args)
+
+        if self.dryrun:
+            logging.info("delhost not called because dryrun is enabled")
+            return
+
+        out, returncode = self._exec(args)
+        if out:
+            logging.info(out.strip())
+            if 'removed from aims2' in out.strip():
+                logging.info("Removed host '%s' from AIMS." % fqdn)
+                return
+        logging.error("Problem removing host from AIMS2 - please remove the host manually from AIMS using")
+        logging.error("aims2client before attempting to reinstall the host with its new name.")
+
     def addhost(self, fqdn, operatingsystem, architecture,
             enc, ksfilepath, user_kopts=None):
         """

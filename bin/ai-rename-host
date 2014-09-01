@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from aitools.aims import AimsClient
 
 try:
     import simplejson as json
@@ -108,6 +109,10 @@ def host_renane(pargs):
         sys.stderr.write("ERROR: your host was renamed from '%s' to '%s' in DNS but could not be renamed in Foreman.\n" % (oldhost, pargs.newhostname))
         sys.stderr.write("Please contact your Foreman support and have a nice day.\n")
         sys.exit(7)
+
+    print "Removing old hostname from AIMS - installhost will add new hostname to AIMS when you run it."
+    aims = AimsClient()
+    aims.delhost(oldhost)
 
     print "Host '%s' was successfully renamed as '%s'." %(oldhost, pargs.newhostname)
     print "Please wait at least 1 hour before reinstalling the host to ensure all"
