@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.2
+Version: 8.3
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -77,6 +77,13 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Sep 01 2014 Nacho Barrientos <nacho.barrientos@cern.ch> 8.3-1
+- [ai-bs-vm] Add support to attach volumes at boot time.
+- [ai-{bs,kill}-vm] Read OS_PASSWORD from STDIN if not defined.
+- [ai-bs-vm] Add support for bootstrapping CentOS7 virtual machines.
+- [ai-installhost] Add support to install CentOS7 boxes.
+- [ai-rename-host] Unregister the old name from AIMS.
+
 * Tue Aug 19 2014 Alberto Rodriguez Peon <alberto.rodriguez.peon@cern.ch> 8.2-1
 - [ai-installhost] Released
 - [ai-bs-vm] Fix puppetinit to allow instantiation of RHEL guests
