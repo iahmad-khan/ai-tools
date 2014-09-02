@@ -1,206 +1,106 @@
 #!/usr/bin/env python
-# Python script based on the ai-tools library to
-# add an IPMI interface to an existing host.
-#
-# Nacho Barrientos <nacho.barrientos@cern.ch>, Liviu Valsan <liviu.valsan@cern.ch>
-
-import sys
-import logging
-import argparse
-import socket
-import json
-import requests
-
-from aitools.common import verify_kerberos_environment
-from aitools.common import configure_logging
 
 from aitools.foreman import ForemanClient
-
 from aitools.config import ForemanConfig
+from aitools.common import configure_logging
+from aitools.errors import AiToolsForemanError
+from aitools.common import shortify
 
-from aitools.errors import AiToolsInitError, AiToolsForemanError
-from aitools.errors import AiToolsHTTPClientError
+import argparse
+import logging
+import sys
 
-def parse_cmdline_args():
-    """Parses and validates cmdline arguments"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--verbose',
-        action="store_true",
-        help="Be chatty")
-    parser.add_argument('-d', '--dryrun',
-        action="store_true",
-        help="Don't do the requests that alter data")
-    # We create a mutually exclusive group for the operation to be performed
-    group = parser.add_mutually_exclusive_group(required = True)
-    group.add_argument("-a", "--add-ipmi-interface", dest = "action", action = "store_const", const = "add-ipmi-interface", help = "Adds the IPMI interface for a host")
-    group.add_argument("-g", "--get-credentials", dest = "action", action = "store_const", const = "get-credentials", help = "Gets the IPMI credentials")
-    group.add_argument("-c", "--change-credentials", dest = "action", action = "store_const", const = "change-credentials", help = "Updates the IPMI credentials")
-    group.add_argument("-r", "--rename-ipmi-interface", dest = "action", action = "store_const", const = "rename-ipmi-interface", help = "Renames the IPMI interface to <hostname>-ipmi.cern.ch")
-    ##
-    ## Foreman options
-    ##
-    ForemanConfig.add_standard_args(parser)
-    parser.add_argument('-m', '--foreman-ipmi-mac', type=str,
-        help="IPMI interface mac", required=False)
-    parser.add_argument('-u', '--foreman-ipmi-username', type=str,
-        help="IPMI interface username", required=False)
-    parser.add_argument('-p', '--foreman-ipmi-password', type=str,
-        help="IPMI interface password", required=False)
-    ##
-    ## Positional
-    ##
-    parser.add_argument('fqdn', nargs=1, default=None,
-        help="FQDN")
+def add_main(pargs):
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
 
-    args = parser.parse_args()
-    args.fqdn = args.fqdn[0]
-    if args.action == "add-ipmi-interface" and (args.foreman_ipmi_mac is None or args.foreman_ipmi_username is None or args.foreman_ipmi_password is None):
-        parser.error("Add IPMI interface requires the MAC address of the IPMI interface, the BMC username and password.")
-    if args.action == "change-credentials" and (args.foreman_ipmi_username is None or args.foreman_ipmi_password is None):
-        parser.error("Changing the credentials requires the new BMC username and password.")
-    return args
-
-def generate_add_payload(args):
-    name = args.fqdn.replace(".cern.ch", "-ipmi.cern.ch")
-    return {'name': name,
-      'ip': socket.gethostbyname(name),
-      'mac': args.foreman_ipmi_mac,
-      'username': args.foreman_ipmi_username,
-      'password': args.foreman_ipmi_password,
-      'type': "Nic::BMC",
-      'provider': 'IPMI',
-    }
-
-def get_ipmi_interface_id(foreman, fqdn):
+    f = ForemanClient()
     try:
-      code, response = foreman._ForemanClient__do_api_request('get',
-        "hosts/%s/interfaces" % (fqdn))
-      if code == requests.codes.ok:
-        for interface in response:
-            if interface['interface']['name'][-13:] == "-ipmi.cern.ch":
-                return interface['interface']['id']
-        return None
-      else:
-        raise AiToolsForemanError("%d: %s" % (code, response))
+        f.add_ipmi_interface(pargs.fqdn, pargs.mac, pargs.user, pargs.pw)
+    except AiToolsForemanError:
+        logging.error("Failed when adding IPMI interface to %s" % (pargs.fqdn))
+        sys.exit(1)
+    logging.info("Successfully added IPMI interface to %s" % (pargs.fqdn))
 
-    except AiToolsHTTPClientError, error:
-      raise AiToolsForemanError(error)
 
-def generate_rename_interface_payload(args):
-    name = args.fqdn.replace(".cern.ch", "-ipmi.cern.ch")
-    return { 'name': name }
+def change_main(pargs):
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
 
-def generate_change_payload(args):
-    name = args.fqdn.replace(".cern.ch", "-ipmi.cern.ch")
-    return {'name': name,
-      'username': args.foreman_ipmi_username,
-      'password': args.foreman_ipmi_password,
-    }
-
-def add_interface(foreman, fqdn, payload):
-    # Ugly hack as the public API does not support
-    # adding IPMI interfaces yet :)
+    f = ForemanClient()
     try:
-      code, response = foreman._ForemanClient__do_api_request('post',
-        "hosts/%s/interfaces" % fqdn,
-        json.dumps(payload))
-      if code == requests.codes.created:
-        logging.info("%s added" % payload['name'])
-      else:
-        raise AiToolsForemanError("%d: %s" % (code, response))
+        f.change_ipmi_credentials(pargs.fqdn, pargs.user, pargs.pw)
+    except AiToolsForemanError:
+        logging.error("Failed when changing IPMI credentials on %s" % (pargs.fqdn))
+        sys.exit(1)
+    logging.info("Successfully changed IPMI credentials %s" % (pargs.fqdn))
 
-    except AiToolsHTTPClientError, error:
-      raise AiToolsForemanError(error)
 
-def rename_interface(foreman, fqdn, payload):
-    ipmi_interface_id = get_ipmi_interface_id(foreman, fqdn)
-    if ipmi_interface_id is None:
-      logging.error("Unable to find the ID of the IPMI interface in Foreman")
-      return 1
+def correct_main(pargs):
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    f = ForemanClient()
     try:
-      code, response = foreman._ForemanClient__do_api_request('put',
-        "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id),
-        json.dumps(payload))
-      if code == requests.codes.ok:
-        logging.info("IPMI interface renamed for device %s to %s" % (fqdn, payload['name']))
-        return 0
-      else:
-        raise AiToolsForemanError("%d: %s" % (code, response))
+        f.correct_ipmi_interface_name(pargs.fqdn)
+    except AiToolsForemanError:
+        logging.error("Failed when correcting IPMI interface name on %s" % (pargs.fqdn))
+        sys.exit(1)
+    logging.info("Successfully corrected IPMI interface name on %s" % (pargs.fqdn))
 
-    except AiToolsHTTPClientError, error:
-      raise AiToolsForemanError(error)
 
-def change_ipmi_credentials(foreman, fqdn, payload):
-    ipmi_interface_id = get_ipmi_interface_id(foreman, fqdn)
-    if ipmi_interface_id is None:
-      logging.error("Unable to find the ID of the IPMI interface in Foreman")
-      return 1
+def getcred_main(pargs):
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    f = ForemanClient()
     try:
-      code, response = foreman._ForemanClient__do_api_request('put',
-        "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id),
-        json.dumps(payload))
-      if code == requests.codes.ok:
-        logging.info("IPMI credentials changed for %s" % payload['name'])
-        return 0
-      else:
-        raise AiToolsForemanError("%d: %s" % (code, response))
+        (user, pw) = f.get_ipmi_credentials(pargs.fqdn)
+        print "Username: %s" % user
+        print "Password: %s" % pw
+        print
+        print "For example:"
+        print
+        print '  ipmitool chassis status -H %s -U "%s" -P "%s"' % ("%s-ipmi.cern.ch" % shortify(pargs.fqdn), user, pw)
+    except AiToolsForemanError:
+        logging.error("Could not fetch IPMI credentials for %s" % (pargs.fqdn))
+        sys.exit(1)
 
-    except AiToolsHTTPClientError, error:
-      raise AiToolsForemanError(error)
 
-def get_ipmi_credentials(foreman, fqdn):
-    try:
-      code, response = foreman._ForemanClient__do_api_request('get',
-        "hosts/%s/interfaces" % (fqdn))
-      if code == requests.codes.ok:
-        ipmi_interface_name = fqdn.replace(".cern.ch", "-ipmi.cern.ch");
-        for interface in response:
-            if interface['interface']['name'].upper() == ipmi_interface_name.upper():
-                print interface['interface']['username'], interface['interface']['password']
-                return 0
-        return 1
-      else:
-        raise AiToolsForemanError("%d: %s" % (code, response))
-
-    except AiToolsHTTPClientError, error:
-      raise AiToolsForemanError(error)
 
 def main():
-    """Application entrypoint"""
-    args = parse_cmdline_args()
-    fconfig = ForemanConfig()
-    fconfig.read_config_and_override_with_pargs(args)
+    parser = argparse.ArgumentParser(description="Manipulate IPMI interface definition in Foreman")
 
-    configure_logging(args)
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+    parser.add_argument('-d', '--dryrun', action="store_true", help="Don't do the requests that alter data")
+    parser.add_argument('-v', '--verbose', action="store_true", help="Be chatty")
+    subparsers = parser.add_subparsers()
 
-    return_code = 0
+    add_parser = subparsers.add_parser("add-ipmi", help="Add an IPMI interface definition to a node")
+    add_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
+    add_parser.add_argument("mac", metavar="MAC-address", help="MAC address of new interface")
+    add_parser.add_argument("user", metavar="username", help="IPMI username")
+    add_parser.add_argument("pw", metavar="password", help="IPMI password")
+    add_parser.set_defaults(func=add_main)
 
-    try:
-        krb_principal = verify_kerberos_environment()
-    except AiToolsInitError, error:
-        logging.error("TGT not found or expired. Exiting...")
-        return 4
+    getcred_parser = subparsers.add_parser("get-creds", help="Retrieve the IPMI username and password")
+    getcred_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
+    getcred_parser.set_defaults(func=getcred_main)
 
-    try:
-      foreman = ForemanClient(dryrun=args.dryrun)
-      if args.action == "add-ipmi-interface":
-        payload = generate_add_payload(args)
-        return_code = add_interface(foreman, args.fqdn, payload)
-      if args.action == "rename-ipmi-interface":
-        payload = generate_rename_interface_payload(args)
-        return_code = rename_interface(foreman, args.fqdn, payload)
-      elif args.action == "change-credentials":
-        payload = generate_change_payload(args)
-        if payload is not None:
-          return_code = change_ipmi_credentials(foreman, args.fqdn, payload)
-      else:
-        return_code = get_ipmi_credentials(foreman, args.fqdn)
-    except AiToolsForemanError, error:
-      logging.error("Couldn't perform the action (%s)." % error)
-      return 10
+    correct_parser = subparsers.add_parser("correct-ipmi", help="Correct the IPMI interface name in Foreman")
+    correct_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
+    correct_parser.set_defaults(func=correct_main)
+
+    change_parser = subparsers.add_parser("change-ipmi-creds", help="Add an IPMI interface definition to a node")
+    change_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
+    change_parser.add_argument("--user", metavar="username", dest="user", help="New BMC username")
+    change_parser.add_argument("--pass", metavar="password", dest="pass", help="New BMC password")
+    change_parser.set_defaults(func=change_main)
+
+    pargs = parser.parse_args()
+    pargs.func(pargs)
 
 
-    return return_code
-
-if __name__ == '__main__':
-    sys.exit(main())
+if __name__ == "__main__":
+    main()
