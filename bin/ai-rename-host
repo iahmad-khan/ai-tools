@@ -152,6 +152,8 @@ if __name__ == "__main__":
     # refuse to do it if host is running puppet- how?
 
     parser = ArgumentParser(description="Rename a host (destructively)")
+    parser.add_argument('-d', '--dryrun', action="store_true", help="Don't do the requests that alter data")
+    parser.add_argument('-v', '--verbose', action="store_true", help="Be chatty")
 
     foreman_config = ForemanConfig()
     foreman_config.add_standard_args(parser)
