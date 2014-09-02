@@ -25,6 +25,7 @@ from aitools.errors import AiToolsForemanNotFoundError
 from aitools.errors import AiToolsForemanError
 from aitools.errors import AiToolsRogerNotFoundError
 from aitools.foreman import ForemanClient
+from aitools.common import configure_logging
 
 def sanity_check_for_alarms(old_name):
     try:
@@ -68,6 +69,7 @@ def host_renane(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
 
     print pargs.oldhostname
     oldhost = fqdnify(pargs.oldhostname)
