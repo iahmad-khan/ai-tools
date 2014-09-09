@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.3
+Version: 8.4
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -56,6 +56,7 @@ install -m 644 man/ai-whatfe.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-rename-host.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-set-fe.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-hiera.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-ipmi.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-remote-power-control.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/tbag.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-installhost.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
@@ -77,6 +78,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Sep 09 2004 Gavin McCance <gavin.mccance@cern.ch> 8.4-1
+- [ai-rename-host] fixes to correctl handle Foreman IPMI interface
+- [ai-ipmi] tool added, allowing direct manipulation of the Foreman IPMI interface
+
 * Mon Sep 01 2014 Nacho Barrientos <nacho.barrientos@cern.ch> 8.3-1
 - [ai-bs-vm] Add support to attach volumes at boot time.
 - [ai-{bs,kill}-vm] Read OS_PASSWORD from STDIN if not defined.
