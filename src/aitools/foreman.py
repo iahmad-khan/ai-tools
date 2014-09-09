@@ -3,6 +3,7 @@
 
 import logging
 import json
+import socket
 import urllib
 import re
 import requests
@@ -314,9 +315,8 @@ class ForemanClient(HTTPClient):
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
             interface_id = body[0]["interface"]["id"]
-            interface_name = body[0]["interface"]["name"]
 
-            new_interface_name = interface_name.replace(oldfqdn.split('.')[0], newfqdn.split('.')[0])
+            new_interface_name = newfqdn.replace(".cern.ch", "-ipmi.cern.ch")
 
             # Now update the IPMI interface
             payload = {"interface": {"name": new_interface_name}}
@@ -452,6 +452,106 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Power operation on '%s' cancelled because dryrun is enabled" % fqdn)
             return (requests.codes.ok, {'power': 'dryrun'})
+
+
+    def get_ipmi_interface_id(self, fqdn):
+        try:
+          code, response = self.__do_api_request('get',
+            "hosts/%s/interfaces" % (fqdn))
+          if code == requests.codes.ok:
+            for interface in response:
+                if interface['interface']['name'][-13:] == "-ipmi.cern.ch":
+                    return interface['interface']['id']
+            return None
+          else:
+            raise AiToolsForemanError("%d: %s" % (code, response))
+
+        except AiToolsHTTPClientError, error:
+          raise AiToolsForemanError(error)
+
+
+    def add_ipmi_interface(self, fqdn, mac, username, password):
+        # Ugly hack as the public API does not support
+        # adding IPMI interfaces yet :)
+        ipmi_name = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
+        payload = {'name': ipmi_name,
+          'ip': socket.gethostbyname(ipmi_name),
+          'mac':mac,
+          'username': username,
+          'password': password,
+          'type': "Nic::BMC",
+          'provider': 'IPMI',
+        }
+
+        try:
+          code, response = self.__do_api_request('post',
+            "hosts/%s/interfaces" % fqdn,
+            json.dumps(payload))
+          if code == requests.codes.created:
+            logging.info("%s added" % payload['name'])
+          else:
+            raise AiToolsForemanError("%d: %s" % (code, response))
+
+        except AiToolsHTTPClientError, error:
+          raise AiToolsForemanError(error)
+
+
+    def correct_ipmi_interface_name(self, fqdn):
+        ipmi_interface_id = self.get_ipmi_interface_id(fqdn)
+        ipmi_name = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
+        payload = { 'name': ipmi_name }
+        if ipmi_interface_id is None:
+          logging.error("Unable to find the ID of the IPMI interface in Foreman")
+          raise AiToolsForemanNotFoundError("Unable to find the ID of the IPMI interface in Foreman")
+        try:
+          code, response = self.__do_api_request('put',
+            "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id),
+            json.dumps(payload))
+          if code == requests.codes.ok:
+            logging.info("IPMI interface renamed for device %s to %s" % (fqdn, payload['name']))
+          else:
+            raise AiToolsForemanError("%d: %s" % (code, response))
+        except AiToolsHTTPClientError, error:
+          raise AiToolsForemanError(error)
+
+
+    def change_ipmi_credentials(self, fqdn, username, password):
+        ipmi_interface_id = self.get_ipmi_interface_id(fqdn)
+        ipmi_name = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
+        payload = {'name': ipmi_name,
+          'username': username,
+          'password': password,
+        }
+        if ipmi_interface_id is None:
+          logging.error("Unable to find the ID of the IPMI interface in Foreman")
+          raise AiToolsForemanNotFoundError("Unable to find the ID of the IPMI interface in Foreman")
+        try:
+          code, response = self.__do_api_request('put',
+            "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id),
+            json.dumps(payload))
+          if code == requests.codes.ok:
+            logging.info("IPMI credentials changed for %s" % payload['name'])
+          else:
+            raise AiToolsForemanError("%d: %s" % (code, response))
+
+        except AiToolsHTTPClientError, error:
+          raise AiToolsForemanError(error)
+
+
+    def get_ipmi_credentials(self, fqdn):
+        ipmi_interface_id = self.get_ipmi_interface_id(fqdn)
+        try:
+          code, response = self.__do_api_request('get',
+            "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id))
+          if code == requests.codes.ok:
+            return response['interface']['username'], response['interface']['password']
+          else:
+            raise AiToolsForemanError("%d: %s" % (code, response))
+
+        except AiToolsHTTPClientError, error:
+          raise AiToolsForemanError(error)
+
+
 
     def get_environment_by_name(self, name):
         return self.__get_model_by_name('environment', name)

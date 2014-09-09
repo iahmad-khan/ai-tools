@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+
+from aitools.foreman import ForemanClient
+from aitools.config import ForemanConfig
+from aitools.common import configure_logging
+from aitools.errors import AiToolsForemanError
+from aitools.common import shortify
+
+import argparse
+import logging
+import sys
+
+def add_main(pargs):
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    f = ForemanClient()
+    try:
+        f.add_ipmi_interface(pargs.fqdn, pargs.mac, pargs.user, pargs.pw)
+    except AiToolsForemanError:
+        logging.error("Failed when adding IPMI interface to %s" % (pargs.fqdn))
+        sys.exit(1)
+    logging.info("Successfully added IPMI interface to %s" % (pargs.fqdn))
+
+
+def change_main(pargs):
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    f = ForemanClient()
+    try:
+        f.change_ipmi_credentials(pargs.fqdn, pargs.user, pargs.pw)
+    except AiToolsForemanError:
+        logging.error("Failed when changing IPMI credentials on %s" % (pargs.fqdn))
+        sys.exit(1)
+    logging.info("Successfully changed IPMI credentials %s" % (pargs.fqdn))
+
+
+def correct_main(pargs):
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    f = ForemanClient()
+    try:
+        f.correct_ipmi_interface_name(pargs.fqdn)
+    except AiToolsForemanError:
+        logging.error("Failed when correcting IPMI interface name on %s" % (pargs.fqdn))
+        sys.exit(1)
+    logging.info("Successfully corrected IPMI interface name on %s" % (pargs.fqdn))
+
+
+def getcred_main(pargs):
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    f = ForemanClient()
+    try:
+        (user, pw) = f.get_ipmi_credentials(pargs.fqdn)
+        print "Username: %s" % user
+        print "Password: %s" % pw
+        print
+        print "For example:"
+        print
+        print '  ipmitool chassis status -H %s -U "%s" -P "%s"' % ("%s-ipmi.cern.ch" % shortify(pargs.fqdn), user, pw)
+    except AiToolsForemanError:
+        logging.error("Could not fetch IPMI credentials for %s" % (pargs.fqdn))
+        sys.exit(1)
+
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Manipulate IPMI interface definition in Foreman")
+
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+    parser.add_argument('-d', '--dryrun', action="store_true", help="Don't do the requests that alter data")
+    parser.add_argument('-v', '--verbose', action="store_true", help="Be chatty")
+    subparsers = parser.add_subparsers()
+
+    add_parser = subparsers.add_parser("add-ipmi", help="Add an IPMI interface definition to a node")
+    add_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
+    add_parser.add_argument("mac", metavar="MAC-address", help="MAC address of new interface")
+    add_parser.add_argument("user", metavar="username", help="IPMI username")
+    add_parser.add_argument("pw", metavar="password", help="IPMI password")
+    add_parser.set_defaults(func=add_main)
+
+    getcred_parser = subparsers.add_parser("get-creds", help="Retrieve the IPMI username and password")
+    getcred_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
+    getcred_parser.set_defaults(func=getcred_main)
+
+    correct_parser = subparsers.add_parser("correct-ipmi", help="Correct the IPMI interface name in Foreman")
+    correct_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
+    correct_parser.set_defaults(func=correct_main)
+
+    change_parser = subparsers.add_parser("change-ipmi-creds", help="Add an IPMI interface definition to a node")
+    change_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
+    change_parser.add_argument("--user", metavar="username", dest="user", help="New BMC username")
+    change_parser.add_argument("--pw", metavar="password", dest="pw", help="New BMC password")
+    change_parser.set_defaults(func=change_main)
+
+    pargs = parser.parse_args()
+    pargs.func(pargs)
+
+
+if __name__ == "__main__":
+    main()

@@ -25,6 +25,7 @@ from aitools.errors import AiToolsForemanNotFoundError
 from aitools.errors import AiToolsForemanError
 from aitools.errors import AiToolsRogerNotFoundError
 from aitools.foreman import ForemanClient
+from aitools.common import configure_logging
 
 def sanity_check_for_alarms(old_name):
     try:
@@ -68,6 +69,7 @@ def host_renane(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
 
     print pargs.oldhostname
     oldhost = fqdnify(pargs.oldhostname)
@@ -150,6 +152,8 @@ if __name__ == "__main__":
     # refuse to do it if host is running puppet- how?
 
     parser = ArgumentParser(description="Rename a host (destructively)")
+    parser.add_argument('-d', '--dryrun', action="store_true", help="Don't do the requests that alter data")
+    parser.add_argument('-v', '--verbose', action="store_true", help="Be chatty")
 
     foreman_config = ForemanConfig()
     foreman_config.add_standard_args(parser)
