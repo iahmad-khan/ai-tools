@@ -4,7 +4,7 @@
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
 Version: 8.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
 Group: CERN/Utilities
@@ -78,7 +78,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
-* Tue Sep 09 2004 Gavin McCance <gavin.mccance@cern.ch> 8.4-1
+* Tue Sep 09 2014 Gavin McCance <gavin.mccance@cern.ch> 8.4-2
 - [ai-rename-host] fixes to correctl handle Foreman IPMI interface
 - [ai-ipmi] tool added, allowing direct manipulation of the Foreman IPMI interface
 
