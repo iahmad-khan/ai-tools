@@ -1,0 +1,70 @@
+#!/usr/bin/python
+
+__author__ = 'gtenagli'
+
+from argparse import ArgumentParser
+from aitools.config import ForemanConfig
+from aitools.foreman import ForemanClient
+from aitools.errors import AiToolsForemanNotFoundError
+from aitools.errors import AiToolsForemanError
+from aitools.common import configure_logging
+import argcomplete
+import json
+import sys
+import logging
+
+def param_set(pargs):
+
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+    f = ForemanClient()
+
+    if pargs.hg:
+        try:
+            f.addhostgroupparameter(pargs.target, pargs.param, pargs.value)
+            logging.info("Successfully set parameter '%s: %s' for hostgroup '%s'" %
+                         (pargs.param, pargs.value, pargs.target))
+        except AiToolsForemanNotFoundError as e:
+            logging.error("The hostgroup '%s' could not be found in Foreman." % pargs.target)
+            sys.exit(4)
+        except AiToolsForemanError as e:
+            logging.error("Problem setting parameter in Foreman.")
+            sys.exit(5)
+    else:
+        try:
+            f.addhostparameter(pargs.target, pargs.param, pargs.value)
+            logging.info("Successfully set parameter '%s: %s' for host '%s'" %
+                         (pargs.param, pargs.value, pargs.target))
+        except AiToolsForemanNotFoundError as e:
+            logging.error("The host '%s' could not be found in Foreman." % pargs.target)
+            sys.exit(4)
+        except AiToolsForemanError as e:
+            logging.error("Problem setting parameter in Foreman.")
+            sys.exit(5)
+
+
+#################
+
+def main():
+    parser = ArgumentParser(description="Add a param to a host or hostgroup")
+
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+
+    parser.add_argument('-v', '--verbose', action="store_true", help="Be chatty")
+    parser.add_argument("--hg", action="store_true", default=False, dest="hg",
+                        help="Target a hostgroup rather than a host")
+    parser.add_argument("target", default=None, help="Target name")
+    parser.add_argument("param", default=None, help="Parameter name")
+    parser.add_argument("value", default=None, help="Parameter value")
+    argcomplete.autocomplete(parser)
+    parser.set_defaults(func=param_set)
+
+    pargs = parser.parse_args()
+    pargs.func(pargs)
+
+    sys.exit()
+
+
+if __name__ == "__main__":
+    main()
