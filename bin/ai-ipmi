@@ -95,7 +95,7 @@ def main():
     change_parser = subparsers.add_parser("change-ipmi-creds", help="Add an IPMI interface definition to a node")
     change_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
     change_parser.add_argument("--user", metavar="username", dest="user", help="New BMC username")
-    change_parser.add_argument("--pass", metavar="password", dest="pass", help="New BMC password")
+    change_parser.add_argument("--pw", metavar="password", dest="pw", help="New BMC password")
     change_parser.set_defaults(func=change_main)
 
     pargs = parser.parse_args()

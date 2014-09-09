@@ -539,18 +539,15 @@ class ForemanClient(HTTPClient):
 
 
     def get_ipmi_credentials(self, fqdn):
+        ipmi_interface_id = self.get_ipmi_interface_id(fqdn)
         try:
           code, response = self.__do_api_request('get',
-            "hosts/%s/interfaces" % (fqdn))
+            "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id))
           if code == requests.codes.ok:
-            ipmi_interface_name = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
-            for interface in response:
-                if interface['interface']['name'].upper() == ipmi_interface_name.upper():
-                    return (interface['interface']['username'], interface['interface']['password'])
-            logging.error("Unable to find the IPMI interface in Foreman")
-            raise AiToolsForemanNotFoundError("Unable to find the IPMI interface in Foreman")
+            return response['interface']['username'], response['interface']['password']
           else:
             raise AiToolsForemanError("%d: %s" % (code, response))
+
         except AiToolsHTTPClientError, error:
           raise AiToolsForemanError(error)
 
