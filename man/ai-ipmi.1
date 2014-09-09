@@ -1,0 +1,104 @@
+.TH AI-IPMI "1" "September 2014" "CERN" "User Commands"
+.SH NAME
+ai-ipmi \- HW procurement tool to manipulate Foreman IPMI internal interface
+.SH DESCRIPTION
+usage: ai-ipmi [\-h] [\-\-foreman\-timeout FOREMAN_TIMEOUT] [\-\-foreman\-hostname FOREMAN_HOSTNAME]
+.IP
+[\-\-foreman\-port FOREMAN_PORT] [\-\-config CONFIG] [\-v] [\-d]
+{add-ipmi,get-creds,correct-ipmi,change-ipmi-creds} ...
+.PP
+HW procurement tool to manipulate Foreman IPMI internal interface. Internal tool: don't use unless you know what you're doing.
+.SS "positional arguments:"
+.IP
+{add-ipmi,get-creds,correct-ipmi,change-ipmi-creds}
+.TP
+add-ipmi
+Add an IPMI interface definition to a node
+.TP
+get-creds
+Retrieve the IPMI username and password
+.TP
+correct-ipmi
+Correct the IPMI interface name in Foreman
+.TP
+change-ipmi-creds
+Change the IPMI credentials (in Foreman) for a node
+.SH COMMAND OVERVIEW
+.SS ai-ipmi add-ipmi
+usage: ai-ipmi add-ipmi FQDN MAC username password 
+.IP
+KEY
+.TP
+.B "positional arguments:"
+.TP
+FQDN
+the host to add the interface to
+.TP
+MAC
+the MAC address of the IPMI interface
+.TP
+username
+the IPMI username stored on the BMC
+.TP
+password
+the IPMI password stored on the BMC
+.SS ai-ipmi delete
+usage: ai-ipmi get-creds FQDN
+.IP
+KEY
+.TP
+.B "positional arguments:"
+.TP
+FQDN
+The host whose IPMI credentials you want to fetch
+.SS ai-ipmi 
+usage: ai-ipmi correct-ipmi FQDN 
+.IP
+KEY
+.TP
+.B "positional arguments:"
+.TP
+FQDN
+The host whose IPMI interface you'd like to correct.
+.SS ai-ipmi change-ipmi-creds
+usage: ai-ipmi change-ipmi-creds FQDN username password 
+.IP
+KEY
+.TP
+.B "positional arguments:"
+.TP
+FQDN
+the host to add the interface to
+.TP
+username
+the IPMI username stored on the BMC
+.TP
+password
+.SH GLOBAL OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-foreman\-timeout\fR FOREMAN_TIMEOUT
+Timeout for Foreman operations
+.TP
+\fB\-\-foreman\-hostname\fR FOREMAN_HOSTNAME
+Foreman hostname
+.TP
+\fB\-\-foreman\-port\fR FOREMAN_PORT
+Foreman port
+.TP
+\fB\-\-config\fR CONFIG
+Configuration file
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Be chatty
+.TP
+\fB\-d\fR, \fB\-\-dryrun\fR
+Don't do the requests that alter data
+
+.SH BUGS
+Open a support call in SNOW.
+
+.SH AUTHOR
+liviu.valsan@cern.ch

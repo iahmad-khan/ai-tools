@@ -92,7 +92,7 @@ def main():
     correct_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
     correct_parser.set_defaults(func=correct_main)
 
-    change_parser = subparsers.add_parser("change-ipmi-creds", help="Add an IPMI interface definition to a node")
+    change_parser = subparsers.add_parser("change-ipmi-creds", help="Change the IPMI credentials stored in Foreman for a node")
     change_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
     change_parser.add_argument("--user", metavar="username", dest="user", help="New BMC username")
     change_parser.add_argument("--pw", metavar="password", dest="pw", help="New BMC password")
