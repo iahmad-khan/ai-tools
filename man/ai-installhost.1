@@ -13,6 +13,9 @@ ai-installhost is a command line utility to prepare physical machines
 for installation. The output is a summary table informing about which
 input hosts are ready to be rebooted.
 
+Note that by default this command will disable all alarms on the target
+hosts. This behaviour can be overridden, though. See below.
+
 Several command line options can be completed automatically by pressing
 TAB when typing.
 
@@ -30,6 +33,9 @@ parameters.
 
 .LP
 .I Optional parameters:
+.TP
+.B -a, --keepalarms
+Don't disable alarms before triggering the installation.
 .TP
 .B --aims-kopts
 Blank separated list of kernel options to be passed to Anaconda (will be

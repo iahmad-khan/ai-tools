@@ -68,6 +68,9 @@ def parse_cmdline_args():
     parser.add_argument('-k', '--keepks',
         action="store_true",
         help="Don't delete the temporary file where the KS lives")
+    parser.add_argument('-a', '--keepalarms',
+        action="store_true",
+        help="Don't disable alarms before triggering the installation")
 
     ##
     ## Certmgr options
@@ -226,10 +229,13 @@ def process_host(hostname):
     if not args.roger_disable:
         roger_client = RogerClient(dryrun=args.dryrun)
         try:
-            # note default for alarms is false, but if already exists, won't touch
-            # probably what we want...
+            alarm_state = {}
+            if not args.keepalarms:
+                alarm_state = dict((alarm_field, False)
+                    for alarm_field in roger_client.alarm_fields)
+            logging.info("Setting application state and disabling alarms on Roger...")
             roger_client.update_or_create_state(fqdn, appstate=args.roger_appstate,
-                message="Installation triggered by ai-installhost")
+                message="Installation triggered by ai-installhost", **alarm_state)
         except AiToolsRogerNotAllowedError, error:
             # new machines should be allowed, so this means you're trying to update
             # something you shouldn't be updating
