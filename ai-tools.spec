@@ -16,8 +16,11 @@ URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
 BuildRequires: python-devel
 Requires: aims2-client, certmgr-client, python-novaclient, python-krbV, python-urllib2_kerberos
-Requires: perl-YAML-Syck, python-requests, python-requests-kerberos, python-argparse
+Requires: perl-YAML-Syck, python-requests, python-requests-kerberos
 Requires: python-argcomplete, python-humanize, teigi-client
+%if 0%{?el5} || 0%{?el6}
+Requires: python-argparse
+%endif
 Obsoletes: qai
 
 %description
