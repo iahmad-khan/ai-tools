@@ -74,7 +74,7 @@ class AiConfig(object):
     def _get_from_cli(self, key):
         return self.pargs.get(key, None)
 
-    def add_configfile_args(self, parser):
+    def add_global_args(self, parser):
         try:
             parser.add_argument('--config', help="Configuration file",
                                 default=self.configfile)
@@ -92,7 +92,7 @@ class ForemanConfig(AiConfig):
         parser.add_argument('--foreman-timeout', type=int, help="Timeout for Foreman operations")
         parser.add_argument('--foreman-hostname', help="Foreman hostname")
         parser.add_argument('--foreman-port', type=int, help="Foreman port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class PdbConfig(AiConfig):
@@ -104,7 +104,7 @@ class PdbConfig(AiConfig):
         parser.add_argument('--pdb-timeout', type=int, help="Timeout for PuppetDB operations")
         parser.add_argument('--pdb-hostname', help="PuppetDB hostname")
         parser.add_argument('--pdb-port', type=int, help="PuppetDB port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class EncConfig(AiConfig):
@@ -116,7 +116,7 @@ class EncConfig(AiConfig):
         parser.add_argument('--enc-timeout', type=int, help="Timeout for ENC operations")
         parser.add_argument('--enc-hostname', help="ENC hostname")
         parser.add_argument('--enc-port', type=int, help="ENC port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class RogerConfig(AiConfig):
@@ -128,7 +128,7 @@ class RogerConfig(AiConfig):
         parser.add_argument('--roger-timeout', type=int, help="Timeout for Roger operations")
         parser.add_argument('--roger-hostname', help="Roger hostname")
         parser.add_argument('--roger-port', type=int, help="Roger port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class CertmgrConfig(AiConfig):
@@ -140,7 +140,7 @@ class CertmgrConfig(AiConfig):
         parser.add_argument('--certmgr-timeout', type=int, help="Timeout for Cert manager operations")
         parser.add_argument('--certmgr-hostname', help="Certmanager hostname")
         parser.add_argument('--certmgr-port', type=int, help="Certmanager port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class NovaConfig(AiConfig):
@@ -150,7 +150,7 @@ class NovaConfig(AiConfig):
 
     def add_standard_args(self, parser):
         parser.add_argument('--nova-timeout', type=int, help="Timeout for Nova operations")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class TrustedBagConfig(AiConfig):
@@ -162,4 +162,4 @@ class TrustedBagConfig(AiConfig):
         parser.add_argument('--tbag-timeout', type=int, help="Timeout for trusted bag operations")
         parser.add_argument('--tbag-hostname', help="Trusted bag hostname")
         parser.add_argument('--tbag-port', type=int, help="Trusted bag port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
