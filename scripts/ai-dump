@@ -139,7 +139,7 @@ def host_main(pargs):
                 "lastreport": host_info['catalog_timestamp'],
                 "environment": enc["environment"], "comment": enc["parameters"]["comment"],
                 "cnames": cnaliases, "landb_service_name": facts.get('landb_service_name', None),
-                "aidump_recordversion": 1}
+                "aidump_recordversion": 1, "cern_os_tenant": facts.get('cern_os_tenant', None)}
 
         if roger:
             rogga = {"appstate": roger['appstate'],
@@ -179,6 +179,7 @@ def host_main(pargs):
         t.add_row(["FE Responsible:", facts.get('fename', '-')])
         t.add_row(["OS:", "%s %s %s (%s)" % (facts.get('operatingsystem', '-'), facts.get('lsbdistrelease', '-'), facts.get('architecture', '-'), facts.get('configured_kernel', '-'))])
         if facts.get('is_virtual') == 'true':
+            t.add_row(["VM Project:", facts.get('cern_os_tenant', '-')])
             t.add_row(["VM Flavour:", facts.get('ec2_instance_type', '-')])
             t.add_row(["Avail zone:", facts.get('ec2_placement_availability_zone', '-')])
         else:
