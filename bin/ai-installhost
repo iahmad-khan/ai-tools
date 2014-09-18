@@ -68,6 +68,9 @@ def parse_cmdline_args():
     parser.add_argument('-k', '--keepks',
         action="store_true",
         help="Don't delete the temporary file where the KS lives")
+    parser.add_argument('-a', '--keepalarms',
+        action="store_true",
+        help="Don't disable alarms before triggering the installation")
 
     ##
     ## Certmgr options
@@ -223,23 +226,6 @@ def process_host(hostname):
         return format_result(fqdn, 14,
             "This host boots only from -gigeth, please use ai-foreman-cli")
 
-    if not args.roger_disable:
-        roger_client = RogerClient(dryrun=args.dryrun)
-        try:
-            # note default for alarms is false, but if already exists, won't touch
-            # probably what we want...
-            roger_client.update_or_create_state(fqdn, appstate=args.roger_appstate,
-                message="Installation triggered by ai-installhost")
-        except AiToolsRogerNotAllowedError, error:
-            # new machines should be allowed, so this means you're trying to update
-            # something you shouldn't be updating
-            logging.warn("Roger: couldn't update roger on %s due to permissions (%s)" %
-                (fqdn, error))
-        except AiToolsRogerInternalServerError:
-            logging.warn("Roger: ISE on %s. Call roger show/update by hand" % fqdn)
-        except Exception, error:
-            logging.warn("Roger: Unhandled error (%s) on %s. Call roger show/update by hand" %
-                (error, fqdn))
 
     if not args.caserver_disable:
         try:
@@ -266,6 +252,27 @@ def process_host(hostname):
         delete_ks_from_disk(ksfilepath)
         return format_result(fqdn, 50, error)
 
+    if not args.roger_disable:
+        roger_client = RogerClient(dryrun=args.dryrun)
+        try:
+            logging.info("Setting application state on Roger...")
+            alarm_state = {}
+            if not args.keepalarms:
+                logging.info("Disabling alarms on Roger...")
+                alarm_state = dict((alarm_field, False)
+                    for alarm_field in roger_client.alarm_fields)
+            roger_client.update_or_create_state(fqdn, appstate=args.roger_appstate,
+                message="Installation triggered by ai-installhost", **alarm_state)
+        except AiToolsRogerNotAllowedError, error:
+            # new machines should be allowed, so this means you're trying to update
+            # something you shouldn't be updating
+            logging.warn("Roger: couldn't update roger on %s due to permissions (%s)" %
+                (fqdn, error))
+        except AiToolsRogerInternalServerError:
+            logging.warn("Roger: ISE on %s. Call roger show/update by hand" % fqdn)
+        except Exception, error:
+            logging.warn("Roger: Unhandled error (%s) on %s. Call roger show/update by hand" %
+                (error, fqdn))
     try:
         ksfilepath = delete_ks_from_disk(ksfilepath)
     except AiToolsError, error:
