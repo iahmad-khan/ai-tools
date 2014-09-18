@@ -45,6 +45,7 @@ def get_roger_client(host):
     roger = teigi.rogerclient.RogerClient(rogerconf.roger_hostname, int(rogerconf.roger_port))
 
     url = roger.state_url(host)
+    answer = None
     try:
         answer = roger.open_url(url)
     except urllib2.HTTPError, e:
