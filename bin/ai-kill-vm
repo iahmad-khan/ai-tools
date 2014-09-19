@@ -104,6 +104,12 @@ def main():
 
     foreman = ForemanClient(dryrun=args.dryrun)
 
+    try:
+        foreman.delhost(fqdn)
+    except AiToolsForemanError, error:
+        logging.error("Couldn't delete Foreman entry (%s)." % error)
+        return 20
+
     openstack_env['dryrun'] = args.dryrun
     del openstack_env['tenant_id']
     nova = NovaClient(**openstack_env)
@@ -111,7 +117,8 @@ def main():
     try:
         nova.delete(fqdn)
     except AiToolsNovaError, error:
-        logging.error("Couldn't delete VM, Foreman entry remains intact (%s)" % error)
+        logging.error("Couldn't delete VM from Nova (%s). Please, make sure that "
+            "the machine is removed executing 'nova delete %s'" % (error, args.hostname[0]))
         return 10
 
     roger_client = RogerClient()
@@ -127,12 +134,6 @@ def main():
     except Exception, error:
         logging.error("Received unexpected error trying to switch off alarms in roger: %s" % error)
         logging.info("Please update roger for machine to switch alarms off if necessary")
-
-    try:
-        foreman.delhost(fqdn)
-    except AiToolsForemanError, error:
-        logging.error("Couldn't delete Foreman entry (%s)." % error)
-        return 20
 
     return 0
 
