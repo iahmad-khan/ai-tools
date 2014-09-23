@@ -13,6 +13,9 @@ If the substring returns a unique FE and the hostgroup is specified, it will set
 parameter on that hostgroup in Foreman. This is used by the alarm system to to identify the correct
 functional element when opening alarms. ai-dump also reports the value for hosts.
 .LP
+Use the special value 'Ignore' if you never want SNOW alarms - i.e. this will cause the SNOW producer to drop all
+exceptions for the hostgroup and never create a ticket.
+.LP
 .I Prerequisites:
 .TP
 .B Valid Kerberos5 ticket
@@ -25,7 +28,7 @@ Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
 
 .TP
 .B FEname
-The FE name substring to match, or the full FE name to add in case of the --jfdi option. If needed, can be quoted.
+The FE name substring to match, or the full FE name to add in case of the --jfdi option. If needed, can be quoted. Or 'Ignore' to never create alarms.
 
 .SH OPTIONS
 .TP
