@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class RogerClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
+    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias="false"):
         """
         Roger client for interacting with the Roger service. Autoconfigures via the AiConfig
         object.

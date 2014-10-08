@@ -21,7 +21,7 @@ from aitools.common import deref_url
 
 class ForemanClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, dryrun=False, deref_alias=False):
+    def __init__(self, host=None, port=None, timeout=None, dryrun=False, deref_alias="false"):
         """
         Foreman client for interacting with the Foreman service. Autoconfigures via the AiConfig
         object.
