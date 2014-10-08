@@ -15,13 +15,15 @@ from aitools.errors import AiToolsRogerInternalServerError
 from aitools.errors import AiToolsRogerNotImplementedError
 from aitools.httpclient import HTTPClient
 from aitools.config import RogerConfig
+from aitools.common import deref_url
+from distutils.util import strtobool
 
 logger = logging.getLogger(__name__)
 
 
 class RogerClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False):
+    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
         """
         Roger client for interacting with the Roger service. Autoconfigures via the AiConfig
         object.
@@ -31,6 +33,7 @@ class RogerClient(HTTPClient):
         :param timeout: override the auto-configured Roger timeout
         :param show_url: print the URLs used to sys.stdout
         :param dryrun: create a dummy client
+        :param deref_alias: resolve dns load balanced aliases
         """
         rogerconfig = RogerConfig()
         self.host = host or rogerconfig.roger_hostname
@@ -38,10 +41,9 @@ class RogerClient(HTTPClient):
         self.timeout = int(timeout or rogerconfig.roger_timeout)
         self.dryrun = dryrun
         self.show_url = show_url
+        self.deref_alias = strtobool(deref_alias)
         self.cache = {}
         self.alarm_fields = set(["nc_alarmed", "hw_alarmed", "os_alarmed", "app_alarmed"])
-        self.truth = set(["1", "true"])
-        self.untruth = set(["0", "false"])
 
     def get_state(self, hostname):
         """
@@ -71,12 +73,7 @@ class RogerClient(HTTPClient):
         for k, v in kwargs.items():
             if not k in self.alarm_fields:
                 continue
-            if str(v).lower() in self.truth:
-                data[k] = True
-            elif str(v).lower() in self.untruth:
-                data[k] = False
-            else:
-                raise ValueError("invalid value for '%s' ('%s'" % (k, v))
+            data[k] = strtobool(v)
         return data
 
     def create_state(self, hostname, appstate=False, message=None, **kwargs):
@@ -147,6 +144,8 @@ class RogerClient(HTTPClient):
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/%s" % \
             (self.host, self.port, url)
+        if self.deref_alias:
+            url = deref_url(url)
         headers = {'Accept': 'application/json',
                    'Accept-Encoding': 'deflate'}
         if data:

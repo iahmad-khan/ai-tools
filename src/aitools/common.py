@@ -12,6 +12,7 @@ from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from uuid import UUID
+from urlparse import urlparse
 
 import krbV
 from aitools.params import FQDN_VALIDATION_RE
@@ -30,6 +31,18 @@ def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
     # Workaround to get rid of "Starting new HTTP connection..."
     if logging_level > logging.DEBUG:
         logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+
+def deref_url(url):
+    """
+    The host in a url will be dereferenced from a load balanced alias
+    :param url: url for which the host will have any alias converted
+    :return: a dereferenced url
+    """
+    url = urlparse(url)
+    res = url._replace(netloc="%s:%s" % (socket.gethostbyaddr(socket.gethostbyname(url.hostname))[0], str(url.port)))
+    return res.geturl()
+
 
 def get_openstack_environment():
     """

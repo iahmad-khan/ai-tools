@@ -16,10 +16,12 @@ from aitools.errors import AiToolsForemanNotFoundError
 from aitools.errors import AiToolsForemanNotAllowedError
 from aitools.httpclient import HTTPClient
 from aitools.config import ForemanConfig
+from distutils.util import strtobool
+from aitools.common import deref_url
 
 class ForemanClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, dryrun=False):
+    def __init__(self, host=None, port=None, timeout=None, dryrun=False, deref_alias=False):
         """
         Foreman client for interacting with the Foreman service. Autoconfigures via the AiConfig
         object.
@@ -28,12 +30,14 @@ class ForemanClient(HTTPClient):
         :param port: override the auto-configured Foreman port
         :param timeout: override the auto-configured Foreman timeout
         :param dryrun: create a dummy client
+        :param deref_alias: resolve dns load balanced aliases
         """
         fmconfig = ForemanConfig()
         self.host = host or fmconfig.foreman_hostname
         self.port = int(port or fmconfig.foreman_port)
         self.timeout = int(timeout or fmconfig.foreman_timeout)
         self.dryrun = dryrun
+        self.deref_alias = strtobool(deref_alias)
         self.cache = {}
         self._media = None
         self._ptables = None
@@ -710,6 +714,8 @@ class ForemanClient(HTTPClient):
 
     def __do_api_request(self, method, url, data=None, prefix="api/"):
         url = "https://%s:%u/%s%s" % (self.host, self.port, prefix, url)
+        if self.deref_alias:
+            url = deref_url(url)
         # Yes, Foreman is stupid
         headers = {'User-Agent': 'ai-tools',
             'Content-type': 'application/json',

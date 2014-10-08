@@ -1,4 +1,4 @@
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoOptionError
 
 # Monostate pattern, Borg impl
 from argparse import ArgumentError
@@ -69,7 +69,7 @@ class AiConfig(object):
             raise AttributeError("'%s' configuration object has no attribute '%s'" % (self.__class__.__name__, key))
 
     def _get_from_configfile(self, key):
-        return self.parser.get("main", key)
+        return self.parser.get("DEFAULT", key)
 
     def _get_from_cli(self, key):
         return self.pargs.get(key, None)
@@ -80,6 +80,12 @@ class AiConfig(object):
                                 default=self.configfile)
         except ArgumentError:
             pass
+        try:
+            parser.add_argument('--dereference_alias', help="dereference any lb aliases",
+                                default="false")
+        except ArgumentError:
+            pass
+
         self.parser = parser
 
 

@@ -16,14 +16,16 @@ from aitools.errors import AiToolsTrustedBagNotImplementedError
 from aitools.httpclient import HTTPClient
 from aitools.config import TrustedBagConfig
 import base64
+from distutils.util import strtobool
 from urllib import quote_plus
+from aitools.common import deref_url
 
 logger = logging.getLogger(__name__)
 
 
 class TrustedBagClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False):
+    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
         """
         Tbag client for interacting with the Tbag service. Autoconfigures via the AiConfig
         object.
@@ -33,6 +35,7 @@ class TrustedBagClient(HTTPClient):
         :param timeout: override the auto-configured Roger timeout
         :param show_url: print the URLs used to sys.stdout
         :param dryrun: create a dummy client
+        :param deref_alias: dereference dns load balanced aliases
         """
         tbag = TrustedBagConfig()
         self.host = host or tbag.tbag_hostname
@@ -40,6 +43,7 @@ class TrustedBagClient(HTTPClient):
         self.timeout = int(timeout or tbag.tbag_timeout)
         self.dryrun = dryrun
         self.show_url = show_url
+        self.deref_alias = strtobool(deref_alias)
 
     def get_keys(self, entity, scope):
         tbag_endpoint = self.fetch_keys_endpoint(entity, scope)
@@ -129,6 +133,8 @@ class TrustedBagClient(HTTPClient):
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/%s" % \
             (self.host, self.port, url)
+        if self.deref_alias:
+            url = deref_url(url)
         headers = {'Accept': 'application/json',
                    'Accept-Encoding': 'deflate'}
         if data:

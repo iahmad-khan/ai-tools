@@ -10,10 +10,13 @@ from aitools.errors import AiToolsPdbError
 from aitools.errors import AiToolsPdbNotAllowedError
 from aitools.httpclient import HTTPClient
 from aitools.config import PdbConfig
+from distutils.util import strtobool
+from aitools.common import deref_url
+
 
 class PdbClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False):
+    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
         """
         PuppetDB client for interacting with the PuppetDB service. Autoconfigures via the AiConfig
         object.
@@ -23,6 +26,7 @@ class PdbClient(HTTPClient):
         :param timeout: override the auto-configured PuppetDB timeout
         :param show_url: print the URLs used to sys.stdout
         :param dryrun: create a dummy client
+        :param deref_alias: resolve dns load balanced aliases
         """
         pdbcondfig = PdbConfig()
         self.host = host or pdbcondfig.pdb_hostname
@@ -30,6 +34,7 @@ class PdbClient(HTTPClient):
         self.timeout = int(timeout or pdbcondfig.pdb_timeout)
         self.dryrun = dryrun
         self.show_url = show_url
+        self.deref_alias = strtobool(deref_alias)
         self.cache = {}
 
     def get_host(self, hostname):
@@ -106,6 +111,8 @@ class PdbClient(HTTPClient):
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/%s" % \
             (self.host, self.port, url)
+        if self.deref_alias:
+            url = deref_url(url)
         headers = {'Accept': 'application/json',
                    'Accept-Encoding': 'deflate'}
 
