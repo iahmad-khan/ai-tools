@@ -170,13 +170,14 @@ def format_summary(rawdata):
     logging.info(table)
     return successful_operations
 
+
 def process_host(hostname):
     fqdn = fqdnify(hostname)
 
     if fqdn is False:
         return format_result(hostname, 5, "No DNS entry")
 
-    foreman = ForemanClient(dryrun=args.dryrun)
+    foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
     try:
         host = foreman.gethost(fqdn=fqdn,
             toexpand=['operatingsystem', 'architecture'])
@@ -212,7 +213,7 @@ def process_host(hostname):
         return format_result(fqdn, 17, error)
 
     try:
-        enc = EncClient()
+        enc = EncClient(deref_alias=args.dereference_alias)
         (code, encdata) = enc.get_node_enc(fqdn)
     except AiToolsEncError, error:
         delete_ks_from_disk(ksfilepath)
@@ -224,7 +225,7 @@ def process_host(hostname):
             "This host boots only from -gigeth, please use ai-foreman-cli")
 
     if not args.roger_disable:
-        roger_client = RogerClient(dryrun=args.dryrun)
+        roger_client = RogerClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
         try:
             # note default for alarms is false, but if already exists, won't touch
             # probably what we want...
@@ -243,7 +244,7 @@ def process_host(hostname):
 
     if not args.caserver_disable:
         try:
-            certmgr = CertmgrClient(dryrun=args.dryrun)
+            certmgr = CertmgrClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
             certmgr.stage(fqdn)
         except AiToolsCertmgrError, error:
             delete_ks_from_disk(ksfilepath)

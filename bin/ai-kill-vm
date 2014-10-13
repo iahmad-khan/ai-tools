@@ -102,7 +102,7 @@ def main():
         logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
         return 5
 
-    foreman = ForemanClient(dryrun=args.dryrun)
+    foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
 
     openstack_env['dryrun'] = args.dryrun
     del openstack_env['tenant_id']
@@ -114,7 +114,7 @@ def main():
         logging.error("Couldn't delete VM, Foreman entry remains intact (%s)" % error)
         return 10
 
-    roger_client = RogerClient()
+    roger_client = RogerClient(deref_alias=args.dereference_alias)
     # we need to turn off alarms
     try:
         state = roger_client.update_or_create_state(fqdn, appstate="disabled", nc_alarmed="false",

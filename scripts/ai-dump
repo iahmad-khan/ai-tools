@@ -19,12 +19,12 @@ import textwrap
 
 from argparse import ArgumentParser
 from aitools.common import fqdnify
-from urllib2_kerberos import HTTPKerberosAuthHandler
 from aitools.completer import ForemanCompleter
 from aitools.config import ForemanConfig, PdbConfig, EncConfig, AiConfig, RogerConfig
 from aitools.pdb import PdbClient
 from aitools.enc import EncClient
 from aitools.errors import AiToolsPdbError
+from aitools.common import deref_url
 
 def location_name(lan_dblocation):
     if not lan_dblocation:
@@ -45,6 +45,8 @@ def get_roger_client(host):
     roger = teigi.rogerclient.RogerClient(rogerconf.roger_hostname, int(rogerconf.roger_port))
 
     url = roger.state_url(host)
+    if rogerconf.dereference_alias == 'true':
+        url = deref_url(url)
     try:
         answer = roger.open_url(url)
     except urllib2.HTTPError, e:
@@ -69,7 +71,7 @@ def host_main(pargs):
         sys.stderr.write("Host %s not found in DNS\n" % pargs.hostname)
         sys.exit(1)
 
-    pdb = PdbClient()
+    pdb = PdbClient(deref_alias=config.dereference_alias)
 
     try:
         host_info = pdb.get_host(hostname)
@@ -108,7 +110,7 @@ def host_main(pargs):
 
     num_disks = len(facts.get('disks','').split(","))
 
-    encclient = EncClient()
+    encclient = EncClient(deref_alias=config.dereference_alias)
     (code, enc) = encclient.get_node_enc(hostname)
 
     extrafacts={}

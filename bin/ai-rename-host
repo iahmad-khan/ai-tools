@@ -29,7 +29,7 @@ from aitools.common import configure_logging
 
 def sanity_check_for_alarms(old_name):
     try:
-        roger = RogerClient()
+        roger = RogerClient(deref_alias=pargs.dereference_alias)
         state = roger.get_state(old_name)
     except AiToolsRogerNotFoundError:
         return # ignore if the host can't be fund in Roger
@@ -45,7 +45,7 @@ def sanity_check_for_alarms(old_name):
         sys.exit(3)
 
 def sanity_check_for_virtual_machine(oldhost):
-    pdb = PdbClient()
+    pdb = PdbClient(deref_alias=pargs.dereference_alias)
     try:
         facts = pdb.get_facts(oldhost)
         if facts["is_virtual"] == u"true":

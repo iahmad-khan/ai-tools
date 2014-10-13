@@ -131,7 +131,7 @@ def process_fqdn(fqdn):
     if re.match(r".+?\.cern\.ch$", fqdn) is None:
         fqdn_summary['details'] = "Unable to resolve FQDN"
     else:
-        foreman = ForemanClient(dryrun=args.dryrun)
+        foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
         fqdn_summary['success'], fqdn_summary['details'] = \
             foreman_power_operation(foreman, fqdn)
 
