@@ -13,6 +13,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from uuid import UUID
 from urlparse import urlparse
+import random
 
 import krbV
 from aitools.params import FQDN_VALIDATION_RE
@@ -40,7 +41,8 @@ def deref_url(url):
     :return: a dereferenced url
     """
     url = urlparse(url)
-    res = url._replace(netloc="%s:%s" % (socket.gethostbyaddr(socket.gethostbyname(url.hostname))[0], str(url.port)))
+    deref_name = socket.gethostbyaddr(random.choice(socket.gethostbyname_ex(url.hostname)[2]))[0]
+    res = url._replace(netloc="%s:%s" % (deref_name, str(url.port)))
     return res.geturl()
 
 
@@ -104,10 +106,10 @@ def generate_random_fqdn(prefix):
     :param prefix: prefix for the hostname
     :return: the generated hostname
     """
-    hash = hashlib.sha1()
-    hash.update(str(time.time()))
+    hashname = hashlib.sha1()
+    hashname.update(str(time.time()))
     return "%s%s.cern.ch" % (prefix.lower() if prefix else "",
-        hash.hexdigest()[:HASHLEN])
+        hashname.hexdigest()[:HASHLEN])
 
 def validate_fqdn(fqdn):
     """
