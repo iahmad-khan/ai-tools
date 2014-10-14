@@ -41,6 +41,7 @@ class AiConfig(object):
         self.configfile = "/etc/ai/ai.conf"
         if configfile:
             self.configfile = configfile
+        self.bool_globals = set(['dereference_alias'])
 
     def read_config_and_override_with_pargs(self, pargs):
         """
@@ -68,8 +69,11 @@ class AiConfig(object):
         except:
             raise AttributeError("'%s' configuration object has no attribute '%s'" % (self.__class__.__name__, key))
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("DEFAULT", key)
+    def _get_from_configfile(self, key, section="DEFAULT"):
+        if key in self.bool_globals:
+            return self.parser.getboolean(section, key)
+        else:
+            return self.parser.get(section, key)
 
     def _get_from_cli(self, key):
         return self.pargs.get(key, None)
@@ -91,8 +95,8 @@ class AiConfig(object):
 
 class ForemanConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("foreman", key)
+    def _get_from_configfile(self, key, section="foreman"):
+        return super(ForemanConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--foreman-timeout', type=int, help="Timeout for Foreman operations")
@@ -103,8 +107,8 @@ class ForemanConfig(AiConfig):
 
 class PdbConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("pdb", key)
+    def _get_from_configfile(self, key, section="pdb"):
+        return super(PdbConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--pdb-timeout', type=int, help="Timeout for PuppetDB operations")
@@ -115,8 +119,8 @@ class PdbConfig(AiConfig):
 
 class EncConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("enc", key)
+    def _get_from_configfile(self, key, section="enc"):
+        return super(EncConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--enc-timeout', type=int, help="Timeout for ENC operations")
@@ -127,8 +131,8 @@ class EncConfig(AiConfig):
 
 class RogerConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("roger", key)
+    def _get_from_configfile(self, key, section="roger"):
+        return super(RogerConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--roger-timeout', type=int, help="Timeout for Roger operations")
@@ -139,8 +143,8 @@ class RogerConfig(AiConfig):
 
 class CertmgrConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("certmgr", key)
+    def _get_from_configfile(self, key, section="certmgr"):
+        return super(CertmgrConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--certmgr-timeout', type=int, help="Timeout for Cert manager operations")
@@ -151,8 +155,8 @@ class CertmgrConfig(AiConfig):
 
 class NovaConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("nova", key)
+    def _get_from_configfile(self, key, section="nova"):
+        return super(NovaConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--nova-timeout', type=int, help="Timeout for Nova operations")
@@ -161,8 +165,8 @@ class NovaConfig(AiConfig):
 
 class TrustedBagConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("tbag", key)
+    def _get_from_configfile(self, key, section="tbag"):
+        return super(TrustedBagConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--tbag-timeout', type=int, help="Timeout for trusted bag operations")
