@@ -32,7 +32,7 @@ class CertmgrClient(HTTPClient):
         self.port = int(port or certmgrconf.certmgr_port)
         self.timeout = int(timeout or certmgrconf.certmgr_timeout)
         self.dryrun = dryrun
-        self.deref_alias = strtobool(deref_alias)
+        self.deref_alias = deref_alias
         self.cache = {}
 
     def stage(self, fqdn):

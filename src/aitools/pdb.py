@@ -16,7 +16,7 @@ from aitools.common import deref_url
 
 class PdbClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias="false"):
+    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
         """
         PuppetDB client for interacting with the PuppetDB service. Autoconfigures via the AiConfig
         object.
@@ -34,7 +34,7 @@ class PdbClient(HTTPClient):
         self.timeout = int(timeout or pdbcondfig.pdb_timeout)
         self.dryrun = dryrun
         self.show_url = show_url
-        self.deref_alias = strtobool(deref_alias)
+        self.deref_alias = deref_alias
         self.cache = {}
 
     def get_host(self, hostname):

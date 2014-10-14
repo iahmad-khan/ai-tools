@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class TrustedBagClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias="false"):
+    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
         """
         Tbag client for interacting with the Tbag service. Autoconfigures via the AiConfig
         object.
@@ -43,7 +43,7 @@ class TrustedBagClient(HTTPClient):
         self.timeout = int(timeout or tbag.tbag_timeout)
         self.dryrun = dryrun
         self.show_url = show_url
-        self.deref_alias = strtobool(deref_alias)
+        self.deref_alias = deref_alias
 
     def get_keys(self, entity, scope):
         tbag_endpoint = self.fetch_keys_endpoint(entity, scope)

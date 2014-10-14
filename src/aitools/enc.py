@@ -29,7 +29,7 @@ class EncClient(HTTPClient):
         self.port = int(port or encconf.enc_port)
         self.timeout = int(timeout or encconf.enc_timeout)
         self.dryrun = dryrun
-        self.deref_alias = strtobool(deref_alias)
+        self.deref_alias = deref_alias
         self.cache = {}
 
     def get_node_enc(self, hostname):

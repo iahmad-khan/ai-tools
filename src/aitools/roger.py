@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class RogerClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias="false"):
+    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
         """
         Roger client for interacting with the Roger service. Autoconfigures via the AiConfig
         object.
@@ -41,7 +41,7 @@ class RogerClient(HTTPClient):
         self.timeout = int(timeout or rogerconfig.roger_timeout)
         self.dryrun = dryrun
         self.show_url = show_url
-        self.deref_alias = strtobool(deref_alias)
+        self.deref_alias = deref_alias
         self.cache = {}
         self.alarm_fields = set(["nc_alarmed", "hw_alarmed", "os_alarmed", "app_alarmed"])
 
