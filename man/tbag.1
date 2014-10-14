@@ -4,7 +4,7 @@ tbag \- tbag
 .SH DESCRIPTION
 usage: tbag [\-h] [\-\-tbag\-timeout TBAG_TIMEOUT] [\-\-tbag\-hostname TBAG_HOSTNAME]
 .IP
-[\-\-tbag\-port TBAG_PORT] [\-\-config CONFIG] [\-\-show_url] [\-v] [\-d]
+[\-\-tbag\-port TBAG_PORT] [\-\-config CONFIG] [\-\-show_url] [\-\-dereference_alias] [\-v] [\-d]
 {add,delete,show,showkeys} ...
 .PP
 Tool for secrets handling
@@ -125,6 +125,9 @@ Trusted bag port
 .TP
 \fB\-\-config\fR CONFIG
 Configuration file
+.TP
+\fB\-\-dereference_alias\fR
+Dereference aliases in urls
 .TP
 \fB\-\-show_url\fR
 show REST urls

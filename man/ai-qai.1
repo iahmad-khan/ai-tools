@@ -10,7 +10,7 @@ ai-qai \- checks to see if hosts are managed by AI or by Quattor
 .SH DESCRIPTION
 Usage: ai-qai [\-h] [\-\-json] [\-\-pdb_timeout TIMEOUT]
     [\-\-pdb_server SERVER] [\-\-pdb_port PORT]
-    [\-\-config CONFIG] HOST [HOST ...]
+    [\-\-config CONFIG] [\-\-dereference_alias] HOST [HOST ...]
 .IP
 .PP
 Checks to see if hosts are managed by AI or by Quattor.
@@ -54,6 +54,9 @@ server running puppetdb
 .TP
 \fB\-\-pdb_port\fR PORT
 port for puppetdb
+.TP
+\fB\-\-dereference_alias
+dereference aliases in urls
 .TP
 \fB\-\-config\fR config
 configuration file

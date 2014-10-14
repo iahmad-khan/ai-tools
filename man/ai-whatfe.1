@@ -9,7 +9,7 @@ ai-whatfe \- IT support tool. Prints the most likely set of FE procedures to loo
 .SH DESCRIPTION
 Usage: ai-whatfe [\-h] [\-\-pdb_timeout TIMEOUT]
     [\-\-pdb_server SERVER] [\-\-pdb_port PORT]
-    [\-\-config CONFIG] HOST
+    [\-\-config CONFIG] [\-\-dereference_alias] HOST
 .IP
 .PP
 IT support tool. Prints the most likely set of FE procedures to look at for a given host. Outputs whether
@@ -39,6 +39,9 @@ port for puppetdb
 .TP
 \fB\-\-config\fR config
 configuration file
+.TP
+\fB\-\-dereference_alias\fR
+dereference aliases in urls
 
 .SH EXAMPLES
 .TP
