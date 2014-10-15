@@ -102,7 +102,7 @@ def main():
         logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
         return 5
 
-    foreman = ForemanClient(dryrun=args.dryrun)
+    foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
 
     try:
         foreman.delhost(fqdn)
@@ -121,7 +121,7 @@ def main():
             "the machine is removed executing 'nova delete %s'" % (error, args.hostname[0]))
         return 10
 
-    roger_client = RogerClient()
+    roger_client = RogerClient(deref_alias=args.dereference_alias)
     # we need to turn off alarms
     try:
         state = roger_client.update_or_create_state(fqdn, appstate="disabled", nc_alarmed="false",

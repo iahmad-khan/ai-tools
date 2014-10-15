@@ -77,7 +77,7 @@ def set_main(pargs):
             pargs.binary = True
 
     try:
-        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
+        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
         tbag.add_key(entity, scope, pargs.key, value, b64_value=pargs.binary)
         logging.info("Key '%s' successfully added to %s '%s'" % (pargs.key, scope, entity))
     except AiToolsTrustedBagError as e:
@@ -94,7 +94,7 @@ def delete_main(pargs):
     (entity, scope) = extract_entity(pargs)
 
     try:
-        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
+        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
         tbag.delete_key(entity, scope, pargs.key)
         logging.info("Key '%s' successfully deleted from %s '%s'" % (pargs.key, scope, entity))
     except AiToolsTrustedBagError as e:
@@ -111,7 +111,7 @@ def show_main(pargs):
     (entity, scope) = extract_entity(pargs)
 
     try:
-        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
+        tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
         secret = tbag.get_key(entity, scope, pargs.key)
     except AiToolsTrustedBagError as e:
         logging.error(e)
@@ -144,7 +144,7 @@ def showkeys_main(pargs):
 
     (entity, scope) = extract_entity(pargs)
 
-    tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun)
+    tbag = TrustedBagClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
 
     rtn = dict()
 

@@ -53,7 +53,7 @@ def main():
     pdbconf = PdbConfig()
     pdbconf.read_config_and_override_with_pargs(args)
 
-    pdbclient = PdbClient()
+    pdbclient = PdbClient(deref_alias=args.dereference_alias)
 
     json_output = {}
     for host in args.hosts:

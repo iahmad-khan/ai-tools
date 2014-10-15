@@ -107,7 +107,7 @@ def process_environments():
         environment_files)
     environment_files = filter(lambda x: x not in ENVIRONMENTS_BLACKLIST,
         environment_files)
-    foreman = ForemanClient(dryrun=args.dryrun)
+    foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
     for environment_file in environment_files:
         logging.info("Processing '%s'..." % environment_file)
 

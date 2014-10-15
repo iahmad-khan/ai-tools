@@ -115,7 +115,7 @@ def main():
 
     print_summary(args, fqdn)
 
-    foreman = ForemanClient(dryrun=False)
+    foreman = ForemanClient(dryrun=False, deref_alias=args.dereference_alias)
 
     try:
         host = foreman.gethost(fqdn=fqdn)

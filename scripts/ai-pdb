@@ -31,7 +31,7 @@ def raw_main(pargs):
             q += "]"
         query = urlencode({"query": q})
 
-    pdb = PdbClient(show_url=pargs.show_url)
+    pdb = PdbClient(show_url=pargs.show_url, deref_alias=pargs.dereference_alias)
     if query:
         path = "%s?%s" % (pargs.endpoint, query)
     else:
