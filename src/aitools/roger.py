@@ -73,7 +73,10 @@ class RogerClient(HTTPClient):
         for k, v in kwargs.items():
             if not k in self.alarm_fields:
                 continue
-            data[k] = strtobool(v)
+            if isinstance(v, bool):
+                data[k] = v
+            else:
+                data[k] = strtobool(v)
         return data
 
     def create_state(self, hostname, appstate=False, message=None, **kwargs):
