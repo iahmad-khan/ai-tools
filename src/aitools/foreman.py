@@ -180,7 +180,7 @@ class ForemanClient(HTTPClient):
         :raise AiToolsForemanError: for any other error
         """
         if self.dryrun:
-            logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
+            logging.info("Host '%s' not deleted because dryrun is enabled" % fqdn)
             return True
         logging.info("Deleting host '%s' from Foreman..." % fqdn)
         (code, body) = self.__do_api_request("delete", "hosts/%s" % fqdn)
