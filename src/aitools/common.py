@@ -12,6 +12,8 @@ from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from uuid import UUID
+from urlparse import urlparse
+import random
 
 import krbV
 from aitools.params import FQDN_VALIDATION_RE
@@ -30,6 +32,19 @@ def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
     # Workaround to get rid of "Starting new HTTP connection..."
     if logging_level > logging.DEBUG:
         logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+
+def deref_url(url):
+    """
+    The host in a url will be dereferenced from a load balanced alias
+    :param url: url for which the host will have any alias converted
+    :return: a dereferenced url
+    """
+    url = urlparse(url)
+    deref_name = socket.gethostbyaddr(random.choice(socket.gethostbyname_ex(url.hostname)[2]))[0]
+    res = url._replace(netloc="%s:%s" % (deref_name, str(url.port)))
+    return res.geturl()
+
 
 def get_openstack_environment():
     """
@@ -91,10 +106,10 @@ def generate_random_fqdn(prefix):
     :param prefix: prefix for the hostname
     :return: the generated hostname
     """
-    hash = hashlib.sha1()
-    hash.update(str(time.time()))
+    hashname = hashlib.sha1()
+    hashname.update(str(time.time()))
     return "%s%s.cern.ch" % (prefix.lower() if prefix else "",
-        hash.hexdigest()[:HASHLEN])
+        hashname.hexdigest()[:HASHLEN])
 
 def validate_fqdn(fqdn):
     """

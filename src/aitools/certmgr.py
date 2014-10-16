@@ -10,10 +10,13 @@ from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsCertmgrError
 from aitools.httpclient import HTTPClient
 from aitools.config import CertmgrConfig
+from distutils.util import strtobool
+from aitools.common import deref_url
+
 
 class CertmgrClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, dryrun=False):
+    def __init__(self, host=None, port=None, timeout=None, dryrun=False, deref_alias=False):
         """
         Basic client to communicate with the Certificate Manager service. Autoconfigures via the
         AiConfig class.
@@ -22,12 +25,14 @@ class CertmgrClient(HTTPClient):
         :param port: override the auto-configured cert manager port
         :param timeout: override the auto-configured cert manager timeout
         :param dryrun: make a dummy client
+        :param deref_alias: dereference load balanced aliases
         """
         certmgrconf = CertmgrConfig()
         self.host = host or certmgrconf.certmgr_hostname
         self.port = int(port or certmgrconf.certmgr_port)
         self.timeout = int(timeout or certmgrconf.certmgr_timeout)
         self.dryrun = dryrun
+        self.deref_alias = deref_alias
         self.cache = {}
 
     def stage(self, fqdn):
@@ -54,6 +59,8 @@ class CertmgrClient(HTTPClient):
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/%s" % \
             (self.host, self.port, url)
+        if self.deref_alias:
+            url = deref_url(url)
         headers = {'User-Agent': 'ai-tools'}
         if method in ('post', 'put'):
             headers['Content-type'] = 'application/json'

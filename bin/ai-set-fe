@@ -17,8 +17,8 @@ import logging
 FECACHE = '/var/cache/femap/femap.json'
 
 
-def set_fe_for_hostgroup(hostgroup, fe):
-    f = ForemanClient()
+def set_fe_for_hostgroup(hostgroup, fe, deref_alias):
+    f = ForemanClient(deref_alias=deref_alias)
     try:
         f.addhostgroupparameter(hostgroup, "fename", fe)
         logging.info("Successfully set '%s' for Foreman hostgroup '%s'" % (fe, hostgroup))
@@ -50,7 +50,7 @@ def fe_set(pargs):
             sys.exit(0)
         else:
             logging.warning("--jfdi specified, so will apply regardless")
-            set_fe_for_hostgroup(pargs.hostgroup, pargs.FEname)
+            set_fe_for_hostgroup(pargs.hostgroup, pargs.FEname, pargs.dereference_alias)
 
 
     candidatefe = [ e for e in entries if pargs.FEname.lower() in e.lower()]

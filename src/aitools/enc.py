@@ -8,10 +8,12 @@ from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsEncError
 from aitools.httpclient import HTTPClient
 from aitools.config import EncConfig
+from distutils.util import strtobool
+from aitools.common import deref_url
 
 class EncClient(HTTPClient):
 
-    def __init__(self, host=None, port=None, timeout=None, dryrun=False):
+    def __init__(self, host=None, port=None, timeout=None, dryrun=False, deref_alias=False):
         """
         ENC client for interacting with the ENC service. Autoconfigures via the AiConfig
         object.
@@ -20,12 +22,14 @@ class EncClient(HTTPClient):
         :param port: override the auto-configured ENC port
         :param timeout: override the auto-configured ENC timeout
         :param dryrun: create a dummy client
+        :param deref_alias: resolve dns load balanced aliases
         """
         encconf = EncConfig()
         self.host = host or encconf.enc_hostname
         self.port = int(port or encconf.enc_port)
         self.timeout = int(timeout or encconf.enc_timeout)
         self.dryrun = dryrun
+        self.deref_alias = deref_alias
         self.cache = {}
 
     def get_node_enc(self, hostname):
@@ -41,6 +45,8 @@ class EncClient(HTTPClient):
     def __do_api_request(self, method, url, data=None):
         url="https://%s:%u/%s" % \
             (self.host, self.port, url)
+        if self.deref_alias:
+            url = deref_url(url)
         headers = {'Accept': 'application/yaml'}
 
         try:

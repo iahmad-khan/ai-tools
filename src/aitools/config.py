@@ -1,4 +1,4 @@
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoOptionError
 
 # Monostate pattern, Borg impl
 from argparse import ArgumentError
@@ -41,6 +41,7 @@ class AiConfig(object):
         self.configfile = "/etc/ai/ai.conf"
         if configfile:
             self.configfile = configfile
+        self.bool_globals = set(['dereference_alias'])
 
     def read_config_and_override_with_pargs(self, pargs):
         """
@@ -68,98 +69,107 @@ class AiConfig(object):
         except:
             raise AttributeError("'%s' configuration object has no attribute '%s'" % (self.__class__.__name__, key))
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("main", key)
+    def _get_from_configfile(self, key, section="DEFAULT"):
+        if key in self.bool_globals:
+            return self.parser.getboolean(section, key)
+        else:
+            return self.parser.get(section, key)
 
     def _get_from_cli(self, key):
         return self.pargs.get(key, None)
 
-    def add_configfile_args(self, parser):
+    def add_global_args(self, parser):
         try:
             parser.add_argument('--config', help="Configuration file",
                                 default=self.configfile)
         except ArgumentError:
             pass
+        try:
+            parser.add_argument('--dereference_alias', help="dereference any lb aliases",
+                                default="false")
+        except ArgumentError:
+            pass
+
         self.parser = parser
 
 
 class ForemanConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("foreman", key)
+    def _get_from_configfile(self, key, section="foreman"):
+        return super(ForemanConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--foreman-timeout', type=int, help="Timeout for Foreman operations")
         parser.add_argument('--foreman-hostname', help="Foreman hostname")
         parser.add_argument('--foreman-port', type=int, help="Foreman port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class PdbConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("pdb", key)
+    def _get_from_configfile(self, key, section="pdb"):
+        return super(PdbConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--pdb-timeout', type=int, help="Timeout for PuppetDB operations")
         parser.add_argument('--pdb-hostname', help="PuppetDB hostname")
         parser.add_argument('--pdb-port', type=int, help="PuppetDB port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class EncConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("enc", key)
+    def _get_from_configfile(self, key, section="enc"):
+        return super(EncConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--enc-timeout', type=int, help="Timeout for ENC operations")
         parser.add_argument('--enc-hostname', help="ENC hostname")
         parser.add_argument('--enc-port', type=int, help="ENC port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class RogerConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("roger", key)
+    def _get_from_configfile(self, key, section="roger"):
+        return super(RogerConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--roger-timeout', type=int, help="Timeout for Roger operations")
         parser.add_argument('--roger-hostname', help="Roger hostname")
         parser.add_argument('--roger-port', type=int, help="Roger port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class CertmgrConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("certmgr", key)
+    def _get_from_configfile(self, key, section="certmgr"):
+        return super(CertmgrConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--certmgr-timeout', type=int, help="Timeout for Cert manager operations")
         parser.add_argument('--certmgr-hostname', help="Certmanager hostname")
         parser.add_argument('--certmgr-port', type=int, help="Certmanager port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class NovaConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("nova", key)
+    def _get_from_configfile(self, key, section="nova"):
+        return super(NovaConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--nova-timeout', type=int, help="Timeout for Nova operations")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
 
 
 class TrustedBagConfig(AiConfig):
 
-    def _get_from_configfile(self, key):
-        return self.parser.get("tbag", key)
+    def _get_from_configfile(self, key, section="tbag"):
+        return super(TrustedBagConfig, self)._get_from_configfile(key, section=section)
 
     def add_standard_args(self, parser):
         parser.add_argument('--tbag-timeout', type=int, help="Timeout for trusted bag operations")
         parser.add_argument('--tbag-hostname', help="Trusted bag hostname")
         parser.add_argument('--tbag-port', type=int, help="Trusted bag port")
-        self.add_configfile_args(parser)
+        self.add_global_args(parser)
