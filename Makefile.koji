@@ -24,3 +24,12 @@ rpm:   all
 	rpmbuild -ba --define '_sourcedir $(PWD)' ${SPECFILE}
 
 
+scratch:
+	koji build ai6 --nowait --scratch  git+https://gitlab.cern.ch/ai-config-team/ai-tools.git#$(shell git rev-parse HEAD)
+	koji build ai7 --nowait --scratch  git+https://gitlab.cern.ch/ai-config-team/ai-tools.git#$(shell git rev-parse HEAD)
+
+build:
+	koji build ai6 --nowait git+https://gitlab.cern.ch/ai-config-team/ai-tools.git#$(shell git rev-parse HEAD)
+	koji build ai7 --nowait git+https://gitlab.cern.ch/ai-config-team/ai-tools.git#$(shell git rev-parse HEAD)
+
+
