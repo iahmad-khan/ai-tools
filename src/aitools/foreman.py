@@ -172,6 +172,8 @@ class ForemanClient(HTTPClient):
 
     def delhost(self, fqdn):
         """
+        Delete the specified host in Foreman.
+
         :param fqdn:
         :raise AiToolsForemanNotFoundError: if try to delete machine that doesn't exist
         :raise AiToolsForemanNotAllowedError: if try to delete machine and not allowed
@@ -258,24 +260,6 @@ class ForemanClient(HTTPClient):
         elif code == requests.codes.unprocessable_entity:
             error = ','.join(body[fqdn]['full_messages'])
             raise AiToolsForemanError("getfacts call failed (%s)" % error)
-
-    def delhost(self, fqdn):
-        """
-        Delete the specified host in Foreman.
-
-        :param fqdn: the hostname to delete
-        :raise AiToolsForemanError: if the deletion call failed or if the host was not found
-        """
-        logging.info("Deleting host '%s' from Foreman" % fqdn)
-
-        if not self.dryrun:
-            (code, body) = self.__do_api_request("delete", "hosts/%s" % fqdn)
-            if code == requests.codes.ok:
-                logging.info("Host '%s' deleted from Foreman" % fqdn)
-            elif code == requests.codes.not_found:
-                raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
-        else:
-            logging.info("Host '%s' not deleted because dryrun is enabled" % fqdn)
 
     def renamehost(self, oldfqdn, newfqdn):
         """
