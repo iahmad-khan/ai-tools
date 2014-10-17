@@ -101,7 +101,7 @@ DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
 [ "$$OS_MAJOR_VERSION" == "6" ] && DEPS="$$DEPS yum-plugin-priorities"
 [ "$$OS_MAJOR_VERSION" == "5" ] && DEPS="$$DEPS yum-priorities"
 
-[ "$$OS_MAJOR_VERSION" == "7" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS --enablerepo=epel-beta"
+[ "$$OS_MAJOR_VERSION" == "7" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS"
 [ "$$OS_MAJOR_VERSION" == "6" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS"
 [ "$$OS_MAJOR_VERSION" == "5" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS"
 
