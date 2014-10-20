@@ -101,16 +101,12 @@ DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
 [ "$$OS_MAJOR_VERSION" == "6" ] && DEPS="$$DEPS yum-plugin-priorities"
 [ "$$OS_MAJOR_VERSION" == "5" ] && DEPS="$$DEPS yum-priorities"
 
-[ "$$OS_MAJOR_VERSION" == "7" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS --enablerepo=epel-beta"
-[ "$$OS_MAJOR_VERSION" == "6" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS"
-[ "$$OS_MAJOR_VERSION" == "5" ] && EXTRA_YUM_OPTS="$$EXTRA_YUM_OPTS"
-
 AIREPO="ai$$OS_MAJOR_VERSION"
 [[ $$(echo $FOREMAN_ENVIRONMENT | tr '[:upper:]' '[:lower:]') == 'qa' ]] && AIREPO="$$AIREPO-qa"
 
 function install_dependencies {
   echo "Trying to install dependencies..."
-  yum install -y --enablerepo=$$AIREPO $$EXTRA_YUM_OPTS $$DEPS
+  yum install -y --enablerepo=$$AIREPO $$DEPS
   rpm -ql $$DEPS > /dev/null
 }
 execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependencies"
@@ -118,7 +114,7 @@ execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependenci
 function install_puppet {
   echo "Trying to install puppet from AI repositories..."
   yum remove -y puppet
-  yum install -y --enablerepo=$$AIREPO $$EXTRA_YUM_OPTS puppet
+  yum install -y --enablerepo=$$AIREPO puppet
   rpm -ql puppet > /dev/null
 }
 execute_shell_block install_puppet 60 5 || unrecoverable_error "puppet"
