@@ -41,7 +41,11 @@ def deref_url(url):
     :return: a dereferenced url
     """
     url = urlparse(url)
-    deref_name = socket.gethostbyaddr(random.choice(socket.gethostbyname_ex(url.hostname)[2]))[0]
+    try:
+        deref_name = socket.gethostbyaddr(random.choice(socket.gethostbyname_ex(url.hostname)[2]))[0]
+    except socket.gaierror, e:
+        logging.warn("Could not deference '%s' in '%s' received error: '%s' attempting connection to original url'" %
+        (url.hostname, url, e))
     res = url._replace(netloc="%s:%s" % (deref_name, str(url.port)))
     return res.geturl()
 
