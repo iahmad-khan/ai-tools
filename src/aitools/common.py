@@ -46,6 +46,7 @@ def deref_url(url):
     except socket.gaierror, e:
         logging.warn("Could not deference '%s' in '%s' received error: '%s' attempting connection to original url'" %
         (url.hostname, url, e))
+        return url
     res = url._replace(netloc="%s:%s" % (deref_name, str(url.port)))
     return res.geturl()
 
