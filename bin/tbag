@@ -158,32 +158,35 @@ def showkeys_main(pargs):
 
     if not pargs.show_tree:
         print json.dumps(thislevel_keys["secrets"], sort_keys=True, indent=5, separators=(',', ': '))
+        sys.exit(0)
+
+    if scope == "hostgroup":
+        hg = entity
     else:
-        if scope == "hostgroup":
-            hg = entity
-        else:
-            pdb_client = PdbClient()
-            facts = pdb_client.get_facts(entity)
-            hg = facts["hostgroup"]
-        hg_elems = hg.split("/")
-        while hg_elems:
-            hostgroup = "/".join(hg_elems)
-            try:
-                hg_keys = tbag.get_keys(hostgroup, "hostgroup")
-                for k in hg_keys["secrets"]:
-                    if pargs.show_all:
-                        if not k in rtn:
-                            rtn[k] = {"hostgroup": [hostgroup]}
+        pdb_client = PdbClient(deref_alias=pargs.dereference_alias)
+        facts = pdb_client.get_facts(entity)
+        hg = facts["hostgroup"]
+    hg_elems = hg.split("/")
+    while hg_elems:
+        hostgroup = "/".join(hg_elems)
+        try:
+            hg_keys = tbag.get_keys(hostgroup, "hostgroup")
+            for k in hg_keys["secrets"]:
+                if pargs.show_all:
+                    if not k in rtn:
+                        rtn[k] = {"hostgroup": [hostgroup]}
+                    else:
+                        if "hostgroup" in rtn[k]:
+                            rtn[k]["hostgroup"].append(hostgroup)
                         else:
-                            if "hostgroup" in rtn[k]:
-                                rtn[k]["hostgroup"].append(hostgroup)
-                            else:
-                                rtn[k]["hostgroup"] = [hostgroup]
-            except AiToolsTrustedBagError as e:
-                logging.error(e)
-                sys.exit(2)
-            hg_elems.pop()
-        print json.dumps(rtn, sort_keys=True, indent=5, separators=(',', ': '))
+                            rtn[k]["hostgroup"] = [hostgroup]
+                else:
+                    rtn[k] = {"hostgroup": [hostgroup]}
+        except AiToolsTrustedBagError as e:
+            logging.error(e)
+            sys.exit(2)
+        hg_elems.pop()
+    print json.dumps(rtn, sort_keys=True, indent=5, separators=(',', ': '))
 
 
 def main():
