@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.5
+Version: 8.6
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -81,6 +81,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Oct 21 2014 Ben Jones <ben.dylan.jones@cern.ch> 8.6-1
+- [tbag] Fixes for --all and --tree printing
+- [common] error handling for url dereferencing
+- [ai-bs-vm] support newest cc7 image
+
 * Tue Sep 09 2014 Steve Traylen <steve.traylen@cern.ch> 8.5-1
 - [roger] - fix bool test for roger state update 
 - [ai-*] - deref alias in kerberos
