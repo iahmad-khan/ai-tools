@@ -35,7 +35,7 @@ def fe_set(pargs):
 
     configure_logging(pargs)
 
-    entries = []
+    entries = {}
     try:
         with open(FECACHE, 'r') as cachefile:
             entries = json.load(cachefile)
@@ -52,7 +52,7 @@ def fe_set(pargs):
             logging.warning("--jfdi specified, so will apply regardless")
             set_fe_for_hostgroup(pargs.hostgroup, pargs.FEname, pargs.dereference_alias)
 
-
+    entries['Ignore'] = "0"
     candidatefe = [ e for e in entries if pargs.FEname.lower() in e.lower()]
     if len(candidatefe) == 0:
         logging.error("Cannot match '%s' to any known SNOW functional element." % pargs.FEname)
