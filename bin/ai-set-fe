@@ -67,7 +67,7 @@ def fe_set(pargs):
             logging.info("Matched SNOW functional element:")
             logging.info(" - %s" % candidatefe[0])
             logging.info("Setting for hostgroup: %s" % pargs.hostgroup)
-            set_fe_for_hostgroup(pargs.hostgroup, candidatefe[0])
+            set_fe_for_hostgroup(pargs.hostgroup, candidatefe[0], pargs.dereference_alias)
     else:
         logging.info("Possible SNOW functional elements:")
         for f in candidatefe:
