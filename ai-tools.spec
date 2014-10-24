@@ -85,6 +85,8 @@ rm -rf ${RPM_BUILD_ROOT}
 - [tbag] Fixes for --all and --tree printing
 - [common] error handling for url dereferencing
 - [ai-bs-vm] support newest cc7 image
+- [ai-set-fe] 'Ignore' as valid FE
+- Disable all alarms by default when preparing host for install
 
 * Tue Sep 09 2014 Steve Traylen <steve.traylen@cern.ch> 8.5-1
 - [roger] - fix bool test for roger state update 
