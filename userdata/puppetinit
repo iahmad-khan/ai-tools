@@ -45,6 +45,7 @@ if [ -f /etc/os-release ] ; then
   OS_DISTRIBUTOR_ID=$$ID
 else
   OS_MAJOR_VERSION=`lsb_release -r | awk '{split($$2,a,"."); print a[1]}'`
+  OS_MINOR_VERSION=`lsb_release -r | awk '{split($$2,a,"."); print a[2]}'`
   OS_DISTRIBUTOR_ID=`lsb_release -i | awk '{print $$3}'`
 fi
 
@@ -66,31 +67,76 @@ execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
 function set_slc_for_rhel_repositories {
   echo "Setting RHEL repository..."
 
-  # get sl-release RPM
-  baseurl=http://linuxsoft.cern.ch/cern/slc$${OS_MAJOR_VERSION}X/updates/x86_64/SRPMS/
-  slreleaserpm=`curl $${baseurl} | awk -F\" '/sl-release/ {print $$2}' | sort | tail -1`
-  rpm -ivh $${baseurl}/$${slreleaserpm} || return 1
-  cd /tmp
-  rm -rf slc-release-$${OS_MAJOR_VERSION}
-  tar xzvf /rpmbuild/SOURCES/slc-release-$${OS_MAJOR_VERSION}.tar.gz || return 1
+  # SLC5 specific bits
+  if [ "$$OS_MAJOR_VERSION" == "5" ]; then
+    # get yum-conf RPM
+    yumconfrpm=http://linuxsoft.cern.ch/cern/slc5X/x86_64/yum/updates//yum-conf-5X-9.slc5.noarch.rpm
+    rm -rf /tmp/yum-conf
+    mkdir /tmp/yum-conf && cd /tmp/yum-conf
+    rpm2cpio $${yumconfrpm} | cpio -ivd || exit 1
 
-  # install needed repos
-  repos="slc$${OS_MAJOR_VERSION}-cernonly slc$${OS_MAJOR_VERSION}-os epel"
-  for repo in $${repos}
-  do
-    echo "Copying $${repo}"
-    cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${repo}.repo /etc/yum.repos.d/
-    test -f /etc/yum.repos.d/$${repo}.repo || return 1
-  done
+    # get sl-release RPM
+    baseurl=http://linuxsoft.cern.ch/cern/slc$${OS_MAJOR_VERSION}X/updates/x86_64/SRPMS/
+    slreleaserpm=`curl $${baseurl} | awk -F\" "/sl-release-$${OS_MAJOR_VERSION}.$${OS_MINOR_VERSION}/ {print \\$$2}" | sort | tail -1`
+    rm -rf /tmp/sl-release
+    mkdir /tmp/sl-release && cd /tmp/sl-release
+    rpm2cpio $${baseurl}/$${slreleaserpm} | cpio -ivd || exit 1
+    cd /tmp
+    rm -rf slc-release-$${OS_MAJOR_VERSION}
+    tar xzvf /tmp/sl-release/sl-release-$${OS_MAJOR_VERSION}.$${OS_MINOR_VERSION}.tar.gz || return 1
 
-  # install needed GPG Keys
-  gpgkeys="RPM-GPG-KEY-cern RPM-GPG-KEY-EPEL-$${OS_MAJOR_VERSION}"
-  for gpgkey in $${gpgkeys}
-  do
-    echo "Copying $${gpgkey}"
-    cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${gpgkey} /etc/pki/rpm-gpg/
-    test -f /etc/pki/rpm-gpg/$${gpgkey} || return 1
-  done
+    # install needed repos
+    repos="slc$${OS_MAJOR_VERSION}-cernonly slc$${OS_MAJOR_VERSION}-os epel"
+    for repo in $${repos}
+    do
+      echo "Copying $${repo}"
+      cp /tmp/yum-conf/etc/yum.repos.d/$${repo}.repo /etc/yum.repos.d/ || exit 1
+    done
+
+    # install needed GPG Keys
+    gpgkeys="RPM-GPG-KEY-EPEL"
+    for gpgkey in $${gpgkeys}
+    do
+      echo "Copying $${gpgkey}"
+      cp /tmp/yum-conf/etc/pki/rpm-gpg/$${gpgkey} /etc/pki/rpm-gpg/ || exit 1
+    done
+    gpgkeys="RPM-GPG-KEY-cern RPM-GPG-KEY-jpolok RPM-GPG-KEY-csieh RPM-GPG-KEY-dawson"
+    for gpgkey in $${gpgkeys}
+    do
+      echo "Copying $${gpgkey}"
+      cp /tmp/sl-release-$${OS_MAJOR_VERSION}.$${OS_MINOR_VERSION}/$${gpgkey} /etc/pki/rpm-gpg/ || exit 1
+    done
+
+  # SLC6 specific bits
+  else if [ "$$OS_MAJOR_VERSION" == "6" ]; then
+    # get sl-release RPM
+    baseurl=http://linuxsoft.cern.ch/cern/slc$${OS_MAJOR_VERSION}X/updates/x86_64/SRPMS/
+    slreleaserpm=`curl $${baseurl} | awk -F\" '/sl-release/ {print $$2}' | sort | tail -1`
+    rpm -ivh $${baseurl}/$${slreleaserpm} || return 1
+    cd /tmp
+    rm -rf slc-release-$${OS_MAJOR_VERSION}
+    tar xzvf /rpmbuild/SOURCES/slc-release-$${OS_MAJOR_VERSION}.tar.gz || return 1
+
+    # install needed repos
+    repos="slc$${OS_MAJOR_VERSION}-cernonly slc$${OS_MAJOR_VERSION}-os epel"
+    for repo in $${repos}
+    do
+      echo "Copying $${repo}"
+      cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${repo}.repo /etc/yum.repos.d/
+      test -f /etc/yum.repos.d/$${repo}.repo || return 1
+    done
+
+    # install needed GPG Keys
+    gpgkeys="RPM-GPG-KEY-cern RPM-GPG-KEY-EPEL-$${OS_MAJOR_VERSION}"
+    for gpgkey in $${gpgkeys}
+    do
+      echo "Copying $${gpgkey}"
+      cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${gpgkey} /etc/pki/rpm-gpg/
+      test -f /etc/pki/rpm-gpg/$${gpgkey} || return 1
+    done
+  fi
+  fi
+
 }
 [[ "$${OS_DISTRIBUTOR_ID}" = "RedHatEnterpriseServer" || "$${OS_DISTRIBUTOR_ID}" = "rhel" ]] && \
   ( execute_shell_block set_slc_for_rhel_repositories 60 5 || unrecoverable_error "slc-rhel-repository" )
