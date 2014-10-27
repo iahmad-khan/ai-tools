@@ -6,23 +6,23 @@ import logging
 import requests
 import cinderclient.exceptions
 from cinderclient.v1 import client
-from aitools.openstack import OpenstackClient
-
 from aitools.errors import AiToolsCinderError
 
 class CinderClient():
 
-    DEFAULT_TIMEOUT= 360
-    def __init__(self, cacert=None, dryrun=False, **kwargs):
+    DEFAULT_TIMEOUT = 360
+    def __init__(self, cm, cacert=None, dryrun=False):
         """
         Cinder client for interacting with the Openstack Cinder service.
 
+        :param cm: Openstack ClientManager
         :param cacert: override the environment variable configured CA certificate bundle
         :param dryrun: create a dummy client
         """
+        self.cinder = None
+        self.cm = cm
         self.cacert = cacert
         self.dryrun = dryrun
-        self.cm = OpenstackClient(**kwargs)
 
     def create(self, size, display_name=None, display_description=None,
                volume_type=None, imageRef=None):
@@ -126,15 +126,16 @@ class CinderClient():
             "'available'{0}".format(' and bootable' if needs_to_be_bootable else ''))
 
     def __init_client(self):
-        try:
-            cc = client.Client(username='',api_key='',project_id='',auth_url='')
-            cc.client.auth_token = self.cm.token
-            cc.client.management_url = self.cm.cinder_endpoint
-            return cc
-        except requests.exceptions.Timeout, error:
-            raise AiToolsCinderError(error)
-        except cinderclient.exceptions.ClientException, error:
-            raise AiToolsCinderError(error)
-        except cinderclient.exceptions.ConnectionError, error:
-            raise AiToolsCinderError(error)
+        if self.cinder is None:
+            try:
+                self.cinder = client.Client(username='', api_key='', project_id='', auth_url='')
+                self.cinder.client.auth_token = self.cm.token
+                self.cinder.client.management_url = self.cm.cinder_endpoint
+            except requests.exceptions.Timeout, error:
+                raise AiToolsCinderError(error)
+            except cinderclient.exceptions.ClientException, error:
+                raise AiToolsCinderError(error)
+            except cinderclient.exceptions.ConnectionError, error:
+                raise AiToolsCinderError(error)
+        return self.cinder
 

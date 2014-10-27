@@ -15,6 +15,7 @@
 #  20 Host staging failed
 #  30 Nova boot failed
 #  40 Cinder volume operation failed
+#  50 Openstack authorization error
 
 import os
 import sys
@@ -29,6 +30,7 @@ from aitools.certmgr import CertmgrClient
 from aitools.roger import RogerClient
 from aitools.nova import NovaClient
 from aitools.cinder import CinderClient
+from aitools.openstack import OpenstackClient
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
@@ -46,6 +48,7 @@ from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
 from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotImplementedError
 from aitools.errors import AiToolsRogerInternalServerError
 from aitools.errors import AiToolsCinderError
+from aitools.errors import AiToolsOpenstackError
 
 from aitools.completer import ForemanCompleter
 from aitools.completer import NovaCompleter
@@ -382,10 +385,10 @@ def main():
 
     if not args.nova_disable:
         try:
-            openstack_env['dryrun'] = args.dryrun
+            cm = OpenstackClient(**openstack_env)
 
-            nova = NovaClient(**openstack_env)
-            cinder = CinderClient(**openstack_env)
+            nova = NovaClient(cm=cm, dryrun=args.dryrun)
+            cinder = CinderClient(cm=cm, dryrun=args.dryrun)
 
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
             meta['tenant-name'] = openstack_env.get('project_name')
@@ -433,6 +436,11 @@ def main():
             if not args.foreman_disable:
                 foreman.delhost(fqdn)
             return 40
+        except AiToolsOpenstackError, error:
+            logging.error("Authorization error: (%s)" % error)
+            if not args.foreman_disable:
+                foreman.delhost(fqdn)
+            return 50
 
     if not args.roger_disable:
         roger_client = RogerClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)

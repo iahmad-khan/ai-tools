@@ -14,13 +14,8 @@ from aitools.openstack import OpenstackClient
 class TestCinder(unittest.TestCase):
 
     def setUp(self):
-        self.patch = patch('aitools.openstack.OpenstackClient.__init__', return_value=None)
-        self.mock_cm = self.patch.start()
-        self.tenant = CinderWrapper(username='username', password='pass',
+        self.tenant = CinderWrapper(client=None,username='username', password='pass',
             project_id='0', auth_url='0', cacert='0')
-
-    def tearDown(self):
-        self.patch.stop()
 
     @patch.object(cinderAPI.Client, '__init__', side_effect=ClientException('Client exception!'))
     def test_client_error_in_cinder_init_client(self, mock_client):
