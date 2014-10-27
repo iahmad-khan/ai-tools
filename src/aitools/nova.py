@@ -8,13 +8,13 @@ import requests
 from novaclient.v1_1 import client
 from aitools.config import NovaConfig
 from aitools.common import is_valid_UUID
+from aitools.openstack import OpenstackClient
 
 from aitools.errors import AiToolsNovaError
 
 
 class NovaClient():
-    def __init__(self, auth_url, username, password,
-            tenant_name, cacert, timeout=None, dryrun=False):
+    def __init__(self, cacert=None, timeout=0, dryrun=False, **kwargs):
         """
         Nova client for interacting with the Openstack Nova service. Autoconfigures via the AiConfig
         object and the standard **_OS** environment variables.
@@ -27,13 +27,10 @@ class NovaClient():
         :param dryrun: create a dummy client
         """
         novaconfig = NovaConfig()
-        self.auth_url = auth_url
-        self.username = username
-        self.password = password
-        self.tenant_name = tenant_name
         self.cacert = cacert
-        self.timeout = int(timeout or novaconfig.nova_timeout)
+        self.timeout = int(timeout)
         self.dryrun = dryrun
+        self.cm = OpenstackClient(**kwargs)
 
     def boot(self, fqdn, flavor, image, userdata, meta,
             key_name=None, availability_zone=None, block_device_mapping=None):
@@ -114,12 +111,10 @@ class NovaClient():
 
     def __init_client(self):
         try:
-            return client.Client(self.username, self.password,
-                    self.tenant_name,
-                    auth_url=self.auth_url,
-                    cacert=self.cacert,
-                    service_type="compute",
-                    timeout=self.timeout)
+            nc = client.Client(username='', api_key='', project_id='', auth_url='')
+            nc.client.auth_token = self.cm.token
+            nc.client.management_url = self.cm.nova_endpoint
+            return nc
         except novaclient.exceptions.ClientException, error:
             raise AiToolsNovaError(error)
         except novaclient.exceptions.ConnectionRefused, error:

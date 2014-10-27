@@ -8,30 +8,34 @@ from aitools.errors import AiToolsCinderError
 from cinderclient.exceptions import ClientException, ConnectionError, NotFound
 from cinderclient.v1 import client as cinderAPI
 from cinderclient.v1 import volumes
+from aitools.openstack import OpenstackClient
+
 
 class TestCinder(unittest.TestCase):
 
     def setUp(self):
+        self.patch = patch('aitools.openstack.OpenstackClient.__init__', return_value=None)
+        self.mock_cm = self.patch.start()
         self.tenant = CinderWrapper(username='username', password='pass',
-            tenant_id='0', auth_url='0', cacert='0')
+            project_id='0', auth_url='0', cacert='0')
+
+    def tearDown(self):
+        self.patch.stop()
 
     @patch.object(cinderAPI.Client, '__init__', side_effect=ClientException('Client exception!'))
     def test_client_error_in_cinder_init_client(self, mock_client):
         self.assertRaises(AiToolsCinderError, self.tenant._CinderClient__init_client)
-        mock_client.assert_called_once_with('username',
-            'pass', tenant_id='0', auth_url='0', cacert='0')
+        mock_client.assert_called_once()
 
     @patch.object(cinderAPI.Client, '__init__', side_effect=ConnectionError)
     def test_connection_error_in_cinder_init_client(self, mock_client):
         self.assertRaises(AiToolsCinderError, self.tenant._CinderClient__init_client)
-        mock_client.assert_called_once_with('username',
-            'pass', tenant_id='0', auth_url='0', cacert='0')
+        mock_client.assert_called_once()
 
     @patch.object(cinderAPI.Client, '__init__', side_effect=Timeout)
     def test_timeout_error_in_cinder_init_client(self, mock_client):
         self.assertRaises(AiToolsCinderError, self.tenant._CinderClient__init_client)
-        mock_client.assert_called_once_with('username',
-            'pass', tenant_id='0', auth_url='0', cacert='0')
+        mock_client.assert_called_once()
 
     @patch.object(cinderAPI.Client, '__init__', side_effect=Exception)
     def test_uncaught_exception_in_cinder_init_client(self, mock_client):
@@ -40,8 +44,7 @@ class TestCinder(unittest.TestCase):
         except AiToolsCinderError:
             self.fail("It shouldn't be an AiToolsCinderError")
         except Exception:
-            mock_client.assert_called_once_with('username',
-            'pass', tenant_id='0', auth_url='0', cacert='0')
+            mock_client.assert_called_once()
         else:
             self.fail("It should throw an exception")
 

@@ -6,31 +6,23 @@ import logging
 import requests
 import cinderclient.exceptions
 from cinderclient.v1 import client
+from aitools.openstack import OpenstackClient
 
 from aitools.errors import AiToolsCinderError
 
 class CinderClient():
 
     DEFAULT_TIMEOUT= 360
-
-    def __init__(self, username, password,
-            tenant_id, auth_url, cacert, dryrun=False):
+    def __init__(self, cacert=None, dryrun=False, **kwargs):
         """
-        Cinder client for interacting with the Openstack Cinder service. .
+        Cinder client for interacting with the Openstack Cinder service.
 
-        :param username: override the environment variable configured username
-        :param password: override the environment variable configured password
-        :param tenant_id: override the environment variable configured Tenant ID
-        :param auth_url: override the environment variable configured Keystone URL
         :param cacert: override the environment variable configured CA certificate bundle
         :param dryrun: create a dummy client
         """
-        self.auth_url = auth_url
-        self.username = username
-        self.password = password
-        self.tenant_id = tenant_id
         self.cacert = cacert
         self.dryrun = dryrun
+        self.cm = OpenstackClient(**kwargs)
 
     def create(self, size, display_name=None, display_description=None,
                volume_type=None, imageRef=None):
@@ -135,10 +127,10 @@ class CinderClient():
 
     def __init_client(self):
         try:
-            return client.Client(self.username, self.password,
-                    tenant_id=self.tenant_id,
-                    auth_url=self.auth_url,
-                    cacert=self.cacert)
+            cc = client.Client(username='',api_key='',project_id='',auth_url='')
+            cc.client.auth_token = self.cm.token
+            cc.client.management_url = self.cm.cinder_endpoint
+            return cc
         except requests.exceptions.Timeout, error:
             raise AiToolsCinderError(error)
         except cinderclient.exceptions.ClientException, error:
