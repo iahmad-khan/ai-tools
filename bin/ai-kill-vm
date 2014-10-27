@@ -111,7 +111,6 @@ def main():
         return 20
 
     openstack_env['dryrun'] = args.dryrun
-    del openstack_env['tenant_id']
     nova = NovaClient(**openstack_env)
 
     try:
