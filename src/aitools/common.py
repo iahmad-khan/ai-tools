@@ -53,40 +53,31 @@ def deref_url(url):
 
 def get_openstack_environment():
     """
-    Verify the user has provided the needed environment for Openstack and returns
-    a dictionary containing this environment with the following entries:
-       username, password, tenant_name, tenant_id, auth_url and cacert
-    The returned values are filled from the **OS_** environement variables when
-    present or asks the user. This function does not validate the correctness
-    of the returned values.
+    Verify the user has provided the needed environment for Openstack and
+    returns a dictionary containing this environment.
+    The returned values are filled from the **OS_** environement variables
+    when present. This function does not validate the correctness of the
+    returned values.
     :raise AiToolsInitError: User doesn't have the basic environments set.
     """
-    res = {}
+    # We get all environment variables that start with 'OS_'
+    res = dict((re.sub(r'^OS_', '', env).lower(), os.getenv(env))
+        for env in os.environ.keys() if env.startswith('OS_'))
 
-    from_openrc = ["OS_USERNAME", "OS_TENANT_NAME",
-        "OS_TENANT_ID", "OS_AUTH_URL"]
-    for variable in from_openrc:
-        if variable not in os.environ:
-            raise AiToolsInitError("%s is not set (did you source openrc?)"
-                % variable)
-        else:
-            res[re.sub(r'^OS_', '', variable).lower()] = os.environ[variable]
+    # Removing tenant_name and tenant_id if they are present
+    if res.get('tenant_name'):
+        if not res.get('project_name'):
+            res['project_name'] = res['tenant_name']
+        del res['tenant_name']
 
-    # The password is a special case, we give the user a chance to
-    # avoid storing it in an environment variable (this should disappear
-    # once Kerberos support arrives)
-    from_userinput = ["OS_PASSWORD"]
-    for variable in from_userinput:
-        name = re.sub(r'^OS_', '', variable).lower()
-        if variable not in os.environ or len(os.environ[variable]) == 0:
-            res[name] = getpass.getpass("Please, type your Openstack %s: " % name)
-        else:
-            res[name] = os.environ[variable]
-        if len(res[name]) == 0:
-            raise AiToolsInitError("%s is not set or empty" % variable)
+    if res.get('tenant_id'):
+        if not res.get('project_id'):
+            res['project_id'] = res['tenant_id']
+        del res['tenant_id']
 
-    # We can continue if OS_CACERT is not defined
-    res["cacert"] = os.environ.get('OS_CACERT', None)
+    if not res:
+        raise AiToolsInitError("OpenStack envionment variables are "
+            "missing (did you source openrc?)")
 
     return res
 
