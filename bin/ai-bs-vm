@@ -256,7 +256,7 @@ def print_summary(args, fqdn, openstack_env):
         logging.info("Booting from volume: %s" % args.nova_boot_from_existing_volume)
     elif args.nova_boot_from_new_volume:
         logging.info("Booting from a new volume created using image: %s" % args.nova_image)
-    logging.info("VM tenant: %s" % openstack_env['tenant_name'])
+    logging.info("VM tenant: %s" % openstack_env.get('project_name'))
     for volume in args.nova_attach_existing_volume:
         logging.info("Attaching volume: %s" % volume)
     for volume in args.nova_attach_new_volume:
@@ -382,19 +382,13 @@ def main():
 
     if not args.nova_disable:
         try:
-            os_clients_args = openstack_env.copy()
-            os_clients_args['dryrun'] = args.dryrun
+            openstack_env['dryrun'] = args.dryrun
 
-            nova_args = os_clients_args.copy()
-            del nova_args['tenant_id']
-            nova = NovaClient(**nova_args)
-
-            cinder_args = os_clients_args.copy()
-            del cinder_args['tenant_name']
-            cinder = CinderClient(**cinder_args)
+            nova = NovaClient(**openstack_env)
+            cinder = CinderClient(**openstack_env)
 
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
-            meta['tenant-name'] = openstack_env['tenant_name']
+            meta['tenant-name'] = openstack_env.get('project_name')
             if args.landb_responsible:
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:
