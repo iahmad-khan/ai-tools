@@ -7,7 +7,6 @@ import logging
 import hashlib
 import socket
 import time
-import getpass
 from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
