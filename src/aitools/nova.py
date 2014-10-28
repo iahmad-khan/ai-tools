@@ -27,7 +27,7 @@ class NovaClient():
         self.nova = None
         self.cm = cm
         self.cacert = cacert
-        self.timeout = int(timeout)
+        self.timeout = int(timeout or novaconfig.nova_timeout)
         self.dryrun = dryrun
 
     def boot(self, fqdn, flavor, image, userdata, meta,
