@@ -26,7 +26,7 @@ from aitools.foreman import ForemanClient
 from aitools.completer import ForemanCompleter
 from aitools.nova import NovaClient
 from aitools.roger import RogerClient
-from aitools.openstack import OpenstackClient
+from aitools.openstack_auth_client import OpenstackAuthClient
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
 from aitools.common import get_openstack_environment
@@ -34,7 +34,7 @@ from aitools.common import validate_fqdn
 from aitools.common import append_domain
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
-from aitools.errors import AiToolsNovaError, AiToolsOpenstackError
+from aitools.errors import AiToolsNovaError, AiToolsOpenstackAuthError
 from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotFoundError
 
 
@@ -113,13 +113,13 @@ def main():
         return 20
 
     try:
-        nova = NovaClient(cm=OpenstackClient(**openstack_env), dryrun=args.dryrun)
+        nova = NovaClient(cm=OpenstackAuthClient(**openstack_env), dryrun=args.dryrun)
         nova.delete(fqdn)
     except AiToolsNovaError, error:
         logging.error("Couldn't delete VM from Nova (%s). Please, make sure that "
             "the machine is removed executing 'nova delete %s'" % (error, args.hostname[0]))
         return 10
-    except AiToolsOpenstackError, error:
+    except AiToolsOpenstackAuthError, error:
         logging.error("Not authorized to delete '%s' (%s)." % (args.hostname[0], error))
         return 30
 

@@ -8,14 +8,13 @@ from aitools.errors import AiToolsCinderError
 from cinderclient.exceptions import ClientException, ConnectionError, NotFound
 from cinderclient.v1 import client as cinderAPI
 from cinderclient.v1 import volumes
-from aitools.openstack import OpenstackClient
+from aitools.openstack_auth_client import OpenstackAuthClient
 
 
 class TestCinder(unittest.TestCase):
 
     def setUp(self):
-        self.tenant = CinderWrapper(client=None,username='username', password='pass',
-            project_id='0', auth_url='0', cacert='0')
+        self.tenant = CinderWrapper(cm=None)
 
     @patch.object(cinderAPI.Client, '__init__', side_effect=ClientException('Client exception!'))
     def test_client_error_in_cinder_init_client(self, mock_client):

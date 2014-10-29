@@ -5,9 +5,9 @@ import logging
 from openstackclient.common import clientmanager
 from keystoneclient import exceptions
 from keystoneclient.openstack.common.apiclient import exceptions as api_exceptions
-from aitools.errors import AiToolsOpenstackError
+from aitools.errors import AiToolsOpenstackAuthError
 
-class OpenstackClient():
+class OpenstackAuthClient():
     def __init__(self, auth_url, project_name=None, project_id=None,
         username=None, password=None, identity_api_version='2.0',
         domain_id=None, domain_name=None, user_domain_id=None,
@@ -37,9 +37,9 @@ class OpenstackClient():
                 client_cert=(clientcert, clientkey) if clientcert and clientkey else None)
 
         except exceptions.SSLError:
-            raise AiToolsOpenstackError("x509 client certificate error")
+            raise AiToolsOpenstackAuthError("x509 client certificate error")
         except api_exceptions.Unauthorized:
-            raise AiToolsOpenstackError("User not authorized to perform "
+            raise AiToolsOpenstackAuthError("User not authorized to perform "
                 "this operation (Wrong tenant?)")
 
     @property
