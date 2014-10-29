@@ -54,15 +54,18 @@ class OpenstackAuthClient():
 
     @property
     def nova_endpoint(self):
-        logging.debug('Getting nova_endpoint from OpenStack ClientManager')
-        return self.client.get_endpoint_for_service_type('compute')
+        endpoint = self.client.get_endpoint_for_service_type('compute')
+        logging.debug("Getting '%s' as nova_endpoint from OpenStack ClientManager" % endpoint)
+        return endpoint
 
     @property
     def cinder_endpoint(self):
-        logging.debug('Getting cinder_endpoint from OpenStack ClientManager')
-        return self.client.get_endpoint_for_service_type('volume')
+        endpoint = self.client.get_endpoint_for_service_type('volume')
+        logging.debug("Getting '%s' as cinder_endpoint from OpenStack ClientManager" % endpoint)
+        return endpoint
 
     @property
     def glance_endpoint(self):
-        logging.debug('Getting glance_endpoint from OpenStack ClientManager')
-        return self.client.get_endpoint_for_service_type('image')
+        endpoint = self.client.get_endpoint_for_service_type('image')
+        logging.debug("Getting '%s' as glance_endpoint from OpenStack ClientManager" % endpoint)
+        return endpoint
