@@ -15,7 +15,7 @@ class CinderClient():
         """
         Cinder client for interacting with the Openstack Cinder service.
 
-        :param auth_client: Openstack ClientManager
+        :param auth_client: OpenstackAuthClient that does the authentication
         :param dryrun: create a dummy client
         """
         self.cinder = None

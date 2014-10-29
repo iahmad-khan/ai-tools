@@ -18,7 +18,7 @@ class NovaClient():
         Nova client for interacting with the Openstack Nova service. Autoconfigures via the AiConfig
         object and the standard **_OS** environment variables.
 
-        :param auth_client: Openstack ClientManager
+        :param auth_client: OpenstackAuthClient that does the authentication
         :param timeout: override the auto-configured Nova timeout
         :param dryrun: create a dummy client
         """
