@@ -108,7 +108,8 @@ class NovaClient():
     def __init_client(self):
         if self.nova is None:
             try:
-                self.nova = client.Client(username='', api_key='', project_id='', auth_url='')
+                self.nova = client.Client(username='', api_key='', project_id='',
+                    auth_url='', timeout=self.timeout)
                 self.nova.client.auth_token = self.auth_client.token
                 self.nova.client.management_url = self.auth_client.nova_endpoint
             except novaclient.exceptions.ClientException, error:
