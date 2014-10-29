@@ -13,18 +13,18 @@ from aitools.errors import AiToolsNovaError
 
 
 class NovaClient():
-    def __init__(self, cm, timeout=0, dryrun=False):
+    def __init__(self, auth_client, timeout=0, dryrun=False):
         """
         Nova client for interacting with the Openstack Nova service. Autoconfigures via the AiConfig
         object and the standard **_OS** environment variables.
 
-        :param cm: Openstack ClientManager
+        :param auth_client: Openstack ClientManager
         :param timeout: override the auto-configured Nova timeout
         :param dryrun: create a dummy client
         """
         novaconfig = NovaConfig()
         self.nova = None
-        self.cm = cm
+        self.auth_client = auth_client
         self.timeout = int(timeout or novaconfig.nova_timeout)
         self.dryrun = dryrun
 
@@ -109,8 +109,8 @@ class NovaClient():
         if self.nova is None:
             try:
                 self.nova = client.Client(username='', api_key='', project_id='', auth_url='')
-                self.nova.client.auth_token = self.cm.token
-                self.nova.client.management_url = self.cm.nova_endpoint
+                self.nova.client.auth_token = self.auth_client.token
+                self.nova.client.management_url = self.auth_client.nova_endpoint
             except novaclient.exceptions.ClientException, error:
                 raise AiToolsNovaError(error)
             except novaclient.exceptions.ConnectionRefused, error:

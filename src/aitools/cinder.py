@@ -11,15 +11,15 @@ from aitools.errors import AiToolsCinderError
 class CinderClient():
 
     DEFAULT_TIMEOUT = 360
-    def __init__(self, cm, dryrun=False):
+    def __init__(self, auth_client, dryrun=False):
         """
         Cinder client for interacting with the Openstack Cinder service.
 
-        :param cm: Openstack ClientManager
+        :param auth_client: Openstack ClientManager
         :param dryrun: create a dummy client
         """
         self.cinder = None
-        self.cm = cm
+        self.auth_client = auth_client
         self.dryrun = dryrun
 
     def create(self, size, display_name=None, display_description=None,
@@ -127,8 +127,8 @@ class CinderClient():
         if self.cinder is None:
             try:
                 self.cinder = client.Client(username='', api_key='', project_id='', auth_url='')
-                self.cinder.client.auth_token = self.cm.token
-                self.cinder.client.management_url = self.cm.cinder_endpoint
+                self.cinder.client.auth_token = self.auth_client.token
+                self.cinder.client.management_url = self.auth_client.cinder_endpoint
             except requests.exceptions.Timeout, error:
                 raise AiToolsCinderError(error)
             except cinderclient.exceptions.ClientException, error:

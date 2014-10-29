@@ -385,10 +385,10 @@ def main():
 
     if not args.nova_disable:
         try:
-            cm = OpenstackAuthClient(**openstack_env)
+            auth_client = OpenstackAuthClient(**openstack_env)
 
-            nova = NovaClient(cm=cm, dryrun=args.dryrun)
-            cinder = CinderClient(cm=cm, dryrun=args.dryrun)
+            nova = NovaClient(auth_client, dryrun=args.dryrun)
+            cinder = CinderClient(auth_client, dryrun=args.dryrun)
 
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
             meta['tenant-name'] = openstack_env.get('project_name')
