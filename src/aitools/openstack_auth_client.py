@@ -12,11 +12,15 @@ class OpenstackAuthClient():
         username=None, password=None, identity_api_version='2.0',
         domain_id=None, domain_name=None, user_domain_id=None,
         user_domain_name=None, project_domain_id=None, project_domain_name=None,
-        clientcert=None, clientkey=None, cacert=None):
+        clientcert=None, clientkey=None, cacert=None, **kwargs):
         """
         Wrapper class for openstackclient.common.ClientManager. It does the
         authentication against Nova, Cinder and Glance.
         """
+        # If there are unexpected parameters, we just ignored them
+        if kwargs:
+            logging.debug("Warning: extra parameters being ignored: "
+                "'%s'" % ', '.join(kwargs.keys()))
         try:
             self.client = clientmanager.ClientManager(auth_url=auth_url,
                 project_name=project_name,
