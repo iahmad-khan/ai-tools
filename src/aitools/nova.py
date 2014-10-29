@@ -13,20 +13,18 @@ from aitools.errors import AiToolsNovaError
 
 
 class NovaClient():
-    def __init__(self, cm, cacert=None, timeout=0, dryrun=False):
+    def __init__(self, cm, timeout=0, dryrun=False):
         """
         Nova client for interacting with the Openstack Nova service. Autoconfigures via the AiConfig
         object and the standard **_OS** environment variables.
 
         :param cm: Openstack ClientManager
-        :param cacert: override the environment variable configured CA certificate bundle
         :param timeout: override the auto-configured Nova timeout
         :param dryrun: create a dummy client
         """
         novaconfig = NovaConfig()
         self.nova = None
         self.cm = cm
-        self.cacert = cacert
         self.timeout = int(timeout or novaconfig.nova_timeout)
         self.dryrun = dryrun
 

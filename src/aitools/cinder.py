@@ -11,17 +11,15 @@ from aitools.errors import AiToolsCinderError
 class CinderClient():
 
     DEFAULT_TIMEOUT = 360
-    def __init__(self, cm, cacert=None, dryrun=False):
+    def __init__(self, cm, dryrun=False):
         """
         Cinder client for interacting with the Openstack Cinder service.
 
         :param cm: Openstack ClientManager
-        :param cacert: override the environment variable configured CA certificate bundle
         :param dryrun: create a dummy client
         """
         self.cinder = None
         self.cm = cm
-        self.cacert = cacert
         self.dryrun = dryrun
 
     def create(self, size, display_name=None, display_description=None,

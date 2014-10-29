@@ -12,7 +12,7 @@ class OpenstackAuthClient():
         username=None, password=None, identity_api_version='2.0',
         domain_id=None, domain_name=None, user_domain_id=None,
         user_domain_name=None, project_domain_id=None, project_domain_name=None,
-        clientcert=None, clientkey=None, cacert=None, **kwargs):
+        clientcert=None, clientkey=None, **kwargs):
         """
         Wrapper class for openstackclient.common.ClientManager. It does the
         authentication against Nova, Cinder and Glance.
