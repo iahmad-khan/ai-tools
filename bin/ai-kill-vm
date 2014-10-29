@@ -113,7 +113,8 @@ def main():
         return 20
 
     try:
-        nova = NovaClient(auth_client=OpenstackAuthClient(**openstack_env), dryrun=args.dryrun)
+        auth_client = OpenstackAuthClient(**openstack_env)
+        nova = NovaClient(auth_client, dryrun=args.dryrun)
         nova.delete(fqdn)
     except AiToolsNovaError, error:
         logging.error("Couldn't delete VM from Nova (%s). Please, make sure that "
