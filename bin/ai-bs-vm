@@ -296,13 +296,14 @@ def _manage_volumes(cinder, volume_id=None, image=None, volume_size=None, volume
             while device == 'auto' or device in volumes:
                 device = device_names.next()
             if not is_valid_UUID(vol_input):
-                vol_input = cinder.create(size=vol_input).id
-            volume = cinder.is_ready(volume_id=vol_input,
-                needs_to_be_bootable=False,
-                wait_until_ready=True,
-                wait_time=5)
-            volumes[device] = "%s:::0" % volume.id
-            logging.info("Attaching volume '%s' in device: '%s'" % (volume.id, device))
+                vol_created = cinder.create(size=vol_input)
+            if vol_created:
+                volume = cinder.is_ready(volume_id=vol_created.id,
+                    needs_to_be_bootable=False,
+                    wait_until_ready=True,
+                    wait_time=5)
+                volumes[device] = "%s:::0" % volume.id
+                logging.info("Attaching volume '%s' in device: '%s'" % (volume.id, device))
 
     # Booting from volume
     if volume_size and image:
