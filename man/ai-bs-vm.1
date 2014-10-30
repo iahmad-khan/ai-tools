@@ -58,7 +58,7 @@ per VM. (see http://cern.ch/go/l9xP)
 .TP
 .B -i, --nova-image (AIBS_VMIMAGE_NAME)
 OpenStack image name of the virtual machine (get a list from
-nova image-list). This parameter is mutually exclusive with
+'openstack image list'). This parameter is mutually exclusive with
 "--nova-boot-from-existing-volume".
 .LP
 Although the synopsis indicates that -g and -i are mandatory
@@ -116,7 +116,7 @@ OpenStack flavor name of the virtual machine (defaults to "m1.small").
 .TP
 .B --nova-sshkey (AIBS_SSHKEY_NAME)
 Name of the SSH key to login into the machine as root in case of
-disaster. Use Horizon or nova keypair-add to generate a new keypair
+disaster. Use Horizon or 'openstack keypair create' to generate a new keypair
 [string]. Because of the security implications this option has, it's
 strongly recommended to avoid it. Your new VM will have the Kerberos
 module enabled by default, use it to configure who has root access
@@ -277,7 +277,7 @@ ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-new-volume 
 If you experience any problem with the Foreman registration or the initial
 Puppet runs of your box, please open a support call on SNOW (Functional
 Element "Configuration Management"). Check the state of your VM with
-"nova show" before opening a ticket. If you can see the machine
+"openstack server show" before opening a ticket. If you can see the machine
 in Foreman but the VM is in ERROR state then please assign the ticket
 directly to "Cloud Infrastructure".
 

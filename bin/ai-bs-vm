@@ -195,9 +195,9 @@ def parse_cmdline_args():
             "In case you just specify one, check the env variable 'AIBS_VMIMAGE_NAME'")
 
     options_to_boot_from = """You can boot from:
-        - An image ('nova image-list')
-        - An existing bootable volume ('cinder-list')
-        - An image ('nova image-list') and the size of a volume to boot from"""
+        - An image ('openstack image list')
+        - An existing bootable volume ('openstack volume list')
+        - An image ('openstack image list') and the size of a volume to boot from"""
 
     if not (args.nova_image or args.nova_boot_from_existing_volume):
         parser.error("No bootable element provided. %s" % options_to_boot_from)
@@ -474,7 +474,7 @@ def main():
     logging.info("  root using your Kerberos credentials. The LANDB responsible")
     logging.info("  has also root access by default.")
     logging.info("* You can check the status of the VM creation request by running:")
-    logging.info("  'nova show %s'" % fqdn.replace('.cern.ch', ''))
+    logging.info("  'openstack server show %s'" % fqdn.replace('.cern.ch', ''))
     if args.landb_responsible or args.landb_mainuser:
         logging.info("* A custom LANDB responsible/user has been set. It will be visible")
         logging.info("  in Foreman a few minutes after the VM is booted. In the")
@@ -482,7 +482,7 @@ def main():
         logging.info("  (%s)" % krb_principal)
     logging.info("* In case of problems, if you provided a SSH key when creating the VM")
     logging.info("  use it to log into the box and take a look at /var/log/firstboot.log.")
-    logging.info("  Console log can be retrieved by using 'nova console-log'.")
+    logging.info("  Console log can be retrieved by using 'openstack console log show'.")
     logging.info("----------------------------------------------------------------------")
     return 0
 

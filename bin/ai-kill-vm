@@ -118,7 +118,7 @@ def main():
         nova.delete(fqdn)
     except AiToolsNovaError, error:
         logging.error("Couldn't delete VM from Nova (%s). Please, make sure that "
-            "the machine is removed executing 'nova delete %s'" % (error, args.hostname[0]))
+            "the machine is removed executing 'openstack server delete %s'" % (error, args.hostname[0]))
         return 10
     except AiToolsOpenstackAuthError, error:
         logging.error("Not authorized to delete '%s' (%s)." % (args.hostname[0], error))
