@@ -157,13 +157,13 @@ def generate_userdata(args):
         script = Template(open(args.puppetinit_path).read())
     except IOError, error:
         raise AiToolsInitError(error)
-    values = {'CASERVER_HOSTNAME': certmgrconf.certmgr_hostname,
-        'CASERVER_PORT': certmgrconf.certmgr_port,
-        'PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
-        'FOREMAN_ENVIRONMENT': args.foreman_environment,
-        'NO_GROW': 1 if args.nogrow else 0,
-        'GROWPART_VDA_PARTITION': args.grow_partition,
-        'NO_REBOOT': 1 if args.noreboot else 0}
+    values = {'_CASERVER_HOSTNAME': certmgrconf.certmgr_hostname,
+        '_CASERVER_PORT': certmgrconf.certmgr_port,
+        '_PUPPETMASTER_HOSTNAME': args.puppetmaster_hostname,
+        '_FOREMAN_ENVIRONMENT': args.foreman_environment,
+        '_NO_GROW': 1 if args.nogrow else 0,
+        '_GROWPART_VDA_PARTITION': args.grow_partition,
+        '_NO_REBOOT': 1 if args.noreboot else 0}
     userdata = MIMEMultipart()
     puppetinit = MIMEText(script.safe_substitute(values), 'x-shellscript')
     puppetinit.add_header('Content-Disposition', 'attachment',

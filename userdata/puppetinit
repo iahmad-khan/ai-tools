@@ -5,62 +5,62 @@
 # as it won't work as expected.
 
 # FUNCTION execute_shell_block
-# Executes function $$1, $$3 times at maximum
-# with a wait time of $$2 seconds between tries
+# Executes function $1, $3 times at maximum
+# with a wait time of $2 seconds between tries
 function execute_shell_block {
-  waittime=$$2
-  max_attempts=$$3
+  waittime=$2
+  max_attempts=$3
   attemptno=1
-  $$1
-  until [ $$? == 0 ] ; do
-    if [ $$attemptno -eq $$max_attempts ] ; then
+  $1
+  until [ $? == 0 ] ; do
+    if [ $attemptno -eq $max_attempts ] ; then
       echo "Max number of attempts exceeded"
       return 1
     fi
-    echo "Execution failed (attempt #$$attemptno out of #$$max_attempts) (next in $$waittime secs)"
-    sleep $$waittime
-    attemptno=$$(($$attemptno + 1))
-    $$1
+    echo "Execution failed (attempt #$attemptno out of #$max_attempts) (next in $waittime secs)"
+    sleep $waittime
+    attemptno=$(($attemptno + 1))
+    $1
   done
   return 0
 }
 
 function unrecoverable_error {
-  echo "Step '$$1' failed. Puppet won't run. Use SSH key (if available) to login."
+  echo "Step '$1' failed. Puppet won't run. Use SSH key (if available) to login."
   exit 1
 }
 
 LOCKFILE=/var/lib/cloud/puppetinit.lock
 
 date
-[ -e "$$LOCKFILE" ] && echo "Puppet init has already run. Exiting." && exit 0
-touch $$LOCKFILE
+[ -e "$LOCKFILE" ] && echo "Puppet init has already run. Exiting." && exit 0
+touch $LOCKFILE
 
 echo "Setting up Puppet for the initial run. Please wait..."
 
 # redhat > 7 and new debians seem to have this file.
 if [ -f /etc/os-release ] ; then
   . /etc/os-release
-  OS_MAJOR_VERSION=$$VERSION_ID
-  OS_DISTRIBUTOR_ID=$$ID
+  OS_MAJOR_VERSION=$VERSION_ID
+  OS_DISTRIBUTOR_ID=$ID
 else
-  OS_MAJOR_VERSION=`lsb_release -r | awk '{split($$2,a,"."); print a[1]}'`
-  OS_MINOR_VERSION=`lsb_release -r | awk '{split($$2,a,"."); print a[2]}'`
-  OS_DISTRIBUTOR_ID=`lsb_release -i | awk '{print $$3}'`
+  OS_MAJOR_VERSION=`lsb_release -r | awk '{split($2,a,"."); print a[1]}'`
+  OS_MINOR_VERSION=`lsb_release -r | awk '{split($2,a,"."); print a[2]}'`
+  OS_DISTRIBUTOR_ID=`lsb_release -i | awk '{print $3}'`
 fi
 
 FINALHOSTNAME=`curl http://169.254.169.254/1.0/meta-data/hostname -s -o -`
-echo "Setting hostname to $${FINALHOSTNAME}"
-hostname $$FINALHOSTNAME
+echo "Setting hostname to ${FINALHOSTNAME}"
+hostname $FINALHOSTNAME
 
 #
 # Install bootstrapping-time dependencies
 #
 function set_repositories {
   echo "Setting AI repository..."
-  curl http://linuxsoft.cern.ch/internal/repos/ai$$OS_MAJOR_VERSION.repo > \
-    /etc/yum.repos.d/ai$$OS_MAJOR_VERSION.repo
-  test -f /etc/yum.repos.d/ai$$OS_MAJOR_VERSION.repo
+  curl http://linuxsoft.cern.ch/internal/repos/ai$OS_MAJOR_VERSION.repo > \
+    /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
+  test -f /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
 }
 execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
 
@@ -68,99 +68,99 @@ function set_slc_for_rhel_repositories {
   echo "Setting RHEL repository..."
 
   # SLC5 specific bits
-  if [ "$$OS_MAJOR_VERSION" == "5" ]; then
+  if [ "$OS_MAJOR_VERSION" == "5" ]; then
     # get yum-conf RPM
     yumconfrpm=http://linuxsoft.cern.ch/cern/slc5X/x86_64/yum/updates//yum-conf-5X-9.slc5.noarch.rpm
     rm -rf /tmp/yum-conf
     mkdir /tmp/yum-conf && cd /tmp/yum-conf
-    rpm2cpio $${yumconfrpm} | cpio -ivd || exit 1
+    rpm2cpio ${yumconfrpm} | cpio -ivd || exit 1
 
     # get sl-release RPM
-    baseurl=http://linuxsoft.cern.ch/cern/slc$${OS_MAJOR_VERSION}X/updates/x86_64/SRPMS/
-    slreleaserpm=`curl $${baseurl} | awk -F\" "/sl-release-$${OS_MAJOR_VERSION}.$${OS_MINOR_VERSION}/ {print \\$$2}" | sort | tail -1`
+    baseurl=http://linuxsoft.cern.ch/cern/slc${OS_MAJOR_VERSION}X/updates/x86_64/SRPMS/
+    slreleaserpm=`curl ${baseurl} | awk -F\" "/sl-release-${OS_MAJOR_VERSION}.${OS_MINOR_VERSION}/ {print \\$2}" | sort | tail -1`
     rm -rf /tmp/sl-release
     mkdir /tmp/sl-release && cd /tmp/sl-release
-    rpm2cpio $${baseurl}/$${slreleaserpm} | cpio -ivd || exit 1
+    rpm2cpio ${baseurl}/${slreleaserpm} | cpio -ivd || exit 1
     cd /tmp
-    rm -rf slc-release-$${OS_MAJOR_VERSION}
-    tar xzvf /tmp/sl-release/sl-release-$${OS_MAJOR_VERSION}.$${OS_MINOR_VERSION}.tar.gz || return 1
+    rm -rf slc-release-${OS_MAJOR_VERSION}
+    tar xzvf /tmp/sl-release/sl-release-${OS_MAJOR_VERSION}.${OS_MINOR_VERSION}.tar.gz || return 1
 
     # install needed repos
-    repos="slc$${OS_MAJOR_VERSION}-cernonly slc$${OS_MAJOR_VERSION}-os epel"
-    for repo in $${repos}
+    repos="slc${OS_MAJOR_VERSION}-cernonly slc${OS_MAJOR_VERSION}-os epel"
+    for repo in ${repos}
     do
-      echo "Copying $${repo}"
-      cp /tmp/yum-conf/etc/yum.repos.d/$${repo}.repo /etc/yum.repos.d/ || exit 1
+      echo "Copying ${repo}"
+      cp /tmp/yum-conf/etc/yum.repos.d/${repo}.repo /etc/yum.repos.d/ || exit 1
     done
 
     # install needed GPG Keys
     gpgkeys="RPM-GPG-KEY-EPEL"
-    for gpgkey in $${gpgkeys}
+    for gpgkey in ${gpgkeys}
     do
-      echo "Copying $${gpgkey}"
-      cp /tmp/yum-conf/etc/pki/rpm-gpg/$${gpgkey} /etc/pki/rpm-gpg/ || exit 1
+      echo "Copying ${gpgkey}"
+      cp /tmp/yum-conf/etc/pki/rpm-gpg/${gpgkey} /etc/pki/rpm-gpg/ || exit 1
     done
     gpgkeys="RPM-GPG-KEY-cern RPM-GPG-KEY-jpolok RPM-GPG-KEY-csieh RPM-GPG-KEY-dawson"
-    for gpgkey in $${gpgkeys}
+    for gpgkey in ${gpgkeys}
     do
-      echo "Copying $${gpgkey}"
-      cp /tmp/sl-release-$${OS_MAJOR_VERSION}.$${OS_MINOR_VERSION}/$${gpgkey} /etc/pki/rpm-gpg/ || exit 1
+      echo "Copying ${gpgkey}"
+      cp /tmp/sl-release-${OS_MAJOR_VERSION}.${OS_MINOR_VERSION}/${gpgkey} /etc/pki/rpm-gpg/ || exit 1
     done
 
   # SLC6 specific bits
-  else if [ "$$OS_MAJOR_VERSION" == "6" ]; then
+  else if [ "$OS_MAJOR_VERSION" == "6" ]; then
     # get sl-release RPM
-    baseurl=http://linuxsoft.cern.ch/cern/slc$${OS_MAJOR_VERSION}X/updates/x86_64/SRPMS/
-    slreleaserpm=`curl $${baseurl} | awk -F\" '/sl-release/ {print $$2}' | sort | tail -1`
-    rpm -ivh $${baseurl}/$${slreleaserpm} || return 1
+    baseurl=http://linuxsoft.cern.ch/cern/slc${OS_MAJOR_VERSION}X/updates/x86_64/SRPMS/
+    slreleaserpm=`curl ${baseurl} | awk -F\" '/sl-release/ {print $2}' | sort | tail -1`
+    rpm -ivh ${baseurl}/${slreleaserpm} || return 1
     cd /tmp
-    rm -rf slc-release-$${OS_MAJOR_VERSION}
-    tar xzvf /rpmbuild/SOURCES/slc-release-$${OS_MAJOR_VERSION}.tar.gz || return 1
+    rm -rf slc-release-${OS_MAJOR_VERSION}
+    tar xzvf /rpmbuild/SOURCES/slc-release-${OS_MAJOR_VERSION}.tar.gz || return 1
 
     # install needed repos
-    repos="slc$${OS_MAJOR_VERSION}-cernonly slc$${OS_MAJOR_VERSION}-os epel"
-    for repo in $${repos}
+    repos="slc${OS_MAJOR_VERSION}-cernonly slc${OS_MAJOR_VERSION}-os epel"
+    for repo in ${repos}
     do
-      echo "Copying $${repo}"
-      cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${repo}.repo /etc/yum.repos.d/
-      test -f /etc/yum.repos.d/$${repo}.repo || return 1
+      echo "Copying ${repo}"
+      cp /tmp/slc-release-${OS_MAJOR_VERSION}/${repo}.repo /etc/yum.repos.d/
+      test -f /etc/yum.repos.d/${repo}.repo || return 1
     done
 
     # install needed GPG Keys
-    gpgkeys="RPM-GPG-KEY-cern RPM-GPG-KEY-EPEL-$${OS_MAJOR_VERSION}"
-    for gpgkey in $${gpgkeys}
+    gpgkeys="RPM-GPG-KEY-cern RPM-GPG-KEY-EPEL-${OS_MAJOR_VERSION}"
+    for gpgkey in ${gpgkeys}
     do
-      echo "Copying $${gpgkey}"
-      cp /tmp/slc-release-$${OS_MAJOR_VERSION}/$${gpgkey} /etc/pki/rpm-gpg/
-      test -f /etc/pki/rpm-gpg/$${gpgkey} || return 1
+      echo "Copying ${gpgkey}"
+      cp /tmp/slc-release-${OS_MAJOR_VERSION}/${gpgkey} /etc/pki/rpm-gpg/
+      test -f /etc/pki/rpm-gpg/${gpgkey} || return 1
     done
   fi
   fi
 
 }
-[[ "$${OS_DISTRIBUTOR_ID}" = "RedHatEnterpriseServer" || "$${OS_DISTRIBUTOR_ID}" = "rhel" ]] && \
+[[ "${OS_DISTRIBUTOR_ID}" = "RedHatEnterpriseServer" || "${OS_DISTRIBUTOR_ID}" = "rhel" ]] && \
   ( execute_shell_block set_slc_for_rhel_repositories 60 5 || unrecoverable_error "slc-rhel-repository" )
 
 DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
 
-[ "$$OS_MAJOR_VERSION" == "7" ] && DEPS="$$DEPS yum-plugin-priorities"
-[ "$$OS_MAJOR_VERSION" == "6" ] && DEPS="$$DEPS yum-plugin-priorities"
-[ "$$OS_MAJOR_VERSION" == "5" ] && DEPS="$$DEPS yum-priorities"
+[ "$OS_MAJOR_VERSION" == "7" ] && DEPS="$DEPS yum-plugin-priorities"
+[ "$OS_MAJOR_VERSION" == "6" ] && DEPS="$DEPS yum-plugin-priorities"
+[ "$OS_MAJOR_VERSION" == "5" ] && DEPS="$DEPS yum-priorities"
 
-AIREPO="ai$$OS_MAJOR_VERSION"
-[[ $$(echo $FOREMAN_ENVIRONMENT | tr '[:upper:]' '[:lower:]') == 'qa' ]] && AIREPO="$$AIREPO-qa"
+AIREPO="ai$OS_MAJOR_VERSION"
+[[ $(echo $_FOREMAN_ENVIRONMENT | tr '[:upper:]' '[:lower:]') == 'qa' ]] && AIREPO="$AIREPO-qa"
 
 function install_dependencies {
   echo "Trying to install dependencies..."
-  yum install -y --enablerepo=$$AIREPO $$DEPS
-  rpm -ql $$DEPS > /dev/null
+  yum install -y --enablerepo=$AIREPO $DEPS
+  rpm -ql $DEPS > /dev/null
 }
 execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependencies"
 
 function install_puppet {
   echo "Trying to install puppet from AI repositories..."
   yum remove -y puppet
-  yum install -y --enablerepo=$$AIREPO puppet
+  yum install -y --enablerepo=$AIREPO puppet
   rpm -ql puppet > /dev/null
 }
 execute_shell_block install_puppet 60 5 || unrecoverable_error "puppet"
@@ -173,8 +173,8 @@ cat << EOF > /etc/puppet/puppet.conf
 # puppet.conf
 # Generated by ai-bs-vm
 [main]
-server = $PUPPETMASTER_HOSTNAME
-ca_server = $CASERVER_HOSTNAME
+server = $_PUPPETMASTER_HOSTNAME
+ca_server = $_CASERVER_HOSTNAME
 pluginsync = true
 vardir = /var/lib/puppet
 logdir = /var/log/puppet
@@ -188,7 +188,7 @@ certificate_revocation = false
 dynamicfacts = memorysize,memoryfree,swapsize,swapfree,uptime_seconds,uptime_hours
 configtimeout = 500
 runinterval = 600
-environment = $FOREMAN_ENVIRONMENT
+environment = $_FOREMAN_ENVIRONMENT
 EOF
 
 #
@@ -235,18 +235,18 @@ install -m 0771 -o puppet -d /var/lib/puppet/ssl
 install -m 0755 -o puppet -d /var/lib/puppet/ssl/certs
 
 CERN_CA_BUNDLE_PATH=/var/lib/puppet/ssl/certs/ca.pem
-case $$OS_MAJOR_VERSION in
+case $OS_MAJOR_VERSION in
   "7"|"6" )
-    cp -p /etc/pki/tls/certs/CERN-bundle.pem $$CERN_CA_BUNDLE_PATH
+    cp -p /etc/pki/tls/certs/CERN-bundle.pem $CERN_CA_BUNDLE_PATH
     ;;
   "5" )
-    cat /etc/pki/tls/certs/CERN*.pem > $$CERN_CA_BUNDLE_PATH
+    cat /etc/pki/tls/certs/CERN*.pem > $CERN_CA_BUNDLE_PATH
     ;;
 esac
 
 function installack {
   echo "Calling certmgr-installack..."
-  /usr/bin/certmgr-installack --url https://$CASERVER_HOSTNAME:$CASERVER_PORT/krb/certmgr/host/
+  /usr/bin/certmgr-installack --url https://$_CASERVER_HOSTNAME:$_CASERVER_PORT/krb/certmgr/host/
 }
 execute_shell_block installack 10 15 || unrecoverable_error "installack"
 
@@ -270,7 +270,7 @@ EOF
 # Restart syslog to make sure it logs with new hostname
 service rsyslog restart
 
-if [ $$OS_MAJOR_VERSION -ge 6 ]
+if [ $OS_MAJOR_VERSION -ge 6 ]
   then
     date
     echo "Waiting for a time slot to run Puppet (osrepos tag only)..."
@@ -282,11 +282,11 @@ if [ $$OS_MAJOR_VERSION -ge 6 ]
     [[ -x /usr/local/sbin/distro_sync.sh ]] \
       && /usr/local/sbin/distro_sync.sh && cat /var/log/distro_sync.log \
       || echo "Distro_sync.sh not found. Either disabled or Puppet failed to install it."
-    [[ $NO_GROW -eq 1 ]] \
-      || (echo "Growing /dev/vda$GROWPART_VDA_PARTITION to use all the available space..." \
-      && growpart /dev/vda $GROWPART_VDA_PARTITION)
-    [[ $NO_REBOOT -eq 1 ]] || (echo "The VM will now reboot" && /sbin/reboot)
-    [[ $NO_REBOOT -eq 1 ]] && /sbin/service puppet start
+    [[ $_NO_GROW -eq 1 ]] \
+      || (echo "Growing /dev/vda$_GROWPART_VDA_PARTITION to use all the available space..." \
+      && growpart /dev/vda $_GROWPART_VDA_PARTITION)
+    [[ $_NO_REBOOT -eq 1 ]] || (echo "The VM will now reboot" && /sbin/reboot)
+    [[ $_NO_REBOOT -eq 1 ]] && /sbin/service puppet start
     cp /var/log/boot.log /var/log/firstboot.log
     chmod 600 /var/log/firstboot.log
     date
