@@ -13,6 +13,7 @@ except ImportError:
     import json
 import logging
 import sys
+import datetime
 from aitools.trustedbag import TrustedBagClient
 from aitools.config import TrustedBagConfig, AiConfig, PdbConfig
 from aitools.pdb import PdbClient
@@ -133,6 +134,8 @@ def show_main(pargs):
         if secret["encoding"] == 'b64':
             logger.error("Secret is binary so cowardly refusing to ruin your console... try --file")
             secret["secret"] = "removed as binary, use --file"
+    if 'update_time' in secret and secret['update_time']:
+        secret['update_time_str'] = '%s' % datetime.datetime.fromtimestamp(int(secret['update_time']))
     print json.dumps(secret, sort_keys=True, indent=5, separators=(',', ': '))
 
 
