@@ -141,7 +141,7 @@ function set_slc_for_rhel_repositories {
 [[ "${OS_DISTRIBUTOR_ID}" = "RedHatEnterpriseServer" || "${OS_DISTRIBUTOR_ID}" = "rhel" ]] && \
   ( execute_shell_block set_slc_for_rhel_repositories 60 5 || unrecoverable_error "slc-rhel-repository" )
 
-DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas"
+DEPS="cern-get-keytab certmgr-client CERN-CA-certs augeas rubygems rubygem-landb rubygem-savon"
 
 [ "$OS_MAJOR_VERSION" == "7" ] && DEPS="$DEPS yum-plugin-priorities"
 [ "$OS_MAJOR_VERSION" == "6" ] && DEPS="$DEPS yum-plugin-priorities"
