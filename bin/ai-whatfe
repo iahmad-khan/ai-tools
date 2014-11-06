@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # Guesses the functional element for .
 import sys
 import argparse
@@ -40,7 +40,7 @@ def parse_cmdline_args():
 
 def get_cdb(h):
     try:
-        conn = cx_Oracle.connect('aiorcdb/shabba8*@cdb')
+        conn = cx_Oracle.connect('cdbreadonly/shabba101@cdb')
         try:
             curs = conn.cursor()
             curs.execute("select hostname from cdb.vwqai where hostname=:hostn and puppet_managed='false'", hostn=h)
