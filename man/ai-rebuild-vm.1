@@ -1,0 +1,145 @@
+.TH AI-REBUILD-VM "1" "November 2014" "ai-rebuild-vm" "User Commands"
+.SH NAME
+ai-rebuild-vm \- Command-line tool to rebuild Puppetized OpenStack VMs
+
+.SH SYNOPSIS
+.B "ai-rebuild-vm"
+[OPTION]...
+\fI[-i IMAGE]\fR \fI[-a]\fR
+VMNAME
+
+.SH DESCRIPTION
+ai-rebuild-vm is a Python command line tool to rebuild Puppet-managed
+Foreman-enabled OpenStack VMs.
+.LP
+.I Prerequisites:
+.TP
+.B OpenStack credentials
+Your OpenStack credentials are in place (get an \fBopenrc.sh\fR from
+OpenStack Horizon and source it). By doing this you will set the OpenStack
+instance you want to use and the project for your VM. Apart from the traditional
+Openstack environment files that prompt for a password when they are sourced,
+this tool is also compatible with Kerberos-enabled ones.
+More info: http://go.web.cern.ch/go/dkR7
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+
+.SH OPTIONS
+The behaviour of the tool can be customized by the following
+parameters.
+
+.LP
+.I Optional parameters:
+.TP
+.B -i, --nova-image
+OpenStack image name or id to base the rebuild on. If this option
+is not specified the current image will be used (get a list from
+"openstack image list").
+.TP
+.B -a, --keepalarms
+Don't disable alarms before triggering the rebuild process.
+
+.LP
+.I Other optional parameters:
+.TP
+The following parameters are for advanced users and debugging.
+.TP
+.B --certmgr-hostname
+Hostname of the Cert Manager server that the virtual machine will request a
+certificate from.
+.TP
+.B --certmgr-port
+Port of the Cert Manager server that the virtual machine will request a
+certificate from.
+.TP
+.B --certmgr-timeout
+Timeout (in seconds) for Cert Manager operations.
+.TP
+.B -d, --dryrun
+Don't do the requests that alter data (host staging, VM creation request
+and alarm masking).
+.TP
+.B --foreman-hostname
+FQDN of the Foreman instance to use.
+.TP
+.B --foreman-port
+Port of the Foreman instance to use -- must support Kerberos.
+.TP
+.B --foreman-timeout
+Timeout (in seconds) for Foreman operations.
+.TP
+.B -h, --help
+Display usage and exit.
+.TP
+.B --nova-timeout
+Timeout (in seconds) for Nova operations.
+.TP
+.B --roger-appstate
+Roger application state upon rebuild (defaults to "build").
+.TP
+.B --roger-hostname
+FQDN of the Roger instance to use.
+.TP
+.B --roger-port
+Port of the Roger instance to use.
+.TP
+.B --roger-timeout
+Timeout (in seconds) for Roger operations.
+.TP
+.B --dereference_alias
+Dereference aliases in URLs.
+.TP
+.B -v, --verbose
+Be chatty.
+
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 2
+Bad command line.
+.TP
+.B 3
+Bad user environment (no OpenStack's openrc.sh has been sourced)
+.TP
+.B 4
+Kerberos TGT not-existent or expired.
+.TP
+.B 5
+FQDN is invalid.
+.TP
+.B 10
+Foreman registration failed.
+.TP
+.B 20
+Host staging failed.
+.TP
+.B 30
+Nova rebuild failed.
+.TP
+.B 50
+Openstack authorization error
+
+.SH EXAMPLES
+.TP
+.B Rebuild a VM using the current image
+ai-rebuild-vm higgsbox.cern.ch
+
+.TP
+.B Rebuild a VM using an user-specified image
+ai-rebuild-vm -i "SLC6 Server - x86_64 [130920]" higgsbox.cern.ch
+
+.TP
+.B Rebuild a VM using an user-specified image and keep the alarm state
+ai-rebuild-vm -i "SLC6 Server - x86_64 [130920]" higgsbox.cern.ch -a
+
+.SH REPORTING BUGS
+If you experience any issue please open a support call on SNOW (Functional
+Element "Configuration Management"). 
+
+.SH SEE ALSO
+ai-bs-vm (1), ai-kill-vm (1), ai-remote-power-control (1)
