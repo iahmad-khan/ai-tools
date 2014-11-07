@@ -85,6 +85,9 @@ class NovaClient():
             server_id = self.__resolve_id(tenant.servers.list(), vmname)
             logging.debug("Server '%s' has id '%s'" % (vmname, server_id))
             server = tenant.servers.get(server_id)
+            #TODO: Cancel when rebulding a VM that booted from a volume
+            # as rebuild will do something odd. On those VMs, server.image
+            # is a str which value is "".
             image_id = image or server.image['id']
             logging.debug("Image to be used has id '%s'" % image_id)
             if not self.dryrun:
