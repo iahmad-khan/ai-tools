@@ -38,7 +38,7 @@ def sanity_check_for_alarms(old_name):
     osa = state['os_alarmed']
     appa = state['app_alarmed']
     appstate = state['appstate']
-    if (hwa or nca or osa or appa or appstate=="production"):
+    if hwa or nca or osa or appa or appstate == "production":
         sys.stderr.write("Renaming host is a destructive operation for the host. Please ensure that\n")
         sys.stderr.write("all alarms have been disabled in Roger and the application state of the nodes\n")
         sys.stderr.write("is not production. To ignore this check, run this command with the --jfdi flag.\n")
