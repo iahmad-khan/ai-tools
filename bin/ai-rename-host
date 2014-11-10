@@ -61,7 +61,7 @@ def sanity_check_for_foreman(foreman, oldhost):
         sys.exit(5)
 
 
-def host_renane(pargs):
+def host_rename(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument("--jfdi", action='store_true', help="Just do it - don't check for alarmed states")
 
     argcomplete.autocomplete(parser)
-    parser.set_defaults(func=host_renane)
+    parser.set_defaults(func=host_rename)
 
     pargs = parser.parse_args()
     pargs.func(pargs)
