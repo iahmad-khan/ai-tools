@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
     parser.add_argument("oldhostname", metavar="HOST", help="host to rename").completer = ForemanCompleter()
     parser.add_argument("newhostname", metavar="HOST", help="the new name for the host")
-    parser.add_argument("--jfdi", default=False, help="Just do it - don't check for alarmed states")
+    parser.add_argument("--jfdi", action='store_true', help="Just do it - don't check for alarmed states")
 
     argcomplete.autocomplete(parser)
     parser.set_defaults(func=host_renane)
