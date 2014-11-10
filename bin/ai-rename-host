@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 from aitools.aims import AimsClient
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
 import sys
 import argcomplete
 import getpass
