@@ -43,9 +43,8 @@ class OpenstackAuthClient():
         except exceptions.SSLError:
             raise AiToolsOpenstackAuthError("x509 client certificate error")
         except api_exceptions.Unauthorized:
-            raise AiToolsOpenstackAuthError("User not authorized to perform "
-                "this operation. It might be that you are using the wrong tenant "
-                "or your Kerberos ticket has expired")
+            raise AiToolsOpenstackAuthError("- Are you using the wrong tenant?\n"
+                " - Is your Kerberos ticket expired?")
 
     @property
     def token(self):

@@ -437,7 +437,7 @@ def main():
                 foreman.delhost(fqdn)
             return 40
         except AiToolsOpenstackAuthError, error:
-            logging.error("Authorization error: (%s)" % error)
+            logging.error("User not authorized to perform this operation:\n %s" % error)
             if not args.foreman_disable:
                 foreman.delhost(fqdn)
             return 50
