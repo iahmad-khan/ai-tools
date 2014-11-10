@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 from aitools.aims import AimsClient
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
 import sys
 import argcomplete
 import getpass
@@ -38,7 +34,7 @@ def sanity_check_for_alarms(old_name):
     osa = state['os_alarmed']
     appa = state['app_alarmed']
     appstate = state['appstate']
-    if (hwa or nca or osa or appa or appstate=="production"):
+    if hwa or nca or osa or appa or appstate == "production":
         sys.stderr.write("Renaming host is a destructive operation for the host. Please ensure that\n")
         sys.stderr.write("all alarms have been disabled in Roger and the application state of the nodes\n")
         sys.stderr.write("is not production. To ignore this check, run this command with the --jfdi flag.\n")
@@ -65,7 +61,7 @@ def sanity_check_for_foreman(foreman, oldhost):
         sys.exit(5)
 
 
-def host_renane(pargs):
+def host_rename(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
@@ -164,10 +160,10 @@ if __name__ == "__main__":
 
     parser.add_argument("oldhostname", metavar="HOST", help="host to rename").completer = ForemanCompleter()
     parser.add_argument("newhostname", metavar="HOST", help="the new name for the host")
-    parser.add_argument("--jfdi", default=False, help="Just do it - don't check for alarmed states")
+    parser.add_argument("--jfdi", action='store_true', help="Just do it - don't check for alarmed states")
 
     argcomplete.autocomplete(parser)
-    parser.set_defaults(func=host_renane)
+    parser.set_defaults(func=host_rename)
 
     pargs = parser.parse_args()
     pargs.func(pargs)
