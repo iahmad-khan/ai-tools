@@ -53,6 +53,8 @@ class EncClient(HTTPClient):
             code, response = super(EncClient, self).do_request(method, url, headers, data)
             if code == requests.codes.not_found:
                 raise AiToolsEncError("Could not find node in ENC")
+            elif code == requests.codes.precondition_failed:
+                raise AiToolsEncError("The ENC payload couldn't be computed")
             elif code == requests.codes.unauthorized or code == requests.codes.forbidden:
                 raise AiToolsEncError("Unauthorized when contacting ENC")
             body = response.text
