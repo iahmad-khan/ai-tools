@@ -244,11 +244,28 @@ case $OS_MAJOR_VERSION in
     ;;
 esac
 
-function installack {
-  echo "Calling certmgr-installack..."
-  /usr/bin/certmgr-installack --url https://$_CASERVER_HOSTNAME:$_CASERVER_PORT/krb/certmgr/host/
+#
+# Download the host certificate
+#
+HOSTCERTDIR=`puppet config print certdir`
+HOSTKEYDIR=`puppet config print privatekeydir`
+HOSTPUBKEYDIR=`puppet config print publickeydir`
+mkdir -p $HOSTCERTDIR $HOSTKEYDIR $HOSTPUBKEYDIR
+chown puppet:root $HOSTCERTDIR $HOSTKEYDIR $HOSTPUBKEYDIR
+HOSTKEY=`puppet config print hostprivkey`
+HOSTPUBKEY=`puppet config print hostpubkey`
+HOSTCERT=`puppet config print hostcert`
+function get_host_certificate {
+  echo "Getting host certificate..."
+  certmgr-getcert -s $_CASERVER_HOSTNAME -p $_CASERVER_PORT -w $HOSTKEYDIR -o $HOSTCERT
+  [[ $? -ne 0 ]] && echo "certmgr-getcert didn't return 0" && return 1
+  [[ ! -s $HOSTKEY ]] && echo "Host key not created" && return 1
+  [[ ! -s $HOSTCERT ]] && echo "Host cert not created" && return 1
+  openssl rsa -in $HOSTKEY -pubout 2> /dev/null > $HOSTPUBKEY
+  chown puppet:root $HOSTKEY $HOSTCERT $HOSTPUBKEY
+  test -s $HOSTPUBKEY
 }
-execute_shell_block installack 10 15 || unrecoverable_error "installack"
+execute_shell_block get_host_certificate 10 15 || unrecoverable_error "getcert"
 
 # Clean up /etc/yum.repos.d/, no longer necessary.
 # Puppet will recreate all of them.
