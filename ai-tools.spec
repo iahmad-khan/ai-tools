@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.6
+Version: 8.7
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -81,6 +81,16 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Nov 17 2014 Nacho Barrientos <nacho.barrientos@cern.ch> 8.7-1
+- [ai-foreman-cli] Add support for SLC/RH 5.11 and 6.6.
+- [ai-bs-vm] Fix bug when attaching a new volume if dryrun is enabled.
+- [ai-bs-vm] Use certmgr-getcert instead of -installack.
+- [ai-bs-vm] Install LANDB gems before running Puppet for the first time.
+- [ai-rename-host] Fix JFDI flag.
+- [tbag] Add friendly update time in show output
+- [ai-qai] [ai-whatfe] "shhh... don't look."
+- [libs] EncClient: Handle 412
+
 * Wed Oct 21 2014 Ben Jones <ben.dylan.jones@cern.ch> 8.6-1
 - [tbag] Fixes for --all and --tree printing
 - [common] error handling for url dereferencing
