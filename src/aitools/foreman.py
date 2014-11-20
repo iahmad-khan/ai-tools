@@ -56,7 +56,7 @@ class ForemanClient(HTTPClient):
         if self._subnets:
             return self._subnets
         subnets = self.get_subnets()
-        self._subnets = dict((s["subnet"]["id"], s["subnet"]["name"]) for s in subnets)
+        self._subnets = dict((s["id"], s["name"]) for s in subnets)
         return self._subnets
 
     @property
@@ -64,7 +64,7 @@ class ForemanClient(HTTPClient):
         if self._domains:
             return self._domains
         domains = self.get_domains()
-        self._domains = dict((d["domain"]["id"], d["domain"]["name"]) for d in domains)
+        self._domains = dict((d["id"], d["name"]) for d in domains)
         return self._domains
 
     @property
@@ -72,7 +72,7 @@ class ForemanClient(HTTPClient):
         if self._usergroups:
             return self._usergroups
         usergroups = self.get_usergroups()
-        self._usergroups = dict((u["usergroup"]["id"], u["usergroup"]["name"]) for u in usergroups)
+        self._usergroups = dict((u["id"], u["name"]) for u in usergroups)
         return self._usergroups
 
     @property
@@ -80,7 +80,7 @@ class ForemanClient(HTTPClient):
         if self._users:
             return self._users
         users = self.get_users()
-        self._users = dict((u["user"]["id"], u["user"]["login"]) for u in users)
+        self._users = dict((u["id"], u["login"]) for u in users)
         return self._users
 
     @property
@@ -88,7 +88,7 @@ class ForemanClient(HTTPClient):
         if self._environments:
             return self._environments
         environments = self.get_environments()
-        self._environments = dict((e["environment"]["id"], e["environment"]["name"]) for e in environments)
+        self._environments = dict((e["id"], e["name"]) for e in environments)
         return self._environments
 
     @property
@@ -96,7 +96,7 @@ class ForemanClient(HTTPClient):
         if self._hostgroups:
             return self._hostgroups
         hostgroups = self.get_hostgroups()
-        self._hostgroups = dict((h["hostgroup"]["id"], h["hostgroup"]["label"]) for h in hostgroups)
+        self._hostgroups = dict((h["id"], h["title"]) for h in hostgroups)
         return self._hostgroups
 
     @property
@@ -104,7 +104,7 @@ class ForemanClient(HTTPClient):
         if self._models:
             return self._models
         models = self.get_models()
-        self._models = dict((m["model"]["id"], m["model"]["name"]) for m in models)
+        self._models = dict((m["id"], m["name"]) for m in models)
         return self._models
 
     @property
@@ -112,7 +112,7 @@ class ForemanClient(HTTPClient):
         if self._architectures:
             return self._architectures
         arches = self.get_architectures()
-        self._architectures = dict((a["architecture"]["id"], a["architecture"]["name"]) for a in arches)
+        self._architectures = dict((a["id"], a["name"]) for a in arches)
         return self._architectures
 
     @property
@@ -120,8 +120,8 @@ class ForemanClient(HTTPClient):
         if self._operatingsystems:
             return self._operatingsystems
         oses = self.get_operatingsystems()
-        self._operatingsystems = dict((o["operatingsystem"]["id"],
-                                       o["operatingsystem"]["name"] + " " + o["operatingsystem"]["major"] + "." + o["operatingsystem"]["minor"])
+        self._operatingsystems = dict((o["id"],
+                                       o["name"] + " " + o["major"] + "." + o["minor"])
                                       for o in oses)
         return self._operatingsystems
 
@@ -130,7 +130,7 @@ class ForemanClient(HTTPClient):
         if self._ptables:
             return self._ptables
         ptables = self.get_ptables()
-        self._ptables = dict((p["ptable"]["id"], p["ptable"]["name"]) for p in ptables)
+        self._ptables = dict((p["id"], p["name"]) for p in ptables)
         return self._ptables
 
     @property
@@ -139,7 +139,7 @@ class ForemanClient(HTTPClient):
         if self._media:
             return self._media
         media = self.get_media()
-        self._media = dict((m["medium"]["id"], m["medium"]["name"]) for m in media)
+        self._media = dict((m["id"], m["name"]) for m in media)
         return self._media
 
     def addhost(self, fqdn, environment, hostgroup, owner):
@@ -584,10 +584,10 @@ class ForemanClient(HTTPClient):
             if not results:
                 raise AiToolsForemanNotFoundError("%s '%s' not found" %
                     (modelname, value))
-            if len(results) > 1:
+            if results['subtotal'] > 1:
                 raise AiToolsForemanError("Multiple choices for %s lookup" % modelname)
-            self.cache[cache_key] = results[0][modelname]['id']
-            return results[0][modelname]['id']
+            self.cache[cache_key] = results[0]['id']
+            return results[0]['id']
 
     def __resolve_model(self, modelname, model_id):
         cache_key = '%s_%s' % (modelname, model_id)
@@ -712,6 +712,8 @@ class ForemanClient(HTTPClient):
                 raise AiToolsForemanNotAllowedError("Unauthorized when trying '%s' on '%s'" % (method, url))
             if re.match('application/json', response.headers['content-type']):
                 body = response.json()
+            if "results" in body:
+                body = body["results"] # FIXME: handle pagination?
             return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsForemanError(error)

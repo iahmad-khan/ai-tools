@@ -43,7 +43,7 @@ class TestForeman(unittest.TestCase):
         res = foreman_client.get_media()
         self.assertTrue(res)
         self.assertTrue((isinstance(res, list)))
-        self.assertTrue(("medium" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_get_ptable(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -52,7 +52,7 @@ class TestForeman(unittest.TestCase):
         res = foreman_client.get_ptables()
         self.assertTrue(res)
         self.assertTrue((isinstance(res, list)))
-        self.assertTrue(("ptable" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_get_operatinsystem(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -61,7 +61,7 @@ class TestForeman(unittest.TestCase):
         res = foreman_client.get_operatingsystems()
         self.assertTrue(res)
         self.assertTrue((isinstance(res, list)))
-        self.assertTrue(("operatingsystem" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_operatingsystem_property(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -77,7 +77,7 @@ class TestForeman(unittest.TestCase):
         foreman_client = ForemanClient()
         res = foreman_client.get_architectures()
         self.assertTrue(res)
-        self.assertTrue(("architecture" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_architectures_property(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -93,7 +93,7 @@ class TestForeman(unittest.TestCase):
         foreman_client = ForemanClient()
         res = foreman_client.get_models()
         self.assertTrue(res)
-        self.assertTrue(("model" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_models_property(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -109,7 +109,7 @@ class TestForeman(unittest.TestCase):
         foreman_client = ForemanClient()
         res = foreman_client.get_hostgroups()
         self.assertTrue(res)
-        self.assertTrue(("hostgroup" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_hostgroups_property(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -125,7 +125,7 @@ class TestForeman(unittest.TestCase):
         foreman_client = ForemanClient()
         res = foreman_client.get_environments()
         self.assertTrue(res)
-        self.assertTrue(("environment" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_environments_property(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -141,7 +141,7 @@ class TestForeman(unittest.TestCase):
         foreman_client = ForemanClient()
         res = foreman_client.get_users()
         self.assertTrue(res)
-        self.assertTrue(("user" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_users_property(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -157,7 +157,7 @@ class TestForeman(unittest.TestCase):
         foreman_client = ForemanClient()
         res = foreman_client.get_usergroups()
         self.assertTrue(res)
-        self.assertTrue(("usergroup" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_usergroups_property(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -173,7 +173,7 @@ class TestForeman(unittest.TestCase):
         foreman_client = ForemanClient()
         res = foreman_client.get_domains()
         self.assertTrue(res)
-        self.assertTrue(("domain" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_domains_property(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
@@ -189,7 +189,7 @@ class TestForeman(unittest.TestCase):
         foreman_client = ForemanClient()
         res = foreman_client.get_subnets()
         self.assertTrue(res)
-        self.assertTrue(("subnet" in res[0].keys()))
+        self.assertTrue(("id" in res[0].keys()))
 
     def test_foreman_subnets_property(self):
         (pargs, _) = self.foreman_config.parser.parse_known_args()
