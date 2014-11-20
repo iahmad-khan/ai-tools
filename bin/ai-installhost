@@ -189,7 +189,6 @@ def process_host(hostname):
     except AiToolsForemanError, error:
         return format_result(fqdn, 11, error)
 
-    host = host['host']
     if host['managed'] == False:
         return format_result(fqdn, 12,
             "Host is unmanaged, and therefore uninstallable")
@@ -257,8 +256,8 @@ def process_host(hostname):
     aims = AimsClient(dryrun=args.dryrun)
     try:
         pxetarget = aims.addhost(fqdn=fqdn,
-            operatingsystem=host['operatingsystem']['operatingsystem'],
-            architecture=host['architecture']['architecture'],
+            operatingsystem=host['operatingsystem'],
+            architecture=host['architecture'],
             enc=encdata['parameters'],
             ksfilepath=ksfilepath,
             user_kopts=args.aims_kopts)
