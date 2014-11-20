@@ -207,13 +207,13 @@ class ForemanClient(HTTPClient):
         (code, body) = self.__do_api_request("get", "hosts/%s" % fqdn)
         if code == requests.codes.ok:
             for model in toexpand:
-                body['host'][model] = self.__resolve_model(model,
-                    body['host']["%s_id" % model])
+                body[model] = self.__resolve_model(model,
+                    body["%s_id" % model])
             return body
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
-            error = ','.join(body['host']['full_messages'])
+            error = ','.join(body['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)
 
     def getks(self, ip_address):
