@@ -584,7 +584,7 @@ class ForemanClient(HTTPClient):
             if not results:
                 raise AiToolsForemanNotFoundError("%s '%s' not found" %
                     (modelname, value))
-            if results['subtotal'] > 1:
+            if len(results) > 1:
                 raise AiToolsForemanError("Multiple choices for %s lookup" % modelname)
             self.cache[cache_key] = results[0]['id']
             return results[0]['id']
