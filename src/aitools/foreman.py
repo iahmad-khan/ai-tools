@@ -712,8 +712,12 @@ class ForemanClient(HTTPClient):
                 raise AiToolsForemanNotAllowedError("Unauthorized when trying '%s' on '%s'" % (method, url))
             if re.match('application/json', response.headers['content-type']):
                 body = response.json()
+            # Handling pagination should be a responsability of the caller.
+            # Therefore, this method should return the body as-is, but that
+            # would require changing all the methods making use of this one.
+            # To be done, but not now.
             if "results" in body:
-                body = body["results"] # FIXME: handle pagination?
+                body = body["results"]
             return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsForemanError(error)
