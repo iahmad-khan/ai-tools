@@ -75,7 +75,7 @@ def parse_cmdline_args():
         ).completer = ForemanCompleter(model='environments')
     parser.add_argument('--foreman-hostgroup', type=str,
         default=None, help="Override Foreman hostgroup"
-        ).completer = ForemanCompleter(model='hostgroups',item='label')
+        ).completer = ForemanCompleter(model='hostgroups',item='title')
 
     ##
     ## Positional
@@ -118,11 +118,12 @@ def main():
     foreman = ForemanClient(dryrun=False, deref_alias=args.dereference_alias)
 
     try:
-        host = foreman.gethost(fqdn=fqdn)
+        host = foreman.gethost(fqdn=fqdn,
+            toexpand=['environment', 'hostgroup'])
         # Resolve environment
         if not args.foreman_environment:
-            if host['host']['environment']:
-                environment = host['host']['environment']['environment']['name']
+            if host['environment']:
+                environment = host['environment']['name']
             else:
                 logging.error("Environment not found in Foreman and not manually set")
         else:
@@ -130,8 +131,8 @@ def main():
         logging.info("Environment: %s" % environment)
         # Resolve hostgroup
         if not args.foreman_hostgroup:
-            if host['host']['hostgroup']:
-                hostgroup = host['host']['hostgroup']['hostgroup']['label']
+            if host['hostgroup']:
+                hostgroup = host['hostgroup']['title']
             else:
                 logging.error("Hostgroup not found in Foreman and not manually set")
         else:
