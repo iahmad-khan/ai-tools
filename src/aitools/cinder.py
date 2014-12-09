@@ -86,7 +86,7 @@ class CinderClient():
             raise AiToolsCinderError(error)
 
     def is_ready(self, volume_id, needs_to_be_bootable=False,
-        wait_until_ready=False, timeout=DEFAULT_TIMEOUT, wait_time=60):
+        timeout=DEFAULT_TIMEOUT, wait_time=60):
         """
         Check if the volume is ready i.e. its status is 'available'.
         If it's ready, the volume is returned, if not, an exception is
@@ -95,9 +95,6 @@ class CinderClient():
         :param volume_id: volume to be checked
         :param needs_to_be_bootable: if True it will check that the volume's
             bootable flag is True
-        :param wait_until_ready: if True it will wait until the status is no
-            longer 'creating' or 'downloading'. This is useful when the volume
-            has been recently created and we are waiting to boot from it
         :param timeout: maximum time spent waiting for a volume
         :param wait_time: time to wait between checking if the volume is ready
         :raise AiToolsCinderError: in case the volume doesn't get created
@@ -105,18 +102,17 @@ class CinderClient():
         """
         if volume_id:
             volume = self.get(volume_id)
-            if wait_until_ready:
-                time_init = time.time()
-                while volume.status == 'creating' or volume.status == 'downloading':
-                    time_elapsed = int(time.time() - time_init)
-                    if time_elapsed > timeout:
-                        raise AiToolsCinderError("Volume '{0}' took more than {1} "
-                            "seconds to be created. Time elapsed: {2} seconds"
-                            .format(volume.id, timeout, time_elapsed))
-                    logging.info("Volume not created yet. Checking again in %s seconds" % wait_time)
-                    time.sleep(wait_time)
-                    logging.debug("Time elapsed: {0} seconds".format(time_elapsed))
-                    volume = self.get(volume.id)
+            time_init = time.time()
+            while volume.status == 'creating' or volume.status == 'downloading':
+                time_elapsed = int(time.time() - time_init)
+                if time_elapsed > timeout:
+                    raise AiToolsCinderError("Volume '{0}' took more than {1} "
+                        "seconds to be created. Time elapsed: {2} seconds"
+                        .format(volume.id, timeout, time_elapsed))
+                logging.info("Volume not created yet. Checking again in %s seconds" % wait_time)
+                time.sleep(wait_time)
+                logging.debug("Time elapsed: {0} seconds".format(time_elapsed))
+                volume = self.get(volume.id)
             if volume.status == 'available':
                 if not needs_to_be_bootable or volume.bootable == 'true':
                     return volume

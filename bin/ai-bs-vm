@@ -309,7 +309,6 @@ def _manage_volumes(cinder, image=None, attachments={}):
         if is_valid_UUID(volume_id):
             volume = cinder.is_ready(volume_id=volume_id,
                 needs_to_be_bootable=bool(device == 'vda'),
-                wait_until_ready=True,
                 wait_time=60 if device == 'vda' else 5)
             volumes[device] = "%s:::%s" % (volume.id, delete_on_terminate)
             logging.info("Attaching volume '%s' in device: '%s'" % (volume.id, device))
