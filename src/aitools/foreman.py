@@ -378,7 +378,7 @@ class ForemanClient(HTTPClient):
 
         logging.info("Checking for existing parameter '%s' on hostgroup '%s'" % (name, hostgroup))
         params = self.gethostgroupparameters(hostgroup)
-        ids = [ (p['parameter']['id'], p['parameter']['value']) for p in params if p['parameter']['name'] == name ]
+        ids = [(p['id'], p['value']) for p in params if p['name'] == name]
 
         if ids:
             # param exists, use PUT on that ID
