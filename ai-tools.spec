@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.7
+Version: 8.8
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -81,6 +81,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Dec 11 2014 Nacho Barrientos <nacho.barrientos@cern.ch> 8.8-1
+- Several fixes adding Foreman 1.6 compatibility
+
 * Mon Nov 17 2014 Nacho Barrientos <nacho.barrientos@cern.ch> 8.7-1
 - [ai-foreman-cli] Add support for SLC/RH 5.11 and 6.6.
 - [ai-bs-vm] Fix bug when attaching a new volume if dryrun is enabled.
