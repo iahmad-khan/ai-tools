@@ -194,12 +194,12 @@ $ ai-remote-power-control cycle -e 404.cern.ch
 .B Do a 'cycle' operation on all the Puppet masters :)
 $ mco find -T punch -F hostgroup_0=punch -F hostgroup_2=master | xargs ai-remote-power-control cycle
 
-.SH BUGS
-Any problem? Open a support call on Jira
-(https://its.cern.ch/jira/) project "Agile Infrastructure".
+.SH REPORTING BUGS
+If you experience any problem with this tool, please open a support
+call on SNOW (Functional Element "Configuration Management").
 
 .SH AUTHOR
 Nacho Barrientos <nacho.barrientos@cern.ch> 
 
 .SH SEE ALSO
-remote-power-control (1), ai-foreman-cli (1)
+ai-foreman-cli (1), ai-installhost (1)
