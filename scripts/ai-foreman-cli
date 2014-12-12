@@ -797,6 +797,24 @@ sub ForemanConfig($$){
 	}
     }
     #print Dumper(\%medium);exit;
+    my @hgp = @{from_json($browser->get("$url/hostgroups?format=json&per_page=10000000")->content)};
+    my %hgp = ();
+    for (@hgp){
+	my %dum = %$_;
+	my $id       = $dum{hostgroup}{id};
+	$hgp{$id}{ancestry} = $dum{hostgroup}{ancestry};
+	$hgp{$id}{name}     = $dum{hostgroup}{name};
+    }
+    for my $id (keys %hgp){
+	my $name = $hgp{$id}{name};
+	my $path = $hgp{$id}{ancestry};
+	if (defined $path){
+	    my @path = split(/\//,$path);
+	    $name = join("/" ,map {$hgp{$_}{name}} @path) . "/$name";
+	}
+	$config{hostgroup}{$id} = $name;
+    }
+    #exit;
 
     # partition tables
     map {$config{ptable}         {$$_{ptable}         {id}} = $$_{ptable}         {name} } @{from_json($browser->get("$url/ptables?format=json&per_page=10000000")->content)};
@@ -809,7 +827,6 @@ sub ForemanConfig($$){
     map {$config{operatingsystem}{$$_{operatingsystem}{id}} = $$_{operatingsystem}{name}." ".$$_{operatingsystem}{major}.".".$$_{operatingsystem}{minor} } @{from_json($browser->get("$url/operatingsystems?format=json&per_page=10000000")->content)};
     map {$config{architecture}   {$$_{architecture}   {id}} = $$_{architecture}   {name} } @{from_json($browser->get("$url/architectures?format=json&per_page=10000000")->content)};
     map {$config{model}          {$$_{model}          {id}} = $$_{model}          {name} } @{from_json($browser->get("$url/models?format=json&per_page=10000000")->content)};
-    map {$config{hostgroup}      {$$_{hostgroup}      {id}} = $$_{hostgroup}      {label}} @{from_json($browser->get("$url/hostgroups?format=json&per_page=10000000")->content)};
     map {$config{environment}    {$$_{environment}    {id}} = $$_{environment}    {name} } @{from_json($browser->get("$url/environments?format=json&per_page=10000000")->content)};
     map {$config{user}           {$$_{user}           {id}} = $$_{user}           {login}} @{from_json($browser->get("$url/users?format=json&per_page=10000000")->content)};
     map {$config{usergroup}      {$$_{usergroup}      {id}} = $$_{usergroup}      {name} } @{from_json($browser->get("$url/usergroups?format=json&per_page=10000000")->content)};
