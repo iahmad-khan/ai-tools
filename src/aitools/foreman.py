@@ -165,7 +165,7 @@ class ForemanClient(HTTPClient):
             if code == requests.codes.ok:
                 logging.info("Host '%s' created in Foreman" % fqdn)
             elif code == requests.codes.unprocessable_entity:
-                error = ','.join(body['host']['full_messages'])
+                error = ','.join(body['full_messages'])
                 raise AiToolsForemanError("addhost call failed (%s)" % error)
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
@@ -604,7 +604,7 @@ class ForemanClient(HTTPClient):
             elif code == requests.codes.not_found:
                 raise AiToolsForemanError("Model '%s' not found in Foreman" % modelname)
             elif code == requests.codes.unprocessable_entity:
-                error = ','.join(body['host']['full_messages'])
+                error = ','.join(body['full_messages'])
                 raise AiToolsForemanError("__resolve_model_name call failed (%s)" % error)
 
     def search_query(self, model, search_string):
