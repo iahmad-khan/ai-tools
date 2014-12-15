@@ -111,9 +111,9 @@ def print_summary(args, fqdn, openstack_env, host):
     logging.info("VM tenant: %s" % openstack_env.get('project_name'))
     if host:
         logging.info("Foreman environment: %s" %
-            host['host']['environment']['environment']['name'])
+            host['environment']['name'])
         logging.info("Foreman hostgroup: %s" %
-            host['host']['hostgroup']['hostgroup']['label'])
+            host['hostgroup']['title'])
     logging.debug("Certmgr server: %s" % certmgrconf.certmgr_hostname)
     logging.debug("Certmgr port: %s" % certmgrconf.certmgr_port)
     logging.debug("Roger server: %s" % roger_config.roger_hostname)
@@ -149,7 +149,8 @@ def main():
     if not args.foreman_disable:
         try:
             foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
-            host = foreman.gethost(fqdn=fqdn)
+            host = foreman.gethost(fqdn=fqdn,
+                toexpand=['environment', 'hostgroup'])
         except AiToolsForemanError, error:
             logging.error("Couldn't fetch Foreman entry (%s). VM not rebuilt." % error)
             return 10
