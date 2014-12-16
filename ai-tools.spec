@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.9
+Version: 8.10
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -81,6 +81,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Dec 16 2014 Nacho Barrientos <nacho.barrientos@cern.ch> 8.10-1
+- [foreman] Parse error messages correctly
+
 * Mon Dec 15 2014 Steve Traylen <steve.traylen@cern.ch> 8.9-1
 - [ai-foreman-cli] - display hostgroup correctley.
 - [*] - update man pages to use snow for support always.
