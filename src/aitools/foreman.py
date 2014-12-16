@@ -165,7 +165,7 @@ class ForemanClient(HTTPClient):
             if code == requests.codes.ok:
                 logging.info("Host '%s' created in Foreman" % fqdn)
             elif code == requests.codes.unprocessable_entity:
-                error = ','.join(body['host']['full_messages'])
+                error = ','.join(body['error']['full_messages'])
                 raise AiToolsForemanError("addhost call failed (%s)" % error)
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
@@ -213,7 +213,7 @@ class ForemanClient(HTTPClient):
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
-            error = ','.join(body['full_messages'])
+            error = ','.join(body['error']['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)
 
     def getks(self, ip_address):
@@ -258,8 +258,7 @@ class ForemanClient(HTTPClient):
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Host '%s' (or facts) not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
-            error = ','.join(body[fqdn]['full_messages'])
-            raise AiToolsForemanError("getfacts call failed (%s)" % error)
+            raise AiToolsForemanError("getfacts call failed (Unprocessable entity)")
 
     def renamehost(self, oldfqdn, newfqdn):
         """
@@ -604,7 +603,7 @@ class ForemanClient(HTTPClient):
             elif code == requests.codes.not_found:
                 raise AiToolsForemanError("Model '%s' not found in Foreman" % modelname)
             elif code == requests.codes.unprocessable_entity:
-                error = ','.join(body['host']['full_messages'])
+                error = ','.join(body['error']['full_messages'])
                 raise AiToolsForemanError("__resolve_model_name call failed (%s)" % error)
 
     def search_query(self, model, search_string):
