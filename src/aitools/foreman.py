@@ -258,8 +258,7 @@ class ForemanClient(HTTPClient):
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Host '%s' (or facts) not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
-            error = ','.join(body[fqdn]['error']['full_messages'])
-            raise AiToolsForemanError("getfacts call failed (%s)" % error)
+            raise AiToolsForemanError("getfacts call failed (Unprocessable entity)")
 
     def renamehost(self, oldfqdn, newfqdn):
         """
