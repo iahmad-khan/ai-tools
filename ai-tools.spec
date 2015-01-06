@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.10
+Version: 8.11
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -81,6 +81,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Jan 06 2015 Alberto Rodriguez Peon <alberto.rodriguez.peon@cern.ch> 8.11-1
+- [ai-{bs,kill}-vm] Use Openstack client manager to authenticate, which supports Kerberos
+
 * Tue Dec 16 2014 Nacho Barrientos <nacho.barrientos@cern.ch> 8.10-1
 - [foreman] Parse error messages correctly
 
