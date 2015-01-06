@@ -13,25 +13,18 @@ from aitools.errors import AiToolsNovaError
 
 
 class NovaClient():
-    def __init__(self, auth_url, username, password,
-            tenant_name, cacert, timeout=None, dryrun=False):
+    def __init__(self, auth_client, timeout=0, dryrun=False):
         """
         Nova client for interacting with the Openstack Nova service. Autoconfigures via the AiConfig
         object and the standard **_OS** environment variables.
 
-        :param auth_url: override the environment variable configured Keystone URL
-        :param username: override the environment variable configured username
-        :param username: override the environment variable configured password
-        :param cacert: override the environment variable configured CA certificate bundle
+        :param auth_client: OpenstackAuthClient that does the authentication
         :param timeout: override the auto-configured Nova timeout
         :param dryrun: create a dummy client
         """
         novaconfig = NovaConfig()
-        self.auth_url = auth_url
-        self.username = username
-        self.password = password
-        self.tenant_name = tenant_name
-        self.cacert = cacert
+        self.nova = None
+        self.auth_client = auth_client
         self.timeout = int(timeout or novaconfig.nova_timeout)
         self.dryrun = dryrun
 
@@ -113,17 +106,17 @@ class NovaClient():
             raise AiToolsNovaError(error)
 
     def __init_client(self):
-        try:
-            return client.Client(self.username, self.password,
-                    self.tenant_name,
-                    auth_url=self.auth_url,
-                    cacert=self.cacert,
-                    service_type="compute",
-                    timeout=self.timeout)
-        except novaclient.exceptions.ClientException, error:
-            raise AiToolsNovaError(error)
-        except novaclient.exceptions.ConnectionRefused, error:
-            raise AiToolsNovaError(error)
+        if self.nova is None:
+            try:
+                self.nova = client.Client(username='', api_key='', project_id='',
+                    auth_url='', timeout=self.timeout)
+                self.nova.client.auth_token = self.auth_client.token
+                self.nova.client.management_url = self.auth_client.nova_endpoint
+            except novaclient.exceptions.ClientException, error:
+                raise AiToolsNovaError(error)
+            except novaclient.exceptions.ConnectionRefused, error:
+                raise AiToolsNovaError(error)
+        return self.nova
 
     def __vmname_from_fqdn(self, fqdn):
         return re.sub("\.cern\.ch$", "", fqdn)

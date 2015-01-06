@@ -6,30 +6,20 @@ import logging
 import requests
 import cinderclient.exceptions
 from cinderclient.v1 import client
-
 from aitools.errors import AiToolsCinderError
 
 class CinderClient():
 
-    DEFAULT_TIMEOUT= 360
-
-    def __init__(self, username, password,
-            tenant_id, auth_url, cacert, dryrun=False):
+    DEFAULT_TIMEOUT = 360
+    def __init__(self, auth_client, dryrun=False):
         """
-        Cinder client for interacting with the Openstack Cinder service. .
+        Cinder client for interacting with the Openstack Cinder service.
 
-        :param username: override the environment variable configured username
-        :param password: override the environment variable configured password
-        :param tenant_id: override the environment variable configured Tenant ID
-        :param auth_url: override the environment variable configured Keystone URL
-        :param cacert: override the environment variable configured CA certificate bundle
+        :param auth_client: OpenstackAuthClient that does the authentication
         :param dryrun: create a dummy client
         """
-        self.auth_url = auth_url
-        self.username = username
-        self.password = password
-        self.tenant_id = tenant_id
-        self.cacert = cacert
+        self.cinder = None
+        self.auth_client = auth_client
         self.dryrun = dryrun
 
     def create(self, size, display_name=None, display_description=None,
@@ -134,15 +124,16 @@ class CinderClient():
             "'available'{0}".format(' and bootable' if needs_to_be_bootable else ''))
 
     def __init_client(self):
-        try:
-            return client.Client(self.username, self.password,
-                    tenant_id=self.tenant_id,
-                    auth_url=self.auth_url,
-                    cacert=self.cacert)
-        except requests.exceptions.Timeout, error:
-            raise AiToolsCinderError(error)
-        except cinderclient.exceptions.ClientException, error:
-            raise AiToolsCinderError(error)
-        except cinderclient.exceptions.ConnectionError, error:
-            raise AiToolsCinderError(error)
+        if self.cinder is None:
+            try:
+                self.cinder = client.Client(username='', api_key='', project_id='', auth_url='')
+                self.cinder.client.auth_token = self.auth_client.token
+                self.cinder.client.management_url = self.auth_client.cinder_endpoint
+            except requests.exceptions.Timeout, error:
+                raise AiToolsCinderError(error)
+            except cinderclient.exceptions.ClientException, error:
+                raise AiToolsCinderError(error)
+            except cinderclient.exceptions.ConnectionError, error:
+                raise AiToolsCinderError(error)
+        return self.cinder
 

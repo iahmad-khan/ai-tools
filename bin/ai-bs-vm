@@ -15,6 +15,7 @@
 #  20 Host staging failed
 #  30 Nova boot failed
 #  40 Cinder volume operation failed
+#  50 Openstack authorization error
 
 import os
 import sys
@@ -29,6 +30,7 @@ from aitools.certmgr import CertmgrClient
 from aitools.roger import RogerClient
 from aitools.nova import NovaClient
 from aitools.cinder import CinderClient
+from aitools.openstack_auth_client import OpenstackAuthClient
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
@@ -46,6 +48,7 @@ from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
 from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotImplementedError
 from aitools.errors import AiToolsRogerInternalServerError
 from aitools.errors import AiToolsCinderError
+from aitools.errors import AiToolsOpenstackAuthError
 
 from aitools.completer import ForemanCompleter
 from aitools.completer import NovaCompleter
@@ -192,9 +195,9 @@ def parse_cmdline_args():
             "In case you just specify one, check the env variable 'AIBS_VMIMAGE_NAME'")
 
     options_to_boot_from = """You can boot from:
-        - An image ('nova image-list')
-        - An existing bootable volume ('cinder-list')
-        - An image ('nova image-list') and the size of a volume to boot from"""
+        - An image ('openstack image list')
+        - An existing bootable volume ('openstack volume list')
+        - An image ('openstack image list') and the size of a volume to boot from"""
 
     if not (args.nova_image or args.nova_boot_from_existing_volume):
         parser.error("No bootable element provided. %s" % options_to_boot_from)
@@ -256,7 +259,7 @@ def print_summary(args, fqdn, openstack_env):
         logging.info("Booting from volume: %s" % args.nova_boot_from_existing_volume)
     elif args.nova_boot_from_new_volume:
         logging.info("Booting from a new volume created using image: %s" % args.nova_image)
-    logging.info("VM tenant: %s" % openstack_env['tenant_name'])
+    logging.info("VM tenant: %s" % openstack_env.get('project_name'))
     for volume in args.nova_attach_existing_volume:
         logging.info("Attaching volume: %s" % volume)
     for volume in args.nova_attach_new_volume:
@@ -382,19 +385,13 @@ def main():
 
     if not args.nova_disable:
         try:
-            os_clients_args = openstack_env.copy()
-            os_clients_args['dryrun'] = args.dryrun
+            auth_client = OpenstackAuthClient(**openstack_env)
 
-            nova_args = os_clients_args.copy()
-            del nova_args['tenant_id']
-            nova = NovaClient(**nova_args)
-
-            cinder_args = os_clients_args.copy()
-            del cinder_args['tenant_name']
-            cinder = CinderClient(**cinder_args)
+            nova = NovaClient(auth_client, dryrun=args.dryrun)
+            cinder = CinderClient(auth_client, dryrun=args.dryrun)
 
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
-            meta['tenant-name'] = openstack_env['tenant_name']
+            meta['tenant-name'] = openstack_env.get('project_name')
             if args.landb_responsible:
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:
@@ -439,6 +436,11 @@ def main():
             if not args.foreman_disable:
                 foreman.delhost(fqdn)
             return 40
+        except AiToolsOpenstackAuthError, error:
+            logging.error("User not authorized to perform this operation:\n %s" % error)
+            if not args.foreman_disable:
+                foreman.delhost(fqdn)
+            return 50
 
     if not args.roger_disable:
         roger_client = RogerClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
@@ -472,7 +474,7 @@ def main():
     logging.info("  root using your Kerberos credentials. The LANDB responsible")
     logging.info("  has also root access by default.")
     logging.info("* You can check the status of the VM creation request by running:")
-    logging.info("  'nova show %s'" % fqdn.replace('.cern.ch', ''))
+    logging.info("  'openstack server show %s'" % fqdn.replace('.cern.ch', ''))
     if args.landb_responsible or args.landb_mainuser:
         logging.info("* A custom LANDB responsible/user has been set. It will be visible")
         logging.info("  in Foreman a few minutes after the VM is booted. In the")
@@ -480,7 +482,7 @@ def main():
         logging.info("  (%s)" % krb_principal)
     logging.info("* In case of problems, if you provided a SSH key when creating the VM")
     logging.info("  use it to log into the box and take a look at /var/log/firstboot.log.")
-    logging.info("  Console log can be retrieved by using 'nova console-log'.")
+    logging.info("  Console log can be retrieved by using 'openstack console log show'.")
     logging.info("----------------------------------------------------------------------")
     return 0
 

@@ -34,6 +34,9 @@ class AiToolsNovaError(AiToolsError):
 class AiToolsCinderError(AiToolsError):
     pass
 
+class AiToolsOpenstackAuthError(AiToolsError):
+    pass
+
 class AiToolsRogerError(AiToolsHTTPClientError):
     pass
 
