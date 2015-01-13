@@ -12,6 +12,13 @@ VMNAME
 ai-rebuild-vm is a Python command line tool to rebuild Puppet-managed
 Foreman-enabled OpenStack VMs.
 .LP
+When a virtual machine is rebuilt, the system disk is recreated with a
+clean image but the name, the DNS entry and the AD registration are
+kept so the time it takes for the node to be ready is much shorter.
+.LP
+This operation is conceptually equivalent to a re-installation of a physical
+box.
+.LP
 .I Prerequisites:
 .TP
 .B OpenStack credentials
