@@ -112,7 +112,7 @@ This option can be specified several times but it is not possible to attach seve
 volumes to the same device.
 .TP
 .B --nova-boot-from-new-volume
-Create a volume from an image and boots from there. The format is '<size>[:delete-on-terminate]',
+Create a volume from an image and boot from there. The format is '<size>[:delete-on-terminate]',
 where 'size' is represented as "XGB" or "XTB", being X an integer larger than 0
 and 'delete-on-terminate' an optional flag that indicates that the volume will be deleted
 when the VM is destroyed. In order to create a bootable volume "--nova-image" must be specified.
@@ -278,7 +278,7 @@ ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-boot-from-new-volu
 ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-existing-volume vdb=8f7949d0-325d-4968-83b4-f12eb8b4619a higgsbox.cern.ch
 
 .TP
-.B Create a VM with a new volume of size 50GB attached to /dev/vdb which will be deleted on termination of the VM:
+.B Create a VM with a new volume of size 50GB attached to /dev/vdb which will be deleted when the VM is terminated:
 ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-new-volume vdb=50GB:delete-on-terminate higgsbox.cern.ch
 
 .SH REPORTING BUGS
