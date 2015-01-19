@@ -64,7 +64,16 @@ DEFAULT_PUPPETINIT_PATH = "/usr/share/ai-tools/userdata/puppetinit"
 DEFAULT_PREFIX = "vm"
 DEFAULT_GROW_PARTITION = 2
 
+REGEX = {
+    'boot_new_volume': r'^(?P<size>[1-9]\d*(TB|GB))(:(?P<dot>delete-on-terminate))?$',
+    'boot_existing_volume': r'^(?P<uuid>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})(?P<dot>:delete-on-terminate)?$',
+    'attach_new_volume': r'^(?P<device>\w+)=(?P<value>[1-9]\d*(TB|GB))(:(?P<dot>delete-on-terminate))?$',
+    'attach_existing_volume': r'^(?P<device>\w+)=(?P<value>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})(?P<dot>:delete-on-terminate)?$'
+}
+
 ATTACHMENTS = {}
+
+parse_arg = lambda name, value : re.match(REGEX[name], value, re.I)
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -208,31 +217,29 @@ def parse_cmdline_args():
         parser.error("More than one bootable element provided. %s" % options_to_boot_from)
 
     if args.nova_boot_from_existing_volume:
-        volume_info = args.nova_boot_from_existing_volume.split(':')
-        if not is_valid_UUID(volume_info[0]):
+        match = parse_arg('boot_existing_volume', args.nova_boot_from_existing_volume)
+        if not match:
             parser.error("--nova-boot-from-existing-volume must be a valid UUID4")
-        ATTACHMENTS['vda'] = (volume_info[0], int(len(volume_info) > 1 and
-            volume_info[-1] == 'delete-on-terminate'))
+        ATTACHMENTS['vda'] = (match.group('uuid'), 1 if match.group('dot') is not None else 0)
 
     if args.nova_boot_from_new_volume:
-        volume_info = args.nova_boot_from_new_volume.split(':')
-        if not args.nova_image:
-            parser.error("An image is needed for booting from a new volume")
-        elif not is_valid_size_format(volume_info[0]):
+        match = parse_arg('boot_new_volume', args.nova_boot_from_new_volume)
+        if not match:
             parser.error("--nova-boot-from-new-volume must be a valid size in "
                 "GB or TB (e.g. '100GB', '1TB' )")
-        ATTACHMENTS['vda'] = (volume_info[0], int(len(volume_info) > 1 and
-            volume_info[-1] == 'delete-on-terminate'))
+        elif not args.nova_image:
+            parser.error("An image is needed for booting from a new volume")
+        ATTACHMENTS['vda'] = (match.group('size'), 1 if match.group('dot') is not None else 0)
+
 
     auto_devices = []
     for index, volume in enumerate(args.nova_attach_existing_volume + args.nova_attach_new_volume):
-        if not re.match(r'\w+=\w+', volume):
+        match = parse_arg('attach_new_volume', volume) or parse_arg('attach_existing_volume', volume)
+        if not match:
             parser.error("Bad format for attaching a volume. The format must be "
                 "'<device>=<UUID>' or '<device>=<size>")
-        device, value = volume.split('=')
-        value = value.split(':')
-        volume_info = value[0]
-        delete_on_terminate = int(len(value) > 1 and value[-1] == 'delete-on-terminate')
+        device, volume_info = match.group('device'), match.group('value')
+        delete_on_terminate = 1 if match.group('dot') is not None else 0
         if device == 'vda':
             parser.error("It is not possible to attach a volume in device 'vda' as this device is "
                 "used for booting")
