@@ -69,6 +69,38 @@ class NovaClient():
         except novaclient.exceptions.ConnectionRefused, error:
             raise AiToolsNovaError(error)
 
+    def rebuild(self, fqdn, image=None):
+        """
+        Execute the Nova boot api call to rebuild a VM.
+
+        :param fqdn: the FQDN of the VM to be rebuilt
+        :param image: the image name to base the rebuilt on.
+            If None, the current one will be used.
+        :raise AiToolsNovaError: in case the API call fails
+        """
+        vmname = self.__vmname_from_fqdn(fqdn)
+        logging.info("Rebuilding virtual machine '%s'..." % vmname)
+        tenant = self.__init_client()
+        try:
+            server_id = self.__resolve_id(tenant.servers.list(), vmname)
+            logging.debug("Server '%s' has id '%s'" % (vmname, server_id))
+            server = tenant.servers.get(server_id)
+            if not server.image:
+                raise AiToolsNovaError("This VM booted from a volume, can't rebuild")
+            image_id = image or server.image['id']
+            logging.debug("Image to be used has id '%s'" % image_id)
+            if not self.dryrun:
+                server.rebuild(image=image_id)
+                logging.info("Request to rebuild VM '%s' sent" % vmname)
+            else:
+                logging.info("VM '%s' not rebuilt because dryrun is enabled" % vmname)
+        except requests.exceptions.Timeout, error:
+            raise AiToolsNovaError(error)
+        except novaclient.exceptions.ClientException, error:
+            raise AiToolsNovaError(error)
+        except novaclient.exceptions.ConnectionRefused, error:
+            raise AiToolsNovaError(error)
+
     def delete(self, fqdn):
         """
         Execute the Nova delete API call to delete a VM.

@@ -1,0 +1,230 @@
+#!/usr/bin/env python
+# This program helps to rebuild a puppet-managed
+# Foreman-enabled Openstack VM.
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
+# Exit codes:
+#   0 all operations succeeded
+#   2 bad command line
+#   3 bad user environment
+#   4 Kerberos TGT not found or expired
+#   5 FQDN is invalid
+#  10 Foreman query failed
+#  20 Host staging failed
+#  30 Nova rebuild failed
+#  50 Openstack authorization error
+
+import sys
+import logging
+import argparse
+import argcomplete
+from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig, RogerConfig
+
+from aitools.foreman import ForemanClient
+from aitools.certmgr import CertmgrClient
+from aitools.roger import RogerClient
+from aitools.nova import NovaClient
+from aitools.openstack_auth_client import OpenstackAuthClient
+
+from aitools.common import configure_logging
+from aitools.common import verify_kerberos_environment
+from aitools.common import get_openstack_environment
+from aitools.common import validate_fqdn
+from aitools.common import append_domain
+from aitools.common import is_valid_UUID
+
+from aitools.errors import AiToolsInitError, AiToolsForemanError
+from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
+from aitools.errors import AiToolsRogerNotAllowedError
+from aitools.errors import AiToolsRogerInternalServerError
+from aitools.errors import AiToolsOpenstackAuthError
+
+from aitools.completer import ForemanCompleter
+from aitools.completer import NovaCompleter
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser()
+    ##
+    ## Internal options
+    ##
+    parser.add_argument('-v', '--verbose',
+        action="store_true",
+        help="Be chatty")
+    parser.add_argument('-d', '--dryrun',
+        action="store_true",
+        help="Don't do the requests that alter data")
+    parser.add_argument('-a', '--keepalarms',
+        action="store_true",
+        help="Don't disable alarms before triggering the rebuild process")
+    ##
+    ## Certmgr options
+    ##
+    parser.add_argument('--caserver-disable', action="store_true",
+        help="Disable Certmgr actions")
+    certmgr_config = CertmgrConfig()
+    certmgr_config.add_standard_args(parser)
+    ##
+    ## Roger options
+    ##
+    parser.add_argument('--roger-disable', action="store_true", default=False,
+                        help="Disable Roger actions")
+    parser.add_argument("--roger-appstate", help="Initial roger appstate",
+                        default="build")
+    roger_config = RogerConfig()
+    roger_config.add_standard_args(parser)
+    ##
+    ## Nova options
+    ##
+    nova_config = NovaConfig()
+    nova_config.add_standard_args(parser)
+    parser.add_argument('--nova-disable', action="store_true",
+        help="Disable Nova actions")
+    parser.add_argument('-i', '--nova-image', type=str,
+        help="OpenStack image name").completer = NovaCompleter(cache='image')
+    ##
+    ## Foreman options
+    ##
+    parser.add_argument('--foreman-disable', action="store_true",
+        help="Disable Foreman actions")
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+    ##
+    ## Positional
+    ##
+    parser.add_argument('hostname', help="Hostname (qualified or not)"
+        ).completer = ForemanCompleter()
+    argcomplete.autocomplete(parser)
+    args = parser.parse_args()
+
+    return args
+
+def print_summary(args, fqdn, openstack_env, host):
+    certmgrconf = CertmgrConfig()
+    roger_config = RogerConfig()
+    logging.info("Trying to rebuild '%s'..." % fqdn)
+    if args.nova_image:
+        logging.info("VM image: %s" % args.nova_image)
+    else:
+        logging.info("VM image: No changes. Current one will be used.")
+    logging.info("VM tenant: %s" % openstack_env.get('project_name'))
+    if host:
+        logging.info("Foreman environment: %s" %
+            host['environment']['name'])
+        logging.info("Foreman hostgroup: %s" %
+            host['hostgroup']['title'])
+    logging.debug("Certmgr server: %s" % certmgrconf.certmgr_hostname)
+    logging.debug("Certmgr port: %s" % certmgrconf.certmgr_port)
+    logging.debug("Roger server: %s" % roger_config.roger_hostname)
+    logging.debug("Roger port: %s" % str(roger_config.roger_port))
+
+def main():
+    """Application entrypoint"""
+    args = parse_cmdline_args()
+    fconfig = ForemanConfig()
+    fconfig.read_config_and_override_with_pargs(args)
+
+    configure_logging(args)
+
+    try:
+        openstack_env = get_openstack_environment()
+    except AiToolsInitError, error:
+        logging.error(error)
+        return 3
+
+    try:
+        verify_kerberos_environment()
+    except AiToolsInitError, error:
+        logging.error("TGT not found or expired. Exiting...")
+        return 4
+
+    fqdn = append_domain(args.hostname)
+
+    if not validate_fqdn(fqdn):
+        logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
+        return 5
+
+    host = None
+    if not args.foreman_disable:
+        try:
+            foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
+            host = foreman.gethost(fqdn=fqdn,
+                toexpand=['environment', 'hostgroup'])
+        except AiToolsForemanError, error:
+            logging.error("Couldn't fetch Foreman entry (%s). VM not rebuilt." % error)
+            return 10
+
+    print_summary(args, fqdn, openstack_env, host)
+
+    if not args.caserver_disable:
+        try:
+            certmgr = CertmgrClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
+            certmgr.stage(fqdn)
+        except AiToolsCertmgrError, error:
+            logging.error("Couldn't stage host (%s). VM not rebuilt." % error)
+            return 20
+
+    if not args.nova_disable:
+        try:
+            auth_client = OpenstackAuthClient(**openstack_env)
+            nova = NovaClient(auth_client, dryrun=args.dryrun)
+
+            image = args.nova_image
+            if image and not is_valid_UUID(image):
+                image = nova.find_image_by_name(name=image)
+            nova.rebuild(fqdn, image=image)
+        except AiToolsNovaError, error:
+            logging.error("Couldn't rebuild VM (%s)" % error)
+            return 30
+        except AiToolsOpenstackAuthError, error:
+            logging.error("Authorization error: (%s)" % error)
+            return 50
+
+    if not args.roger_disable:
+        roger_client = RogerClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
+        try:
+            logging.info("Setting application state on Roger...")
+            alarm_state = {}
+            if not args.keepalarms:
+                logging.info("Disabling alarms on Roger...")
+                alarm_state = dict((alarm_field, False)
+                    for alarm_field in roger_client.alarm_fields)
+            roger_client.update_or_create_state(fqdn, appstate=args.roger_appstate,
+                message="Rebuild triggered by ai-rebuild-vm", **alarm_state)
+        except AiToolsRogerNotAllowedError, e:
+            # new machines should be allowed, so this means you're trying to update
+            # something you shouldn't be updating
+            logging.error("Couldn't update roger due to permissions, perhaps entry already exists? (%s)" % e)
+        except AiToolsRogerInternalServerError:
+            logging.error("Received 500 trying to update roger")
+            logging.info("Please be aware alarm masking may not work till resolved")
+            logging.info("If this is important verify with 'roger show' and update with 'roger update'")
+        except Exception, e:
+            logging.error("Received unexpected error when trying to add to roger: '%s'" % e)
+            logging.info("Please be aware alarm masking may not work till resolved")
+            logging.info("If this is important verify with 'roger show' and update with 'roger update'")
+
+
+    logging.info("----------------------------------------------------------------------")
+    logging.info("* Your virtual machine is rebuilding right now. Puppet will run")
+    logging.info("  immediately after a successful rebuild process.")
+    logging.info("* It typically takes around 10-20 minutes between this command is")
+    logging.info("  executed and the first Puppet report arrives to Foreman:")
+    logging.info("  https://%s/hosts/%s/reports" % (fconfig.foreman_hostname, fqdn))
+    logging.info("  (although this depends a lot on the complexity of your configuration")
+    logging.info("  and on the number of packages to be installed/updated)")
+    logging.info("* After the initial configuration, if you've set rootegroups or")
+    logging.info("  rootusers in Foreman or Hiera you should be able to log in as")
+    logging.info("  root using your Kerberos credentials. The LANDB responsible")
+    logging.info("  has also root access by default.")
+    logging.info("* You can check the status of the VM rebuild request by running:")
+    logging.info("  'openstack server show %s'" % fqdn.replace('.cern.ch', ''))
+    logging.info("* In case of problems, if you provided a SSH key when creating the VM")
+    logging.info("  use it to log into the box and take a look at /var/log/firstboot.log.")
+    logging.info("  Console log can be retrieved by using 'openstack console log show'.")
+    logging.info("----------------------------------------------------------------------")
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
