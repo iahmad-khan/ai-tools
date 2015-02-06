@@ -624,6 +624,7 @@ sub UpdateHost($@){
     if (defined $opt{operatingsystem} and not defined $opt{medium}){
 	switch ($opt{operatingsystem}) {
 	    case /^SLC/      { $opt{medium} = "SLC"           }
+	    case /^CentOS/   { $opt{medium} = "CentOS Mirror" }
 	    case /^RedHat 6/ { $opt{medium} = "RedHat"        }
 	    case /^Fedora/   { $opt{medium} = "Fedora Mirror" }
 	}
