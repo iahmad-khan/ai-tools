@@ -136,6 +136,7 @@ def show_main(pargs):
             secret["secret"] = "removed as binary, use --file"
     if 'update_time' in secret and secret['update_time']:
         secret['update_time_str'] = '%s' % datetime.datetime.fromtimestamp(int(secret['update_time']))
+    secret["secret"] = secret["secret"].decode("string-escape")
     print json.dumps(secret, sort_keys=True, indent=5, separators=(',', ': '))
 
 
