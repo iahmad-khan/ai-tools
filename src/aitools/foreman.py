@@ -298,10 +298,10 @@ class ForemanClient(HTTPClient):
             if len(body) == 0:
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
-            if body[0]["interface"]["provider"] != "IPMI":
+            if body[0]["provider"] != "IPMI":
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
-            interface_id = body[0]["interface"]["id"]
+            interface_id = body[0]["id"]
 
             new_interface_name = newfqdn.replace(".cern.ch", "-ipmi.cern.ch")
 
@@ -447,8 +447,8 @@ class ForemanClient(HTTPClient):
             "hosts/%s/interfaces" % (fqdn))
           if code == requests.codes.ok:
             for interface in response:
-                if interface['interface']['name'][-13:] == "-ipmi.cern.ch":
-                    return interface['interface']['id']
+                if interface['name'][-13:] == "-ipmi.cern.ch":
+                    return interface['id']
             return None
           else:
             raise AiToolsForemanError("%d: %s" % (code, response))
@@ -531,7 +531,7 @@ class ForemanClient(HTTPClient):
           code, response = self.__do_api_request('get',
             "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id))
           if code == requests.codes.ok:
-            return response['interface']['username'], response['interface']['password']
+            return response['username'], response['password']
           else:
             raise AiToolsForemanError("%d: %s" % (code, response))
 
