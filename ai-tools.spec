@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.11
+Version: 8.12
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -82,6 +82,12 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Feb 24 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 8.12-1
+- [tbag] Unescape secret string for printing
+- [ai-rename-host, ai-ipmi] Fix for API change in Foreman
+- [ai-rebuild-vm] First release.
+- [ai-foreman-cli] Add the centos media path for CentOS machines.
+
 * Tue Jan 06 2015 Alberto Rodriguez Peon <alberto.rodriguez.peon@cern.ch> 8.11-1
 - [ai-{bs,kill}-vm] Use Openstack client manager to authenticate, which supports Kerberos
 
