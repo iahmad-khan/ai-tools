@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.12
+Version: 8.13
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -82,6 +82,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Mar 03 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 8.13-1
+- [ai-bs-vm] Make sure background runs use batch on CC7.
+
 * Tue Feb 24 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 8.12-1
 - [tbag] Unescape secret string for printing
 - [ai-rename-host, ai-ipmi] Fix for API change in Foreman
