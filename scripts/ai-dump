@@ -23,7 +23,7 @@ from aitools.completer import ForemanCompleter
 from aitools.config import ForemanConfig, PdbConfig, EncConfig, AiConfig, RogerConfig
 from aitools.pdb import PdbClient
 from aitools.enc import EncClient
-from aitools.errors import AiToolsPdbError
+from aitools.errors import AiToolsPdbError, AiToolsEncError
 from aitools.common import deref_url
 
 def location_name(lan_dblocation):
@@ -112,7 +112,11 @@ def host_main(pargs):
     num_disks = len(facts.get('disks','').split(","))
 
     encclient = EncClient(deref_alias=config.dereference_alias)
-    (code, enc) = encclient.get_node_enc(hostname)
+    try:
+        (code, enc) = encclient.get_node_enc(hostname)
+    except AiToolsEncError, error:
+        sys.stderr.write(str(error)+'\n')
+        sys.exit(1)
 
     extrafacts={}
     if pargs.facts:
