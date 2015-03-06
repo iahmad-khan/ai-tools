@@ -277,8 +277,7 @@ execute_shell_block get_host_certificate 10 15 || unrecoverable_error "getcert"
 
 echo "Generating initial /etc/sysconfig/puppet"
 cat << EOF > /etc/sysconfig/puppet
-PUPPET_PORT=8150
-PUPPET_EXTRA_OPTS="--waitforcert=500 --ca_port=8140"
+PUPPET_EXTRA_OPTS="--waitforcert=500 --masterport=8150 --ca_port=8140"
 EOF
 
 # Turn puppet on for next boot.
