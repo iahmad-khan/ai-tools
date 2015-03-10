@@ -1,0 +1,130 @@
+#!/usr/bin/env python
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
+# Exit codes:
+#   0 all operations succeeded
+#  10 Foreman registration failed
+
+import sys
+import logging
+import argparse
+import argcomplete
+from dateutil import tz
+from dateutil import parser
+from prettytable import PrettyTable
+
+from aitools.foreman import ForemanClient
+
+from aitools.config import ForemanConfig
+from aitools.common import configure_logging
+from aitools.common import verify_kerberos_environment
+from aitools.common import fqdnify
+
+from aitools.errors import AiToolsInitError, AiToolsForemanError
+
+from aitools.completer import ForemanCompleter
+
+SUMMARY_TABLE_FIELDS = ['Name', 'OS', 'Environment',
+        'Model', 'Hostgroup', 'Last Report']
+SUMMARY_TABLE_DEFAULT_SORT_KEY = 'Name'
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser()
+    ##
+    ## Internal options
+    ##
+    parser.add_argument('-v', '--verbose',
+        action="store_true",
+        help="Be chatty")
+
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+
+    subparsers = parser.add_subparsers(dest="subcommand")
+
+    ##
+    ## Showhost
+    ##
+
+    showhost_parser = subparsers.add_parser('showhost')
+    showhost_parser.add_argument('-f', '--filter', type=str,
+        help="Host discovery based on a Foreman search filter")
+    showhost_parser.add_argument('-g', '--hostgroup', type=str,
+        help="Prints hosts in the given hostgroup. Overwrites -f.")
+    showhost_parser.add_argument('-s', '--sort', type=str,
+        choices=SUMMARY_TABLE_FIELDS, default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
+        help="Field name to sort by (default: '%s')" % \
+            SUMMARY_TABLE_DEFAULT_SORT_KEY)
+    showhost_parser.add_argument('hostname', nargs='*',
+        help="Zero of more hostnames (qualified or not)").completer = \
+            ForemanCompleter()
+
+    argcomplete.autocomplete(parser)
+    args = parser.parse_args()
+    return args
+
+def showhost(foreman, args):
+    if args.hostgroup:
+        args.filter = "hostgroup_fullname = %s" % args.hostgroup
+    if args.filter:
+        logging.debug("Searching for hosts matching '%s'" % args.filter)
+        data = foreman.search_query("hosts", args.filter)
+    else:
+        data = []
+        logging.debug("Gathering information for: %s" % ", ".join(args.hostname))
+        for host in args.hostname:
+            try:
+                fqdn = fqdnify(host)
+                if fqdn:
+                    data.append(foreman.gethost(fqdn, toexpand=[]))
+                else:
+                    logging.warn("There's no DNS record for host '%s'" % host)
+            except AiToolsForemanError:
+               logging.warn("Host '%s' not found" % fqdn)
+
+    if not data:
+        logging.warn("No results found")
+        return
+
+    table = PrettyTable(SUMMARY_TABLE_FIELDS)
+    table.align = 'l'
+    for host in data:
+        last_report = None
+        if host['last_report']:
+          last_report = parser.parse(host['last_report'])
+          last_report = last_report.astimezone(tz.tzlocal())
+        table.add_row([
+            host['name'],
+            host['operatingsystem_name'],
+            host['environment_name'],
+            host['model_name'],
+            host['hostgroup_name'],
+            last_report])
+
+    # Not using logging.info so it does not go to STDERR.
+    print table.get_string(sortby=args.sort)
+
+def main():
+    """Application entrypoint"""
+    args = parse_cmdline_args()
+    fconfig = ForemanConfig()
+    fconfig.read_config_and_override_with_pargs(args)
+
+    configure_logging(args)
+
+    try:
+        verify_kerberos_environment()
+    except AiToolsInitError, error:
+        logging.error("TGT not found or expired. Exiting...")
+        return 4
+
+    foreman = ForemanClient(dryrun=False, deref_alias=args.dereference_alias)
+
+    globals()[args.subcommand](foreman, args)
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
