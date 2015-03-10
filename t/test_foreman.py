@@ -1,207 +1,51 @@
-__author__ = 'bejones'
-
 import unittest
 import sys
 import os
 import re
-import string
-from argparse import ArgumentParser
-from aitools.config import ForemanConfig
+import requests
+import json
+
+from mock import Mock, patch, ANY
+
 from aitools.foreman import ForemanClient
+from aitools.httpclient import HTTPClient
 from aitools.errors import AiToolsForemanError
 from aitools.errors import AiToolsForemanNotAllowedError
 from aitools.errors import AiToolsForemanNotFoundError
 
+TEST_HOST='localhost'
+TEST_PORT=1
 
-class TestForeman(unittest.TestCase):
+def generate_response(code, payload):
+    response = Mock()
+    response.headers = {}
+    if type(payload) == str:
+        response.text = payload
+        response.headers['content-type'] = 'text/html'
+    else:
+        response.text = json.dumps(payload)
+        response.headers['content-type'] = 'application/json'
+    response.json = Mock(return_value=payload)
+    return (code, response)
+
+def full_uri(path):
+    return "https://%s:%s/api/%s" % (TEST_HOST, TEST_PORT, path)
+
+class TestForemanClient(unittest.TestCase):
 
     def setUp(self):
-        self.foreman_config = ForemanConfig(configfile=os.path.abspath("ai.conf"))
-        parser = ArgumentParser()
-        self.foreman_config.add_standard_args(parser)
+        self.client = ForemanClient(host=TEST_HOST, port=TEST_PORT, timeout=1)
 
-    def test_config_obj(self):
-        self.assertTrue((isinstance(self.foreman_config.parser, ArgumentParser)))
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.OK, {}))
+    def test_delhost_existing(self, mock_client):
+        self.client.delhost('foo.cern.ch')
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('delete', full_uri('hosts/foo.cern.ch'), ANY, None)
 
-    def test_default_args(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        self.assertEqual(self.foreman_config.foreman_hostname, "foreman-test.cern.ch")
-        self.assertEqual(self.foreman_config.foreman_port, "8443")
-
-    def test_foreman_obj(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        self.assertEqual(foreman_client.host, self.foreman_config.foreman_hostname)
-        self.assertEqual(foreman_client.port, int(self.foreman_config.foreman_port))
-
-    def test_foreman_get_media(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_media()
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, list)))
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_get_ptable(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_ptables()
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, list)))
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_get_operatinsystem(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_operatingsystems()
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, list)))
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_operatingsystem_property(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.operatingsystems
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, dict)))
-
-    def test_foreman_get_architectures(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_architectures()
-        self.assertTrue(res)
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_architectures_property(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.architectures
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, dict)))
-
-    def test_foreman_get_models(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_models()
-        self.assertTrue(res)
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_models_property(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.models
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, dict)))
-
-    def test_foreman_get_hostgroups(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_hostgroups()
-        self.assertTrue(res)
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_hostgroups_property(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.hostgroups
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, dict)))
-
-    def test_foreman_get_environments(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_environments()
-        self.assertTrue(res)
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_environments_property(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.environments
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, dict)))
-
-    def test_foreman_get_users(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_users()
-        self.assertTrue(res)
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_users_property(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.users
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, dict)))
-
-    def test_foreman_get_usergroups(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_usergroups()
-        self.assertTrue(res)
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_usergroups_property(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.usergroups
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, dict)))
-
-    def test_foreman_get_domains(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_domains()
-        self.assertTrue(res)
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_domains_property(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.domains
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, dict)))
-
-    def test_foreman_get_subnets(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.get_subnets()
-        self.assertTrue(res)
-        self.assertTrue(("id" in res[0].keys()))
-
-    def test_foreman_subnets_property(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        res = foreman_client.subnets
-        self.assertTrue(res)
-        self.assertTrue((isinstance(res, dict)))
-
-    def test_resolve_hostgroup_id(self):
-        (pargs, _) = self.foreman_config.parser.parse_known_args()
-        self.foreman_config.read_config_and_override_with_pargs(pargs)
-        foreman_client = ForemanClient()
-        hid = foreman_client.resolve_hostgroup_id("punch/puppet/master/batch")
-        self.assertEqual(int(hid), 764)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.NOT_FOUND, "rubbish"))
+    def test_delhost_notfound(self, mock_client):
+        self.assertRaises(AiToolsForemanNotFoundError, self.client.delhost, 'foo.cern.ch')
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('delete', full_uri('hosts/foo.cern.ch'), ANY, None)
