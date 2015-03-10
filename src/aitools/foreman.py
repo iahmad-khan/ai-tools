@@ -9,6 +9,7 @@ import re
 import requests
 import pytz
 import datetime
+import math
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
@@ -506,14 +507,19 @@ class ForemanClient(HTTPClient):
 
     def search_query(self, model, search_string):
         query_string = urllib.urlencode({'search': search_string})
-        url = "%s/?%s" % (model, query_string)
-        (code, body) = self.__do_api_request("get", url)
-        if code == requests.codes.ok:
-            return body
-        else:
-            msg = "Foreman didn't return a controlled status code when looking up %s" \
-                % model
-            raise AiToolsForemanError(msg)
+        page = 1
+        results = []
+        while page == 1 or page <= math.ceil(payload['subtotal']/float(payload['per_page'])):
+            url = "%s/?%s&page=%d" % (model, query_string, page)
+            (code, payload) = self.__do_api_request("get", url)
+            if code == requests.codes.ok:
+                results.extend(payload['results'])
+                page = page + 1
+            else:
+                msg = "Foreman didn't return a controlled status code when looking up %s" \
+                    % model
+                raise AiToolsForemanError(msg)
+        return results
 
     def __do_api_request(self, method, url, data=None, prefix="api/"):
         url = "https://%s:%u/%s%s" % (self.host, self.port, prefix, url)
@@ -531,12 +537,6 @@ class ForemanClient(HTTPClient):
                 raise AiToolsForemanNotAllowedError("Unauthorized when trying '%s' on '%s'" % (method, url))
             if re.match('application/json', response.headers['content-type']):
                 body = response.json()
-            # Handling pagination should be a responsability of the caller.
-            # Therefore, this method should return the body as-is, but that
-            # would require changing all the methods making use of this one.
-            # To be done, but not now.
-            if "results" in body:
-                body = body["results"]
             return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsForemanError(error)
