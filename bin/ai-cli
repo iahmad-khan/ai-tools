@@ -62,6 +62,8 @@ def parse_cmdline_args():
         help="Host's operating system name", required=True)
     addhost_parser.add_argument('-c', '--comment', type=str,
         help="Host's commentary", default=None)
+    addhost_parser.add_argument('-r', '--reset',
+        help="Delete before create", action='store_true')
     addhost_parser.add_argument('-i', '--input', nargs='?',
         type=argparse.FileType('r'), default=sys.stdin)
 
@@ -99,6 +101,12 @@ def parse_cmdline_args():
 def addhost(foreman, args):
     reader = csv.DictReader(args.input, fieldnames=['fqdn', 'ip', 'mac'])
     for record in reader:
+        if args.reset:
+            try:
+                foreman.delhost(record['fqdn'])
+                logging.info("Done")
+            except AiToolsForemanError, error:
+                logging.warn("Failed to delete '%s': %s" % (fqdn, error))
         try:
             logging.debug("Adding '%s'" % record['fqdn'])
             foreman.addhost(fqdn=record['fqdn'],
@@ -132,13 +140,9 @@ def showhost(foreman, args):
     else:
         data = []
         logging.debug("Gathering information for: %s" % ", ".join(args.hostname))
-        for host in args.hostname:
+        for fqdn in args.hostname:
             try:
-                fqdn = fqdnify(host)
-                if fqdn:
-                    data.append(foreman.gethost(fqdn, toexpand=[]))
-                else:
-                    logging.warn("There's no DNS record for host '%s'" % host)
+                data.append(foreman.gethost(fqdn, toexpand=[]))
             except AiToolsForemanError:
                logging.warn("Host '%s' not found" % fqdn)
 
