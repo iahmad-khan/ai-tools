@@ -131,6 +131,18 @@ class TestForemanClient(unittest.TestCase):
         self.client._ForemanClient__resolve_model_id.\
             was_called_once_with("foo")
 
+    @patch.object(HTTPClient, 'do_request', return_value=
+            generate_response(requests.codes.OK,
+            [{"id": 1,"name":"Foo","major":"6","minor":"4","fullname":"Foo 6.4"},
+            {"id": 2,"name":"Foo","major":"6","minor":"3","fullname":"Foo 6.31"}],
+            meta=True, page=1, page_size=5, subtotal=2))
+    def test_resolve_operatingsystem_id(self, mock_client):
+        result = self.client._ForemanClient__resolve_operatingsystem_id("Foo 6.31")
+        self.assertEquals(result, 2)
+        self.assertRaises(AiToolsForemanError,
+            self.client._ForemanClient__resolve_operatingsystem_id,
+            "Foodsfds")
+
     #### ADDHOST ####
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',

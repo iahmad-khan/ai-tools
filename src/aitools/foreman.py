@@ -41,7 +41,9 @@ class ForemanClient(HTTPClient):
         self.deref_alias = deref_alias
         self.cache = {}
 
-    def addhost(self, fqdn, environment, hostgroup, owner):
+    def addhost(self, fqdn, environment, hostgroup, owner,
+            managed=False, operatingsystem=None, architecture=None,
+            comment=None, ptable=None, mac=None, ip=None):
         """
         Add a host entry to Foreman.
 
@@ -57,6 +59,16 @@ class ForemanClient(HTTPClient):
         payload['hostgroup_id'] = self.resolve_hostgroup_id(hostgroup)
         payload['owner_type'] = "User"
         payload['owner_id'] = self.__resolve_user_id(owner)
+        if comment:
+            payload['comment'] = comment
+        if managed:
+            payload['managed'] = True
+            payload['operatingsystem_id'] = \
+                self.__resolve_operatingsystem_id(operatingsystem)
+            payload['architecture_id'] = self.__resolve_architecture_id(architecture)
+            payload['ptable_id'] = self.__resolve_ptable_id(ptable)
+            payload['ip'] = ip
+            payload['mac'] = mac
         logging.debug("With payload: %s" % payload)
 
         if not self.dryrun:
@@ -462,6 +474,21 @@ class ForemanClient(HTTPClient):
     def __resolve_user_id(self, name):
         return self.__resolve_model_id('user', name, search_key='login')
 
+    def __resolve_architecture_id(self, name):
+        return self.__resolve_model_id('architecture', name)
+
+    def __resolve_ptable_id(self, name):
+        return self.__resolve_model_id('ptable', name)
+
+    def __resolve_operatingsystem_id(self, fullname):
+        match_object = re.match(r'(?P<name>\S+?)\s+(?P<major>\d+).(?P<minor>\d+)',
+            fullname)
+        if not match_object:
+            raise AiToolsForemanError("Couldn't resolve operating system name")
+        return self.__resolve_model_id('operatingsystem',
+            match_object.group('name'),
+            results_filter=lambda x: x['fullname'] == fullname)
+
     def __resolve_model_id(self, modelname, value, results_filter=None,
                             search_key="name",
                             value_filter=None):
@@ -478,7 +505,7 @@ class ForemanClient(HTTPClient):
             search_string = "%s=\"%s\"" % (search_key, search_string_value)
             results = self.search_query("%ss" % modelname, search_string)
             if results_filter:
-                results = results_filter(results)
+                results = filter(results_filter, results)
             if not results:
                 raise AiToolsForemanNotFoundError("%s '%s' not found" %
                     (modelname, value))

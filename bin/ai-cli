@@ -10,6 +10,7 @@ import sys
 import logging
 import argparse
 import argcomplete
+import csv
 from dateutil import tz
 from dateutil import parser
 from prettytable import PrettyTable
@@ -45,6 +46,26 @@ def parse_cmdline_args():
     subparsers = parser.add_subparsers(dest="subcommand")
 
     ##
+    ## Addhost
+    ##
+
+    addhost_parser = subparsers.add_parser('addhost')
+    addhost_parser.add_argument('-e', '--environment', type=str,
+        help="Host's environment", required=True)
+    addhost_parser.add_argument('-g', '--hostgroup', type=str,
+        help="Host's hostgroup", required=True)
+    addhost_parser.add_argument('-a', '--architecture', type=str,
+        help="Host's architecture", required=True)
+    addhost_parser.add_argument('-p', '--ptable', type=str,
+        help="Host's partition table", required=True)
+    addhost_parser.add_argument('-o', '--operatingsystem', type=str,
+        help="Host's operating system name", required=True)
+    addhost_parser.add_argument('-c', '--comment', type=str,
+        help="Host's commentary", default=None)
+    addhost_parser.add_argument('-i', '--input', nargs='?',
+        type=argparse.FileType('r'), default=sys.stdin)
+
+    ##
     ## Showhost
     ##
 
@@ -62,8 +83,31 @@ def parse_cmdline_args():
             ForemanCompleter()
 
     argcomplete.autocomplete(parser)
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except IOError, error:
+        parser.exit(1, str(error))
+
     return args
+
+def addhost(foreman, args):
+    reader = csv.DictReader(args.input, fieldnames=['fqdn', 'ip', 'mac'])
+    for record in reader:
+        try:
+            logging.debug("Adding '%s'" % record['fqdn'])
+            foreman.addhost(fqdn=record['fqdn'],
+                environment=args.environment,
+                hostgroup=args.hostgroup,
+                owner=args.krb_principal.replace("@CERN.CH", ""),
+                managed=True,
+                operatingsystem=args.operatingsystem,
+                architecture=args.architecture,
+                comment=args.comment,
+                ptable=args.ptable,
+                ip=record['ip'],
+                mac=record['mac'])
+        except AiToolsForemanError, error:
+            logging.error("Couldn't add '%s': %s" % (record['fqdn'], error))
 
 def showhost(foreman, args):
     if args.hostgroup:
@@ -115,7 +159,7 @@ def main():
     configure_logging(args)
 
     try:
-        verify_kerberos_environment()
+        args.krb_principal = verify_kerberos_environment()
     except AiToolsInitError, error:
         logging.error("TGT not found or expired. Exiting...")
         return 4
