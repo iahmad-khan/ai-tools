@@ -78,9 +78,10 @@ def parse_cmdline_args():
     ##
 
     showhost_parser = subparsers.add_parser('showhost')
-    showhost_parser.add_argument('-f', '--filter', type=str,
+    showhost_group = showhost_parser.add_mutually_exclusive_group()
+    showhost_group.add_argument('-f', '--filter', type=str,
         help="Host discovery based on a Foreman search filter")
-    showhost_parser.add_argument('-g', '--hostgroup', type=str,
+    showhost_group.add_argument('-g', '--hostgroup', type=str,
         help="Prints hosts in the given hostgroup. Overwrites -f.")
     showhost_parser.add_argument('-s', '--sort', type=str,
         choices=SUMMARY_TABLE_FIELDS, default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
