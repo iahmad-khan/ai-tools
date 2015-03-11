@@ -26,8 +26,8 @@ from aitools.errors import AiToolsInitError, AiToolsForemanError
 
 from aitools.completer import ForemanCompleter
 
-SUMMARY_TABLE_FIELDS = ['Name', 'OS', 'Environment',
-        'Model', 'Hostgroup', 'Last Report']
+SUMMARY_TABLE_FIELDS = ['Name', 'Hostgroup', 'Environment',
+        'OS', 'Model', 'Ptable', 'Last Report']
 SUMMARY_TABLE_DEFAULT_SORT_KEY = 'Name'
 
 def parse_cmdline_args():
@@ -159,10 +159,11 @@ def showhost(foreman, args):
           last_report = last_report.astimezone(tz.tzlocal())
         table.add_row([
             host['name'],
-            host['operatingsystem_name'],
-            host['environment_name'],
-            host['model_name'],
             host['hostgroup_name'],
+            host['environment_name'],
+            host['operatingsystem_name'],
+            host['model_name'],
+            host['ptable_name'],
             last_report])
 
     # Not using logging.info so it does not go to STDERR.
