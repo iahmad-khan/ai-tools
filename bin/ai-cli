@@ -65,6 +65,12 @@ def parse_cmdline_args():
     addhost_parser.add_argument('-i', '--input', nargs='?',
         type=argparse.FileType('r'), default=sys.stdin)
 
+    ## Delhost
+    delhost_parser = subparsers.add_parser('delhost')
+    delhost_parser.add_argument('hostname', nargs='*',
+        help="Zero of more hostnames (qualified or not)").completer = \
+            ForemanCompleter()
+
     ##
     ## Showhost
     ##
@@ -108,6 +114,14 @@ def addhost(foreman, args):
                 mac=record['mac'])
         except AiToolsForemanError, error:
             logging.error("Couldn't add '%s': %s" % (record['fqdn'], error))
+
+def delhost(foreman, args):
+    for fqdn in args.hostname:
+        try:
+            foreman.delhost(fqdn)
+            logging.info("Done")
+        except AiToolsForemanError, error:
+            logging.warn("Failed to delete '%s': %s" % (fqdn, error))
 
 def showhost(foreman, args):
     if args.hostgroup:
