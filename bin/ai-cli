@@ -133,13 +133,15 @@ def delhost(foreman, args):
             logging.warn("Failed to delete '%s': %s" % (fqdn, error))
 
 def showhost(foreman, args):
+    data = []
     if args.hostgroup:
         args.filter = "hostgroup_fullname = %s" % args.hostgroup
+
     if args.filter:
         logging.debug("Searching for hosts matching '%s'" % args.filter)
-        data = foreman.search_query("hosts", args.filter)
-    else:
-        data = []
+        data.extend(foreman.search_query("hosts", args.filter))
+
+    if args.hostname:
         logging.debug("Gathering information for: %s" % ", ".join(args.hostname))
         for fqdn in args.hostname:
             try:
