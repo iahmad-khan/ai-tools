@@ -11,6 +11,7 @@ import logging
 import argparse
 import argcomplete
 import csv
+import socket
 from dateutil import tz
 from dateutil import parser
 from prettytable import PrettyTable
@@ -118,14 +119,18 @@ def parse_cmdline_args():
 ##
 
 def addhost(foreman, args):
-    reader = csv.DictReader(args.input, fieldnames=['fqdn', 'ip', 'mac'])
+    ipmi_fieldnames = ['i_mac', 'i_user', 'i_pass']
+    fieldnames = ['fqdn', 'ip', 'mac']
+    fieldnames.extend(ipmi_fieldnames)
+    reader = csv.DictReader(args.input, fieldnames=fieldnames)
     for record in reader:
         if args.reset:
             try:
                 foreman.delhost(record['fqdn'])
                 logging.info("Done")
             except AiToolsForemanError, error:
-                logging.warn("Failed to delete '%s': %s" % (fqdn, error))
+                logging.warn("Failed to delete '%s': %s (will continue)" \
+                    % (record['fqdn'], error))
         try:
             logging.debug("Adding '%s'" % record['fqdn'])
             foreman.addhost(fqdn=record['fqdn'],
@@ -141,6 +146,14 @@ def addhost(foreman, args):
                 mac=record['mac'])
         except AiToolsForemanError, error:
             logging.error("Couldn't add '%s': %s" % (record['fqdn'], error))
+
+        if all(record[f] is not None for f in ipmi_fieldnames):
+            try:
+                foreman.add_ipmi_interface(record['fqdn'], record['i_mac'],
+                    record['i_user'], record['i_pass'])
+            except (socket.gaierror, AiToolsForemanError), error:
+                logging.error("Couldn't add %s's IPMI iface': %s" % \
+                    (record['fqdn'], error))
 
 def delhost(foreman, args):
     try:
