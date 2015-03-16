@@ -22,7 +22,7 @@ from aitools.foreman import ForemanClient
 from aitools.config import ForemanConfig
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
-from aitools.common import fqdnify
+from aitools.common import append_domain
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsAiForemanError
@@ -137,6 +137,12 @@ def parse_cmdline_args():
         args = parser.parse_args()
     except IOError, error:
         parser.exit(1, str(error))
+
+    # Can't use fqndify here as some Foreman entries
+    # might not have a DNS record yet. Also, stale hosts
+    # not in DNS to be deleted.
+    if args.hostname:
+        args.hostname = map(append_domain, args.hostname)
 
     return args
 
