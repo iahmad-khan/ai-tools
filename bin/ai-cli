@@ -66,9 +66,11 @@ def parse_cmdline_args():
     filter_group.add_argument('-f', '--filter', type=str,
         help="Host discovery based on a Foreman search filter")
     filter_group.add_argument('-g', '--hg', type=str,
-        help="Prints hosts in the given hostgroup.")
+        help="Selects hosts in the given hostgroup.")
+    filter_group.add_argument('-l', '--hl', type=str,
+        help="Selects hosts in a hostgroup that looks like this.")
     filter_group.add_argument('--only-error', action='store_true',
-        help="Prints only hosts in error state.")
+        help="Selects only hosts in error state.")
     parser.add_argument('-s', '--sort', type=str,
         choices=SUMMARY_TABLE_FIELDS,
         default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
@@ -255,6 +257,9 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
     data = []
     if args.hg:
         args.filter = "hostgroup_fullname = %s" % args.hg
+
+    if args.hl:
+        args.filter = "hostgroup_fullname ~ %s" % args.hl
 
     if args.only_error:
         args.filter = ("last_report > \"1505 minutes ago\" and (status.failed > 0"
