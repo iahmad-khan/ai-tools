@@ -211,9 +211,9 @@ def delhost(foreman, args):
     for host in data:
         try:
             foreman.delhost(host['name'])
-            logging.info("Done")
+            logging.info("Host %s deleted" % host['name'])
         except AiToolsForemanError, error:
-            logging.warn("Failed to delete '%s': %s" % (fqdn, error))
+            logging.warn("Failed to delete '%s': %s" % (host['name'], error))
 
 def showhost(foreman, args):
     try:
