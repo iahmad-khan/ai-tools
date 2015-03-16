@@ -146,7 +146,7 @@ def parse_cmdline_args():
     # Can't use fqndify here as some Foreman entries
     # might not have a DNS record yet. Also, stale hosts
     # not in DNS to be deleted.
-    if args.hostname:
+    if hasattr(args, 'hostname'):
         args.hostname = map(append_domain, args.hostname)
 
     return args
