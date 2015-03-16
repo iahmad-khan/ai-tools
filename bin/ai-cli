@@ -4,7 +4,8 @@
 
 # Exit codes:
 #   0 all operations succeeded
-#  10 Foreman registration failed
+#   2 bad command line
+#   4 Kerberos TGT not found or expired
 
 import sys
 import logging
@@ -31,6 +32,18 @@ from aitools.completer import ForemanCompleter
 SUMMARY_TABLE_FIELDS = ['Name', 'Hostgroup', 'Environment',
         'OS', 'Model', 'Ptable', 'Last Report']
 SUMMARY_TABLE_DEFAULT_SORT_KEY = 'Name'
+COMMON_MODEL_OPTIONS = [
+    {'short': '-e', 'long': '--environment',
+        'help': "Host's environment"},
+    {'short': '-c', 'long': '--hostgroup',
+        'help': "Host's hostgroup"},
+    {'short': '-a', 'long': '--architecture',
+        'help': "Host's architecture"},
+    {'short': '-p', 'long': '--ptable',
+        'help': "Host's partition table"},
+    {'short': '-o', 'long': '--operatingsystem',
+        'help': "Host's operating system name"},
+]
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -43,10 +56,19 @@ def parse_cmdline_args():
     parser.add_argument('-v', '--verbose',
         action="store_true",
         help="Be chatty")
-    parser.add_argument('-f', '--filter', type=str,
+    parser.add_argument('-d', '--dryrun',
+        action="store_true",
+        help="Don't execute actions that alter data")
+    filter_group = parser.add_mutually_exclusive_group()
+    filter_group.add_argument('-f', '--filter', type=str,
         help="Host discovery based on a Foreman search filter")
-    parser.add_argument('-g', '--hg', type=str,
+    filter_group.add_argument('-g', '--hg', type=str,
         help="Prints hosts in the given hostgroup. Overwrites -f.")
+    parser.add_argument('-s', '--sort', type=str,
+        choices=SUMMARY_TABLE_FIELDS,
+        default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
+        help="Field name to sort by (default: '%s')" % \
+            SUMMARY_TABLE_DEFAULT_SORT_KEY)
 
     foreman_config = ForemanConfig()
     foreman_config.add_standard_args(parser)
@@ -58,18 +80,11 @@ def parse_cmdline_args():
     ##
 
     addhost_parser = subparsers.add_parser('addhost')
-    addhost_parser.add_argument('-e', '--environment', type=str,
-        help="Host's environment", required=True)
-    addhost_parser.add_argument('-g', '--hostgroup', type=str,
-        help="Host's hostgroup", required=True)
-    addhost_parser.add_argument('-a', '--architecture', type=str,
-        help="Host's architecture", required=True)
-    addhost_parser.add_argument('-p', '--ptable', type=str,
-        help="Host's partition table", required=True)
-    addhost_parser.add_argument('-o', '--operatingsystem', type=str,
-        help="Host's operating system name", required=True)
-    addhost_parser.add_argument('-c', '--comment', type=str,
-        help="Host's commentary", default=None)
+    for option in COMMON_MODEL_OPTIONS:
+        addhost_parser.add_argument(option['short'], option['long'],
+            type=str, help=option['help'], required=True)
+    addhost_parser.add_argument('--comment', type=str,
+        help="Host's comment", default=None)
     addhost_parser.add_argument('-r', '--reset',
         help="Delete before create", action='store_true')
     addhost_parser.add_argument('-i', '--input', nargs='?',
@@ -91,11 +106,6 @@ def parse_cmdline_args():
     ##
 
     showhost_parser = subparsers.add_parser('showhost')
-    showhost_group = showhost_parser.add_mutually_exclusive_group()
-    showhost_parser.add_argument('-s', '--sort', type=str,
-        choices=SUMMARY_TABLE_FIELDS, default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
-        help="Field name to sort by (default: '%s')" % \
-            SUMMARY_TABLE_DEFAULT_SORT_KEY)
     showhost_parser.add_argument('hostname', nargs='*',
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
@@ -105,6 +115,20 @@ def parse_cmdline_args():
     ##
 
     updatehost_parser = subparsers.add_parser('updatehost')
+    updatehost_parser.add_argument('-y', '--yes',
+        help="Answer yes to all questions asked", action='store_true')
+    for option in COMMON_MODEL_OPTIONS:
+        updatehost_parser.add_argument(option['short'], option['long'],
+            type=str, help=option['help'])
+    updatehost_parser.add_argument('--comment', type=str,
+        help="Host's comment", default=None)
+    updatehost_parser.add_argument('-i', '--ip', type=str,
+        help="Host's IP address", default=None)
+    updatehost_parser.add_argument('-m', '--mac', type=str,
+        help="Host's MAC address", default=None)
+    updatehost_parser.add_argument('hostname', nargs='*',
+        help="Zero of more hostnames (qualified or not)").completer = \
+            ForemanCompleter()
 
     argcomplete.autocomplete(parser)
     try:
@@ -164,13 +188,10 @@ def delhost(foreman, args):
 
     logging.info("The following hosts will be deleted:")
     table = generate_summary_table_from_data(data)
-    print table.get_string(sortby=SUMMARY_TABLE_DEFAULT_SORT_KEY)
+    print table.get_string(sortby=args.sort)
 
-    if not args.yes:
-        user = raw_input("Please type YES and press enter: ")
-        if user != 'YES':
-            logging.info("Cancelling")
-            return
+    if not user_confirms(args):
+        return
 
     for host in data:
         try:
@@ -190,7 +211,28 @@ def showhost(foreman, args):
     print table.get_string(sortby=args.sort)
 
 def updatehost(foreman, args):
-    pass
+    try:
+        data = get_hosts_by_filter_and_explicit_list(foreman, args)
+    except AiToolsAiForemanError, error:
+        logging.warn(error)
+        return
+
+    logging.info("The following hosts will be updated:")
+    table = generate_summary_table_from_data(data)
+    print table.get_string(sortby=args.sort)
+
+    if not user_confirms(args):
+        return
+
+    candidates = [x['long'].replace('--', '') for x in COMMON_MODEL_OPTIONS]
+    candidates.extend(['ip', 'mac'])
+    to_update = dict([(k, getattr(args, k)) for k in candidates])
+
+    for host in data:
+        try:
+            foreman.updatehost(host['name'], **to_update)
+        except AiToolsForemanError, error:
+            logging.warn("Failed to update '%s': %s" % (host['name'], error))
 
 ##
 ## Helper functions
@@ -240,6 +282,14 @@ def generate_summary_table_from_data(data):
 
     return table
 
+def user_confirms(args):
+    if not args.yes:
+        user = raw_input("Please type YES and press enter: ")
+        if user != 'YES':
+            logging.info("Cancelling")
+            return False
+    return True
+
 def main():
     """Application entrypoint"""
     args = parse_cmdline_args()
@@ -254,7 +304,8 @@ def main():
         logging.error("TGT not found or expired. Exiting...")
         return 4
 
-    foreman = ForemanClient(dryrun=False, deref_alias=args.dereference_alias)
+    foreman = ForemanClient(dryrun=args.dryrun,
+        deref_alias=args.dereference_alias)
 
     globals()[args.subcommand](foreman, args)
 

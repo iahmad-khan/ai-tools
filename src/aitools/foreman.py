@@ -81,6 +81,50 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
 
+    def updatehost(self, fqdn, environment=None, hostgroup=None,
+            operatingsystem=None, architecture=None,
+            comment=None, ptable=None, mac=None, ip=None):
+        """
+        Updates a host entry in Foreman.
+
+        :param fqdn: the hostname to add
+        :param environment: the environment for the host
+        :param hostgroup: the hostgroup for the host
+        ...
+        :raise AiToolsForemanError: in case the host update fails
+        """
+        logging.info("Updating host '%s' in Foreman..." % fqdn)
+        payload = {}
+        if environment:
+            payload['environment_id'] = self.__resolve_environment_id(environment)
+        if hostgroup:
+            payload['hostgroup_id'] = self.resolve_hostgroup_id(hostgroup)
+        if operatingsystem:
+            payload['operatingsystem_id'] = \
+                self.__resolve_operatingsystem_id(operatingsystem)
+        if architecture:
+            payload['architecture_id'] = self.__resolve_architecture_id(architecture)
+        if comment:
+            payload['comment'] = comment
+        if ptable:
+            payload['ptable_id'] = self.__resolve_ptable_id(ptable)
+        if mac:
+            payload['mac'] = mac
+        if ip:
+            payload['ip'] = ip
+        logging.debug("With payload: %s" % payload)
+
+        if not self.dryrun:
+            (code, body) = self.__do_api_request("put", "hosts/%s" % fqdn,
+                data=json.dumps(payload))
+            if code == requests.codes.ok:
+                logging.info("Host '%s' updated" % fqdn)
+            elif code == requests.codes.unprocessable_entity:
+                error = ','.join(body['error']['full_messages'])
+                raise AiToolsForemanError("addhost call failed (%s)" % error)
+        else:
+            logging.info("Host '%s' not updated because dryrun is enabled" % fqdn)
+
     def delhost(self, fqdn):
         """
         Delete the specified host in Foreman.
