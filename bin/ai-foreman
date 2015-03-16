@@ -46,6 +46,8 @@ COMMON_MODEL_OPTIONS = [
         'help': "Host's partition table"},
     {'short': '-o', 'long': '--operatingsystem',
         'help': "Host's operating system name"},
+    {'short': '-m', 'long': '--medium',
+        'help': "Host's operating system medium name"},
 ]
 
 def parse_cmdline_args():
@@ -129,9 +131,9 @@ def parse_cmdline_args():
             type=str, help=option['help'])
     updatehost_parser.add_argument('--comment', type=str,
         help="Host's comment", default=None)
-    updatehost_parser.add_argument('-i', '--ip', type=str,
+    updatehost_parser.add_argument('--ip', type=str,
         help="Host's IP address", default=None)
-    updatehost_parser.add_argument('-m', '--mac', type=str,
+    updatehost_parser.add_argument('--mac', type=str,
         help="Host's MAC address", default=None)
     updatehost_parser.add_argument('hostname', nargs='*',
         help="Zero of more hostnames (qualified or not)").completer = \
@@ -177,6 +179,7 @@ def addhost(foreman, args):
                 owner=args.krb_principal.replace("@CERN.CH", ""),
                 managed=True,
                 operatingsystem=args.operatingsystem,
+                medium=args.medium,
                 architecture=args.architecture,
                 comment=args.comment,
                 ptable=args.ptable,

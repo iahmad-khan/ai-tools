@@ -42,7 +42,8 @@ class ForemanClient(HTTPClient):
         self.cache = {}
 
     def addhost(self, fqdn, environment, hostgroup, owner,
-            managed=False, operatingsystem=None, architecture=None,
+            managed=False, operatingsystem=None, medium=None,
+            architecture=None,
             comment=None, ptable=None, mac=None, ip=None):
         """
         Add a host entry to Foreman.
@@ -65,6 +66,7 @@ class ForemanClient(HTTPClient):
             payload['managed'] = True
             payload['operatingsystem_id'] = \
                 self.__resolve_operatingsystem_id(operatingsystem)
+            payload['medium_id'] = self.__resolve_medium_id(medium)
             payload['architecture_id'] = self.__resolve_architecture_id(architecture)
             payload['ptable_id'] = self.__resolve_ptable_id(ptable)
             payload['ip'] = ip
@@ -82,7 +84,7 @@ class ForemanClient(HTTPClient):
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
 
     def updatehost(self, fqdn, environment=None, hostgroup=None,
-            operatingsystem=None, architecture=None,
+            operatingsystem=None, medium=None, architecture=None,
             comment=None, ptable=None, mac=None, ip=None):
         """
         Updates a host entry in Foreman.
@@ -102,6 +104,8 @@ class ForemanClient(HTTPClient):
         if operatingsystem:
             payload['operatingsystem_id'] = \
                 self.__resolve_operatingsystem_id(operatingsystem)
+        if medium:
+            payload['medium_id'] = self.__resolve_medium_id(medium)
         if architecture:
             payload['architecture_id'] = self.__resolve_architecture_id(architecture)
         if comment:
@@ -524,6 +528,9 @@ class ForemanClient(HTTPClient):
     def __resolve_ptable_id(self, name):
         return self.__resolve_model_id('ptable', name)
 
+    def __resolve_medium_id(self, name):
+        return self.__resolve_model_id('medium', name)
+
     def __resolve_operatingsystem_id(self, fullname):
         match_object = re.match(r'(?P<name>\S+?)\s+(?P<major>\d+).(?P<minor>\d+)',
             fullname)
@@ -547,7 +554,10 @@ class ForemanClient(HTTPClient):
             if value_filter is not None:
                 search_string_value = value_filter(value)
             search_string = "%s=\"%s\"" % (search_key, search_string_value)
-            results = self.search_query("%ss" % modelname, search_string)
+            model_endpoint = "%ss" % modelname
+            if modelname == 'medium':
+                model_endpoint = "media"
+            results = self.search_query(model_endpoint, search_string)
             if results_filter:
                 results = filter(results_filter, results)
             if not results:
