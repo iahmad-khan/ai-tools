@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# This is a command line client to do CRUD operations
+# on Foreman entries. It's meant to fully cover the
+# functionality of its precedesor (ai-foreman-cli).
 # Authors:
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
 
