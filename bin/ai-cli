@@ -219,7 +219,7 @@ def updatehost(foreman, args):
         logging.warn(error)
         return
 
-    logging.info("The following hosts will be updated:")
+    logging.info("The following %d host(s) will be updated:" % len(data))
     table = generate_summary_table_from_data(data)
     print table.get_string(sortby=args.sort)
 
@@ -290,9 +290,9 @@ def generate_summary_table_from_data(data):
 
 def user_confirms(args):
     if not args.yes:
-        user = raw_input("Please type YES and press enter: ")
-        if user != 'YES':
-            logging.info("Cancelling")
+        user = raw_input("Is this ok [y/N]: ")
+        if user.lower() != 'y':
+            logging.info("Exiting on user command")
             return False
     return True
 
