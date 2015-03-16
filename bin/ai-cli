@@ -23,6 +23,7 @@ from aitools.common import verify_kerberos_environment
 from aitools.common import fqdnify
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
+from aitools.errors import AiToolsAiForemanError
 
 from aitools.completer import ForemanCompleter
 
@@ -33,12 +34,18 @@ SUMMARY_TABLE_DEFAULT_SORT_KEY = 'Name'
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
     parser = argparse.ArgumentParser()
+
     ##
-    ## Internal options
+    ## Common options
     ##
+
     parser.add_argument('-v', '--verbose',
         action="store_true",
         help="Be chatty")
+    parser.add_argument('-f', '--filter', type=str,
+        help="Host discovery based on a Foreman search filter")
+    parser.add_argument('-g', '--hg', type=str,
+        help="Prints hosts in the given hostgroup. Overwrites -f.")
 
     foreman_config = ForemanConfig()
     foreman_config.add_standard_args(parser)
@@ -67,8 +74,13 @@ def parse_cmdline_args():
     addhost_parser.add_argument('-i', '--input', nargs='?',
         type=argparse.FileType('r'), default=sys.stdin)
 
+    ##
     ## Delhost
+    ##
+
     delhost_parser = subparsers.add_parser('delhost')
+    delhost_parser.add_argument('-y', '--yes',
+        help="Answer yes to all questions asked", action='store_true')
     delhost_parser.add_argument('hostname', nargs='*',
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
@@ -79,10 +91,6 @@ def parse_cmdline_args():
 
     showhost_parser = subparsers.add_parser('showhost')
     showhost_group = showhost_parser.add_mutually_exclusive_group()
-    showhost_group.add_argument('-f', '--filter', type=str,
-        help="Host discovery based on a Foreman search filter")
-    showhost_group.add_argument('-g', '--hostgroup', type=str,
-        help="Prints hosts in the given hostgroup. Overwrites -f.")
     showhost_parser.add_argument('-s', '--sort', type=str,
         choices=SUMMARY_TABLE_FIELDS, default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
         help="Field name to sort by (default: '%s')" % \
@@ -91,6 +99,12 @@ def parse_cmdline_args():
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
 
+    ##
+    ## Updatehost
+    ##
+
+    updatehost_parser = subparsers.add_parser('updatehost')
+
     argcomplete.autocomplete(parser)
     try:
         args = parser.parse_args()
@@ -98,6 +112,10 @@ def parse_cmdline_args():
         parser.exit(1, str(error))
 
     return args
+
+##
+## Main functions, one per subparser
+##
 
 def addhost(foreman, args):
     reader = csv.DictReader(args.input, fieldnames=['fqdn', 'ip', 'mac'])
@@ -125,34 +143,72 @@ def addhost(foreman, args):
             logging.error("Couldn't add '%s': %s" % (record['fqdn'], error))
 
 def delhost(foreman, args):
-    for fqdn in args.hostname:
+    try:
+        data = get_hosts_by_filter_and_explicit_list(foreman, args)
+    except AiToolsAiForemanError, error:
+        logging.warn(error)
+        return
+
+    logging.info("The following hosts will be deleted:")
+    table = generate_summary_table_from_data(data)
+    print table.get_string(sortby=SUMMARY_TABLE_DEFAULT_SORT_KEY)
+
+    if not args.yes:
+        user = raw_input("Please type YES and press enter: ")
+        if user != 'YES':
+            logging.info("Cancelling")
+            return
+
+    for host in data:
         try:
-            foreman.delhost(fqdn)
+            foreman.delhost(host['name'])
             logging.info("Done")
         except AiToolsForemanError, error:
             logging.warn("Failed to delete '%s': %s" % (fqdn, error))
 
 def showhost(foreman, args):
+    try:
+        data = get_hosts_by_filter_and_explicit_list(foreman, args)
+    except AiToolsAiForemanError, error:
+        logging.warn(error)
+        return
+
+    table = generate_summary_table_from_data(data)
+    print table.get_string(sortby=args.sort)
+
+def updatehost(foreman, args):
+    pass
+
+##
+## Helper functions
+##
+
+def get_hosts_by_filter_and_explicit_list(foreman, args):
     data = []
-    if args.hostgroup:
-        args.filter = "hostgroup_fullname = %s" % args.hostgroup
+    if args.hg:
+        args.filter = "hostgroup_fullname = %s" % args.hg
 
     if args.filter:
         logging.debug("Searching for hosts matching '%s'" % args.filter)
         data.extend(foreman.search_query("hosts", args.filter))
 
     if args.hostname:
+        found = [host['name'] for host in data]
         logging.debug("Gathering information for: %s" % ", ".join(args.hostname))
         for fqdn in args.hostname:
+            if fqdn in found:
+                continue
             try:
                 data.append(foreman.gethost(fqdn, toexpand=[]))
             except AiToolsForemanError:
                logging.warn("Host '%s' not found" % fqdn)
 
     if not data:
-        logging.warn("No results found")
-        return
+        raise AiToolsAiForemanError("No results found")
 
+    return data
+
+def generate_summary_table_from_data(data):
     table = PrettyTable(SUMMARY_TABLE_FIELDS)
     table.align = 'l'
     for host in data:
@@ -169,8 +225,7 @@ def showhost(foreman, args):
             host['ptable_name'],
             last_report])
 
-    # Not using logging.info so it does not go to STDERR.
-    print table.get_string(sortby=args.sort)
+    return table
 
 def main():
     """Application entrypoint"""

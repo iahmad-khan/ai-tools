@@ -78,3 +78,6 @@ class AiToolsTrustedBagNotImplementedError(AiToolsTrustedBagError):
 
 class AiToolsTrustedBagInternalServerError(AiToolsTrustedBagError):
     pass
+
+class AiToolsAiForemanError(AiToolsError):
+    pass
