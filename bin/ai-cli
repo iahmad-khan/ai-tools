@@ -148,7 +148,8 @@ def addhost(foreman, args):
     ipmi_fieldnames = ['i_mac', 'i_user', 'i_pass']
     fieldnames = ['fqdn', 'ip', 'mac']
     fieldnames.extend(ipmi_fieldnames)
-    reader = csv.DictReader(args.input, fieldnames=fieldnames)
+    reader = csv.DictReader(args.input,
+        fieldnames=fieldnames, delimiter=' ')
     for record in reader:
         if args.reset:
             try:
