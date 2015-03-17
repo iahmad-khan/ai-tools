@@ -16,13 +16,12 @@ import argparse
 import argcomplete
 import csv
 import socket
-from dateutil import tz
-from dateutil import parser
+from dateutil import tz, parser
 from prettytable import PrettyTable
 
 from aitools.foreman import ForemanClient
-
 from aitools.config import ForemanConfig
+
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
 from aitools.common import append_domain
