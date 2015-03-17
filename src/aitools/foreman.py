@@ -92,9 +92,16 @@ class ForemanClient(HTTPClient):
         """
         Updates a host entry in Foreman.
 
-        :param fqdn: the hostname to add
-        :param environment: the environment for the host
-        :param hostgroup: the hostgroup for the host
+        :param fqdn: the fqdn of the host to be modified
+        :param environment: the environment for the host ("production")
+        :param hostgroup: the hostgroup for the host ("foo/bar")
+        :param operatingsystem: the operatingsystem for the host ("SLC 6.6")
+        :param medium: the operatingsystem medium for the host ("SLC 6.6")
+        :param architecture: the architecture for the host ("x86_64")
+        :param comment: the comment for the host
+        :param ptable: the ptable for the host ("Kickstart default")
+        :param mac: the mac for the host ("11:22:33:44:55:66")
+        :param ip: the ip address for the host ("127.0.0.1")
         ...
         :raise AiToolsForemanError: in case the host update fails
         """
