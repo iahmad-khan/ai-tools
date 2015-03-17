@@ -95,7 +95,7 @@ class ForemanClient(HTTPClient):
         ...
         :raise AiToolsForemanError: in case the host update fails
         """
-        logging.info("Updating host '%s' in Foreman..." % fqdn)
+        logging.debug("Updating host '%s' in Foreman..." % fqdn)
         payload = {}
         if environment:
             payload['environment_id'] = self.__resolve_environment_id(environment)
@@ -122,7 +122,7 @@ class ForemanClient(HTTPClient):
             (code, body) = self.__do_api_request("put", "hosts/%s" % fqdn,
                 data=json.dumps(payload))
             if code == requests.codes.ok:
-                logging.info("Host '%s' updated" % fqdn)
+                logging.debug("Host '%s' updated" % fqdn)
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['error']['full_messages'])
                 raise AiToolsForemanError("updatehost call failed (%s)" % error)

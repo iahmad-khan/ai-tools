@@ -245,11 +245,25 @@ def updatehost(foreman, args):
     candidates.extend(['ip', 'mac'])
     to_update = dict([(k, getattr(args, k)) for k in candidates])
 
-    for host in data:
+    errors = []
+    for count, host in enumerate(data):
         try:
             foreman.updatehost(host['name'], **to_update)
+            print_progress(count, len(data))
         except AiToolsForemanError, error:
-            logging.warn("Failed to update '%s': %s" % (host['name'], error))
+            errors.append((host['name'], error))
+
+    print_progress(len(data), len(data))
+
+    if errors:
+        logging.warn("\nSome hosts failed to update:")
+        table = PrettyTable(['Host', 'Error'])
+        table.align = 'l'
+        for host, error in errors:
+            table.add_row([host, error])
+        print table.get_string()
+    else:
+        logging.info("\nAll hosts were successfully updated :)")
 
 ##
 ## Helper functions
@@ -313,6 +327,11 @@ def user_confirms(args):
             logging.info("Exiting on user command")
             return False
     return True
+
+def print_progress(count, total):
+    progress = int((float(count)/total)*100)
+    sys.stdout.write("\rIn progress: %d%% done" % progress)
+    sys.stdout.flush()
 
 def main():
     """Application entrypoint"""
