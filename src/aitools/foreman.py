@@ -604,6 +604,8 @@ class ForemanClient(HTTPClient):
             url = "%s/?%s&page=%d" % (model, query_string, page)
             (code, payload) = self.__do_api_request("get", url)
             if code == requests.codes.ok:
+                if page == 1 and payload['subtotal'] > 4 * payload['per_page']:
+                    logging.warn("Crikey! expensive query, this might take a while...")
                 results.extend(payload['results'])
                 page = page + 1
             else:
