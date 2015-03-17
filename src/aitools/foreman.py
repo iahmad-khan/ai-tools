@@ -125,7 +125,7 @@ class ForemanClient(HTTPClient):
                 logging.debug("Host '%s' updated" % fqdn)
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['error']['full_messages'])
-                raise AiToolsForemanError("updatehost call failed (%s)" % error)
+                raise AiToolsForemanError(error)
         else:
             logging.info("Host '%s' not updated because dryrun is enabled" % fqdn)
 
