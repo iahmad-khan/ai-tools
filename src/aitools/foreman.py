@@ -171,7 +171,7 @@ class ForemanClient(HTTPClient):
         :return: a parsed JSON dictionary record
         :raise AiToolsForemanError: if the query call failed or the host could not be found
         """
-        logging.info("Getting host '%s' from Foreman..." % fqdn)
+        logging.debug("Getting host '%s' from Foreman..." % fqdn)
 
         (code, body) = self.__do_api_request("get", "hosts/%s" % fqdn)
         if code == requests.codes.ok:
