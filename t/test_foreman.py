@@ -85,6 +85,22 @@ class TestForemanClient(unittest.TestCase):
     @patch.object(HTTPClient, 'do_request', side_effect=
         [
             generate_response(requests.codes.OK,
+                [],
+                meta=True, page=1, page_size=5, subtotal=0),
+        ])
+    def test_resolve_search_query_no_results(self, mock_client):
+        model = "foomodel"
+        query = 'name="production"'
+        results = self.client.search_query(model, query)
+        self.assertEquals(results, [])
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls([
+            call('get', full_uri("%s/?search=%s&page=1" %
+                    (model, urllib.quote(query))), ANY, None)])
+
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.OK,
                 [{"name":"foo","id":1,"created_at":"Z","updated_at":"Z"},
                 {"name":"bar","id":2,"created_at":"Z","updated_at":"Z"}],
                 meta=True, page=1, page_size=2, subtotal=2),
@@ -131,6 +147,14 @@ class TestForemanClient(unittest.TestCase):
         self.client._ForemanClient__resolve_model_id.\
             was_called_once_with("foo")
 
+    @patch.object(ForemanClient, '_ForemanClient__resolve_model_id',
+        return_value=1)
+    def test_resolve_hostgroup_id(self, mock_client):
+        result = self.client.resolve_hostgroup_id("foo")
+        self.assertEquals(result, 1)
+        self.client._ForemanClient__resolve_model_id.\
+            was_called_once_with("hostgroup", "foo", search_key='label')
+
     @patch.object(HTTPClient, 'do_request', return_value=
             generate_response(requests.codes.OK,
             [{"id": 1,"name":"Foo","major":"6","minor":"4","fullname":"Foo 6.4"},
@@ -143,6 +167,19 @@ class TestForemanClient(unittest.TestCase):
             self.client._ForemanClient__resolve_operatingsystem_id,
             "Foodsfds")
 
+    @patch.object(HTTPClient, 'do_request', return_value=
+            generate_response(requests.codes.OK,
+            [{"id": 3,"name":"Foo"}],
+            meta=True, page=1, page_size=5, subtotal=1))
+    def test_resolve_medium_id(self, mock_client):
+        query = 'name="Foo"'
+        result = self.client._ForemanClient__resolve_medium_id("Foo")
+        self.assertEquals(result, 3)
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls([
+            call('get', full_uri("media/?search=%s&page=1" %
+                    urllib.quote(query)), ANY, None)])
+
     #### ADDHOST ####
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',
@@ -153,7 +190,7 @@ class TestForemanClient(unittest.TestCase):
         return_value=3)
     @patch.object(HTTPClient, 'do_request',
         return_value=generate_response(requests.codes.OK, []))
-    def test_addhost(self, *args):
+    def test_addhost_unmanaged(self, *args):
         self.client.addhost(fqdn='foo.cern.ch',
             environment='foo',
             hostgroup='bar/baz',
@@ -164,6 +201,72 @@ class TestForemanClient(unittest.TestCase):
             was_called_once_with("bar/baz")
         self.client._ForemanClient__resolve_user_id.\
             was_called_once_with("bob")
+        expected_payload = {'name': 'foo.cern.ch',
+            'environment_id': 1,
+            'hostgroup_id': 2,
+            'owner_id': 3,
+            'owner_type': 'User',
+            'managed': False}
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("hosts"), ANY,
+                json.dumps(expected_payload))
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',
+        return_value=1)
+    @patch.object(ForemanClient, 'resolve_hostgroup_id',
+        return_value=2)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_user_id',
+        return_value=3)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_operatingsystem_id',
+        return_value=4)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_medium_id',
+        return_value=5)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_architecture_id',
+        return_value=6)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_ptable_id',
+        return_value=7)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.OK, []))
+    def test_addhost_managed(self, *args):
+        self.client.addhost(fqdn='foo.cern.ch',
+            environment='foo',
+            hostgroup='bar/baz',
+            owner='bob',
+            managed=True,
+            operatingsystem="Foo 5.6",
+            medium="Foo",
+            architecture="Foo arch",
+            comment="baaar",
+            ptable="Ptable",
+            mac="foomac",
+            ip="fooip")
+        self.client._ForemanClient__resolve_environment_id.\
+            was_called_once_with("foo")
+        self.client.resolve_hostgroup_id.\
+            was_called_once_with("bar/baz")
+        self.client._ForemanClient__resolve_user_id.\
+            was_called_once_with("bob")
+        self.client._ForemanClient__resolve_operatingsystem_id.\
+            was_called_once_with("Foo 5.6")
+        self.client._ForemanClient__resolve_medium_id.\
+            was_called_once_with("Foo")
+        self.client._ForemanClient__resolve_architecture_id.\
+            was_called_once_with("Foo arch")
+        self.client._ForemanClient__resolve_ptable_id.\
+            was_called_once_with("Ptable")
+        expected_payload = {'name': 'foo.cern.ch',
+            'environment_id': 1,
+            'hostgroup_id': 2,
+            'owner_id': 3,
+            'owner_type': 'User',
+            'operatingsystem_id': 4,
+            'medium_id': 5,
+            'architecture_id': 6,
+            'ptable_id': 7,
+            'comment': 'baaar',
+            'ip': 'fooip',
+            'mac': 'foomac',
+            'managed': True}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('post', full_uri("hosts"), ANY, ANY)
 
