@@ -270,6 +270,30 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('post', full_uri("hosts"), ANY, ANY)
 
+    @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',
+        return_value=1)
+    @patch.object(ForemanClient, 'resolve_hostgroup_id',
+        return_value=2)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_user_id',
+        return_value=3)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_operatingsystem_id',
+        return_value=4)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_medium_id',
+        return_value=5)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_architecture_id',
+        return_value=6)
+    @patch.object(ForemanClient, '_ForemanClient__resolve_ptable_id',
+        return_value=7)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.OK, []))
+    def test_addhost_unmanaged_fails_if_missing_fields_and_managed(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.addhost,
+            fqdn='foo.cern.ch',
+            environment='foo',
+            hostgroup='bar/baz',
+            owner='bob',
+            managed=True)
+
     #### GETHOST ####
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_model',

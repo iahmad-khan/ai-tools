@@ -63,6 +63,9 @@ class ForemanClient(HTTPClient):
         if comment:
             payload['comment'] = comment
         if managed:
+            if any(f is None for f in (operatingsystem, medium,
+                architecture, ptable, mac, ip)):
+                raise AiToolsForemanError("Missing mandatory params for a managed host")
             payload['managed'] = True
             payload['operatingsystem_id'] = \
                 self.__resolve_operatingsystem_id(operatingsystem)
