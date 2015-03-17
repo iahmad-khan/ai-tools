@@ -103,8 +103,6 @@ def parse_cmdline_args():
     ##
 
     delhost_parser = subparsers.add_parser('delhost')
-    delhost_parser.add_argument('-y', '--yes',
-        help="Answer yes to all questions asked", action='store_true')
     delhost_parser.add_argument('hostname', nargs='*',
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
@@ -123,8 +121,6 @@ def parse_cmdline_args():
     ##
 
     updatehost_parser = subparsers.add_parser('updatehost')
-    updatehost_parser.add_argument('-y', '--yes',
-        help="Answer yes to all questions asked", action='store_true')
     for option in COMMON_MODEL_OPTIONS:
         updatehost_parser.add_argument(option['short'], option['long'],
             type=str, help=option['help'])
@@ -207,9 +203,6 @@ def delhost(foreman, args):
     table = generate_summary_table_from_data(data)
     print table.get_string(sortby=args.sort)
 
-    if not user_confirms(args):
-        return
-
     for host in data:
         try:
             foreman.delhost(host['name'])
@@ -237,9 +230,6 @@ def updatehost(foreman, args):
     logging.info("The following %d host(s) will be updated:" % len(data))
     table = generate_summary_table_from_data(data)
     print table.get_string(sortby=args.sort)
-
-    if not user_confirms(args):
-        return
 
     candidates = [x['long'].replace('--', '') for x in COMMON_MODEL_OPTIONS]
     candidates.extend(['ip', 'mac'])
@@ -319,14 +309,6 @@ def generate_summary_table_from_data(data):
             last_report])
 
     return table
-
-def user_confirms(args):
-    if not args.yes:
-        user = raw_input("Is this ok [y/N]: ")
-        if user.lower() != 'y':
-            logging.info("Exiting on user command")
-            return False
-    return True
 
 def print_progress(count, total):
     progress = int((float(count)/total)*100)

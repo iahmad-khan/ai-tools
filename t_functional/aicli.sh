@@ -20,11 +20,11 @@ ai-foreman --config $CONF showhost aifcliftest10.cern.ch
 ai-foreman --config $CONF -g playground/ibarrien/test1 showhost aifcliftest10.cern.ch
 ai-foreman --config $CONF -g playground/ibarrien/test1 showhost
 echo "Updatehost..."
-ai-foreman --config $CONF updatehost -e production aifcliftest10.cern.ch -y
-ai-foreman --config $CONF updatehost -o "CentOS 7.0" -m "CentOS mirror" aifcliftest11.cern.ch -y
-ai-foreman --config $CONF -g playground/ibarrien/test1 updatehost -e production -c playground/ibarrien/test2 -y
+ai-foreman --config $CONF updatehost -e production aifcliftest10.cern.ch
+ai-foreman --config $CONF updatehost -o "CentOS 7.0" -m "CentOS mirror" aifcliftest11.cern.ch
+ai-foreman --config $CONF -g playground/ibarrien/test1 updatehost -e production -c playground/ibarrien/test2
 ai-foreman --config $CONF -g playground/ibarrien/test2 showhost
 echo "Delhost..."
-ai-foreman --config $CONF delhost -y aifcliftest10.cern.ch
-ai-foreman --config $CONF -g playground/ibarrien/test2 delhost -y
+ai-foreman --config $CONF delhost  aifcliftest10.cern.ch
+ai-foreman --config $CONF -g playground/ibarrien/test2 delhost
 rm $IN $CONF
