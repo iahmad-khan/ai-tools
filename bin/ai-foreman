@@ -32,7 +32,9 @@ from aitools.errors import AiToolsAiForemanError
 from aitools.completer import ForemanCompleter
 
 SUMMARY_TABLE_FIELDS = ['Name', 'Hostgroup', 'Environment',
-    'OS', 'Model', 'Ptable', 'Last Report']
+    'OS', 'Arch', 'Model', 'Ptable', 'Last Report']
+SUMMARY_TABLE_SHOWN_FIELDS = ['Name', 'Hostgroup',
+    'Environment', 'OS']
 SUMMARY_TABLE_DEFAULT_SORT_KEY = 'Name'
 COMMON_MODEL_OPTIONS = [
     {'short': '-e', 'long': '--environment',
@@ -77,6 +79,9 @@ def parse_cmdline_args():
         default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
         help="Field name to sort by (default: '%s')" % \
             SUMMARY_TABLE_DEFAULT_SORT_KEY)
+    parser.add_argument('--longtable',
+        action="store_true",
+        help="Shows more information on the summary tables")
 
     foreman_config = ForemanConfig()
     foreman_config.add_standard_args(parser)
@@ -200,8 +205,7 @@ def delhost(foreman, args):
         return
 
     logging.info("The following hosts will be deleted:")
-    table = generate_summary_table_from_data(data)
-    print table.get_string(sortby=args.sort)
+    print_summary_table_from_data(args, data)
 
     for host in data:
         try:
@@ -217,8 +221,7 @@ def showhost(foreman, args):
         logging.warn(error)
         return
 
-    table = generate_summary_table_from_data(data)
-    print table.get_string(sortby=args.sort)
+    print_summary_table_from_data(args, data)
 
 def updatehost(foreman, args):
     try:
@@ -228,8 +231,7 @@ def updatehost(foreman, args):
         return
 
     logging.info("The following %d host(s) will be updated:" % len(data))
-    table = generate_summary_table_from_data(data)
-    print table.get_string(sortby=args.sort)
+    print_summary_table_from_data(args, data)
 
     candidates = [x['long'].replace('--', '') for x in COMMON_MODEL_OPTIONS]
     candidates.extend(['ip', 'mac'])
@@ -291,7 +293,7 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
 
     return data
 
-def generate_summary_table_from_data(data):
+def print_summary_table_from_data(args, data):
     table = PrettyTable(SUMMARY_TABLE_FIELDS)
     table.align = 'l'
     for host in data:
@@ -304,11 +306,16 @@ def generate_summary_table_from_data(data):
             host['hostgroup_name'],
             host['environment_name'],
             host['operatingsystem_name'],
+            host['architecture_name'],
             host['model_name'],
             host['ptable_name'],
             last_report])
 
-    return table
+    if not args.longtable:
+        print table.get_string(sortby=args.sort,
+            fields=SUMMARY_TABLE_SHOWN_FIELDS)
+    else:
+        print table.get_string(sortby=args.sort)
 
 def print_progress(count, total):
     progress = int((float(count)/total)*100)
