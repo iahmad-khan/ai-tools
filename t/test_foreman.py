@@ -150,7 +150,7 @@ class TestForemanClient(unittest.TestCase):
     @patch.object(ForemanClient, '_ForemanClient__resolve_model_id',
         return_value=1)
     def test_resolve_hostgroup_id(self, mock_client):
-        result = self.client.resolve_hostgroup_id("foo")
+        result = self.client._ForemanClient__resolve_hostgroup_id("foo")
         self.assertEquals(result, 1)
         self.client._ForemanClient__resolve_model_id.\
             was_called_once_with("hostgroup", "foo", search_key='label')
@@ -184,7 +184,7 @@ class TestForemanClient(unittest.TestCase):
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',
         return_value=1)
-    @patch.object(ForemanClient, 'resolve_hostgroup_id',
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
         return_value=2)
     @patch.object(ForemanClient, '_ForemanClient__resolve_user_id',
         return_value=3)
@@ -197,7 +197,7 @@ class TestForemanClient(unittest.TestCase):
             owner='bob')
         self.client._ForemanClient__resolve_environment_id.\
             was_called_once_with("foo")
-        self.client.resolve_hostgroup_id.\
+        self.client._ForemanClient__resolve_hostgroup_id.\
             was_called_once_with("bar/baz")
         self.client._ForemanClient__resolve_user_id.\
             was_called_once_with("bob")
@@ -213,7 +213,7 @@ class TestForemanClient(unittest.TestCase):
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',
         return_value=1)
-    @patch.object(ForemanClient, 'resolve_hostgroup_id',
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
         return_value=2)
     @patch.object(ForemanClient, '_ForemanClient__resolve_user_id',
         return_value=3)
@@ -242,7 +242,7 @@ class TestForemanClient(unittest.TestCase):
             ip="fooip")
         self.client._ForemanClient__resolve_environment_id.\
             was_called_once_with("foo")
-        self.client.resolve_hostgroup_id.\
+        self.client._ForemanClient__resolve_hostgroup_id.\
             was_called_once_with("bar/baz")
         self.client._ForemanClient__resolve_user_id.\
             was_called_once_with("bob")
@@ -272,7 +272,7 @@ class TestForemanClient(unittest.TestCase):
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',
         return_value=1)
-    @patch.object(ForemanClient, 'resolve_hostgroup_id',
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
         return_value=2)
     @patch.object(ForemanClient, '_ForemanClient__resolve_user_id',
         return_value=3)

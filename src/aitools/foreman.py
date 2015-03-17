@@ -57,7 +57,7 @@ class ForemanClient(HTTPClient):
         logging.info("Adding host '%s' to Foreman..." % fqdn)
         payload = {'managed': False, 'name': fqdn}
         payload['environment_id'] = self.__resolve_environment_id(environment)
-        payload['hostgroup_id'] = self.resolve_hostgroup_id(hostgroup)
+        payload['hostgroup_id'] = self.__resolve_hostgroup_id(hostgroup)
         payload['owner_type'] = "User"
         payload['owner_id'] = self.__resolve_user_id(owner)
         if comment:
@@ -103,7 +103,7 @@ class ForemanClient(HTTPClient):
         if environment:
             payload['environment_id'] = self.__resolve_environment_id(environment)
         if hostgroup:
-            payload['hostgroup_id'] = self.resolve_hostgroup_id(hostgroup)
+            payload['hostgroup_id'] = self.__resolve_hostgroup_id(hostgroup)
         if operatingsystem:
             payload['operatingsystem_id'] = \
                 self.__resolve_operatingsystem_id(operatingsystem)
@@ -312,7 +312,7 @@ class ForemanClient(HTTPClient):
         logging.info("Getting hostgroup parameters for '%s' from Foreman..." % hostgroup)
 
         logging.info("Resolving ID for hostgroup '%s'" % hostgroup)
-        hgid = self.resolve_hostgroup_id(hostgroup)
+        hgid = self.__resolve_hostgroup_id(hostgroup)
 
         (code, body) = self.__do_api_request("get", "hostgroups/%s/parameters" % hgid)
         if code == requests.codes.ok:
@@ -335,7 +335,7 @@ class ForemanClient(HTTPClient):
         """
 
         logging.info("Resolving ID for hostgroup '%s'" % hostgroup)
-        hgid = self.resolve_hostgroup_id(hostgroup)
+        hgid = self.__resolve_hostgroup_id(hostgroup)
 
         logging.info("Checking for existing parameter '%s' on hostgroup '%s'" % (name, hostgroup))
         params = self.gethostgroupparameters(hostgroup)
@@ -519,7 +519,7 @@ class ForemanClient(HTTPClient):
     def __resolve_environment_id(self, name):
         return self.__resolve_model_id('environment', name)
 
-    def resolve_hostgroup_id(self, name):
+    def __resolve_hostgroup_id(self, name):
         return self.__resolve_model_id('hostgroup', name, search_key='label')
 
     def __resolve_user_id(self, name):
