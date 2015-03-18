@@ -182,7 +182,8 @@ class ForemanClient(HTTPClient):
                     body["%s_id" % model])
             return body
         elif code == requests.codes.not_found:
-            raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
+            raise AiToolsForemanNotFoundError("Host '%s' not found or not visible "
+                "with the presented credentials" % fqdn)
         elif code == requests.codes.unprocessable_entity:
             error = ','.join(body['error']['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)

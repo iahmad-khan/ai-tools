@@ -282,14 +282,14 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
         logging.debug("Gathering information for: %s" % ", ".join(args.hostname))
         for fqdn in args.hostname:
             if fqdn in found:
-                continue
+                continue # Just to avoid duplicates
             try:
                 data.append(foreman.gethost(fqdn, toexpand=[]))
-            except AiToolsForemanError:
-                logging.warn("Host '%s' not found" % fqdn)
+            except AiToolsForemanError, error:
+                logging.warn(error)
 
     if not data:
-        raise AiToolsAiForemanError("No results found")
+        raise AiToolsAiForemanError("All filters processed, nothing to show :/")
 
     return data
 
