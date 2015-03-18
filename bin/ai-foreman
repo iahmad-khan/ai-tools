@@ -178,7 +178,6 @@ def addhost(foreman, args):
         if args.reset:
             try:
                 foreman.delhost(record['fqdn'])
-                logging.info("Done")
             except AiToolsForemanError, error:
                 logging.warn("Failed to delete '%s': %s (will continue)" \
                     % (record['fqdn'], error))
