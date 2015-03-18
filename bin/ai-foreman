@@ -50,6 +50,8 @@ COMMON_MODEL_OPTIONS = [
     {'short': '-m', 'long': '--medium',
         'help': "Host's operating system medium name"},
 ]
+T_GREEN="\033[1;92m%s\033[00m"
+T_RED="\033[01;91m%s\033[00m"
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -252,14 +254,14 @@ def updatehost(foreman, args):
     print_progress(len(data), len(data))
 
     if errors:
-        logging.warn("\nSome hosts failed to update:")
+        logging.warn(T_RED % "\nSome hosts failed to update:")
         table = PrettyTable(['Host', 'Error'])
         table.align = 'l'
         for host, error in errors:
             table.add_row([host, error])
         print table.get_string()
     else:
-        logging.info("\nAll hosts were successfully updated :)")
+        logging.info(T_GREEN % "\nAll hosts were successfully updated :)")
 
 ##
 ## Helper functions
@@ -323,7 +325,7 @@ def print_summary_table_from_data(args, data):
 
 def print_progress(count, total):
     progress = int((float(count)/total)*100)
-    sys.stdout.write("\rIn progress: %d%% done" % progress)
+    sys.stdout.write("\rIn progress... %d%% done" % progress)
     sys.stdout.flush()
 
 def main():
