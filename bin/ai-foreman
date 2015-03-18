@@ -16,6 +16,7 @@ import argparse
 import argcomplete
 import csv
 import socket
+import datetime
 from dateutil import tz
 from dateutil import parser as duparser
 from prettytable import PrettyTable
@@ -304,11 +305,12 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
 def print_summary_table_from_data(args, data):
     table = PrettyTable(SUMMARY_TABLE_FIELDS)
     table.align = 'l'
+    unix_epoch = datetime.datetime.fromtimestamp(0, tz=tz.tzlocal())
     for host in data:
-        last_report = None
+        last_report = unix_epoch
         if host['last_report']:
             last_report = duparser.parse(host['last_report'])
-            last_report = last_report.astimezone(tz.tzlocal())
+        last_report = last_report.astimezone(tz.tzlocal())
         table.add_row([
             host['name'],
             host['hostgroup_name'],
