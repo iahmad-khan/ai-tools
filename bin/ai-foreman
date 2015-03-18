@@ -16,7 +16,8 @@ import argparse
 import argcomplete
 import csv
 import socket
-from dateutil import tz, parser
+from dateutil import tz
+from dateutil import parser as duparser
 from prettytable import PrettyTable
 
 from aitools.foreman import ForemanClient
@@ -306,7 +307,7 @@ def print_summary_table_from_data(args, data):
     for host in data:
         last_report = None
         if host['last_report']:
-            last_report = parser.parse(host['last_report'])
+            last_report = duparser.parse(host['last_report'])
             last_report = last_report.astimezone(tz.tzlocal())
         table.add_row([
             host['name'],
