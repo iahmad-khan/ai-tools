@@ -84,6 +84,9 @@ def parse_cmdline_args():
     parser.add_argument('--longtable',
         action="store_true",
         help="Shows more information on the summary tables")
+    parser.add_argument('--no-color',
+        action="store_true",
+        help="Switch colorized outputs off")
 
     foreman_config = ForemanConfig()
     foreman_config.add_standard_args(parser)
@@ -344,6 +347,10 @@ def main():
 
     foreman = ForemanClient(dryrun=args.dryrun,
         deref_alias=args.dereference_alias)
+
+    if args.no_color:
+        global T_GREEN, T_RED
+        T_GREEN = T_RED = "%s"
 
     globals()[args.subcommand](foreman, args)
 
