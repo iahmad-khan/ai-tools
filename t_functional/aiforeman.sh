@@ -11,9 +11,11 @@ foreman_timeout = 60
 EOF
 IN=$(mktemp)
 
-echo "aifcliftest10.cern.ch 192.168.0.2 aa:bb:cc:dd:ee:FF" > $IN
-echo "aifcliftest11.cern.ch 192.168.0.3 aa-bb-cc-dd-ee-FE" >> $IN
-echo "aifcliftest12.cern.ch 192.168.0.4 AA:bb:cc:dd:ee:FD" >> $IN
+for i in `seq 16 20`
+do
+  m=`echo "obase=16; $i" | bc`
+  echo "aifcliftest$i.cern.ch 192.168.0.$i aa:bb:cc-dd:ee:$m" >> $IN
+done
 cat $IN | ai-foreman --config $CONF addhost -c playground/ibarrien/test1 -e qa -a x86_64 -p "Kickstart default" -o "SLC 6.6" -m "SLC" -r
 echo "Showhost..."
 ai-foreman --config $CONF showhost aifcliftest10.cern.ch
