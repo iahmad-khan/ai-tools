@@ -246,23 +246,21 @@ def updatehost(foreman, args):
     candidates.extend(['ip', 'mac'])
     to_update = dict([(k, getattr(args, k)) for k in candidates])
 
-    errors = []
+    errors_table = PrettyTable(['Host', 'Error'])
+    errors_table.align = 'l'
     for count, host in enumerate(data):
         try:
             foreman.updatehost(host['name'], **to_update)
             print_progress(count, len(data))
         except AiToolsForemanError, error:
-            errors.append((host['name'], error))
+            errors_table.add_row([host['name'], error])
 
     print_progress(len(data), len(data))
 
-    if errors:
+    # Apparently there's no clean way to get the number of rows :/
+    if len(errors_table._rows) > 0:
         logging.warn(T_RED % "\nSome hosts failed to update:")
-        table = PrettyTable(['Host', 'Error'])
-        table.align = 'l'
-        for host, error in errors:
-            table.add_row([host, error])
-        print table.get_string()
+        print errors_table.get_string()
     else:
         logging.info(T_GREEN % "\nAll hosts were successfully updated :)")
 
