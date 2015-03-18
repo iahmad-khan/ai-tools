@@ -20,7 +20,7 @@ cat $IN | ai-foreman --config $CONF addhost -c playground/ibarrien/test1 -e qa -
 echo "Showhost..."
 ai-foreman --config $CONF showhost aifcliftest10.cern.ch
 ai-foreman --config $CONF -g playground/ibarrien/test1 showhost aifcliftest10.cern.ch
-ai-foreman --config $CONF -g playground/ibarrien/test1 showhost
+ai-foreman --config $CONF --longtable -g playground/ibarrien/test1 showhost
 echo "Updatehost..."
 ai-foreman --config $CONF updatehost -e production aifcliftest10.cern.ch
 ai-foreman --config $CONF updatehost -o "CentOS 7.0" -m "CentOS mirror" aifcliftest11.cern.ch
