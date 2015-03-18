@@ -92,7 +92,8 @@ def parse_cmdline_args():
     ## Addhost
     ##
 
-    addhost_parser = subparsers.add_parser('addhost')
+    addhost_parser = subparsers.add_parser('addhost',
+        help="Adds hosts")
     for option in COMMON_MODEL_OPTIONS:
         addhost_parser.add_argument(option['short'], option['long'],
             type=str, help=option['help'], required=True)
@@ -107,7 +108,8 @@ def parse_cmdline_args():
     ## Delhost
     ##
 
-    delhost_parser = subparsers.add_parser('delhost')
+    delhost_parser = subparsers.add_parser('delhost',
+        help="Deletes hosts")
     delhost_parser.add_argument('hostname', nargs='*',
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
@@ -116,7 +118,8 @@ def parse_cmdline_args():
     ## Showhost
     ##
 
-    showhost_parser = subparsers.add_parser('showhost')
+    showhost_parser = subparsers.add_parser('showhost',
+        help="Shows information about hosts")
     showhost_parser.add_argument('hostname', nargs='*',
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
@@ -125,7 +128,8 @@ def parse_cmdline_args():
     ## Updatehost
     ##
 
-    updatehost_parser = subparsers.add_parser('updatehost')
+    updatehost_parser = subparsers.add_parser('updatehost',
+        help="Updates hosts")
     for option in COMMON_MODEL_OPTIONS:
         updatehost_parser.add_argument(option['short'], option['long'],
             type=str, help=option['help'])
