@@ -1,0 +1,283 @@
+.TH AI-FOREMAN "1" "March 2015" "ai-foreman" "User Commands"
+.SH NAME
+ai-foreman \- Command-like tool to perform CRUD operations on Foreman entries
+
+.SH SYNOPSIS
+.B "ai-foreman"
+[OPTION]...
+SUBCOMMAND
+[SUBCOMMAND_OPTION]...
+
+.SH DESCRIPTION
+ai-foreman is a Python command line tool to manage Foreman entries.
+.LP
+The command line is composed by common options to all subcommands,
+the subcommand itself and the subcommand-specific options.
+.LP
+.I Prerequisites:
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+
+.SH SUBCOMMANDS
+
+The available subcommands are: addhost, delhost, showhost and updatehost.
+
+.SH OPTIONS
+The behaviour of the tool can be customized by the following
+parameters:
+
+.LP
+.I Common options:
+
+This section covers the main common options, which turn out to be switches
+to select hosts. The less popular flags are described below.
+
+It's legal to use filtering options with either of the subcommands but they
+will only take effect when it makes sense to make use of them (for instance,
+they will all be ignored when passed along the addhost subcommand)
+
+They're all mutually exclusive, however they can be combined with explicit
+host lists. Take a look to the EXAMPLES section to see how this can be achieved.
+
+.TP
+.B -f, --filter FILTER
+String containing a Foreman filter to discover hosts. The syntax is the same
+as one would use on the Foreman user interface. Examples: "environment=qa",
+"hostgroup_fullname ~ foo/bar and facts.is_virtual = False".
+
+.TP
+.B -g, --hg HOSTGROUP
+Select hosts that are member of HOSTGROUP. This option is effectively an alias
+for --filter "hostgroup_fullname = HOSTGROUP".
+
+.TP
+.B -l, --hl HOSTGROUP
+Select hosts that are member of a hostgroup that looks like HOSTGROUP.
+This option is an alias for --filter "hostgroup_fullname ~ HOSTGROUP".
+
+.TP
+.B --only-error
+Only select hosts that are in error state. The generated query is equivalent
+to the one sent to Foreman when browsing the dashboard view and clicking
+"hosts in error state".
+
+.\""""""""""
+.\" ADDHOST
+.\""""""""""
+
+.LP
+.I Addhost options:
+
+Please note that some of the following options are mandatory and the tool will
+refuse to continue if they're not present.
+
+.TP
+.B -a, --architecture ARCHITECTURE
+Architecture name for the new host(s). Example: "x86_64".
+
+.TP
+.B -c, --hostgroup HOSTGROUP
+Hostgroup name for the new host(s). Example: "foo/bar".
+
+.TP
+.B --comment COMMENT
+Comment for the new host(s).
+
+.TP
+.B -e, --environment ENVIRONMENT
+Environment name for the new host(s). Example: "qa".
+
+.TP
+.B -i, --input INPUTFILE
+Use INPUTFILE as source of information about the hosts being added. The
+default value for this option is STDIN. Example: see INPUT FORMAT.
+
+.TP
+.B -m, --medium MEDIUM
+Medium name for the new host(s). Example "CentOS mirror".
+
+.TP
+.B -o, --operatingsystem OS
+Operating system name and version for the new host(s). Example "CentOS 7.0".
+
+.TP
+.B -p, --ptable PTABLE
+Partition table name for the new host(s). Example "Default Kickstart".
+
+.TP
+.B -r, --reset
+When this switch is enabled, the CLI will try to delete existing entries
+before creating new ones.
+
+.\""""""""""
+.\" DELHOST
+.\""""""""""
+
+.LP
+.I Delhost options:
+
+.TP
+.B [HOSTNAME]...
+A list of hostnames (qualified or not) to delete. This option can be combined
+with a filtering option of your choice.
+
+.\""""""""""
+.\" SHOWHOST
+.\""""""""""
+
+.LP
+.I Showhost options:
+
+.TP
+.B [HOSTNAME]...
+A list of hostnames (qualified or not) to show. This option can be combined
+with a filtering option of your choice.
+
+
+.\"""""""""""""
+.\" UPDATEHOST
+.\"""""""""""""
+
+.LP
+.I Update options:
+
+.TP
+.B -a, --architecture ARCHITECTURE
+Architecture name for the host(s). Example: "x86_64".
+
+.TP
+.B -c, --hostgroup HOSTGROUP
+Hostgroup name for the host(s). Example: "foo/bar".
+
+.TP
+.B --comment COMMENT
+Comment for the host(s).
+
+.TP
+.B -e, --environment ENVIRONMENT
+Environment name for the host(s). Example: "qa".
+
+.TP
+.B --ip
+IP address for the host(s). Example: "127.0.0.1"
+
+.TP
+.B --mac
+MAC address for the host(s). Example: "AA:CC:BE:BE:CA:FE"
+
+.TP
+.B -m, --medium MEDIUM
+Medium name for the host(s). Example "CentOS mirror".
+
+.TP
+.B -o, --operatingsystem OS
+Operating system name and version for the host(s). Example "CentOS 7.0".
+
+.TP
+.B -p, --ptable PTABLE
+Partition table name for the host(s). Example "Default Kickstart".
+
+.TP
+.B [HOSTNAME]...
+A list of hostnames (qualified or not) to update. This option can be combined
+with a filtering option of your choice.
+
+.LP
+.I Other common options:
+
+.TP
+.B -d, --dryrun
+Don't do the requests that alter data.
+
+.TP
+.B --foreman-hostname
+FQDN of the Foreman instance to use.
+
+.TP
+.B --foreman-port
+Port of the Foreman instance to use -- must support Kerberos.
+
+.TP
+.B --foreman-timeout
+Timeout (in seconds) for Foreman operations.
+
+.TP
+.B -h, --help
+Display usage and exit.
+
+.TP
+.B --longtable
+When showing summary tables, add some extra columns with additional
+information (Architecture, Model, Ptable, Last Report).
+
+.TP
+.B -s, --sort FIELD
+When showing summary tables, sort by column FIELD. Accepted fields are:
+Name, Hostgroup, Environment, OS, Arch, Model, Ptable and Last Report.
+
+.TP
+.B -v, --verbose
+Be chatty.
+
+.SH INPUT FORMAT
+When adding hosts, this tool consumes a text file in which there must
+be one host described in each line. Each record must contain either 3
+or 6 blank-separated fields as follows:
+
+fqdn ip mac ipmi_mac ipmi_user ipmi_mac
+
+The last three are optional, allowing registrations of machines without
+an IPMI interface. The FQDN of the IPMI interface will be generated by
+the CLI, using "fqdn" as base. Also, the IP address of this interface
+will be resolved using DNS. Dashes to separate bytes of MAC addresses
+will be automatically translated into colons.
+
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 2
+Bad command line.
+.TP
+.B 4
+Kerberos TGT not-existent or expired.
+
+.SH EXAMPLES
+
+.TP
+.B Show extended information about host "foo.cern.ch"
+ai-foreman --longtable showhost foo.cern.ch
+
+.TP
+.B Show information about hosts in hostgroup "foo/bar" sorted by environment
+ai-foreman -g foo/bar --sort Environment showhost
+
+.TP
+.B Show information about virtual hosts in environment "qa"
+ai-foreman -f "facts.is_virtual = True and environment = qa" showhost
+
+.TP
+.B Change the operating system of a couple of hosts:
+ai-foreman updatehost -o "SLC 6.6" -m "SLC" baz.cern.ch sugar.cern.ch
+
+.TP
+.B Update the hostgroup of hosts which hostgroup looks like "pants/2" and "bar.cern.ch"
+ai-foreman -l "pants/2" updatehost bar.cern.ch --hostgroup pants/1
+
+.TP
+.B Delete all CASTOR ATLAS hosts
+ai-foreman -l castor/c2atlas delhost
+
+.SH REPORTING BUGS
+If you experience any problem when using this tool, please open a support
+call on SNOW (Functional Element "Configuration Management").
+
+.SH AUTHORS
+Nacho Barrientos <nacho.barrientos@cern.ch>
+
+.SH SEE ALSO
+ai-remote-power-control (1), ai-bs-vm (1)
