@@ -133,6 +133,8 @@ class ForemanClient(HTTPClient):
                 data=json.dumps(payload))
             if code == requests.codes.ok:
                 logging.debug("Host '%s' updated" % fqdn)
+            elif code == requests.codes.not_found:
+                raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['error']['full_messages'])
                 raise AiToolsForemanError(error)
