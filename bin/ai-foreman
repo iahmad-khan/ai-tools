@@ -69,9 +69,9 @@ def parse_cmdline_args():
     filter_group.add_argument('-f', '--filter', type=str,
         help="Host discovery based on a Foreman search filter")
     filter_group.add_argument('-g', '--hg', type=str,
-        help="Selects hosts in the given hostgroup.")
+        help="Equivalent to -f hostgroup_fullname = foo.")
     filter_group.add_argument('-l', '--hl', type=str,
-        help="Selects hosts in a hostgroup that looks like this.")
+        help="Equivalent to -f hostgroup_fullname ~ foo.")
     filter_group.add_argument('--only-error', action='store_true',
         help="Selects only hosts in error state.")
     parser.add_argument('-s', '--sort', type=str,
