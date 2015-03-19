@@ -279,6 +279,23 @@ ai-foreman -l "pants/2" updatehost bar.cern.ch --hostgroup pants/1
 .B Delete all CASTOR ATLAS hosts
 ai-foreman -l castor/c2atlas delhost
 
+.SH FAQ
+
+.B Why is the CLI returning "not found" for hosts that actually exist?
+.LP
+Unfortunately, the Foreman API retuns 404 when an object cannot be read
+with the presented credentials, regardless of the existence of the object.
+
+.B Where's the installhost subcommand?
+.LP
+Please type man ai-installhost.
+
+.B When updating the operating system of a given host, why is Foreman
+.B complaining about the medium?
+.LP
+Operating systems have media associated to them and a correct one
+has to be set by passing -m/--media too. See EXAMPLES.
+
 .SH EXIT CODES
 .TP
 .B 0
