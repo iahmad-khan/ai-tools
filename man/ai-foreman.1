@@ -253,17 +253,6 @@ the CLI, using "fqdn" as base. Also, the IP address of this interface
 will be resolved using DNS. Dashes to separate bytes of MAC addresses
 will be automatically translated into colons.
 
-.SH EXIT CODES
-.TP
-.B 0
-All operations executed successfully.
-.TP
-.B 2
-Bad command line.
-.TP
-.B 4
-Kerberos TGT not-existent or expired.
-
 .SH EXAMPLES
 
 .TP
@@ -289,6 +278,20 @@ ai-foreman -l "pants/2" updatehost bar.cern.ch --hostgroup pants/1
 .TP
 .B Delete all CASTOR ATLAS hosts
 ai-foreman -l castor/c2atlas delhost
+
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 1
+Some operations that modify data failed.
+.TP
+.B 2
+Bad command line.
+.TP
+.B 4
+Kerberos TGT not-existent or expired.
 
 .SH REPORTING BUGS
 If you experience any problem when using this tool, please open a support

@@ -172,18 +172,25 @@ def parse_cmdline_args():
 ##
 
 def addhost(foreman, args):
+    errors = False
     ipmi_fieldnames = ['i_mac', 'i_user', 'i_pass']
-    fieldnames = ['fqdn', 'ip', 'mac']
-    fieldnames.extend(ipmi_fieldnames)
+    basefieldnames = ['fqdn', 'ip', 'mac']
+    fieldnames = basefieldnames + ipmi_fieldnames
     reader = csv.DictReader(args.input,
         fieldnames=fieldnames, delimiter=' ')
-    for record in reader:
+    for count, record in enumerate(reader):
         if args.reset:
             try:
                 foreman.delhost(record['fqdn'])
             except AiToolsForemanError, error:
                 logging.warn("Failed to delete '%s': %s (will continue)" \
                     % (record['fqdn'], error))
+
+        if any(record[f] is None for f in basefieldnames):
+            errors = True
+            logging.warn("Line %d is malformed" % count)
+            continue
+
         try:
             logging.debug("Adding '%s'" % record['fqdn'])
             foreman.addhost(fqdn=record['fqdn'],
@@ -199,6 +206,7 @@ def addhost(foreman, args):
                 ip=record['ip'],
                 mac=record['mac'].replace('-', ':'))
         except AiToolsForemanError, error:
+            errors = True
             logging.error("Couldn't add '%s': %s" % (record['fqdn'], error))
 
         if all(record[f] is not None for f in ipmi_fieldnames):
@@ -207,10 +215,14 @@ def addhost(foreman, args):
                     record['i_mac'].replace('-', ':'),
                     record['i_user'], record['i_pass'])
             except (socket.gaierror, AiToolsForemanError), error:
+                errors = True
                 logging.error("Couldn't add %s's IPMI iface': %s" % \
                     (record['fqdn'], error))
 
+    return 1 if errors else 0
+
 def delhost(foreman, args):
+    errors = False
     try:
         data = get_hosts_by_filter_and_explicit_list(foreman, args)
     except AiToolsAiForemanError, error:
@@ -225,7 +237,10 @@ def delhost(foreman, args):
             foreman.delhost(host['name'])
             logging.info("Host %s deleted" % host['name'])
         except AiToolsForemanError, error:
+            errors = True
             logging.warn("Failed to delete '%s': %s" % (host['name'], error))
+
+    return 1 if errors else 0
 
 def showhost(foreman, args):
     try:
@@ -235,8 +250,10 @@ def showhost(foreman, args):
         return
 
     print_summary_table_from_data(args, data)
+    return 0
 
 def updatehost(foreman, args):
+    errors = False
     try:
         data = get_hosts_by_filter_and_explicit_list(foreman, args)
     except AiToolsAiForemanError, error:
@@ -263,6 +280,7 @@ def updatehost(foreman, args):
 
     # Apparently there's no clean way to get the number of rows :/
     if len(errors_table._rows) > 0:
+        errors = True
         logging.warn(T_RED % "\nSome hosts failed to update:")
         print errors_table.get_string()
     else:
@@ -274,6 +292,8 @@ def updatehost(foreman, args):
         args.only_errors = False
         args.hostname = [host['name'] for host in data]
         showhost(foreman, args)
+
+    return 1 if errors else 0
 
 ##
 ## Helper functions
@@ -362,9 +382,7 @@ def main():
         global T_GREEN, T_RED
         T_GREEN = T_RED = "%s"
 
-    globals()[args.subcommand](foreman, args)
-
-    return 0
+    return globals()[args.subcommand](foreman, args)
 
 if __name__ == '__main__':
     sys.exit(main())
