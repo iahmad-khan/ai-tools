@@ -549,9 +549,15 @@ class ForemanClient(HTTPClient):
             fullname)
         if not match_object:
             raise AiToolsForemanError("Couldn't resolve operating system name")
-        return self.__resolve_model_id('operatingsystem',
-            match_object.group('name'),
-            results_filter=lambda x: x['fullname'] == fullname)
+        try:
+            return self.__resolve_model_id('operatingsystem',
+                match_object.group('name'),
+                results_filter=lambda x: x['fullname'] == fullname)
+        except AiToolsForemanNotFoundError, error:
+            # This is necessary to avoid misleading the user showing just
+            # the OS name when nothing has been found
+            raise AiToolsForemanNotFoundError("Operatingsystem '%s' not found" %
+                fullname)
 
     def __resolve_model_id(self, modelname, value, results_filter=None,
                             search_key="name",
