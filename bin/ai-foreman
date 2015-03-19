@@ -324,7 +324,7 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
             try:
                 data.append(foreman.gethost(fqdn, toexpand=[]))
             except AiToolsForemanError, error:
-                logging.warn(error)
+                logging.warn(T_RED % error)
 
     if not data:
         raise AiToolsAiForemanError("Nothing to show after processing all search filters :/")
