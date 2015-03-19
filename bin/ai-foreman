@@ -146,6 +146,9 @@ def parse_cmdline_args():
         help="Host's IP address", default=None)
     updatehost_parser.add_argument('--mac', type=str,
         help="Host's MAC address", default=None)
+    updatehost_parser.add_argument('--after',
+        help="Show summary after the update process",
+        action='store_true')
     updatehost_parser.add_argument('hostname', nargs='*',
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
@@ -264,6 +267,13 @@ def updatehost(foreman, args):
         print errors_table.get_string()
     else:
         logging.info(T_GREEN % "\nAll hosts were successfully updated :)")
+
+    if args.after:
+        logging.info("Refetching hosts. This may take a while...")
+        args.filter = args.hg = args.hl = None
+        args.only_errors = False
+        args.hostname = [host['name'] for host in data]
+        showhost(foreman, args)
 
 ##
 ## Helper functions
