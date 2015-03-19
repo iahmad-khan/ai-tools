@@ -324,6 +324,18 @@ class TestForemanClient(unittest.TestCase):
             .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
                 ANY, json.dumps(expected_payload))
 
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.UNPROCESSABLE_ENTITY,
+            {'error': {'full_messages': ['MAC not valid']}}))
+    def test_updatehost_bad_data(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.updatehost,
+            fqdn='foo.cern.ch', mac='foo1')
+        expected_payload = {'mac': 'foo1'}
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
+                ANY, json.dumps(expected_payload))
+
+
     #### GETHOST ####
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_model',
