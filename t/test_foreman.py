@@ -294,6 +294,36 @@ class TestForemanClient(unittest.TestCase):
             owner='bob',
             managed=True)
 
+    #### UPDATEHOST ####
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        return_value=2)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.OK, []))
+    def test_updatehost_single_field(self, *args):
+        self.client.updatehost(fqdn='foo.cern.ch',
+            hostgroup='bar/baz')
+        self.client._ForemanClient__resolve_hostgroup_id.\
+            was_called_once_with("bar/baz")
+        expected_payload = {'hostgroup_id': 2}
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
+                ANY, json.dumps(expected_payload))
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',
+        return_value=6)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.NOT_FOUND, []))
+    def test_updatehost_not_found(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.updatehost,
+            fqdn='foo.cern.ch', environment='foo1')
+        self.client._ForemanClient__resolve_environment_id.\
+            was_called_once_with("foo1")
+        expected_payload = {'environment_id': 6}
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
+                ANY, json.dumps(expected_payload))
+
     #### GETHOST ####
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_model',
