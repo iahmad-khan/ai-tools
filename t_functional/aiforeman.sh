@@ -47,6 +47,7 @@ _expect 0 ai-foreman --config $CONF --longtable -g playground/ibarrien/test1 sho
 
 echo "Updatehost..."
 _expect 0 ai-foreman --config $CONF updatehost -e production aifcliftest16.cern.ch
+_expect 1 ai-foreman --config $CONF updatehost --mac foo aifcliftest16.cern.ch
 _expect 1 ai-foreman --config $CONF updatehost -o "\"CentOS 7.0\"" \
   aifcliftest17.cern.ch
 _expect 0 ai-foreman --config $CONF updatehost -o "\"CentOS 7.0\"" \
