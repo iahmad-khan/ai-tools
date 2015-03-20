@@ -264,7 +264,7 @@ def updatehost(foreman, args):
     print_summary_table_from_data(args, data)
 
     candidates = [x['long'].replace('--', '') for x in COMMON_MODEL_OPTIONS]
-    candidates.extend(['ip', 'mac'])
+    candidates.extend(['comment', 'ip', 'mac'])
     to_update = dict([(k, getattr(args, k)) for k in candidates])
 
     errors_table = PrettyTable(['Host', 'Error'])
