@@ -316,7 +316,7 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
         data.extend(foreman.search_query("hosts", args.filter))
 
     if args.hostname:
-        found = [host['name'] for host in data]
+        found = set([host['name'] for host in data])
         logging.debug("Gathering information for: %s" % ", ".join(args.hostname))
         for fqdn in args.hostname:
             if fqdn in found:
