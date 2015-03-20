@@ -240,6 +240,11 @@ Name, Hostgroup, Environment, OS, Arch, Model, Ptable and Last Report.
 .B -v, --verbose
 Be chatty.
 
+.TP
+.B -z, --field FIELD
+When showing summary tables, only print this column. This option can
+be specified several times and it's not compatible with --longtable.
+
 .SH INPUT FORMAT
 When adding hosts, this tool consumes a text file in which there must
 be one host described in each line. Each record must contain either 3

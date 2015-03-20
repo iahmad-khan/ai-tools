@@ -83,9 +83,13 @@ def parse_cmdline_args():
         default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
         help="Field name to sort by (default: '%s')" % \
             SUMMARY_TABLE_DEFAULT_SORT_KEY)
-    parser.add_argument('--longtable',
+    table_group = parser.add_mutually_exclusive_group()
+    table_group.add_argument('--longtable',
         action="store_true",
         help="Shows more information on the summary tables")
+    table_group.add_argument('-z', '--field', type=str,
+        help="Foreman parameter", action='append',
+        choices=SUMMARY_TABLE_FIELDS, default=[])
     parser.add_argument('--no-color',
         action="store_true",
         help="Switch colorized outputs off")
@@ -164,6 +168,12 @@ def parse_cmdline_args():
     # not in DNS to be deleted.
     if hasattr(args, 'hostname'):
         args.hostname = map(append_domain, args.hostname)
+
+    global SUMMARY_TABLE_SHOWN_FIELDS
+    if args.longtable:
+        SUMMARY_TABLE_SHOWN_FIELDS = SUMMARY_TABLE_FIELDS
+    if args.field:
+        SUMMARY_TABLE_SHOWN_FIELDS = args.field
 
     return args
 
@@ -351,11 +361,8 @@ def print_summary_table_from_data(args, data):
             host['comment'],
             last_report])
 
-    if not args.longtable:
-        print table.get_string(sortby=args.sort,
-            fields=SUMMARY_TABLE_SHOWN_FIELDS)
-    else:
-        print table.get_string(sortby=args.sort)
+    print table.get_string(sortby=args.sort,
+        fields=SUMMARY_TABLE_SHOWN_FIELDS)
 
 def print_progress(count, total):
     progress = int((float(count)/total)*100)

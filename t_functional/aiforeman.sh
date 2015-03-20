@@ -29,6 +29,10 @@ do
   echo "aifcliftest$i.cern.ch 192.168.0.$i aa:bb:cc-dd:ee:$m" >> $IN
 done
 
+echo "Arguments"
+_expect 2 ai-foreman --config $CONF -z Fail showhost aifcliftest16.cern.ch
+_expect 2 ai-foreman --config $CONF -z Name --longtable showhost aifcliftest16.cern.ch
+
 echo "Addhost..."
 _expect 0 ai-foreman --config $CONF addhost -c playground/ibarrien/test1 -e qa \
   -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -r -i $IN
@@ -44,6 +48,7 @@ echo "Showhost..."
 _expect 0 ai-foreman --config $CONF showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF -g playground/ibarrien/test1 showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF --longtable -g playground/ibarrien/test1 showhost
+_expect 0 ai-foreman --config $CONF -z Name -z Environment -g playground/ibarrien/test1 showhost
 
 echo "Updatehost..."
 _expect 0 ai-foreman --config $CONF updatehost -e production aifcliftest16.cern.ch
