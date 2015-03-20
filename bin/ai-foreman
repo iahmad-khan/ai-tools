@@ -52,6 +52,7 @@ COMMON_MODEL_OPTIONS = [
     {'short': '-m', 'long': '--medium',
         'help': "Host's operating system medium name"},
 ]
+INDIV_HOSTS_CHUNK_SIZE=10
 T_GREEN="\033[1;92m%s\033[00m"
 T_RED="\033[01;91m%s\033[00m"
 
@@ -328,11 +329,13 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
     if args.hostname:
         found = set([host['name'] for host in data])
         logging.debug("Gathering information for: %s" % ", ".join(args.hostname))
-        for fqdn in args.hostname:
-            if fqdn in found:
-                continue # Just to avoid duplicates
+        for ii in xrange(0, len(args.hostname), INDIV_HOSTS_CHUNK_SIZE):
+            fqdns = set(args.hostname[ii:ii+INDIV_HOSTS_CHUNK_SIZE]).difference(found)
+            if not fqdns:
+                continue # All of the hosts in the subset found by filters above
+            query = " or ".join(map(lambda x: "name=%s" % x, fqdns))
             try:
-                data.append(foreman.gethost(fqdn, toexpand=[]))
+                data.extend(foreman.search_query("hosts", query))
             except AiToolsForemanError, error:
                 logging.warn(T_RED % error)
 
