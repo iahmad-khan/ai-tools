@@ -291,6 +291,15 @@ ai-foreman -l castor/c2atlas delhost
 Unfortunately, the Foreman API retuns 404 when an object cannot be read
 with the presented credentials, regardless of the existence of the object.
 
+.B Some hosts don't appear in the summary table when using showhost, why?
+.LP
+When requesting data for a static list of hosts (not using filters),
+the CLI groups them and uses combined search queries instead of iterating
+over all hosts one by one for efficiency reasons. Due to this, the CLI
+won't print any error messages for hosts that don't exist or that you
+cannot see with your credentials. This might sound odd but bear with us
+that the speed increase pays off.
+
 .B Where's the installhost subcommand?
 .LP
 Please type man ai-installhost.
