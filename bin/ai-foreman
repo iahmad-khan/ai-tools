@@ -34,7 +34,7 @@ from aitools.errors import AiToolsAiForemanError
 from aitools.completer import ForemanCompleter
 
 SUMMARY_TABLE_FIELDS = ['Name', 'Hostgroup', 'Environment',
-    'OS', 'Arch', 'Model', 'Ptable', 'Last Report']
+    'OS', 'Arch', 'Model', 'Ptable', 'Comment', 'Last Report']
 SUMMARY_TABLE_SHOWN_FIELDS = ['Name', 'Hostgroup',
     'Environment', 'OS']
 SUMMARY_TABLE_DEFAULT_SORT_KEY = 'Name'
@@ -348,6 +348,7 @@ def print_summary_table_from_data(args, data):
             host['architecture_name'],
             host['model_name'],
             host['ptable_name'],
+            host['comment'],
             last_report])
 
     if not args.longtable:
