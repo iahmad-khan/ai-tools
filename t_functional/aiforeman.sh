@@ -30,7 +30,11 @@ do
 done
 
 echo "Arguments"
+_expect 2 ai-foreman --config $CONF -g foo -l foo showhost
+_expect 2 ai-foreman --config $CONF --only-error -f "foo" foo showhost
+_expect 2 ai-foreman --config $CONF addhost showhost aifcliftest16.cern.ch
 _expect 2 ai-foreman --config $CONF -z Fail showhost aifcliftest16.cern.ch
+_expect 2 ai-foreman --config $CONF -s Fail showhost aifcliftest16.cern.ch
 _expect 2 ai-foreman --config $CONF -z Name --longtable showhost aifcliftest16.cern.ch
 
 echo "Addhost..."
@@ -49,6 +53,7 @@ _expect 0 ai-foreman --config $CONF showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF -g playground/ibarrien/test1 showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF --longtable -g playground/ibarrien/test1 showhost
 _expect 0 ai-foreman --config $CONF -z Name -z Environment -g playground/ibarrien/test1 showhost
+_expect 0 ai-foreman --config $CONF -z Name -z Environment -s Environment -g playground/ibarrien/test1 showhost
 
 echo "Updatehost..."
 _expect 0 ai-foreman --config $CONF updatehost -e production aifcliftest16.cern.ch
