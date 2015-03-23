@@ -35,27 +35,28 @@ from aitools.errors import AiToolsAiForemanError
 from aitools.completer import ForemanCompleter
 
 SUMMARY_TABLE_FIELDS = ['Name', 'Hostgroup', 'Environment',
-    'OS', 'Arch', 'Model', 'Ptable', 'Comment', 'Last Report']
+                        'OS', 'Arch', 'Model', 'Ptable',
+                        'Comment', 'Last Report']
 SUMMARY_TABLE_SHOWN_FIELDS = ['Name', 'Hostgroup',
-    'Environment', 'OS']
+                              'Environment', 'OS']
 SUMMARY_TABLE_DEFAULT_SORT_KEY = 'Name'
 COMMON_MODEL_OPTIONS = [
     {'short': '-e', 'long': '--environment',
-        'help': "Host's environment"},
+     'help': "Host's environment"},
     {'short': '-c', 'long': '--hostgroup',
-        'help': "Host's hostgroup"},
+     'help': "Host's hostgroup"},
     {'short': '-a', 'long': '--architecture',
-        'help': "Host's architecture"},
+     'help': "Host's architecture"},
     {'short': '-p', 'long': '--ptable',
-        'help': "Host's partition table"},
+     'help': "Host's partition table"},
     {'short': '-o', 'long': '--operatingsystem',
-        'help': "Host's operating system name"},
+     'help': "Host's operating system name"},
     {'short': '-m', 'long': '--medium',
-        'help': "Host's operating system medium name"},
+     'help': "Host's operating system medium name"},
 ]
-INDIV_HOSTS_CHUNK_SIZE=10
-T_GREEN="\033[1;92m%s\033[00m"
-T_RED="\033[01;91m%s\033[00m"
+INDIV_HOSTS_CHUNK_SIZE = 10
+T_GREEN = "\033[1;92m%s\033[00m"
+T_RED = "\033[01;91m%s\033[00m"
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
