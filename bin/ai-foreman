@@ -344,7 +344,7 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
             fqdns = set(args.hostname[ii:ii+INDIV_HOSTS_CHUNK_SIZE]).difference(found)
             if not fqdns:
                 continue # All of the hosts in the subset found by filters above
-            query = " or ".join(map(lambda x: "name=%s" % x, fqdns))
+            query = " or ".join(["name=%s" % x for x in fqdns])
             try:
                 data.extend(foreman.search_query("hosts", query))
             except AiToolsForemanError, error:
