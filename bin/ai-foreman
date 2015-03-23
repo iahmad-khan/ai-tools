@@ -387,7 +387,7 @@ def main():
 
     try:
         args.krb_principal = verify_kerberos_environment()
-    except AiToolsInitError, error:
+    except AiToolsInitError:
         logging.error("TGT not found or expired. Exiting...")
         return 4
 
