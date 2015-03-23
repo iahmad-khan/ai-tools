@@ -80,6 +80,8 @@ def parse_cmdline_args():
         help="Equivalent to -f hostgroup_fullname ~ foo.")
     filter_group.add_argument('--only-error', action='store_true',
         help="Selects only hosts in error state.")
+    filter_group.add_argument('--only-oos', action='store_true',
+        help="Selects only hosts which are out of sync.")
     parser.add_argument('-s', '--sort', type=str,
         choices=SUMMARY_TABLE_FIELDS,
         default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
@@ -301,7 +303,7 @@ def updatehost(foreman, args):
     if args.after:
         logging.info("Refetching hosts. This may take a while...")
         args.filter = args.hg = args.hl = None
-        args.only_errors = False
+        args.only_errors = args.only_oos = False
         args.hostname = [host['name'] for host in data]
         showhost(foreman, args)
 
@@ -322,6 +324,9 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
     if args.only_error:
         args.filter = ("last_report > \"1505 minutes ago\" and (status.failed > 0"
             " or status.failed_restarts > 0)")
+
+    if args.only_oos:
+        args.filter = "last_report < \"1505 minutes ago\" and status.enabled = true"
 
     if args.filter:
         logging.debug("Searching for hosts matching '%s'" % args.filter)

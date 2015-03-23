@@ -31,7 +31,8 @@ done
 
 echo "Arguments"
 _expect 2 ai-foreman --config $CONF -g foo -l foo showhost
-_expect 2 ai-foreman --config $CONF --only-error -f "foo" foo showhost
+_expect 2 ai-foreman --config $CONF --only-error -f "foo" howhost
+_expect 2 ai-foreman --config $CONF --only-error --only-oos foo showhost
 _expect 2 ai-foreman --config $CONF addhost showhost aifcliftest16.cern.ch
 _expect 2 ai-foreman --config $CONF -z Fail showhost aifcliftest16.cern.ch
 _expect 2 ai-foreman --config $CONF -s Fail showhost aifcliftest16.cern.ch
