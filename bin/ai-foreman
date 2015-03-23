@@ -200,16 +200,16 @@ def addhost(foreman, args):
             try:
                 foreman.delhost(record['fqdn'])
             except AiToolsForemanError, error:
-                logging.warn("Failed to delete '%s': %s (will continue)" \
-                    % (record['fqdn'], error))
+                logging.warn("Failed to delete '%s': %s (will continue)",
+                    record['fqdn'], error)
 
         if any(record[f] is None for f in basefieldnames):
             errors = True
-            logging.warn("Line %d is malformed" % count)
+            logging.warn("Line %d is malformed", count)
             continue
 
         try:
-            logging.debug("Adding '%s'" % record['fqdn'])
+            logging.debug("Adding '%s'", record['fqdn'])
             foreman.addhost(fqdn=record['fqdn'],
                 environment=args.environment,
                 hostgroup=args.hostgroup,
@@ -224,7 +224,7 @@ def addhost(foreman, args):
                 mac=record['mac'].replace('-', ':'))
         except AiToolsForemanError, error:
             errors = True
-            logging.error("Couldn't add '%s': %s" % (record['fqdn'], error))
+            logging.error("Couldn't add '%s': %s", record['fqdn'], error)
             continue
 
         if all(record[f] is not None for f in ipmi_fieldnames):
@@ -234,8 +234,8 @@ def addhost(foreman, args):
                     record['i_user'], record['i_pass'])
             except (socket.gaierror, AiToolsForemanError), error:
                 errors = True
-                logging.error("Couldn't add %s's IPMI iface': %s" % \
-                    (record['fqdn'], error))
+                logging.error("Couldn't add %s's IPMI iface': %s",
+                    record['fqdn'], error)
 
     return 1 if errors else 0
 
@@ -253,10 +253,10 @@ def delhost(foreman, args):
     for host in data:
         try:
             foreman.delhost(host['name'])
-            logging.info("Host %s deleted" % host['name'])
+            logging.info("Host %s deleted", host['name'])
         except AiToolsForemanError, error:
             errors = True
-            logging.warn("Failed to delete '%s': %s" % (host['name'], error))
+            logging.warn("Failed to delete '%s': %s", host['name'], error)
 
     return 1 if errors else 0
 
@@ -278,7 +278,7 @@ def updatehost(foreman, args):
         logging.warn(error)
         return
 
-    logging.info("The following %d host(s) will be updated:" % len(data))
+    logging.info("The following %d host(s) will be updated:", len(data))
     print_summary_table_from_data(args, data)
 
     candidates = [x['long'].replace('--', '') for x in COMMON_MODEL_OPTIONS]
@@ -299,10 +299,10 @@ def updatehost(foreman, args):
     # Apparently there's no clean way to get the number of rows :/
     if len(errors_table._rows) > 0:
         errors = True
-        logging.warn(T_RED % "Some hosts failed to update:")
+        logging.warn(T_RED, "Some hosts failed to update:")
         print errors_table.get_string()
     else:
-        logging.info(T_GREEN % "All hosts were successfully updated :)")
+        logging.info(T_GREEN, "All hosts were successfully updated :)")
 
     if args.after:
         logging.info("Refetching hosts. This may take a while...")
@@ -333,12 +333,12 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
         args.filter = "last_report < \"1505 minutes ago\" and status.enabled = true"
 
     if args.filter:
-        logging.debug("Searching for hosts matching '%s'" % args.filter)
+        logging.debug("Searching for hosts matching '%s'", args.filter)
         data.extend(foreman.search_query("hosts", args.filter))
 
     if args.hostname:
         found = set([host['name'] for host in data])
-        logging.debug("Gathering information for: %s" % ", ".join(args.hostname))
+        logging.debug("Gathering information for: %s", ", ".join(args.hostname))
         for ii in xrange(0, len(args.hostname), INDIV_HOSTS_CHUNK_SIZE):
             fqdns = set(args.hostname[ii:ii+INDIV_HOSTS_CHUNK_SIZE]).difference(found)
             if not fqdns:
@@ -347,7 +347,7 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
             try:
                 data.extend(foreman.search_query("hosts", query))
             except AiToolsForemanError, error:
-                logging.warn(T_RED % error)
+                logging.warn(T_RED, error)
 
     if not data:
         raise AiToolsAiForemanError("Nothing to do after processing all search filters :/")
