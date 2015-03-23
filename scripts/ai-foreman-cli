@@ -41,6 +41,13 @@ sub CertMgrStageHostname($);
 sub RogerModifyAlarms($$$);
 sub SetBuild(@);
 
+use Term::ANSIColor;
+print color 'bold red';
+print "This CLI will disappear soon, please use the following instead:\n";
+print "\t - ai-foreman: for CRUD operations (showhost, updatehost...)\n";
+print "\t - ai-installhost: to prepare hosts for installation.\n";
+print color 'reset';
+
 HelpMessage("No arguments given.") if not @ARGV;
 
 my $debug = my $verbose = my $dryrun = 0;
