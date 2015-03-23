@@ -99,7 +99,7 @@ def parse_cmdline_args():
         help="Don't show table headers")
     parser.add_argument('--no-color',
         action="store_true",
-        help="Switch colorized outputs off")
+        help="Switch colourised outputs off")
 
     foreman_config = ForemanConfig()
     foreman_config.add_standard_args(parser)
