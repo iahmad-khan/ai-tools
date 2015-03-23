@@ -27,6 +27,7 @@ from aitools.config import ForemanConfig
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
 from aitools.common import append_domain
+from aitools.common import print_progress_meter
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsAiForemanError
@@ -283,19 +284,19 @@ def updatehost(foreman, args):
     for count, host in enumerate(data):
         try:
             foreman.updatehost(host['name'], **to_update)
-            print_progress(count, len(data))
+            print_progress_meter(count, len(data))
         except AiToolsForemanError, error:
             errors_table.add_row([host['name'], error])
 
-    print_progress(len(data), len(data))
+    print_progress_meter(1, 1, new_line=True)
 
     # Apparently there's no clean way to get the number of rows :/
     if len(errors_table._rows) > 0:
         errors = True
-        logging.warn(T_RED % "\nSome hosts failed to update:")
+        logging.warn(T_RED % "Some hosts failed to update:")
         print errors_table.get_string()
     else:
-        logging.info(T_GREEN % "\nAll hosts were successfully updated :)")
+        logging.info(T_GREEN % "All hosts were successfully updated :)")
 
     if args.after:
         logging.info("Refetching hosts. This may take a while...")
@@ -366,11 +367,6 @@ def print_summary_table_from_data(args, data):
 
     print table.get_string(sortby=args.sort,
         fields=SUMMARY_TABLE_SHOWN_FIELDS)
-
-def print_progress(count, total):
-    progress = int((float(count)/total)*100)
-    sys.stdout.write("\rIn progress... %d%% done" % progress)
-    sys.stdout.flush()
 
 def main():
     """Application entrypoint"""

@@ -15,10 +15,15 @@ from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
 from aitools.errors import AiToolsForemanNotAllowedError
+from aitools.common import print_progress_meter
 from aitools.httpclient import HTTPClient
 from aitools.config import ForemanConfig
 from distutils.util import strtobool
 from aitools.common import deref_url
+
+# This is the number of pages that have to be retrieved
+# by search_query to consider the query "expensive".
+EXP_THOLD = 4
 
 class ForemanClient(HTTPClient):
 
@@ -609,18 +614,25 @@ class ForemanClient(HTTPClient):
         query_string = urllib.urlencode({'search': search_string})
         page = 1
         results = []
+        expensive_query = False
         while page == 1 or page <= math.ceil(payload['subtotal']/float(payload['per_page'])):
             url = "%s/?%s&page=%d" % (model, query_string, page)
             (code, payload) = self.__do_api_request("get", url)
             if code == requests.codes.ok:
-                if page == 1 and payload['subtotal'] > 4 * payload['per_page']:
-                    logging.warn("Crikey! expensive query, this might take a while...")
+                if page == 1 and payload['subtotal'] > EXP_THOLD * payload['per_page']:
+                    logging.warn("Crikey! That's an expensive query! this might take a while...")
+                    expensive_query = True
+                if expensive_query:
+                    print_progress_meter(page,
+                        math.ceil(payload['subtotal']/float(payload['per_page'])))
                 results.extend(payload['results'])
                 page = page + 1
             else:
                 msg = "Foreman didn't return a controlled status code when looking up %s" \
                     % model
                 raise AiToolsForemanError(msg)
+        if expensive_query:
+            print_progress_meter(1, 1, new_line=True)
         return results
 
     def __do_api_request(self, method, url, data=None, prefix="api/"):
