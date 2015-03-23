@@ -225,6 +225,7 @@ def addhost(foreman, args):
         except AiToolsForemanError, error:
             errors = True
             logging.error("Couldn't add '%s': %s" % (record['fqdn'], error))
+            continue
 
         if all(record[f] is not None for f in ipmi_fieldnames):
             try:
