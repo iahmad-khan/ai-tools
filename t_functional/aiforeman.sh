@@ -51,6 +51,7 @@ _expect 0 ai-foreman --config $CONF addhost -c playground/ibarrien/test1 -e qa \
 
 echo "Showhost..."
 _expect 0 ai-foreman --config $CONF showhost aifcliftest16.cern.ch
+_expect 0 ai-foreman --config $CONF --no-header showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF -g playground/ibarrien/test1 showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF --longtable -g playground/ibarrien/test1 showhost
 _expect 0 ai-foreman --config $CONF -z Name -z Environment -g playground/ibarrien/test1 showhost

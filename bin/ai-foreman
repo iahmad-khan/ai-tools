@@ -94,6 +94,9 @@ def parse_cmdline_args():
     table_group.add_argument('-z', '--field', type=str,
         help="Foreman parameter", action='append',
         choices=SUMMARY_TABLE_FIELDS, default=[])
+    parser.add_argument('--no-header',
+        action="store_true",
+        help="Don't show table headers")
     parser.add_argument('--no-color',
         action="store_true",
         help="Switch colorized outputs off")
@@ -370,7 +373,7 @@ def print_summary_table_from_data(args, data):
             host['comment'],
             last_report])
 
-    print table.get_string(sortby=args.sort,
+    print table.get_string(sortby=args.sort, header=not args.no_header,
         fields=SUMMARY_TABLE_SHOWN_FIELDS)
 
 def main():
