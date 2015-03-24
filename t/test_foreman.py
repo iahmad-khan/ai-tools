@@ -80,6 +80,34 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('get', full_uri("environments/2"), ANY, None)
 
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.OK,
+            [{"name":"production","id":16,"full":"production 1"},
+            {"name":"production","id":17,"full":"production 2"}],
+            meta=True))
+    def test_resolve_model_id_multiple_results(self, mock_client):
+        self.assertRaises(AiToolsForemanError,\
+            self.client._ForemanClient__resolve_model_id,
+            "environment", "production")
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get',
+                full_uri("environments/?search=%s&page=1" %
+                    urllib.quote('name="production"')), ANY, None)
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.OK,
+            [{"name":"production","id":16,"full":"production_1"},
+            {"name":"production","id":17,"full":"production_2"}],
+            meta=True))
+    def test_resolve_model_id_multiple_results_with_filter(self, mock_client):
+        idd =self.client._ForemanClient__resolve_model_id("environment",
+            "production", results_filter=lambda x: x['full'] == "production_1")
+        self.assertEquals(idd, 16)
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get',
+                full_uri("environments/?search=%s&page=1" %
+                    urllib.quote('name="production"')), ANY, None)
+
     #### SEARCH_QUERY ####
 
     @patch.object(HTTPClient, 'do_request', side_effect=
