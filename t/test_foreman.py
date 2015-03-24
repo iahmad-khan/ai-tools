@@ -30,7 +30,7 @@ def generate_response(code, payload, meta = False, page=1, page_size=3, subtotal
         payload['page'] = 1
         # The page size
         payload['per_page'] = page_size
-    if type(payload) == str:
+    if isinstance(payload, str):
         response.text = payload
         response.headers['content-type'] = 'text/html'
     else:
