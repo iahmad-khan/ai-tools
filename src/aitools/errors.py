@@ -81,3 +81,18 @@ class AiToolsTrustedBagInternalServerError(AiToolsTrustedBagError):
 
 class AiToolsAiForemanError(AiToolsError):
     pass
+
+class AiToolsPwnError(AiToolsHTTPClientError):
+    pass
+
+class AiToolsPwnNotFoundError(AiToolsPwnError):
+    pass
+
+class AiToolsPwnNotAllowedError(AiToolsPwnError):
+    pass
+
+class AiToolsPwnNotImplementedError(AiToolsPwnError):
+    pass
+
+class AiToolsPwnInternalServerError(AiToolsPwnError):
+    pass
