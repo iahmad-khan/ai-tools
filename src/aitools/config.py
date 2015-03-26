@@ -173,3 +173,15 @@ class TrustedBagConfig(AiConfig):
         parser.add_argument('--tbag-hostname', help="Trusted bag hostname")
         parser.add_argument('--tbag-port', type=int, help="Trusted bag port")
         self.add_global_args(parser)
+
+
+class PwnConfig(AiConfig):
+
+    def _get_from_configfile(self, key, section="pwn"):
+        return super(PwnConfig, self)._get_from_configfile(key, section=section)
+
+    def add_standard_args(self, parser):
+        parser.add_argument('--pwn-timeout', type=int, help="Timeout for pwn operations")
+        parser.add_argument('--pwn-hostname', help="Pwn hostname")
+        parser.add_argument('--pwn-port', type=int, help="Pwn port")
+        self.add_global_args(parser)
