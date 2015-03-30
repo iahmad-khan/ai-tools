@@ -85,6 +85,9 @@ class ForemanClient(HTTPClient):
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['error']['full_messages'])
                 raise AiToolsForemanError("addhost call failed (%s)" % error)
+            else:
+                raise AiToolsForemanError("Unexpected error code (%i) when trying to "
+                    "add '%s' to Foreman" % (code, fqdn))
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
 
@@ -140,6 +143,9 @@ class ForemanClient(HTTPClient):
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['error']['full_messages'])
                 raise AiToolsForemanError(error)
+            else:
+                raise AiToolsForemanError("Unexpected error code (%i) when trying to "
+                    "update '%s' in Foreman" % (code, fqdn))
         else:
             logging.info("Host '%s' not updated because dryrun is enabled" % fqdn)
 
@@ -189,6 +195,9 @@ class ForemanClient(HTTPClient):
         elif code == requests.codes.unprocessable_entity:
             error = ','.join(body['error']['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)
+        else:
+            raise AiToolsForemanError("Unexpected error code (%i) when getting "
+                "'%s' from Foreman" % (code, fqdn))
 
     def getks(self, ip_address):
         """
