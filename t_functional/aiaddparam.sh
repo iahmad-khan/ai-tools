@@ -27,6 +27,8 @@ _expect 0 ai-add-param --hg playground/ibarrien foo bar
 _expect 0 ai-add-param --hg playground/ibarrien foo bar
 _expect 0 ai-add-param --hg playground/ibarrien foo bar2
 _expect 0 ai-add-param nachodev03.cern.ch foo2 bar2
+_expect 0 ai-add-param nachodev03.cern.ch foo2 bar2
+_expect 0 ai-add-param nachodev03.cern.ch foo2 bar3
 
 echo "Tearing down..."
 rm -f $IN $CONF
