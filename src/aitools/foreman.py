@@ -337,7 +337,7 @@ class ForemanClient(HTTPClient):
 
         (code, body) = self.__do_api_request("get", "hostgroups/%s/parameters" % hgid)
         if code == requests.codes.ok:
-            params = body
+            params = body['results']
             return params
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Hostgroup '%s' not found in Foreman" % hostgroup)
