@@ -508,3 +508,21 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_has_calls([
             call('get', full_uri("hosts/foo.cern.ch/interfaces"), ANY, None)])
+
+    #### PARAMETERS STUFF ####
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        return_value=2)
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.OK,
+                [{"name":"foo","id":1,"value":"bar"}],
+                meta=True, page=1, page_size=5, subtotal=2),
+        ])
+    def test_gethostgroupparameters_ok(self, *args):
+        results = self.client.gethostgroupparameters("hg/1")
+        self.assertEquals(len(results), 1)
+        self.assertEquals(results[0]['name'], 'foo')
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls([
+            call('get', full_uri("hostgroups/2/parameters"), ANY, None)])
