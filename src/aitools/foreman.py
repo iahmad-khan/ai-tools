@@ -7,8 +7,6 @@ import socket
 import urllib
 import re
 import requests
-import pytz
-import datetime
 import math
 
 from aitools.errors import AiToolsHTTPClientError
@@ -18,7 +16,6 @@ from aitools.errors import AiToolsForemanNotAllowedError
 from aitools.common import print_progress_meter
 from aitools.httpclient import HTTPClient
 from aitools.config import ForemanConfig
-from distutils.util import strtobool
 from aitools.common import deref_url
 
 # This is the number of pages that have to be retrieved
