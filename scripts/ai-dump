@@ -19,11 +19,13 @@ import textwrap
 
 from argparse import ArgumentParser
 from aitools.common import fqdnify
+from aitools.common import verify_kerberos_environment
 from aitools.completer import ForemanCompleter
 from aitools.config import ForemanConfig, PdbConfig, EncConfig, AiConfig, RogerConfig
 from aitools.pdb import PdbClient
 from aitools.enc import EncClient
 from aitools.errors import AiToolsPdbError, AiToolsEncError
+from aitools.errors import AiToolsInitError
 from aitools.common import deref_url
 
 def location_name(lan_dblocation):
@@ -230,6 +232,12 @@ def host_main(pargs):
 
 def main():
     parser = ArgumentParser(description="Dump information about a host")
+
+    try:
+        krb_principal = verify_kerberos_environment()
+    except AiToolsInitError, error:
+        print "TGT not found or expired. Exiting..."
+        return 4
 
     foreman_config = ForemanConfig()
     foreman_config.add_standard_args(parser)
