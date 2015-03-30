@@ -429,7 +429,7 @@ class ForemanClient(HTTPClient):
           code, response = self.__do_api_request('get',
             "hosts/%s/interfaces" % (fqdn))
           if code == requests.codes.ok:
-            for interface in response:
+            for interface in response['results']:
                 if interface['name'][-13:] == "-ipmi.cern.ch":
                     return interface['id']
             return None
