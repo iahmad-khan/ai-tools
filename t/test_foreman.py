@@ -526,3 +526,17 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_has_calls([
             call('get', full_uri("hostgroups/2/parameters"), ANY, None)])
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        return_value=2)
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.OK, [],
+                meta=True, page=1, page_size=5, subtotal=0),
+        ])
+    def test_gethostgroupparameters_zero(self, *args):
+        results = self.client.gethostgroupparameters("hg/1")
+        self.assertEquals(len(results), 0)
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls([
+            call('get', full_uri("hostgroups/2/parameters"), ANY, None)])
