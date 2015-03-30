@@ -479,3 +479,32 @@ class TestForemanClient(unittest.TestCase):
         self.assertRaises(AiToolsForemanNotFoundError, self.client.delhost, 'foo.cern.ch')
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('delete', full_uri('hosts/foo.cern.ch'), ANY, None)
+
+    #### IPMI STUFF ####
+
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.OK,
+                [{"name":"foo-ipmi.cern.ch","id":1,"type":"Nic::BMC",
+                "provider": "IPMI"}],
+                meta=True, page=1, page_size=5, subtotal=2),
+        ])
+    def test_get_ipmi_interface_id_ok(self, mock_client):
+        results = self.client.get_ipmi_interface_id("foo.cern.ch")
+        self.assertEquals(results, 1)
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls([
+            call('get', full_uri("hosts/foo.cern.ch/interfaces"), ANY, None)])
+
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.OK,
+                [],
+                meta=True, page=1, page_size=5, subtotal=0),
+        ])
+    def test_get_ipmi_interface_id_empty(self, mock_client):
+        results = self.client.get_ipmi_interface_id("foo.cern.ch")
+        self.assertEquals(results, None)
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls([
+            call('get', full_uri("hosts/foo.cern.ch/interfaces"), ANY, None)])
