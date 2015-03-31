@@ -540,3 +540,28 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_has_calls([
             call('get', full_uri("hostgroups/2/parameters"), ANY, None)])
+
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.OK,
+                {"name":"foo","id":1,"value":"bar"}, meta=False),
+        ])
+    def test_getaddhostparameter_ok(self, *args):
+        self.client.addhostparameter('foo.cern.ch', 'a', 'b')
+        expected = '{"parameter": {"name": "a", "value": "b"}}'
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls([
+            call('post', full_uri("hosts/foo.cern.ch/parameters"), ANY, expected)])
+
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.NOT_FOUND,
+                {"error": {"message": "foo"}}, meta=False),
+        ])
+    def test_getaddhostparameter_host_not_found(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.addhostparameter,
+            'foo.cern.ch', 'a', 'b')
+        expected = '{"parameter": {"name": "a", "value": "b"}}'
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls([
+            call('post', full_uri("hosts/foo.cern.ch/parameters"), ANY, expected)])
