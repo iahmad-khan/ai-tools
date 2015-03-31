@@ -39,38 +39,38 @@ _expect 2 ai-foreman --config $CONF -s Fail showhost aifcliftest16.cern.ch
 _expect 2 ai-foreman --config $CONF -z Name --longtable showhost aifcliftest16.cern.ch
 
 echo "Addhost..."
-_expect 0 ai-foreman --config $CONF addhost -c playground/ibarrien/test1 -e qa \
+_expect 0 ai-foreman --config $CONF addhost -c playground/aitoolstest/test1 -e qa \
   -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -r -i $IN
 echo "aifcliftest100.cern.ch 192.168.0.100" > $IN
-_expect 1 ai-foreman --config $CONF addhost -c playground/ibarrien/test1 -e qa \
+_expect 1 ai-foreman --config $CONF addhost -c playground/aitoolstest/test1 -e qa \
   -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -r -i $IN
 echo "aifcliftest101.cern.ch 192.168.0.101 aa:bb:cc:dd:ee:fa fail" > $IN
 # If the IPMI interface data is wrong then we ignore it
-_expect 0 ai-foreman --config $CONF addhost -c playground/ibarrien/test1 -e qa \
+_expect 0 ai-foreman --config $CONF addhost -c playground/aitoolstest/test1 -e qa \
   -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -r -i $IN
 
 echo "Showhost..."
 _expect 0 ai-foreman --config $CONF showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF --no-header showhost aifcliftest16.cern.ch
-_expect 0 ai-foreman --config $CONF -g playground/ibarrien/test1 showhost aifcliftest16.cern.ch
-_expect 0 ai-foreman --config $CONF --longtable -g playground/ibarrien/test1 showhost
-_expect 0 ai-foreman --config $CONF -z Name -z Environment -g playground/ibarrien/test1 showhost
-_expect 0 ai-foreman --config $CONF -z Name -z Environment -s Environment -g playground/ibarrien/test1 showhost
+_expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test1 showhost aifcliftest16.cern.ch
+_expect 0 ai-foreman --config $CONF --longtable -g playground/aitoolstest/test1 showhost
+_expect 0 ai-foreman --config $CONF -z Name -z Environment -g playground/aitoolstest/test1 showhost
+_expect 0 ai-foreman --config $CONF -z Name -z Environment -s Environment -g playground/aitoolstest/test1 showhost
 
 echo "Updatehost..."
 _expect 0 ai-foreman --config $CONF updatehost -e production aifcliftest16.cern.ch
 _expect 1 ai-foreman --config $CONF updatehost --mac foo aifcliftest16.cern.ch
 _expect 1 ai-foreman --config $CONF updatehost -o "\"CentOS 7.0\"" \
   aifcliftest17.cern.ch
-_expect 0 ai-foreman --no-color --config $CONF updatehost -o "\"CentOS 7.0\"" \
+_expect 0 ai-foreman --config $CONF updatehost -o "\"CentOS 7.0\"" \
   -m "\"CentOS mirror\"" aifcliftest17.cern.ch
-_expect 0 ai-foreman --config $CONF -g playground/ibarrien/test1 updatehost \
-  -e production -c playground/ibarrien/test2
-_expect 0 ai-foreman --config $CONF -g playground/ibarrien/test2 showhost
+_expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test1 updatehost \
+  -e production -c playground/aitoolstest/test2
+_expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test2 showhost
 
 echo "Delhost..."
 _expect 0 ai-foreman --config $CONF delhost  aifcliftest16.cern.ch
-_expect 0 ai-foreman --config $CONF -g playground/ibarrien/test2 delhost
+_expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test2 delhost
 
 echo "Tearing down..."
 rm -f $IN $CONF
