@@ -74,3 +74,4 @@ _expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test2 delhost
 
 echo "Tearing down..."
 rm -f $IN $CONF
+echo "All tests passed :)"
