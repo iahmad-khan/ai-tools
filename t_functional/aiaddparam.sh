@@ -30,4 +30,5 @@ _expect 0 ai-add-param nachodev03.cern.ch foo2 bar2
 _expect 0 ai-add-param nachodev03.cern.ch foo2 bar3
 
 echo "Tearing down..."
-rm -f $IN $CONF
+rm -f $CONF
+echo "All tests passed :)"
