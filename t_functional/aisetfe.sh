@@ -21,6 +21,7 @@ function _expect {
 _expect 0 ai-set-fe --hostgroup playground/aitoolstest \"Configuration Management\"
 _expect 3 ai-set-fe --hostgroup playground/aitoolstest \"This will never exist\"
 _expect 0 ai-set-fe --hostgroup playground/aitoolstest Ignore
+_expect 4 ai-set-fe --hostgroup hope/this/will/never/exist Ignore
 
 echo "Tearing down..."
 rm -f $CONF
