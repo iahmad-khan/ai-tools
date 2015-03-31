@@ -1,7 +1,4 @@
 import unittest
-import sys
-import os
-import re
 import requests
 import json
 import urllib
@@ -11,7 +8,6 @@ from mock import Mock, patch, ANY, call
 from aitools.foreman import ForemanClient
 from aitools.httpclient import HTTPClient
 from aitools.errors import AiToolsForemanError
-from aitools.errors import AiToolsForemanNotAllowedError
 from aitools.errors import AiToolsForemanNotFoundError
 
 TEST_HOST='localhost'
