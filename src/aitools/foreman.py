@@ -222,6 +222,9 @@ class ForemanClient(HTTPClient):
             # can be resolved
             raise AiToolsForemanError("Kickstart for host with IP '%s'"
                 " not found in Foreman" % ip_address)
+        else:
+            raise AiToolsForemanError("Error code '%i' received when trying to "
+                "get a KS for '%s' from Foreman" % (code, ip_address))
 
     def getfacts(self, fqdn):
         """
@@ -242,6 +245,9 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanNotFoundError("Host '%s' (or facts) not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
             raise AiToolsForemanError("getfacts call failed (Unprocessable entity)")
+        else:
+            raise AiToolsForemanError("Error code '%i' received when trying to "
+                "get facts for host '%s'' Foreman" % (code, fqdn))
 
     def renamehost(self, oldfqdn, newfqdn):
         """

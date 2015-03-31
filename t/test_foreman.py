@@ -35,8 +35,9 @@ def generate_response(code, payload, meta = False, page=1, page_size=3, subtotal
     response.json = Mock(return_value=payload)
     return (code, response)
 
-def full_uri(path):
-    return "https://%s:%s/api/%s" % (TEST_HOST, TEST_PORT, path)
+def full_uri(path, api=True):
+    prefix = "api/" if api else ""
+    return "https://%s:%s/%s%s" % (TEST_HOST, TEST_PORT, prefix, path)
 
 class TestForemanClient(unittest.TestCase):
 
@@ -561,3 +562,34 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_has_calls([
             call('post', full_uri("hosts/foo.cern.ch/parameters"), ANY, expected)])
+
+    #### GETKS ####
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.internal_server_error, []))
+    def test_getks_uncontrolled_status_code(self, *args):
+        ip = "127.0.0.1"
+        self.assertRaises(AiToolsForemanError, self.client.getks, ip_address=ip)
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get',
+                full_uri("unattended/provision?spoof=%s" % ip, api=False), ANY, ANY)
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.not_found, []))
+    def test_getks_not_found(self, *args):
+        ip = "127.0.0.1"
+        self.assertRaises(AiToolsForemanError, self.client.getks, ip_address=ip)
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get',
+                full_uri("unattended/provision?spoof=%s" % ip, api=False), ANY, ANY)
+
+    #### GETFACTS ####
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.internal_server_error, []))
+    def test_getfacts_uncontrolled_status_code(self, *args):
+        fqdn = "foo.cern.ch"
+        self.assertRaises(AiToolsForemanError, self.client.getfacts, fqdn=fqdn)
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get',
+                full_uri("hosts/%s/facts/?per_page=500" % fqdn), ANY, ANY)
