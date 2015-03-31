@@ -55,8 +55,13 @@ COMMON_MODEL_OPTIONS = [
      'help': "Host's operating system medium name"},
 ]
 INDIV_HOSTS_CHUNK_SIZE = 10
-T_GREEN = "\033[1;92m%s\033[00m"
-T_RED = "\033[01;91m%s\033[00m"
+
+FS_GREEN = "\033[1;92m%s\033[00m"
+FS_RED = "\033[01;91m%s\033[00m"
+FS_NOCOLOR = "%s"
+
+COLOR_MAP = {'SUCCESS': FS_GREEN,
+    'FAILURE': FS_RED}
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -300,10 +305,10 @@ def updatehost(foreman, args):
     # Apparently there's no clean way to get the number of rows :/
     if len(errors_table._rows) > 0:
         errors = True
-        logging.warn(T_RED, "Some hosts failed to update:")
+        logging.warn(COLOR_MAP['FAILURE'], "Some hosts failed to update:")
         print errors_table.get_string()
     else:
-        logging.info(T_GREEN, "All hosts were successfully updated :)")
+        logging.info(COLOR_MAP['SUCCESS'], "All hosts were successfully updated :)")
 
     if args.after:
         logging.info("Refetching hosts. This may take a while...")
@@ -348,7 +353,7 @@ def get_hosts_by_filter_and_explicit_list(foreman, args):
             try:
                 data.extend(foreman.search_query("hosts", query))
             except AiToolsForemanError, error:
-                logging.warn(T_RED, error)
+                logging.warn(COLOR_MAP['FAILURE'], error)
 
     if not data:
         raise AiToolsAiForemanError("Nothing to do after processing all search filters :/")
@@ -396,8 +401,7 @@ def main():
         deref_alias=args.dereference_alias)
 
     if args.no_color:
-        global T_GREEN, T_RED
-        T_GREEN = T_RED = "%s"
+        COLOR_MAP['SUCCESS'] = COLOR_MAP['FAILURE'] = FS_NOCOLOR
 
     return globals()[args.subcommand](foreman, args)
 

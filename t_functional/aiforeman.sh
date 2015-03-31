@@ -62,7 +62,7 @@ _expect 0 ai-foreman --config $CONF updatehost -e production aifcliftest16.cern.
 _expect 1 ai-foreman --config $CONF updatehost --mac foo aifcliftest16.cern.ch
 _expect 1 ai-foreman --config $CONF updatehost -o "\"CentOS 7.0\"" \
   aifcliftest17.cern.ch
-_expect 0 ai-foreman --config $CONF updatehost -o "\"CentOS 7.0\"" \
+_expect 0 ai-foreman --no-color --config $CONF updatehost -o "\"CentOS 7.0\"" \
   -m "\"CentOS mirror\"" aifcliftest17.cern.ch
 _expect 0 ai-foreman --config $CONF -g playground/ibarrien/test1 updatehost \
   -e production -c playground/ibarrien/test2
