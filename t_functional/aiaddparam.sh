@@ -22,7 +22,6 @@ function _expect {
 }
 
 
-echo "Addhost..."
 _expect 0 ai-add-param --hg playground/aitoolstest foo bar
 _expect 0 ai-add-param --hg playground/aitoolstest foo bar
 _expect 0 ai-add-param --hg playground/aitoolstest foo bar2
