@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 8.13
+Version: 9.0
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -83,6 +83,12 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Apr 01 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.0-1
+- [ai-foreman] New!
+- [ai-add-param] New!
+- [ai-bs-vm] Use /etc/sysconfig/puppet no matter what OS is being installed
+- [ai-dump] Check if there's a Krb ticket
+
 * Tue Mar 03 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 8.13-1
 - [ai-bs-vm] Make sure background runs use batch on CC7.
 
