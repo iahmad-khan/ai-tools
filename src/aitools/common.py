@@ -2,6 +2,7 @@
 #  Nacho Barrientos <nacho.barrientos@cern.ch>
 
 import os
+import sys
 import re
 import logging
 import hashlib
@@ -209,3 +210,9 @@ def generator_device_names():
     while ord(value) <= ord('z'):
         yield 'vd' + value
         value = chr(ord(value) + 1)
+
+def print_progress_meter(count, total, new_line=False):
+    progress = int((float(count)/total)*100)
+    term = "\n" if new_line else ""
+    sys.stdout.write("\rIn progress... %d%% done%s" % (progress, term))
+    sys.stdout.flush()

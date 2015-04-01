@@ -1,0 +1,409 @@
+#!/usr/bin/env python
+# This is a command line client to do CRUD operations
+# on Foreman entries. It's meant to fully cover the
+# functionality of its predecessor (ai-foreman-cli).
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
+# Exit codes:
+#   0 all operations succeeded
+#   2 bad command line
+#   4 Kerberos TGT not found or expired
+
+import sys
+import logging
+import argparse
+import argcomplete
+import csv
+import socket
+import datetime
+from dateutil import tz
+from dateutil import parser as duparser
+from prettytable import PrettyTable
+
+from aitools.foreman import ForemanClient
+from aitools.config import ForemanConfig
+
+from aitools.common import configure_logging
+from aitools.common import verify_kerberos_environment
+from aitools.common import append_domain
+from aitools.common import print_progress_meter
+
+from aitools.errors import AiToolsInitError, AiToolsForemanError
+from aitools.errors import AiToolsAiForemanError
+
+from aitools.completer import ForemanCompleter
+
+SUMMARY_TABLE_FIELDS = ['Name', 'Hostgroup', 'Environment',
+                        'OS', 'Arch', 'Model', 'Ptable',
+                        'Comment', 'Last Report']
+SUMMARY_TABLE_SHOWN_FIELDS = ['Name', 'Hostgroup',
+                              'Environment', 'OS']
+SUMMARY_TABLE_DEFAULT_SORT_KEY = 'Name'
+COMMON_MODEL_OPTIONS = [
+    {'short': '-e', 'long': '--environment',
+     'help': "Host's environment"},
+    {'short': '-c', 'long': '--hostgroup',
+     'help': "Host's hostgroup"},
+    {'short': '-a', 'long': '--architecture',
+     'help': "Host's architecture"},
+    {'short': '-p', 'long': '--ptable',
+     'help': "Host's partition table"},
+    {'short': '-o', 'long': '--operatingsystem',
+     'help': "Host's operating system name"},
+    {'short': '-m', 'long': '--medium',
+     'help': "Host's operating system medium name"},
+]
+INDIV_HOSTS_CHUNK_SIZE = 10
+
+FS_GREEN = "\033[1;92m%s\033[00m"
+FS_RED = "\033[01;91m%s\033[00m"
+FS_NOCOLOR = "%s"
+
+COLOR_MAP = {'SUCCESS': FS_GREEN,
+    'FAILURE': FS_RED}
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser()
+
+    ##
+    ## Common options
+    ##
+
+    parser.add_argument('-v', '--verbose',
+        action="store_true",
+        help="Be chatty")
+    parser.add_argument('-d', '--dryrun',
+        action="store_true",
+        help="Don't execute actions that alter data")
+    filter_group = parser.add_mutually_exclusive_group()
+    filter_group.add_argument('-f', '--filter', type=str,
+        help="Host discovery based on a Foreman search filter")
+    filter_group.add_argument('-g', '--hg', type=str,
+        help="Equivalent to -f hostgroup_fullname = foo.")
+    filter_group.add_argument('-l', '--hl', type=str,
+        help="Equivalent to -f hostgroup_fullname ~ foo.")
+    filter_group.add_argument('--only-error', action='store_true',
+        help="Selects only hosts in error state.")
+    filter_group.add_argument('--only-oos', action='store_true',
+        help="Selects only hosts which are out of sync.")
+    parser.add_argument('-s', '--sort', type=str,
+        choices=SUMMARY_TABLE_FIELDS,
+        default=SUMMARY_TABLE_DEFAULT_SORT_KEY,
+        help="Field name to sort by (default: '%s')" % \
+            SUMMARY_TABLE_DEFAULT_SORT_KEY)
+    table_group = parser.add_mutually_exclusive_group()
+    table_group.add_argument('--longtable',
+        action="store_true",
+        help="Shows more information on the summary tables")
+    table_group.add_argument('-z', '--field', type=str,
+        help="Foreman parameter", action='append',
+        choices=SUMMARY_TABLE_FIELDS, default=[])
+    parser.add_argument('--no-header',
+        action="store_true",
+        help="Don't show table headers")
+    parser.add_argument('--no-color',
+        action="store_true",
+        help="Switch colourised outputs off")
+
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+
+    subparsers = parser.add_subparsers(dest="subcommand")
+
+    ##
+    ## Addhost
+    ##
+
+    addhost_parser = subparsers.add_parser('addhost',
+        help="Adds hosts")
+    for option in COMMON_MODEL_OPTIONS:
+        addhost_parser.add_argument(option['short'], option['long'],
+            type=str, help=option['help'], required=True)
+    addhost_parser.add_argument('--comment', type=str,
+        help="Host's comment", default=None)
+    addhost_parser.add_argument('-r', '--reset',
+        help="Delete before create", action='store_true')
+    addhost_parser.add_argument('-i', '--input', nargs='?',
+        type=argparse.FileType('r'), default=sys.stdin)
+
+    ##
+    ## Delhost
+    ##
+
+    delhost_parser = subparsers.add_parser('delhost',
+        help="Deletes hosts")
+    delhost_parser.add_argument('hostname', nargs='*',
+        help="Zero of more hostnames (qualified or not)").completer = \
+            ForemanCompleter()
+
+    ##
+    ## Showhost
+    ##
+
+    showhost_parser = subparsers.add_parser('showhost',
+        help="Shows information about hosts")
+    showhost_parser.add_argument('hostname', nargs='*',
+        help="Zero of more hostnames (qualified or not)").completer = \
+            ForemanCompleter()
+
+    ##
+    ## Updatehost
+    ##
+
+    updatehost_parser = subparsers.add_parser('updatehost',
+        help="Updates hosts")
+    for option in COMMON_MODEL_OPTIONS:
+        updatehost_parser.add_argument(option['short'], option['long'],
+            type=str, help=option['help'])
+    updatehost_parser.add_argument('--comment', type=str,
+        help="Host's comment", default=None)
+    updatehost_parser.add_argument('--ip', type=str,
+        help="Host's IP address", default=None)
+    updatehost_parser.add_argument('--mac', type=str,
+        help="Host's MAC address", default=None)
+    updatehost_parser.add_argument('--after',
+        help="Show summary after the update process",
+        action='store_true')
+    updatehost_parser.add_argument('hostname', nargs='*',
+        help="Zero of more hostnames (qualified or not)").completer = \
+            ForemanCompleter()
+
+    argcomplete.autocomplete(parser)
+    try:
+        args = parser.parse_args()
+    except IOError, error:
+        parser.exit(1, str(error))
+
+    # Can't use fqndify here as some Foreman entries
+    # might not have a DNS record yet. Also, stale hosts
+    # not in DNS to be deleted.
+    if hasattr(args, 'hostname'):
+        args.hostname = map(append_domain, args.hostname)
+
+    global SUMMARY_TABLE_SHOWN_FIELDS
+    if args.longtable:
+        SUMMARY_TABLE_SHOWN_FIELDS = SUMMARY_TABLE_FIELDS
+    if args.field:
+        SUMMARY_TABLE_SHOWN_FIELDS = args.field
+
+    return args
+
+##
+## Main functions, one per subparser
+##
+
+def addhost(foreman, args):
+    errors = False
+    ipmi_fieldnames = ['i_mac', 'i_user', 'i_pass']
+    basefieldnames = ['fqdn', 'ip', 'mac']
+    fieldnames = basefieldnames + ipmi_fieldnames
+    reader = csv.DictReader(args.input,
+        fieldnames=fieldnames, delimiter=' ')
+    for count, record in enumerate(reader):
+        if args.reset:
+            try:
+                foreman.delhost(record['fqdn'])
+            except AiToolsForemanError, error:
+                logging.warn("Failed to delete '%s': %s (will continue)",
+                    record['fqdn'], error)
+
+        if any(record[f] is None for f in basefieldnames):
+            errors = True
+            logging.warn("Line %d is malformed", count)
+            continue
+
+        try:
+            logging.debug("Adding '%s'", record['fqdn'])
+            foreman.addhost(fqdn=record['fqdn'],
+                environment=args.environment,
+                hostgroup=args.hostgroup,
+                owner=args.krb_principal.replace("@CERN.CH", ""),
+                managed=True,
+                operatingsystem=args.operatingsystem,
+                medium=args.medium,
+                architecture=args.architecture,
+                comment=args.comment,
+                ptable=args.ptable,
+                ip=record['ip'],
+                mac=record['mac'].replace('-', ':'))
+        except AiToolsForemanError, error:
+            errors = True
+            logging.error("Couldn't add '%s': %s", record['fqdn'], error)
+            continue
+
+        if all(record[f] is not None for f in ipmi_fieldnames):
+            try:
+                foreman.add_ipmi_interface(record['fqdn'],
+                    record['i_mac'].replace('-', ':'),
+                    record['i_user'], record['i_pass'])
+            except (socket.gaierror, AiToolsForemanError), error:
+                errors = True
+                logging.error("Couldn't add %s's IPMI iface': %s",
+                    record['fqdn'], error)
+
+    return 1 if errors else 0
+
+def delhost(foreman, args):
+    errors = False
+    try:
+        data = get_hosts_by_filter_and_explicit_list(foreman, args)
+    except AiToolsAiForemanError, error:
+        logging.warn(error)
+        return 1
+
+    logging.info("The following hosts will be deleted:")
+    print_summary_table_from_data(args, data)
+
+    for host in data:
+        try:
+            foreman.delhost(host['name'])
+            logging.info("Host %s deleted", host['name'])
+        except AiToolsForemanError, error:
+            errors = True
+            logging.warn("Failed to delete '%s': %s", host['name'], error)
+
+    return 1 if errors else 0
+
+def showhost(foreman, args):
+    try:
+        data = get_hosts_by_filter_and_explicit_list(foreman, args)
+    except AiToolsAiForemanError, error:
+        logging.warn(error)
+        return 1
+
+    print_summary_table_from_data(args, data)
+    return 0
+
+def updatehost(foreman, args):
+    errors = False
+    try:
+        data = get_hosts_by_filter_and_explicit_list(foreman, args)
+    except AiToolsAiForemanError, error:
+        logging.warn(error)
+        return 1
+
+    logging.info("The following %d host(s) will be updated:", len(data))
+    print_summary_table_from_data(args, data)
+
+    candidates = [x['long'].replace('--', '') for x in COMMON_MODEL_OPTIONS]
+    candidates.extend(['comment', 'ip', 'mac'])
+    to_update = dict([(k, getattr(args, k)) for k in candidates])
+
+    errors_table = PrettyTable(['Host', 'Error'])
+    errors_table.align = 'l'
+    for count, host in enumerate(data):
+        try:
+            foreman.updatehost(host['name'], **to_update)
+            print_progress_meter(count, len(data))
+        except AiToolsForemanError, error:
+            errors_table.add_row([host['name'], error])
+
+    print_progress_meter(1, 1, new_line=True)
+
+    # Apparently there's no clean way to get the number of rows :/
+    if len(errors_table._rows) > 0:
+        errors = True
+        logging.warn(COLOR_MAP['FAILURE'], "Some hosts failed to update:")
+        print errors_table.get_string()
+    else:
+        logging.info(COLOR_MAP['SUCCESS'], "All hosts were successfully updated :)")
+
+    if args.after:
+        logging.info("Refetching hosts. This may take a while...")
+        args.filter = args.hg = args.hl = None
+        args.only_errors = args.only_oos = False
+        args.hostname = [host['name'] for host in data]
+        showhost(foreman, args)
+
+    return 1 if errors else 0
+
+##
+## Helper functions
+##
+
+def get_hosts_by_filter_and_explicit_list(foreman, args):
+    data = []
+    if args.hg:
+        args.filter = "hostgroup_fullname = %s" % args.hg
+
+    if args.hl:
+        args.filter = "hostgroup_fullname ~ %s" % args.hl
+
+    if args.only_error:
+        args.filter = ("last_report > \"1505 minutes ago\" and (status.failed > 0"
+            " or status.failed_restarts > 0)")
+
+    if args.only_oos:
+        args.filter = "last_report < \"1505 minutes ago\" and status.enabled = true"
+
+    if args.filter:
+        logging.debug("Searching for hosts matching '%s'", args.filter)
+        data.extend(foreman.search_query("hosts", args.filter))
+
+    if args.hostname:
+        found = set([host['name'] for host in data])
+        logging.debug("Gathering information for: %s", ", ".join(args.hostname))
+        for ii in xrange(0, len(args.hostname), INDIV_HOSTS_CHUNK_SIZE):
+            fqdns = set(args.hostname[ii:ii+INDIV_HOSTS_CHUNK_SIZE]).difference(found)
+            if not fqdns:
+                continue # All of the hosts in the subset found by filters above
+            query = " or ".join(["name=%s" % x for x in fqdns])
+            try:
+                data.extend(foreman.search_query("hosts", query))
+            except AiToolsForemanError, error:
+                logging.warn(COLOR_MAP['FAILURE'], error)
+
+    if not data:
+        raise AiToolsAiForemanError("Nothing to do after processing all search filters :/")
+
+    return data
+
+def print_summary_table_from_data(args, data):
+    table = PrettyTable(SUMMARY_TABLE_FIELDS)
+    table.align = 'l'
+    unix_epoch = datetime.datetime.fromtimestamp(0, tz=tz.tzlocal())
+    for host in data:
+        last_report = unix_epoch
+        if host['last_report']:
+            last_report = duparser.parse(host['last_report'])
+        last_report = last_report.astimezone(tz.tzlocal())
+        table.add_row([
+            host['name'],
+            host['hostgroup_name'],
+            host['environment_name'],
+            host['operatingsystem_name'],
+            host['architecture_name'],
+            host['model_name'],
+            host['ptable_name'],
+            host['comment'],
+            last_report])
+
+    print table.get_string(sortby=args.sort, header=not args.no_header,
+        fields=SUMMARY_TABLE_SHOWN_FIELDS)
+
+def main():
+    """Application entrypoint"""
+    args = parse_cmdline_args()
+    fconfig = ForemanConfig()
+    fconfig.read_config_and_override_with_pargs(args)
+
+    configure_logging(args)
+
+    try:
+        args.krb_principal = verify_kerberos_environment()
+    except AiToolsInitError:
+        logging.error("TGT not found or expired. Exiting...")
+        return 4
+
+    foreman = ForemanClient(dryrun=args.dryrun,
+        deref_alias=args.dereference_alias)
+
+    if args.no_color:
+        COLOR_MAP['SUCCESS'] = COLOR_MAP['FAILURE'] = FS_NOCOLOR
+
+    return globals()[args.subcommand](foreman, args)
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -7,17 +7,20 @@ import socket
 import urllib
 import re
 import requests
-import pytz
-import datetime
+import math
 
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
 from aitools.errors import AiToolsForemanNotAllowedError
+from aitools.common import print_progress_meter
 from aitools.httpclient import HTTPClient
 from aitools.config import ForemanConfig
-from distutils.util import strtobool
 from aitools.common import deref_url
+
+# This is the number of pages that have to be retrieved
+# by search_query to consider the query "expensive".
+EXP_THOLD = 4
 
 class ForemanClient(HTTPClient):
 
@@ -39,110 +42,11 @@ class ForemanClient(HTTPClient):
         self.dryrun = dryrun
         self.deref_alias = deref_alias
         self.cache = {}
-        self._media = None
-        self._ptables = None
-        self._operatingsystems = None
-        self._architectures = None
-        self._models = None
-        self._hostgroups = None
-        self._environments = None
-        self._users = None
-        self._usergroups = None
-        self._domains = None
-        self._subnets = None
 
-    @property
-    def subnets(self):
-        if self._subnets:
-            return self._subnets
-        subnets = self.get_subnets()
-        self._subnets = dict((s["id"], s["name"]) for s in subnets)
-        return self._subnets
-
-    @property
-    def domains(self):
-        if self._domains:
-            return self._domains
-        domains = self.get_domains()
-        self._domains = dict((d["id"], d["name"]) for d in domains)
-        return self._domains
-
-    @property
-    def usergroups(self):
-        if self._usergroups:
-            return self._usergroups
-        usergroups = self.get_usergroups()
-        self._usergroups = dict((u["id"], u["name"]) for u in usergroups)
-        return self._usergroups
-
-    @property
-    def users(self):
-        if self._users:
-            return self._users
-        users = self.get_users()
-        self._users = dict((u["id"], u["login"]) for u in users)
-        return self._users
-
-    @property
-    def environments(self):
-        if self._environments:
-            return self._environments
-        environments = self.get_environments()
-        self._environments = dict((e["id"], e["name"]) for e in environments)
-        return self._environments
-
-    @property
-    def hostgroups(self):
-        if self._hostgroups:
-            return self._hostgroups
-        hostgroups = self.get_hostgroups()
-        self._hostgroups = dict((h["id"], h["title"]) for h in hostgroups)
-        return self._hostgroups
-
-    @property
-    def models(self):
-        if self._models:
-            return self._models
-        models = self.get_models()
-        self._models = dict((m["id"], m["name"]) for m in models)
-        return self._models
-
-    @property
-    def architectures(self):
-        if self._architectures:
-            return self._architectures
-        arches = self.get_architectures()
-        self._architectures = dict((a["id"], a["name"]) for a in arches)
-        return self._architectures
-
-    @property
-    def operatingsystems(self):
-        if self._operatingsystems:
-            return self._operatingsystems
-        oses = self.get_operatingsystems()
-        self._operatingsystems = dict((o["id"],
-                                       o["name"] + " " + o["major"] + "." + o["minor"])
-                                      for o in oses)
-        return self._operatingsystems
-
-    @property
-    def ptables(self):
-        if self._ptables:
-            return self._ptables
-        ptables = self.get_ptables()
-        self._ptables = dict((p["id"], p["name"]) for p in ptables)
-        return self._ptables
-
-    @property
-    def media(self):
-        # is this evil? what about exceptions in properties?
-        if self._media:
-            return self._media
-        media = self.get_media()
-        self._media = dict((m["id"], m["name"]) for m in media)
-        return self._media
-
-    def addhost(self, fqdn, environment, hostgroup, owner):
+    def addhost(self, fqdn, environment, hostgroup, owner,
+            managed=False, operatingsystem=None, medium=None,
+            architecture=None,
+            comment=None, ptable=None, mac=None, ip=None):
         """
         Add a host entry to Foreman.
 
@@ -155,9 +59,23 @@ class ForemanClient(HTTPClient):
         logging.info("Adding host '%s' to Foreman..." % fqdn)
         payload = {'managed': False, 'name': fqdn}
         payload['environment_id'] = self.__resolve_environment_id(environment)
-        payload['hostgroup_id'] = self.resolve_hostgroup_id(hostgroup)
+        payload['hostgroup_id'] = self.__resolve_hostgroup_id(hostgroup)
         payload['owner_type'] = "User"
         payload['owner_id'] = self.__resolve_user_id(owner)
+        if comment:
+            payload['comment'] = comment
+        if managed:
+            if any(f is None for f in (operatingsystem, medium,
+                architecture, ptable, mac, ip)):
+                raise AiToolsForemanError("Missing mandatory params for a managed host")
+            payload['managed'] = True
+            payload['operatingsystem_id'] = \
+                self.__resolve_operatingsystem_id(operatingsystem)
+            payload['medium_id'] = self.__resolve_medium_id(medium)
+            payload['architecture_id'] = self.__resolve_architecture_id(architecture)
+            payload['ptable_id'] = self.__resolve_ptable_id(ptable)
+            payload['ip'] = ip
+            payload['mac'] = mac
         logging.debug("With payload: %s" % payload)
 
         if not self.dryrun:
@@ -167,8 +85,69 @@ class ForemanClient(HTTPClient):
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['error']['full_messages'])
                 raise AiToolsForemanError("addhost call failed (%s)" % error)
+            else:
+                raise AiToolsForemanError("Unexpected error code (%i) when trying to "
+                    "add '%s' to Foreman" % (code, fqdn))
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
+
+    def updatehost(self, fqdn, environment=None, hostgroup=None,
+            operatingsystem=None, medium=None, architecture=None,
+            comment=None, ptable=None, mac=None, ip=None):
+        """
+        Updates a host entry in Foreman.
+
+        :param fqdn: the fqdn of the host to be modified
+        :param environment: the environment for the host ("production")
+        :param hostgroup: the hostgroup for the host ("foo/bar")
+        :param operatingsystem: the operatingsystem for the host ("SLC 6.6")
+        :param medium: the operatingsystem medium for the host ("SLC 6.6")
+        :param architecture: the architecture for the host ("x86_64")
+        :param comment: the comment for the host
+        :param ptable: the ptable for the host ("Kickstart default")
+        :param mac: the mac for the host ("11:22:33:44:55:66")
+        :param ip: the ip address for the host ("127.0.0.1")
+        ...
+        :raise AiToolsForemanError: in case the host update fails
+        """
+        logging.debug("Updating host '%s' in Foreman..." % fqdn)
+        payload = {}
+        if environment:
+            payload['environment_id'] = self.__resolve_environment_id(environment)
+        if hostgroup:
+            payload['hostgroup_id'] = self.__resolve_hostgroup_id(hostgroup)
+        if operatingsystem:
+            payload['operatingsystem_id'] = \
+                self.__resolve_operatingsystem_id(operatingsystem)
+        if medium:
+            payload['medium_id'] = self.__resolve_medium_id(medium)
+        if architecture:
+            payload['architecture_id'] = self.__resolve_architecture_id(architecture)
+        if comment:
+            payload['comment'] = comment
+        if ptable:
+            payload['ptable_id'] = self.__resolve_ptable_id(ptable)
+        if mac:
+            payload['mac'] = mac
+        if ip:
+            payload['ip'] = ip
+        logging.debug("With payload: %s" % payload)
+
+        if not self.dryrun:
+            (code, body) = self.__do_api_request("put", "hosts/%s" % fqdn,
+                data=json.dumps(payload))
+            if code == requests.codes.ok:
+                logging.debug("Host '%s' updated" % fqdn)
+            elif code == requests.codes.not_found:
+                raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
+            elif code == requests.codes.unprocessable_entity:
+                error = ','.join(body['error']['full_messages'])
+                raise AiToolsForemanError(error)
+            else:
+                raise AiToolsForemanError("Unexpected error code (%i) when trying to "
+                    "update '%s' in Foreman" % (code, fqdn))
+        else:
+            logging.info("Host '%s' not updated because dryrun is enabled" % fqdn)
 
     def delhost(self, fqdn):
         """
@@ -202,7 +181,7 @@ class ForemanClient(HTTPClient):
         :return: a parsed JSON dictionary record
         :raise AiToolsForemanError: if the query call failed or the host could not be found
         """
-        logging.info("Getting host '%s' from Foreman..." % fqdn)
+        logging.debug("Getting host '%s' from Foreman..." % fqdn)
 
         (code, body) = self.__do_api_request("get", "hosts/%s" % fqdn)
         if code == requests.codes.ok:
@@ -211,10 +190,14 @@ class ForemanClient(HTTPClient):
                     body["%s_id" % model])
             return body
         elif code == requests.codes.not_found:
-            raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
+            raise AiToolsForemanNotFoundError("Host '%s' not found or not visible "
+                "with the presented credentials" % fqdn)
         elif code == requests.codes.unprocessable_entity:
             error = ','.join(body['error']['full_messages'])
             raise AiToolsForemanError("gethost call failed (%s)" % error)
+        else:
+            raise AiToolsForemanError("Unexpected error code (%i) when getting "
+                "'%s' from Foreman" % (code, fqdn))
 
     def getks(self, ip_address):
         """
@@ -239,6 +222,9 @@ class ForemanClient(HTTPClient):
             # can be resolved
             raise AiToolsForemanError("Kickstart for host with IP '%s'"
                 " not found in Foreman" % ip_address)
+        else:
+            raise AiToolsForemanError("Error code '%i' received when trying to "
+                "get a KS for '%s' from Foreman" % (code, ip_address))
 
     def getfacts(self, fqdn):
         """
@@ -259,6 +245,9 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanNotFoundError("Host '%s' (or facts) not found in Foreman" % fqdn)
         elif code == requests.codes.unprocessable_entity:
             raise AiToolsForemanError("getfacts call failed (Unprocessable entity)")
+        else:
+            raise AiToolsForemanError("Error code '%i' received when trying to "
+                "get facts for host '%s'' Foreman" % (code, fqdn))
 
     def renamehost(self, oldfqdn, newfqdn):
         """
@@ -292,16 +281,13 @@ class ForemanClient(HTTPClient):
             # Now fetch and updated IPMI interface
             (code, body) = self.__do_api_request("get", "hosts/%s/interfaces" % newfqdn)
 
-            if code == requests.codes.not_found:
+            if body['subtotal'] == 0:
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
-            if len(body) == 0:
+            if body['results'][0]["provider"] != "IPMI":
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
-            if body[0]["provider"] != "IPMI":
-                logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
-                return
-            interface_id = body[0]["id"]
+            interface_id = body['results'][0]["id"]
 
             new_interface_name = newfqdn.replace(".cern.ch", "-ipmi.cern.ch")
 
@@ -350,11 +336,11 @@ class ForemanClient(HTTPClient):
         logging.info("Getting hostgroup parameters for '%s' from Foreman..." % hostgroup)
 
         logging.info("Resolving ID for hostgroup '%s'" % hostgroup)
-        hgid = self.resolve_hostgroup_id(hostgroup)
+        hgid = self.__resolve_hostgroup_id(hostgroup)
 
         (code, body) = self.__do_api_request("get", "hostgroups/%s/parameters" % hgid)
         if code == requests.codes.ok:
-            params = body
+            params = body['results']
             return params
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Hostgroup '%s' not found in Foreman" % hostgroup)
@@ -373,7 +359,7 @@ class ForemanClient(HTTPClient):
         """
 
         logging.info("Resolving ID for hostgroup '%s'" % hostgroup)
-        hgid = self.resolve_hostgroup_id(hostgroup)
+        hgid = self.__resolve_hostgroup_id(hostgroup)
 
         logging.info("Checking for existing parameter '%s' on hostgroup '%s'" % (name, hostgroup))
         params = self.gethostgroupparameters(hostgroup)
@@ -446,7 +432,7 @@ class ForemanClient(HTTPClient):
           code, response = self.__do_api_request('get',
             "hosts/%s/interfaces" % (fqdn))
           if code == requests.codes.ok:
-            for interface in response:
+            for interface in response['results']:
                 if interface['name'][-13:] == "-ipmi.cern.ch":
                     return interface['id']
             return None
@@ -557,11 +543,35 @@ class ForemanClient(HTTPClient):
     def __resolve_environment_id(self, name):
         return self.__resolve_model_id('environment', name)
 
-    def resolve_hostgroup_id(self, name):
+    def __resolve_hostgroup_id(self, name):
         return self.__resolve_model_id('hostgroup', name, search_key='label')
 
     def __resolve_user_id(self, name):
         return self.__resolve_model_id('user', name, search_key='login')
+
+    def __resolve_architecture_id(self, name):
+        return self.__resolve_model_id('architecture', name)
+
+    def __resolve_ptable_id(self, name):
+        return self.__resolve_model_id('ptable', name)
+
+    def __resolve_medium_id(self, name):
+        return self.__resolve_model_id('medium', name)
+
+    def __resolve_operatingsystem_id(self, fullname):
+        match_object = re.match(r'(?P<name>\S+?)\s+(?P<major>\d+).(?P<minor>\d+)',
+            fullname)
+        if not match_object:
+            raise AiToolsForemanError("Couldn't resolve operating system name")
+        try:
+            return self.__resolve_model_id('operatingsystem',
+                match_object.group('name'),
+                results_filter=lambda x: x['fullname'] == fullname)
+        except AiToolsForemanNotFoundError, error:
+            # This is necessary to avoid misleading the user showing just
+            # the OS name when nothing has been found
+            raise AiToolsForemanNotFoundError("Operatingsystem '%s' not found" %
+                fullname)
 
     def __resolve_model_id(self, modelname, value, results_filter=None,
                             search_key="name",
@@ -577,9 +587,12 @@ class ForemanClient(HTTPClient):
             if value_filter is not None:
                 search_string_value = value_filter(value)
             search_string = "%s=\"%s\"" % (search_key, search_string_value)
-            results = self.search_query("%ss" % modelname, search_string)
+            model_endpoint = "%ss" % modelname
+            if modelname == 'medium':
+                model_endpoint = "media"
+            results = self.search_query(model_endpoint, search_string)
             if results_filter:
-                results = results_filter(results)
+                results = filter(results_filter, results)
             if not results:
                 raise AiToolsForemanNotFoundError("%s '%s' not found" %
                     (modelname, value))
@@ -608,92 +621,28 @@ class ForemanClient(HTTPClient):
 
     def search_query(self, model, search_string):
         query_string = urllib.urlencode({'search': search_string})
-        url = "%s/?%s" % (model, query_string)
-        (code, body) = self.__do_api_request("get", url)
-        if code == requests.codes.ok:
-            return body
-        else:
-            msg = "Foreman didn't return a controlled status code when looking up %s" \
-                % model
-            raise AiToolsForemanError(msg)
-
-    def get_subnets(self):
-        return self.get_toplevel("subnets")
-
-    def get_environments(self):
-        """
-        get raw envrionments info from foreman
-        :return list of all envrionments:
-        """
-        return self.get_toplevel("environments")
-
-    def get_users(self):
-        return self.get_toplevel("users")
-
-    def get_usergroups(self):
-        return self.get_toplevel("usergroups")
-
-    def get_domains(self):
-        return self.get_toplevel("domains")
-
-    def get_hostgroups(self):
-        """
-        get raw hostgroup info from foreman
-        :return list of all hostgroups:
-        """
-        return self.get_toplevel("hostgroups")
-
-    def get_models(self):
-        """
-        Get raw models info from foreman
-        :return list of all models:
-        """
-        return self.get_toplevel("models")
-
-    def get_architectures(self):
-        """
-        Get raw architecture info from foreman
-        :return list of install mediums:
-        """
-        return self.get_toplevel("architectures")
-
-    def get_media(self):
-        """
-        Get raw install media info from foreman
-        :return list of install mediums:
-        """
-        return self.get_toplevel("media")
-
-    def get_ptables(self):
-        """
-        Get raw partition tables from foreman
-        :return list of partition tables:
-        """
-        return self.get_toplevel("ptables")
-
-    def get_operatingsystems(self):
-        """
-        Get raw operatingsystem list from foreman
-        :return list of operatingsystems:
-        """
-        return self.get_toplevel("operatingsystems")
-
-    def get_toplevel(self, endpoint):
-        """
-        For top level api endpoints, ie /api/operatingsystems /api/media /api/ptables
-        :param endpoint:
-        :return list of endpoint type:
-        :raise AiToolsForemanNotFoundError: for 404
-        :raise AiToolsForemanError: for all others
-        """
-        (code, body) = self.__do_api_request("get", endpoint)
-        if code == requests.codes.ok:
-            return body
-        elif code == requests.codes.not_found:
-            raise AiToolsForemanNotFoundError("Endpoint /%s not found" % endpoint)
-        else:
-            msg = "Foreman didn't return a controlled status code when looking up %s, got error: '%i'" % (endpoint, code)
-            raise AiToolsForemanError(msg)
+        page = 1
+        results = []
+        expensive_query = False
+        while page == 1 or page <= math.ceil(payload['subtotal']/float(payload['per_page'])):
+            url = "%s/?%s&page=%d" % (model, query_string, page)
+            (code, payload) = self.__do_api_request("get", url)
+            if code == requests.codes.ok:
+                if page == 1 and payload['subtotal'] > EXP_THOLD * payload['per_page']:
+                    logging.warn("Crikey! That's an expensive query! this might take a while...")
+                    expensive_query = True
+                if expensive_query:
+                    print_progress_meter(page,
+                        math.ceil(payload['subtotal']/float(payload['per_page'])))
+                results.extend(payload['results'])
+                page = page + 1
+            else:
+                msg = "Foreman didn't return a controlled status code when looking up %s" \
+                    % model
+                raise AiToolsForemanError(msg)
+        if expensive_query:
+            print_progress_meter(1, 1, new_line=True)
+        return results
 
     def __do_api_request(self, method, url, data=None, prefix="api/"):
         url = "https://%s:%u/%s%s" % (self.host, self.port, prefix, url)
@@ -711,13 +660,6 @@ class ForemanClient(HTTPClient):
                 raise AiToolsForemanNotAllowedError("Unauthorized when trying '%s' on '%s'" % (method, url))
             if re.match('application/json', response.headers['content-type']):
                 body = response.json()
-            # Handling pagination should be a responsability of the caller.
-            # Therefore, this method should return the body as-is, but that
-            # would require changing all the methods making use of this one.
-            # To be done, but not now.
-            if "results" in body:
-                body = body["results"]
             return (code, body)
         except AiToolsHTTPClientError, error:
             raise AiToolsForemanError(error)
-
