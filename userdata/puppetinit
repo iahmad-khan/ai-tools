@@ -275,12 +275,9 @@ execute_shell_block get_host_certificate 10 15 || unrecoverable_error "getcert"
 /bin/mkdir -p /etc/yum-puppet.repos.d
 /usr/bin/augtool -s set /files/etc/yum.conf/main/reposdir /etc/yum-puppet.repos.d/
 
-echo "Generating initial sysconfig for puppetd"
-PUPPETD_ENV_FILE="/etc/sysconfig/puppetagent"
-[ "$OS_MAJOR_VERSION" == "5" ] && PUPPETD_ENV_FILE="/etc/sysconfig/puppet"
-[ "$OS_MAJOR_VERSION" == "6" ] && PUPPETD_ENV_FILE="/etc/sysconfig/puppet"
-cat << EOF > $PUPPETD_ENV_FILE
-PUPPET_EXTRA_OPTS="--waitforcert=500 --ca_port=8140 --masterport 8150"
+echo "Generating initial /etc/sysconfig/puppet"
+cat << EOF > /etc/sysconfig/puppet
+PUPPET_EXTRA_OPTS="--waitforcert=500 --masterport=8150 --ca_port=8140"
 EOF
 
 # Turn puppet on for next boot.
