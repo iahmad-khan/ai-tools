@@ -17,7 +17,7 @@ def param_set(pargs):
 
     ForemanConfig().read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
-    f = ForemanClient()
+    f = ForemanClient(deref_alias=pargs.dereference_alias)
 
     if pargs.hg:
         try:
