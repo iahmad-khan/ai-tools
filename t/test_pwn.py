@@ -96,6 +96,12 @@ class TestPwn(unittest.TestCase):
         result = pwn.delete_ownership(entity, scope)
         self.assertRaises(AiToolsPwnNotFoundError, pwn.get_ownership, entity, scope)
 
+    def test_08_pwn_remove_owner_from_nonexistent_hostgroup(self):
+        pwn = PwnClient()
+        scope = 'hostgroup'
+        entity = self.test_entities[scope]
+        self.assertRaises(AiToolsPwnNotFoundError, pwn.remove_owners, entity, scope,
+            self.test_ownership[0])
     # Now the sama with modules
 
     def test_11_pwn_add_module_ownership(self):
@@ -164,3 +170,10 @@ class TestPwn(unittest.TestCase):
         entity = self.test_entities[scope]
         result = pwn.delete_ownership(entity, scope)
         self.assertRaises(AiToolsPwnNotFoundError, pwn.get_ownership, entity, scope)
+
+    def test_18_pwn_remove_owner_from_nonexistent_module(self):
+        pwn = PwnClient()
+        scope = 'module'
+        entity = self.test_entities[scope]
+        self.assertRaises(AiToolsPwnNotFoundError, pwn.remove_owners, entity, scope,
+            self.test_ownership[0])

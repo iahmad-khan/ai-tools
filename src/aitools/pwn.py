@@ -100,10 +100,7 @@ class PwnClient(HTTPClient):
         return self.put_ownership(entity, scope, new_owners, options=options, **kwargs)
 
     def remove_owners(self, entity, scope, owners, options=None, **kwargs):
-        try:
-            result = self.get_ownership(entity, scope)
-        except AiToolsPwnNotFoundError:
-            return self.create_ownership(entity, scope, owners, options=options, **kwargs)
+        result = self.get_ownership(entity, scope)
         existing_owners = result['owners']
         new_owners = [owner for owner in existing_owners if owner not in self.clean_owners(owners)]
         return self.put_ownership(entity, scope, new_owners, options=options, **kwargs)
