@@ -65,7 +65,31 @@ class TestPwn(unittest.TestCase):
         self.assertEqual(expected_owners, result['owners'])
         self.assertEqual(expected_options, result['options'])
 
-    def test_05_pwn_del_hostgroup_ownership(self):
+    def test_05_pwn_add_hostgroup_owners(self):
+        pwn = PwnClient()
+        scope = 'hostgroup'
+        entity = self.test_entities[scope]
+        owners_to_add = self.test_ownership[0]
+        expected_owners = pwn.clean_owners(self.test_ownership[1] + self.test_ownership[0])
+        expected_options = self.test_options
+        pwn.add_owners(entity, scope, owners_to_add)
+        result = pwn.get_ownership(entity, scope)
+        self.assertEqual(expected_owners, result['owners'])
+        self.assertEqual(expected_options, result['options'])
+
+    def test_06_pwn_remove_hostgroup_owner(self):
+        pwn = PwnClient()
+        scope = 'hostgroup'
+        entity = self.test_entities[scope]
+        owners_to_remove = self.test_ownership[0][1]
+        expected_owners  = pwn.clean_owners(self.test_ownership[1] + [self.test_ownership[0][0]])
+        expected_options = self.test_options
+        pwn.remove_owners(entity, scope, owners_to_remove)
+        result = pwn.get_ownership(entity, scope)
+        self.assertEqual(expected_owners, result['owners'])
+        self.assertEqual(expected_options, result['options'])
+
+    def test_07_pwn_del_hostgroup_ownership(self):
         pwn = PwnClient()
         scope = 'hostgroup'
         entity = self.test_entities[scope]
@@ -110,7 +134,31 @@ class TestPwn(unittest.TestCase):
         self.assertEqual(expected_owners, result['owners'])
         self.assertEqual(expected_options, result['options'])
 
-    def test_15_pwn_del_module_ownership(self):
+    def test_15_pwn_add_module_owners(self):
+        pwn = PwnClient()
+        scope = 'module'
+        entity = self.test_entities[scope]
+        owners_to_add = self.test_ownership[0]
+        expected_owners = pwn.clean_owners(self.test_ownership[1] + self.test_ownership[0])
+        expected_options = self.test_options
+        pwn.add_owners(entity, scope, owners_to_add)
+        result = pwn.get_ownership(entity, scope)
+        self.assertEqual(expected_owners, result['owners'])
+        self.assertEqual(expected_options, result['options'])
+
+    def test_16_pwn_remove_module_owner(self):
+        pwn = PwnClient()
+        scope = 'module'
+        entity = self.test_entities[scope]
+        owners_to_remove = self.test_ownership[0][1]
+        expected_owners  = pwn.clean_owners(self.test_ownership[1] + [self.test_ownership[0][0]])
+        expected_options = self.test_options
+        pwn.remove_owners(entity, scope, owners_to_remove)
+        result = pwn.get_ownership(entity, scope)
+        self.assertEqual(expected_owners, result['owners'])
+        self.assertEqual(expected_options, result['options'])
+
+    def test_17_pwn_del_module_ownership(self):
         pwn = PwnClient()
         scope = 'module'
         entity = self.test_entities[scope]

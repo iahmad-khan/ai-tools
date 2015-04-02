@@ -7,6 +7,7 @@ except ImportError:
 import requests
 import logging
 import re
+from collections import OrderedDict
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsPwnNotFoundError
 from aitools.errors import AiToolsPwnError
@@ -15,6 +16,8 @@ from aitools.errors import AiToolsPwnInternalServerError
 from aitools.errors import AiToolsPwnNotImplementedError
 from aitools.httpclient import HTTPClient
 from aitools.config import PwnConfig
+from aitools.common import deref_url
+
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +89,24 @@ class PwnClient(HTTPClient):
             return self.create_ownership(entity, scope, owners, options=options, **kwargs)
         else:
             return self.put_ownership(entity, scope, owners, options=options, **kwargs)
+
+    def add_owners(self, entity, scope, owners, options=None, **kwargs):
+        try:
+            result = self.get_ownership(entity, scope)
+        except AiToolsPwnNotFoundError:
+            return self.create_ownership(entity, scope, owners, options=options, **kwargs)
+        existing_owners = result['owners']
+        new_owners = list(OrderedDict.fromkeys(existing_owners+self.clean_owners(owners)))
+        return self.put_ownership(entity, scope, new_owners, options=options, **kwargs)
+
+    def remove_owners(self, entity, scope, owners, options=None, **kwargs):
+        try:
+            result = self.get_ownership(entity, scope)
+        except AiToolsPwnNotFoundError:
+            return self.create_ownership(entity, scope, owners, options=options, **kwargs)
+        existing_owners = result['owners']
+        new_owners = [owner for owner in existing_owners if owner not in self.clean_owners(owners)]
+        return self.put_ownership(entity, scope, new_owners, options=options, **kwargs)
 
     def create_ownership(self, entity, scope, owners, options=None, **kwargs):
         if self.dryrun:
