@@ -1,0 +1,191 @@
+#!/usr/bin/python
+
+from argparse import ArgumentParser
+import re
+import argcomplete
+
+from urllib import urlencode
+from aitools.errors import AiToolsPwnError
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
+import logging
+import sys
+import datetime
+from aitools.pwn import PwnClient
+from aitools.config import PwnConfig, AiConfig, PdbConfig
+from aitools.pdb import PdbClient
+from aitools.completer import ForemanCompleter
+from aitools.common import fqdnify
+from aitools.common import configure_logging
+import base64
+
+logger = logging.getLogger(__name__)
+
+
+def extract_entity(pargs):
+    # mutual exclusion already handled by argparse
+    if pargs.module:
+        scope = 'module'
+    elif pargs.hostgroup:
+        scope = 'hostgroup'
+    else:
+        parser.error('Either --host or --hg must be specified.')
+    return (getattr(pargs,scope), scope)
+
+
+def set_main(pargs):
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    (entity, scope) = extract_entity(pargs)
+
+    try:
+        pwn = PwnClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
+        pwn.update_or_create_ownership(entity, scope, pargs.ownership, options=pargs.options)
+        logging.info("Ownership info successfully set for %s '%s'" % (scope, entity))
+    except AiToolsPwnError as e:
+        logging.error(e)
+        sys.exit(2)
+
+
+def delete_main(pargs):
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    (entity, scope) = extract_entity(pargs)
+
+    try:
+        pwn = PwnClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
+        pwn.delete_ownership(entity, scope)
+        logging.info("Ownership info successfully deleted for %s '%s'" % (scope, entity))
+    except AiToolsPwnError as e:
+        logging.error(e)
+        sys.exit(2)
+
+
+def show_main(pargs):
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    (entity, scope) = extract_entity(pargs)
+
+    try:
+        pwn = PwnClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
+        ownership = pwn.get_ownership(entity, scope)
+        print json.dumps(ownership)
+    except AiToolsPwnError as e:
+        logging.error(e)
+        sys.exit(2)
+
+def add_main(pargs):
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    (entity, scope) = extract_entity(pargs)
+
+    try:
+        pwn = PwnClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
+        pwn.add_owners(entity, scope, pargs.ownership)
+        logging.info("Ownership info successfully set for %s '%s'" % (scope, entity))
+    except AiToolsPwnError as e:
+        logging.error(e)
+        sys.exit(2)
+
+def remove_main(pargs):
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    (entity, scope) = extract_entity(pargs)
+
+    try:
+        pwn = PwnClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
+        pwn.remove_owners(entity, scope, pargs.ownership)
+        logging.info("Ownership info successfully set for %s '%s'" % (scope, entity))
+    except AiToolsPwnError as e:
+        logging.error(e)
+        sys.exit(2)
+
+
+def main():
+
+    global parser # weeeeellll....
+    parser = ArgumentParser(description="Tool for setting hostgroup/module ownership")
+
+    pwn_config = PwnConfig()
+    pwn_config.add_standard_args(parser)
+    # pdb_config = PdbConfig()
+    # pdb_config.add_standard_args(parser)
+
+    subparsers = parser.add_subparsers()
+
+    set_parser = subparsers.add_parser("set", help="Set the list of owners")
+    shgm = set_parser.add_mutually_exclusive_group(required=True)
+    shgm.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+                            help="The hostgroup to set the ownership for")
+    shgm.add_argument("--md", metavar="MODULE", dest="module",
+                            help="The module to set the ownership for")
+    set_parser.add_argument("ownership", metavar="OWNER", nargs="+", help="Owner entity (account or egroup)")
+    set_parser.add_argument("--options", metavar="OPTIONS", help="Extra options, in JSON format", type=json.loads)
+    set_parser.set_defaults(func=set_main)
+
+
+    delete_parser = subparsers.add_parser("delete", help="Delete ownership information")
+    dhgm = delete_parser.add_mutually_exclusive_group(required=True)
+    dhgm.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+                            help="The hostgroup to delete the ownership for")
+    dhgm.add_argument("--md", metavar="MODULE", dest="module",
+                            help="The module to delete the ownership for")
+    delete_parser.set_defaults(func=delete_main)
+
+
+    show_parser = subparsers.add_parser("show", help="Show ownership information")
+    shhgm = show_parser.add_mutually_exclusive_group(required=True)
+    shhgm.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+                            help="The hostgroup to show the ownership for")
+    shhgm.add_argument("--md", metavar="MODULE", dest="module",
+                            help="The module to show the ownership for")
+    show_parser.set_defaults(func=show_main)
+
+
+    add_parser = subparsers.add_parser("add", help="Add new owner(s) to the list of known owners")
+    addhgm = add_parser.add_mutually_exclusive_group(required=True)
+    addhgm.add_argument("--hg", metavar="HOSTGROUP", dest="hostgroup",
+                            help="The hostgroup to set the ownership for")
+    addhgm.add_argument("--md", metavar="MODULE", dest="module",
+                            help="The module to set the ownership for")
+    add_parser.add_argument("ownership", metavar="OWNER", nargs="+", help="Owner entity (account or egroup)")
+    add_parser.set_defaults(func=add_main)
+
+
+    rem_parser = subparsers.add_parser("remove", help="Remove owner(s) from the list of known owners")
+    remhgm = rem_parser.add_mutually_exclusive_group(required=True)
+    remhgm.add_argument("--hgasdasd", metavar="HOSTGROUP", dest="hostgroup",
+                         help="The hostgroup to set the ownership for")
+    remhgm.add_argument("--md", metavar="MODULE", dest="module",
+                         help="The module to set the ownership for")
+    rem_parser.add_argument("ownership", metavar="OWNER", nargs="+", help="Owner entity (account or egroup)")
+    rem_parser.set_defaults(func=remove_main)
+
+
+    parser.add_argument("--show_url", action="store_true", default=False, dest="show_url",
+                    help="show REST urls")
+    parser.add_argument('-v', '--verbose',
+                        action="store_true", help="Be chatty")
+    parser.add_argument('-d', '--dryrun',
+                        action="store_true", help="Don't do the requests that alter data")
+
+    argcomplete.autocomplete(parser)
+
+    pargs = parser.parse_args()
+    pargs.func(pargs)
+
+if __name__ == "__main__":
+    main()
