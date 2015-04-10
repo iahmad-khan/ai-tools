@@ -161,12 +161,9 @@ class AimsClient(object):
         # It's not clear yet that minor versions will be supported
         # so for the moment we map ignoring the minors.
         elif operatingsystem['name'] == "CentOS":
-            target_os = "CC%s" % major
+            target_os = "CC%s%s" % (major, minor)
         elif operatingsystem['name'] == "RedHat":
-            if major == 5:
-                target_os = "RHES_5_U%s" % minor
-            else:
-                target_os = "RHEL%s_U%s" % (major, minor)
+            target_os = "RHEL_%s_%s" % (major, minor)
         elif operatingsystem['name'] == "Fedora":
             target_os = "FEDORA%s" % major
         else:
