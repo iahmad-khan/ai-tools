@@ -158,8 +158,6 @@ class AimsClient(object):
 
         if operatingsystem['name'] == "SLC":
             target_os = "SLC%s%s" % (major, minor)
-        # It's not clear yet that minor versions will be supported
-        # so for the moment we map ignoring the minors.
         elif operatingsystem['name'] == "CentOS":
             target_os = "CC%s%s" % (major, minor)
         elif operatingsystem['name'] == "RedHat":
