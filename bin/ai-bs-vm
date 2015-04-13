@@ -64,7 +64,7 @@ DEFAULT_PUPPETINIT_PATH = "/usr/share/ai-tools/userdata/puppetinit"
 DEFAULT_PREFIX = "vm"
 DEFAULT_GROW_PARTITION = 2
 
-REGEX = {
+VOLUME_VALIDATION_REGEX = {
     'boot_new_volume': r'^(?P<size>[1-9]\d*(TB|GB))(:(?P<dot>delete-on-terminate))?$',
     'boot_existing_volume': r'^(?P<uuid>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})(?P<dot>:delete-on-terminate)?$',
     'attach_new_volume': r'^(?P<device>\w+)=(?P<value>[1-9]\d*(TB|GB))(:(?P<dot>delete-on-terminate))?$',
@@ -73,7 +73,7 @@ REGEX = {
 
 ATTACHMENTS = {}
 
-parse_arg = lambda name, value : re.match(REGEX[name], value, re.I)
+parse_arg = lambda name, value : re.match(VOLUME_VALIDATION_REGEX[name], value, re.I)
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
