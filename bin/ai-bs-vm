@@ -162,13 +162,13 @@ def parse_cmdline_args():
     bootable_elements.add_argument('--nova-boot-from-existing-volume',
         type=str, help="Cinder Volume UUID to boot from", default=None)
     parser.add_argument('--nova-boot-from-new-volume', type=str,
-        help="Size (in GB or TB) of the cinder volume to be created (e.g. '100GB', '1TB' )",
+        help="Size (in GB or TB) of the cinder volume to be created (e.g. '100GB', '1TB')",
         default=None)
     parser.add_argument('--nova-attach-existing-volume', type=str,
         help="Cinder Volume UUID to attach to the new server",
         action='append', default=[])
     parser.add_argument('--nova-attach-new-volume', type=str,
-        help="Size (in GB or TB) of the cinder volume to be attached (e.g. '100GB', '1TB' )",
+        help="Size (in GB or TB) of the cinder volume to be attached (e.g. '100GB', '1TB')",
         action='append', default=[])
     parser.add_argument('--nova-parameter', type=str,
         help="Openstack metaparameter", action='append', default=[])
@@ -226,7 +226,7 @@ def parse_cmdline_args():
         match = parse_arg('boot_new_volume', args.nova_boot_from_new_volume)
         if not match:
             parser.error("--nova-boot-from-new-volume must be a valid size in "
-                "GB or TB (e.g. '100GB', '1TB' )")
+                "GB or TB (e.g. '100GB', '1TB')")
         elif not args.nova_image:
             parser.error("An image is needed for booting from a new volume")
         ATTACHMENTS['vda'] = (match.group('size'), 1 if match.group('dot') is not None else 0)
@@ -249,7 +249,7 @@ def parse_cmdline_args():
             parser.error("--nova-attach-existing-volume must be a valid UUID4")
         if index >= len(args.nova_attach_existing_volume) and not is_valid_size_format(volume_info):
             parser.error("--nova-attach-new-volume must be a valid size in GB or "
-                "TB (e.g. '100GB', '1TB' )")
+                "TB (e.g. '100GB', '1TB')")
         if is_valid_UUID(volume_info) and volume_info in (ATTACHMENTS.values() + auto_devices):
             parser.error("It is not possible to attach same volume twice")
         if device == 'auto':
