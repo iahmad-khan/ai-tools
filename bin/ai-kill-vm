@@ -55,12 +55,16 @@ def parse_cmdline_args():
     ##
     nova_config = NovaConfig()
     nova_config.add_standard_args(parser)
+    parser.add_argument('--nova-disable', action="store_true",
+        help="Disable Nova actions")
 
     ##
     ## Roger options
     ##
     roger_config = RogerConfig()
     roger_config.add_standard_args(parser)
+    parser.add_argument('--roger-disable', action="store_true",
+        help="Disable Roger actions")
 
     ##
     ## Foreman options
@@ -69,6 +73,8 @@ def parse_cmdline_args():
     foreman_config.add_standard_args(parser)
     parser.add_argument('hostname', nargs=1, default=None,
         help="Hostname (qualified or not)").completer = ForemanCompleter()
+    parser.add_argument('--foreman-disable', action="store_true",
+        help="Disable Foreman actions")
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
     return args
@@ -106,37 +112,40 @@ def main():
 
     foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
 
-    try:
-        foreman.delhost(fqdn)
-    except AiToolsForemanError, error:
-        logging.error("Couldn't delete Foreman entry (%s)." % error)
-        return 20
+    if not args.foreman_disable:
+        try:
+            foreman.delhost(fqdn)
+        except AiToolsForemanError, error:
+            logging.error("Couldn't delete Foreman entry (%s)." % error)
+            return 20
 
-    try:
-        auth_client = OpenstackAuthClient(**openstack_env)
-        nova = NovaClient(auth_client, dryrun=args.dryrun)
-        nova.delete(fqdn)
-    except AiToolsNovaError, error:
-        logging.error("Couldn't delete VM from Nova (%s). Please, make sure that "
-            "the machine is removed executing 'openstack server delete %s'" % (error, args.hostname[0]))
-        return 10
-    except AiToolsOpenstackAuthError, error:
-        logging.error("Not authorized to delete '%s' (%s)." % (args.hostname[0], error))
-        return 30
+    if not args.nova_disable:
+        try:
+            auth_client = OpenstackAuthClient(**openstack_env)
+            nova = NovaClient(auth_client, dryrun=args.dryrun)
+            nova.delete(fqdn)
+        except AiToolsNovaError, error:
+            logging.error("Couldn't delete VM from Nova (%s). Please, make sure that "
+                "the machine is removed executing 'openstack server delete %s'" % (error, args.hostname[0]))
+            return 10
+        except AiToolsOpenstackAuthError, error:
+            logging.error("Not authorized to delete '%s' (%s)." % (args.hostname[0], error))
+            return 30
 
-    roger_client = RogerClient(deref_alias=args.dereference_alias)
-    # we need to turn off alarms
-    try:
-        state = roger_client.update_or_create_state(fqdn, appstate="disabled", nc_alarmed="false",
-                                   hw_alarmed="false", app_alarmed="false", os_alarmed="false",
-                                   message="alarms disabled by ai-kill-vm")
-    except AiToolsRogerNotAllowedError, error:
-        logging.error("Couldn't switch off Roger alarms, not authorized (%s)" % error)
-    except AiToolsRogerNotFoundError, error:
-        logging.error("Couldn't find Roger entry to switch off alarms (%s)" % error)
-    except Exception, error:
-        logging.error("Received unexpected error trying to switch off alarms in roger: %s" % error)
-        logging.info("Please update roger for machine to switch alarms off if necessary")
+    if not args.roger_disable:
+        roger_client = RogerClient(deref_alias=args.dereference_alias)
+        # we need to turn off alarms
+        try:
+            state = roger_client.update_or_create_state(fqdn, appstate="disabled", nc_alarmed="false",
+                                       hw_alarmed="false", app_alarmed="false", os_alarmed="false",
+                                       message="alarms disabled by ai-kill-vm")
+        except AiToolsRogerNotAllowedError, error:
+            logging.error("Couldn't switch off Roger alarms, not authorized (%s)" % error)
+        except AiToolsRogerNotFoundError, error:
+            logging.error("Couldn't find Roger entry to switch off alarms (%s)" % error)
+        except Exception, error:
+            logging.error("Received unexpected error trying to switch off alarms in roger: %s" % error)
+            logging.info("Please update roger for machine to switch alarms off if necessary")
 
     return 0
 
