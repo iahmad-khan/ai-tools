@@ -43,6 +43,7 @@ class TestRoger(unittest.TestCase):
         (pargs, _) = self.roger_config.parser.parse_known_args()
         self.roger_config.read_config_and_override_with_pargs(pargs)
         rogerclient = RogerClient()
+        state = rogerclient.get_state("teigitest01.cern.ch")
         self.assertTrue((isinstance(state, dict)))
         self.assertTrue(("hostname" in state))
         self.assertEqual(state["hostname"], "teigitest01.cern.ch")
