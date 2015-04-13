@@ -19,20 +19,16 @@ class TestTrustedBag(unittest.TestCase):
         (pargs, _) = self.tbag_config.parser.parse_known_args()
         self.tbag_config.read_config_and_override_with_pargs(pargs)
 
-# yes, explicit order is frowned upon, but add/show/delete so...
-    def test_00_default_args(self):
-        self.assertEqual(self.tbag_config.tbag_hostname, "teigitest.cern.ch")
-
     def test_01_tbag_add_host_key(self):
         tbag = TrustedBagClient()
-        hostname = "aiadm049.cern.ch"
+        hostname = "aiadm053.cern.ch"
         key = "testsecret"
         value = "sooperseekrit"
         tbag.add_key(hostname, "host", key, value)
 
     def test_02_tbag_get_host_key(self):
         tbag = TrustedBagClient()
-        hostname = "aiadm049.cern.ch"
+        hostname = "aiadm053.cern.ch"
         key = "testsecret"
         expected_value = "sooperseekrit"
         result = tbag.get_key(hostname, "host", key)
@@ -40,7 +36,7 @@ class TestTrustedBag(unittest.TestCase):
 
     def test_03_tbag_list_host_keys(self):
         tbag = TrustedBagClient()
-        hostname = "aiadm049.cern.ch"
+        hostname = "aiadm053.cern.ch"
         key = "testsecret"
         res = tbag.get_keys(hostname, "host")
         self.assertEqual(hostname, res["hostname"])
@@ -48,7 +44,7 @@ class TestTrustedBag(unittest.TestCase):
 
     def test_04_tbag_del_host_key(self):
         tbag = TrustedBagClient()
-        hostname = "aiadm049.cern.ch"
+        hostname = "aiadm053.cern.ch"
         key = "testsecret"
         result = tbag.delete_key(hostname, "host", key)
         self.assertRaises(AiToolsTrustedBagNotFoundError, tbag.get_key, hostname, "host", key)

@@ -28,7 +28,6 @@ class TestRoger(unittest.TestCase):
     def test_default_args(self):
         (pargs, _) = self.roger_config.parser.parse_known_args()
         self.roger_config.read_config_and_override_with_pargs(pargs)
-        self.assertEqual(self.roger_config.roger_hostname, "teigitest.cern.ch")
         self.assertEqual(self.roger_config.roger_port, "8201")
         self.assertEqual(self.roger_config.roger_timeout, "15")
 
@@ -37,7 +36,6 @@ class TestRoger(unittest.TestCase):
         self.roger_config.read_config_and_override_with_pargs(pargs)
         rogerclient = RogerClient()
         self.assertEqual(rogerclient.host, self.roger_config.roger_hostname)
-        self.assertEqual(rogerclient.host, "teigitest.cern.ch")
         self.assertEqual(rogerclient.port, int(self.roger_config.roger_port))
         self.assertEqual(rogerclient.timeout, int(self.roger_config.roger_timeout))
 
@@ -45,7 +43,6 @@ class TestRoger(unittest.TestCase):
         (pargs, _) = self.roger_config.parser.parse_known_args()
         self.roger_config.read_config_and_override_with_pargs(pargs)
         rogerclient = RogerClient()
-        state = rogerclient.get_state("teigitest01.cern.ch") # FIXME: test hosts in the config file
         self.assertTrue((isinstance(state, dict)))
         self.assertTrue(("hostname" in state))
         self.assertEqual(state["hostname"], "teigitest01.cern.ch")
@@ -54,7 +51,6 @@ class TestRoger(unittest.TestCase):
         (pargs, _) = self.roger_config.parser.parse_known_args()
         self.roger_config.read_config_and_override_with_pargs(pargs)
         rogerclient = RogerClient()
-        self.assertEqual(rogerclient.host, "teigitest.cern.ch")
         message = teststring_generator()
         state = rogerclient.put_state("teigitest01.cern.ch", nc_alarmed=False, message=message + " unittest entry")
         new_state = rogerclient.get_state("teigitest01.cern.ch")
@@ -68,14 +64,13 @@ class TestRoger(unittest.TestCase):
         (pargs, _) = self.roger_config.parser.parse_known_args()
         self.roger_config.read_config_and_override_with_pargs(pargs)
         rogerclient = RogerClient()
-        self.assertEqual(rogerclient.host, "teigitest.cern.ch")
         # need to add the damn thing first
-        newstate = rogerclient.update_or_create_state("aiadm049.cern.ch")
-        confirm_newstate = rogerclient.get_state("aiadm049.cern.ch")
+        newstate = rogerclient.update_or_create_state("aiadm053.cern.ch")
+        confirm_newstate = rogerclient.get_state("aiadm053.cern.ch")
         self.assertTrue(("hostname" in confirm_newstate))
-        delstate = rogerclient.delete_state("aiadm049.cern.ch")
+        delstate = rogerclient.delete_state("aiadm053.cern.ch")
         try:
-            rogerclient.get_state("aiadm049.cern.ch")
+            rogerclient.get_state("aiadm053.cern.ch")
         except Exception, e:
             self.assertTrue((isinstance(e, AiToolsRogerNotFoundError)))
 
