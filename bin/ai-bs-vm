@@ -227,8 +227,6 @@ def parse_cmdline_args():
         if not match:
             parser.error("--nova-boot-from-new-volume must be a valid size in "
                 "GB or TB (e.g. '100GB', '1TB')")
-        elif not args.nova_image:
-            parser.error("An image is needed for booting from a new volume")
         ATTACHMENTS['vda'] = (match.group('size'), 1 if match.group('dot') is not None else 0)
 
 
