@@ -235,7 +235,7 @@ def parse_cmdline_args():
         match = parse_arg('attach_new_volume', volume) or parse_arg('attach_existing_volume', volume)
         if not match:
             parser.error("Bad format for attaching a volume. The format must be "
-                "'<device>=<UUID>' or '<device>=<size>")
+                "'<device>=<UUID>' or '<device>=<size>'")
         device, volume_info = match.group('device'), match.group('value')
         delete_on_terminate = 1 if match.group('dot') is not None else 0
         if device == 'vda':
