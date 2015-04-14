@@ -73,7 +73,7 @@ VOLUME_VALIDATION_REGEX = {
 
 ATTACHMENTS = {}
 
-parse_arg = lambda name, value : re.match(VOLUME_VALIDATION_REGEX[name], value, re.I)
+validate_arg_with_regex = lambda name, value : re.match(VOLUME_VALIDATION_REGEX[name], value, re.I)
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -217,13 +217,13 @@ def parse_cmdline_args():
         parser.error("More than one bootable element provided. %s" % options_to_boot_from)
 
     if args.nova_boot_from_existing_volume:
-        match = parse_arg('boot_existing_volume', args.nova_boot_from_existing_volume)
+        match = validate_arg_with_regex('boot_existing_volume', args.nova_boot_from_existing_volume)
         if not match:
             parser.error("--nova-boot-from-existing-volume must be a valid UUID4")
         ATTACHMENTS['vda'] = (match.group('uuid'), 1 if match.group('dot') is not None else 0)
 
     if args.nova_boot_from_new_volume:
-        match = parse_arg('boot_new_volume', args.nova_boot_from_new_volume)
+        match = validate_arg_with_regex('boot_new_volume', args.nova_boot_from_new_volume)
         if not match:
             parser.error("--nova-boot-from-new-volume must be a valid size in "
                 "GB or TB (e.g. '100GB', '1TB')")
@@ -232,7 +232,7 @@ def parse_cmdline_args():
 
     auto_devices = []
     for index, volume in enumerate(args.nova_attach_existing_volume + args.nova_attach_new_volume):
-        match = parse_arg('attach_new_volume', volume) or parse_arg('attach_existing_volume', volume)
+        match = validate_arg_with_regex('attach_new_volume', volume) or validate_arg_with_regex('attach_existing_volume', volume)
         if not match:
             parser.error("Bad format for attaching a volume. The format must be "
                 "'<device>=<UUID>' or '<device>=<size>'")
