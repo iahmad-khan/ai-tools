@@ -19,6 +19,10 @@ A2C_BIN_PATH = "/usr/bin/aims2client"
 AIMS_DEFAULT_KOPTS = ['text', 'network', 'ks', 'ksdevice=bootif',
     'latefcload', 'nodmraid', 'console=tty0']
 
+BOOT_TARGETS = {'SLC': "SLC%s%s",
+                'CentOS': "CC%s%s",
+                'RedHat': "RHEL_%s_%s"}
+
 class AimsClient(object):
     def __init__(self, dryrun=False):
         self.dryrun = dryrun
@@ -156,22 +160,11 @@ class AimsClient(object):
         except (ValueError, KeyError):
             raise AiToolsAimsError("OS major/minor not defined or bogus")
 
-        if operatingsystem['name'] == "SLC":
-            target_os = "SLC%s%s" % (major, minor)
-        # It's not clear yet that minor versions will be supported
-        # so for the moment we map ignoring the minors.
-        elif operatingsystem['name'] == "CentOS":
-            target_os = "CC%s" % major
-        elif operatingsystem['name'] == "RedHat":
-            if major == 5:
-                target_os = "RHES_5_U%s" % minor
-            else:
-                target_os = "RHEL%s_U%s" % (major, minor)
-        elif operatingsystem['name'] == "Fedora":
-            target_os = "FEDORA%s" % major
-        else:
-            raise AiToolsAimsError("There's no PXE target for '%s'"
+        if operatingsystem['name'] not in BOOT_TARGETS:
+            raise AiToolsAimsError("Couldn't find an AIMS target for '%s'"
                 % operatingsystem['name'])
+
+        target_os = BOOT_TARGETS[operatingsystem['name']] % (major, minor)
 
         pxetarget = "%s_%s" % (target_os, architecture['name'].upper())
         logging.debug("%s translated into %s" % (operatingsystem, pxetarget))
