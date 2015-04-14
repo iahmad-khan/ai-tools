@@ -51,9 +51,11 @@ Name of the Foreman hostgroup where you want your new virtual
 machine to land (beware that you must be hostgroup manager of it).
 .TP
 .B --nova-boot-from-existing-volume
-Cinder Volume UUID to boot from. In order to boot from an existing volume,
-it has to be bootable and available (it will fail in any other case).
-This parameter is mutually exclusive with "--nova-image" and
+Cinder Volume UUID to boot from. Format is '<volume UUID>[:delete-on-terminate]'
+where 'delete-on-terminate' is an optional flag that indicates that the
+volume will be deleted when the VM is destroyed. In order to boot from
+an existing volume, it has to be bootable and available (it will fail in any
+other case). This parameter is mutually exclusive with "--nova-image" and
 "--nova-boot-from-new-volume" as only one bootable element can be specified
 per VM. (see http://cern.ch/go/l9xP)
 .TP
@@ -94,23 +96,28 @@ only). Foreman owner will be set accordingly later on.
 The desired availability zone for the VM (see http://cern.ch/go/7ttT).
 .TP
 .B --nova-attach-existing-volume
-Attach a volume during boot time. The format is '<device>=<volume UUID>'.
-The volume will be attached in '/dev/<device>'. In order to attach a volume
-it must be 'available'. This option can be specified several times but it is not
-possible to attach the same volume more than once nor attach several volumes to
-the same device.
+Attach a volume during boot time. The format is '<device>=<volume UUID>[:delete-on-terminate]'.
+The volume will be attached in '/dev/<device>'. It's possible to specify an optional flag
+called 'delete-on-terminate' that indicates that the volume will be deleted when
+the VM is destroyed. In order to attach a volume it must be 'available'.
+This option can be specified several times but it is not possible to attach the
+same volume more than once nor attach several volumes to the same device.
 .TP
 .B --nova-attach-new-volume
-Create a volume to be attached during boot time. The format is '<device>=<size>',
-'size' in the format "XGB" or "XTB" where X is an integer larger than 0. The volume
-will be attached in '/dev/<device>'. This option can be specified several times but
-it is not possible to attach several volumes to the same device.
+Create a volume to be attached during boot time. The format is '<device>=<size>[:delete-on-terminate]',
+where 'size' is represented as "XGB" or "XTB", being X an integer larger than 0
+and 'delete-on-terminate' an optional flag that indicates that the volume will be deleted
+when the VM is destroyed. The volume will be attached in '/dev/<device>'.
+This option can be specified several times but it is not possible to attach several
+volumes to the same device.
 .TP
 .B --nova-boot-from-new-volume
-Size in the format "XGB" or "XTB" where X is an integer larger than 0.
-In order to create a bootable volume "--nova-image" must be specified.
-This parameter is mutually exclusive with "--nova-boot-from-existing-volume",
-as only one bootable element can be specified per VM. (see http://cern.ch/go/l9xP)
+Create a volume from an image and boot from there. The format is '<size>[:delete-on-terminate]',
+where 'size' is represented as "XGB" or "XTB", being X an integer larger than 0
+and 'delete-on-terminate' an optional flag that indicates that the volume will be deleted
+when the VM is destroyed. In order to create a bootable volume "--nova-image" must be specified.
+This parameter is mutually exclusive with "--nova-boot-from-existing-volume", as only one bootable
+element can be specified per VM. (see http://cern.ch/go/l9xP)
 .TP
 .B --nova-flavor (AIBS_VMFLAVOR_NAME)
 OpenStack flavor name of the virtual machine (defaults to "m1.small").
@@ -271,8 +278,8 @@ ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-boot-from-new-volu
 ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-existing-volume vdb=8f7949d0-325d-4968-83b4-f12eb8b4619a higgsbox.cern.ch
 
 .TP
-.B Create a VM with a new volume of size 50GB attached to /dev/vdb:
-ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-new-volume vdb=50GB higgsbox.cern.ch
+.B Create a VM with a new volume of size 50GB attached to /dev/vdb which will be deleted when the VM is terminated:
+ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --nova-attach-new-volume vdb=50GB:delete-on-terminate higgsbox.cern.ch
 
 .SH REPORTING BUGS
 If you experience any problem with the Foreman registration or the initial
