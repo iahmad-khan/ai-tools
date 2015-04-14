@@ -162,8 +162,6 @@ class AimsClient(object):
             target_os = "CC%s%s" % (major, minor)
         elif operatingsystem['name'] == "RedHat":
             target_os = "RHEL_%s_%s" % (major, minor)
-        elif operatingsystem['name'] == "Fedora":
-            target_os = "FEDORA%s" % major
         else:
             raise AiToolsAimsError("There's no PXE target for '%s'"
                 % operatingsystem['name'])
