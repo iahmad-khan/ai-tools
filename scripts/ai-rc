@@ -1,0 +1,95 @@
+#!/usr/bin/python
+
+# This program sets the appropiate environment variables
+# to interact with the OpenStack Service.
+# Authors:
+#  Alberto Rodriguez Peon <alberto.rodriguez.peon@cern.ch>
+
+# Exit codes:
+#   0 all operations succeeded
+#   1 Host not found in DNS
+#   3 Host doesn't have "cern_os_tenant" fact in PuppetDB
+
+from argcomplete import autocomplete
+from getpass import getuser
+import logging
+import sys
+
+from argparse import ArgumentParser
+
+from aitools.errors import AiToolsPdbError
+from aitools.common import append_domain, configure_logging, fqdnify
+from aitools.config import AiConfig, PdbConfig
+from aitools.pdb import PdbClient
+
+OPENRC_ENV = {
+    'OS_AUTH_URL':'https://keystone.cern.ch/krb/v3',
+    'OS_IDENTITY_API_VERSION':'3',
+    'OS_PROJECT_DOMAIN_ID':'default',
+    'OS_USERNAME':getuser()
+}
+ENV_TO_UNSET = ['OS_PROJECT_ID', 'OS_TENANT_ID', 'OS_TENANT_NAME']
+
+def parse_cmd_args():
+    parser = ArgumentParser(description="Set OpenStack project credentials "
+                                        "based on a single host")
+    pdb_config = PdbConfig()
+    pdb_config.add_standard_args(parser)
+    parser.add_argument('-v', '--verbose', action="store_true",
+                        help="Verbose output")
+    parser.add_argument('-s', '--same-project-as', type=str, metavar="HOST",
+                        help="Hostname to get the OS Project credentials from")
+    parser.add_argument("project", nargs='?', metavar="OS_PROJECT",
+                        help="OpenStack project name")
+    autocomplete(parser)
+    args = parser.parse_args()
+
+    if args.same_project_as and args.project:
+        parser.error("'--same-project-as' and 'OS_PROJECT' are mutually exclusive")
+    return args
+
+def print_env_variables(project_name=None):
+    if not project_name:
+        project_name = "Personal %s" % OPENRC_ENV['OS_USERNAME']
+    OPENRC_ENV['OS_PROJECT_NAME'] = "'%s'" % project_name
+
+    # First unset potentially clashing variables
+    for name in ENV_TO_UNSET:
+        print "unset %s;" % name
+
+    for name, value in OPENRC_ENV.items():
+        print "export %s=%s;" % (name, value)
+
+    logging.info("OpenStack environment variables set for Project = '%s'"
+                 "" % project_name)
+
+def main():
+    args = parse_cmd_args()
+    configure_logging(args)
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(args)
+
+    host = args.same_project_as
+    project_name = args.project
+    if host:
+        fqdn_host = fqdnify(host)
+        if not fqdn_host:
+            logging.error("Host '%s' not found in DNS" % host)
+            sys.exit(1)
+
+        if fqdn_host != append_domain(host):
+            logging.debug("'%s' is an alias for '%s', "
+                          "attempting to continue..." % (host, fqdn_host))
+
+        try:
+            pdb = PdbClient(deref_alias=config.dereference_alias)
+            project_name = pdb.get_facts(fqdn_host, 'cern_os_tenant')['cern_os_tenant']
+        except AiToolsPdbError as error:
+            logging.error(error)
+            sys.exit(3)
+
+    print_env_variables(project_name)
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
