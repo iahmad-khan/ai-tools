@@ -142,6 +142,7 @@ def main():
         else:
             hostgroup = args.foreman_hostgroup
         logging.info("Hostgroup: %s" % hostgroup)
+        logging.info("Getting facts from PuppetDB...")
         try:
             facts = pdb.get_facts(hostname=fqdn)
         except AiToolsPdbNotFoundError:
