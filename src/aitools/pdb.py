@@ -51,18 +51,25 @@ class PdbClient(HTTPClient):
             raise AiToolsPdbNotFoundError("Host %s not found in PuppetDB" % hostname)
         return body
 
-    def get_facts(self, hostname):
+    def get_facts(self, hostname, fact=None):
         """
-        Return all current facts for the specified host, from the /v3/nodes/[hostname]/facts URL.
+        Return all current facts (or a single fact, if specified) for the specified host, from
+        the /v3/nodes/[hostname]/facts/[fact] URL.
 
         :param hostname: the hostname to query
+        :param hostname: the fact to query, if present
         :return: dict of facts
         :raise AiToolsPdbError: in case the hostname is not found
         """
-        host_endpoint = "v3/nodes/%s/facts" % hostname
+        host_endpoint = "v3/nodes/%s/facts/%s" % (hostname, fact or '')
         (code, body) = self.__do_api_request("get", host_endpoint)
-        if code == requests.codes.not_found:
-            raise AiToolsPdbNotFoundError("Host %s not found in PuppetDB" % hostname)
+        if code == requests.codes.not_found or not body:
+            # Code is 200 even when hostname is not found.
+            if fact:
+                raise AiToolsPdbNotFoundError("Host '%s' doesn't have fact '%s' in "
+                    "PuppetDB" % (hostname, fact))
+            else:
+                raise AiToolsPdbNotFoundError("Host '%s' not found in PuppetDB" % hostname)
         return dict([ (f['name'], f['value']) for f in body ])
 
     def get_resources(self, hostname, resource):
