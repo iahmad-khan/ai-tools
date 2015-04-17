@@ -30,6 +30,7 @@ from aitools.common import validate_fqdn
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsHieraError, AiToolsPdbNotFoundError
+from aitools.errors import AiToolsPdbError
 
 from aitools.completer import ForemanCompleter
 
@@ -153,6 +154,10 @@ def main():
             facts = pdb.get_facts(hostname=fqdn)
         except AiToolsPdbNotFoundError:
             logging.warn("Host not found in PDB, some parts of the hierarchy "
+                "won't be explored")
+            facts = {}
+        except AiToolsPdbError:
+            logging.warn("PDB is not available, some parts of the hierarchy "
                 "won't be explored")
             facts = {}
     except AiToolsForemanError, error:
