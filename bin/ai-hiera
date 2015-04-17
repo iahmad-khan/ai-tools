@@ -150,16 +150,15 @@ def main():
             hostgroup = args.foreman_hostgroup
         logging.info("Hostgroup: %s" % hostgroup)
         logging.info("Getting facts from PuppetDB...")
+        facts = {}
         try:
             facts = pdb.get_facts(hostname=fqdn)
         except AiToolsPdbNotFoundError:
             logging.warn("Host not found in PDB, some parts of the hierarchy "
                 "won't be explored")
-            facts = {}
         except AiToolsPdbError:
             logging.warn("PDB is not available, some parts of the hierarchy "
                 "won't be explored")
-            facts = {}
     except AiToolsForemanError, error:
         logging.error("Couldn't fetch Foreman entry (%s)" % error)
         return 10
