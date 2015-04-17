@@ -79,6 +79,12 @@ def parse_cmdline_args():
         ).completer = ForemanCompleter(model='hostgroups',item='title')
 
     ##
+    ## Foreman options
+    ##
+    pdb_config = PdbConfig()
+    pdb_config.add_standard_args(parser)
+
+    ##
     ## Positional
     ##
     parser.add_argument('key', nargs='+', default=None,
