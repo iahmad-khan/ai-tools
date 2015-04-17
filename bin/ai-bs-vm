@@ -306,13 +306,16 @@ def print_summary(args, fqdn, openstack_env):
     logging.info("Roger server: %s" % roger_config.roger_hostname)
     logging.info("Roger port: %s" % str(roger_config.roger_port))
 
-def _manage_volumes(cinder, image=None, attachments={}):
+def _manage_volumes(cinder, hostname, image=None, attachments={}):
     volumes = {}
+    n_created_volumes = 0
     for device, (volume_info, delete_on_terminate) in attachments.iteritems():
         volume = None
         if is_valid_size_format(volume_info):
+            n_created_volumes += 1
             volume = cinder.create(size=volume_info,
-                imageRef=image if device == 'vda' else None)
+                imageRef=image if device == 'vda' else None,
+                display_name='%s_vol_%s' % (hostname, str(n_created_volumes).zfill(3)))
         volume_id = volume.id if volume else volume_info
         if is_valid_UUID(volume_id):
             volume = cinder.is_ready(volume_id=volume_id,
@@ -412,6 +415,7 @@ def main():
                 image = nova.find_image_by_name(name=image)
 
             volumes = _manage_volumes(cinder=cinder,
+                        hostname=fqdn,
                         attachments=ATTACHMENTS,
                         image=image)
             logging.debug(volumes)
