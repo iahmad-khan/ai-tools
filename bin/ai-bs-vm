@@ -11,6 +11,7 @@
 #   4 Kerberos TGT not found or expired
 #   5 FQDN is invalid
 #   6 Userdata generation failed
+#   7 Userdata dump failed
 #  10 Foreman registration failed
 #  20 Host staging failed
 #  30 Nova boot failed
@@ -101,6 +102,8 @@ def parse_cmdline_args():
         default=DEFAULT_PUPPETINIT_PATH)
     parser.add_argument('--userdata-dir', type=str,
         help="Path to a directory with snippets to attach to the userdata")
+    parser.add_argument('--userdata-dump', type=str,
+        help="Path to a file to dump the userdata")
     parser.add_argument('--landb-mainuser', type=str,
         help="LANDB main user to be assigned to the virtual machine",
         default=os.environ.get('AIBS_LANDB_MAINUSER', None))
@@ -355,6 +358,16 @@ def main():
     except AiToolsInitError, error:
         logging.error("Failed to generate userdata (%s). Exiting..." % error)
         return 6
+
+    if args.userdata_dump:
+        logging.info("Dumping userdata to %s..." % args.userdata_dump)
+        try:
+            userdata_file = open(args.userdata_dump, "w")
+            userdata_file.write(userdata)
+            userdata_file.close()
+        except IOError as error:
+            logging.error("Failed to dump userdata (%s). Exiting..." % error)
+            return 7
 
     foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
 

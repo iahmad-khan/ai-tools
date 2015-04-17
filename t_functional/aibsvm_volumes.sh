@@ -80,6 +80,13 @@ _expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE"
 _expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --nova-boot-from-new-volume '10GB'
 _expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --nova-boot-from-new-volume '10GB' --nova-attach-new-volume 'vdb=1GB' --nova-attach-new-volume 'vdc=1GB'
 
+echo "Userdata dump..."
+_expect 7 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --userdata-dump /etc/passwd
+DUMP=$(mktemp -u)
+_expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --userdata-dump $DUMP
+_expect 0 stat $DUMP
+rm -rf $DUMP
+
 echo "Tearing down..."
 rm -f $CONF
 echo "All tests passed :)"
