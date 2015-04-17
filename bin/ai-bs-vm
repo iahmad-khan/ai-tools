@@ -311,7 +311,7 @@ def _manage_volumes(cinder, hostname, image=None, attachments={}):
         if is_valid_size_format(volume_info):
             n_created_volumes += 1
             volume = cinder.create(size=volume_info,
-                imageRef = image if device == 'vda' else None,
+                imageRef=image if device == 'vda' else None,
                 display_name='%svol%s' % (hostname, str(n_created_volumes).zfill(3)))
         volume_id = volume.id if volume else volume_info
         if is_valid_UUID(volume_id):
