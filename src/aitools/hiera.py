@@ -5,7 +5,6 @@ import os
 import logging
 import subprocess
 
-from aitools.common import extract_fact
 from aitools.errors import AiToolsHieraError
 
 DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
@@ -75,7 +74,7 @@ class HieraClient():
                 process.returncode)
 
     def __append_fact(self, name, facts, fqdn, hiera_cmd):
-        value = extract_fact(name, facts, fqdn)
+        value = facts.get(name)
         if value:
             logging.debug("Fact '%s': %s" % (name, value))
             hiera_cmd.append("::%s=%s" % (name, value))
