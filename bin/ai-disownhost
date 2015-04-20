@@ -9,6 +9,7 @@
 #   0 all operations succeeded
 #   2 bad command line
 #   4 Kerberos TGT not found or expired
+#  10 Landb authentication failed
 
 import sys
 import logging
@@ -17,20 +18,22 @@ import argcomplete
 
 from aitools.foreman import ForemanClient
 from aitools.roger import RogerClient
+from aitools.landb import LandbClient
 from aitools.config import ForemanConfig, RogerConfig
+from aitools.config import LandbConfig
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
 from aitools.common import fqdnify
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
-from aitools.errors import AiToolsAiForemanError
+from aitools.errors import AiToolsLandbError
 from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotFoundError
 
 from aitools.completer import ForemanCompleter
 
 # Read from conf?
-DEFAULT_NEXT_OWNER = "sysadmins-team"
+DEFAULT_NEXT_OWNER = "sysadmin-team"
 DEFAULT_NEXT_HOSTGROUP = "retirement/incoming"
 
 def parse_cmdline_args():
@@ -74,6 +77,14 @@ def parse_cmdline_args():
     parser.add_argument('--roger-disable', action="store_true",
         help="Disable Roger actions")
 
+    ##
+    ## Landb options
+    ##
+    landb_config = LandbConfig()
+    landb_config.add_standard_args(parser)
+    parser.add_argument('--landb-disable', action="store_true",
+        help="Disable Landb actions")
+
     argcomplete.autocomplete(parser)
     try:
         args = parser.parse_args()
@@ -96,7 +107,7 @@ def alarms(fqdn, roger):
         logging.error("Received unexpected error trying to switch off alarms in roger: %s" % error)
         logging.info("Please update roger for machine to switch alarms off if necessary")
 
-def disown(hostname, args, foreman, roger):
+def disown(hostname, args, foreman, roger, landb):
     fqdn = fqdnify(hostname)
     if not fqdn:
         logging.error("Couldn't fqdnify %s, skipping...", hostname)
@@ -111,15 +122,26 @@ def disown(hostname, args, foreman, roger):
 
     logging.debug("Current hostgroup: %s", old_hostgroup)
 
-    logging.info("Moving host to %s...", args.hostgroup)
     # 1. Hostgroup update
-    try:
-        foreman.updatehost(fqdn, hostgroup=args.hostgroup)
-    except AiToolsForemanError, error:
-        logging.error("Foreman: %s", error)
+    if not args.foreman_disable:
+        logging.info("Moving host to %s...", args.hostgroup)
+        try:
+            foreman.updatehost(fqdn, hostgroup=args.hostgroup)
+        except AiToolsForemanError, error:
+            logging.error("Foreman: %s", error)
 
     # 2. Disable alarms and change appstate
-    alarms(fqdn, roger)
+    if not args.roger_disable:
+        alarms(fqdn, roger)
+
+    # 3. Change LANDB reponsible
+    if not args.landb_disable:
+        logging.info("Changing LANDB responsible...")
+        try:
+            landb.change_responsible(fqdn, args.owner, egroup=True)
+        except AiToolsLandbError, error:
+            logging.error(error)
+            # Put host back in old_hostgroup
 
     logging.info("Done")
 
@@ -132,7 +154,7 @@ def main():
     configure_logging(args)
 
     try:
-        args.krb_principal = verify_kerberos_environment()
+        krb_principal = verify_kerberos_environment()
     except AiToolsInitError:
         logging.error("TGT not found or expired. Exiting...")
         return 4
@@ -140,9 +162,15 @@ def main():
     foreman = ForemanClient(dryrun=args.dryrun,
         deref_alias=args.dereference_alias)
     roger = RogerClient(deref_alias=args.dereference_alias)
+    try:
+        landb = LandbClient(dryrun=args.dryrun,
+            username=krb_principal.replace("@CERN.CH", ""))
+    except AiToolsLandbError, error:
+        logging.error(error)
+        return 10
 
     for hostname in args.hostname:
-        disown(hostname, args, foreman, roger)
+        disown(hostname, args, foreman, roger, landb)
 
     return 0
 

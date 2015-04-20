@@ -111,3 +111,9 @@ class AiToolsAuthzNotImplementedError(AiToolsAuthzError):
 
 class AiToolsAuthzInternalServerError(AiToolsAuthzError):
     pass
+
+class AiToolsLandbError(AiToolsError):
+    pass
+
+class AiToolsLandbInitError(AiToolsLandbError):
+    pass

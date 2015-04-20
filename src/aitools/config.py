@@ -174,7 +174,6 @@ class TrustedBagConfig(AiConfig):
         parser.add_argument('--tbag-port', type=int, help="Trusted bag port")
         self.add_global_args(parser)
 
-
 class PwnConfig(AiConfig):
 
     def _get_from_configfile(self, key, section="pwn"):
@@ -195,4 +194,15 @@ class AuthzConfig(AiConfig):
         parser.add_argument('--authz-timeout', type=int, help="Timeout for authz operations")
         parser.add_argument('--authz-hostname', help="Authz hostname")
         parser.add_argument('--authz-port', type=int, help="Authz port")
+
+class LandbConfig(AiConfig):
+
+    def _get_from_configfile(self, key, section="landb"):
+        return super(LandbConfig, self)._get_from_configfile(key, section=section)
+
+    def add_standard_args(self, parser):
+        parser.add_argument('--landb-timeout', type=int,
+            help="Timeout for operations")
+        parser.add_argument('--landb-hostname', help="Landb hostname")
+        parser.add_argument('--landb-port', type=int, help="Landb port")
         self.add_global_args(parser)
