@@ -185,3 +185,14 @@ class PwnConfig(AiConfig):
         parser.add_argument('--pwn-hostname', help="Pwn hostname")
         parser.add_argument('--pwn-port', type=int, help="Pwn port")
         self.add_global_args(parser)
+
+class AuthzConfig(AiConfig):
+
+    def _get_from_configfile(self, key, section="authz"):
+        return super(AuthzConfig, self)._get_from_configfile(key, section=section)
+
+    def add_standard_args(self, parser):
+        parser.add_argument('--authz-timeout', type=int, help="Timeout for authz operations")
+        parser.add_argument('--authz-hostname', help="Authz hostname")
+        parser.add_argument('--authz-port', type=int, help="Authz port")
+        self.add_global_args(parser)
