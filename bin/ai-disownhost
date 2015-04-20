@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+# This is a command line client to do disown hosts
+# for further inspection by the sysadmins and procurement
+# teams.
+# Authors:
+#  Nacho Barrientos <nacho.barrientos@cern.ch>
+
+# Exit codes:
+#   0 all operations succeeded
+#   2 bad command line
+#   4 Kerberos TGT not found or expired
+
+import sys
+import logging
+import argparse
+import argcomplete
+
+from aitools.foreman import ForemanClient
+from aitools.roger import RogerClient
+from aitools.config import ForemanConfig, RogerConfig
+
+from aitools.common import configure_logging
+from aitools.common import verify_kerberos_environment
+from aitools.common import fqdnify
+
+from aitools.errors import AiToolsInitError, AiToolsForemanError
+from aitools.errors import AiToolsAiForemanError
+from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotFoundError
+
+from aitools.completer import ForemanCompleter
+
+# Read from conf?
+DEFAULT_NEXT_OWNER = "sysadmins-team"
+DEFAULT_NEXT_HOSTGROUP = "retirement/incoming"
+
+def parse_cmdline_args():
+    """Parses and validates cmdline arguments"""
+    parser = argparse.ArgumentParser()
+
+    ##
+    ## Common options
+    ##
+
+    parser.add_argument('-v', '--verbose',
+        action="store_true",
+        help="Be chatty")
+    parser.add_argument('-d', '--dryrun',
+        action="store_true",
+        help="Don't execute actions that alter data")
+    parser.add_argument('-o', '--owner', type=str,
+        default=DEFAULT_NEXT_OWNER,
+        help="LANDB resposible after disowning (default: '%s')" % \
+            DEFAULT_NEXT_OWNER)
+    parser.add_argument('-g', '--hostgroup', type=str,
+        default=DEFAULT_NEXT_HOSTGROUP,
+        help="Target hostgroup after disowning (default: '%s')" % \
+            DEFAULT_NEXT_HOSTGROUP)
+    parser.add_argument('hostname', nargs='+',
+        help="Zero of more hostnames (qualified or not)").completer = \
+            ForemanCompleter()
+    ##
+    ## Foreman options
+    ##
+    foreman_config = ForemanConfig()
+    foreman_config.add_standard_args(parser)
+    parser.add_argument('--foreman-disable', action="store_true",
+        help="Disable Foreman actions")
+
+    ##
+    ## Roger options
+    ##
+    roger_config = RogerConfig()
+    roger_config.add_standard_args(parser)
+    parser.add_argument('--roger-disable', action="store_true",
+        help="Disable Roger actions")
+
+    argcomplete.autocomplete(parser)
+    try:
+        args = parser.parse_args()
+    except IOError, error:
+        parser.exit(1, str(error))
+
+    return args
+
+def alarms(fqdn, roger):
+    logging.info("Disabling alarms and setting appstate...")
+    try:
+        state = roger.update_or_create_state(fqdn, appstate="disabled", nc_alarmed="false",
+            hw_alarmed="false", app_alarmed="false", os_alarmed="false",
+            message="alarms disabled by ai-disownhost")
+    except AiToolsRogerNotAllowedError, error:
+        logging.error("Couldn't switch off Roger alarms, not authorized (%s)" % error)
+    except AiToolsRogerNotFoundError, error:
+        logging.error("Couldn't find Roger entry to switch off alarms (%s)" % error)
+    except Exception, error:
+        logging.error("Received unexpected error trying to switch off alarms in roger: %s" % error)
+        logging.info("Please update roger for machine to switch alarms off if necessary")
+
+def disown(hostname, args, foreman, roger):
+    fqdn = fqdnify(hostname)
+    if not fqdn:
+        logging.error("Couldn't fqdnify %s, skipping...", hostname)
+        return
+
+    logging.info("Starting disown procedure for %s...", fqdn)
+    logging.info("Getting current hostgroup...")
+    try:
+        old_hostgroup = foreman.gethost(fqdn, toexpand=[])['hostgroup_name']
+    except AiToolsForemanError, error:
+        logging.error("Foreman: %s", error)
+
+    logging.debug("Current hostgroup: %s", old_hostgroup)
+
+    logging.info("Moving host to %s...", args.hostgroup)
+    # 1. Hostgroup update
+    try:
+        foreman.updatehost(fqdn, hostgroup=args.hostgroup)
+    except AiToolsForemanError, error:
+        logging.error("Foreman: %s", error)
+
+    # 2. Disable alarms and change appstate
+    alarms(fqdn, roger)
+
+    logging.info("Done")
+
+def main():
+    """Application entrypoint"""
+    args = parse_cmdline_args()
+    fconfig = ForemanConfig()
+    fconfig.read_config_and_override_with_pargs(args)
+
+    configure_logging(args)
+
+    try:
+        args.krb_principal = verify_kerberos_environment()
+    except AiToolsInitError:
+        logging.error("TGT not found or expired. Exiting...")
+        return 4
+
+    foreman = ForemanClient(dryrun=args.dryrun,
+        deref_alias=args.dereference_alias)
+    roger = RogerClient(deref_alias=args.dereference_alias)
+
+    for hostname in args.hostname:
+        disown(hostname, args, foreman, roger)
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
