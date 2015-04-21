@@ -5,7 +5,6 @@ import os
 import logging
 import subprocess
 
-from aitools.common import extract_fact
 from aitools.errors import AiToolsHieraError
 
 DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
@@ -60,7 +59,7 @@ class HieraClient():
         hiera_cmd.extend(["::encgroup_%d=%s" % (i,x) 
             for i,x in enumerate(hostgroup)])
         for factname in ['operatingsystemmajorrelease', 'osfamily', 'cern_hwvendor']:
-            self.__append_fact(factname, facts, fqdn, hiera_cmd)
+            self.__append_fact(factname, facts, hiera_cmd)
         logging.debug("About to execute: %s" % hiera_cmd)
         try:
             process = subprocess.Popen(hiera_cmd, stdout=subprocess.PIPE,
@@ -74,8 +73,8 @@ class HieraClient():
             raise AiToolsHieraError("Hiera returned non-zero exit code (%d)" %
                 process.returncode)
 
-    def __append_fact(self, name, facts, fqdn, hiera_cmd):
-        value = extract_fact(name, facts, fqdn)
+    def __append_fact(self, name, facts, hiera_cmd):
+        value = facts.get(name)
         if value:
             logging.debug("Fact '%s': %s" % (name, value))
             hiera_cmd.append("::%s=%s" % (name, value))

@@ -19,16 +19,18 @@ from argcomplete.completers import FilesCompleter
 
 from aitools.foreman import ForemanClient
 from aitools.hiera import HieraClient
+from aitools.pdb import PdbClient
 
 from aitools.hiera import DEFAULT_HIERA_CONF_PATH
 
-from aitools.config import ForemanConfig
+from aitools.config import ForemanConfig, PdbConfig
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
 from aitools.common import validate_fqdn
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
-from aitools.errors import AiToolsHieraError
+from aitools.errors import AiToolsHieraError, AiToolsPdbNotFoundError
+from aitools.errors import AiToolsPdbError
 
 from aitools.completer import ForemanCompleter
 
@@ -78,6 +80,12 @@ def parse_cmdline_args():
         ).completer = ForemanCompleter(model='hostgroups',item='title')
 
     ##
+    ## Foreman options
+    ##
+    pdb_config = PdbConfig()
+    pdb_config.add_standard_args(parser)
+
+    ##
     ## Positional
     ##
     parser.add_argument('key', nargs='+', default=None,
@@ -98,6 +106,8 @@ def main():
     args = parse_cmdline_args()
     fconfig = ForemanConfig()
     fconfig.read_config_and_override_with_pargs(args)
+    pdbconfig = PdbConfig()
+    pdbconfig.read_config_and_override_with_pargs(args)
 
     configure_logging(args)
 
@@ -116,6 +126,7 @@ def main():
     print_summary(args, fqdn)
 
     foreman = ForemanClient(dryrun=False, deref_alias=args.dereference_alias)
+    pdb = PdbClient()
 
     try:
         host = foreman.gethost(fqdn=fqdn,
@@ -138,7 +149,16 @@ def main():
         else:
             hostgroup = args.foreman_hostgroup
         logging.info("Hostgroup: %s" % hostgroup)
-        facts = foreman.getfacts(fqdn=fqdn)
+        logging.info("Getting facts from PuppetDB...")
+        facts = {}
+        try:
+            facts = pdb.get_facts(hostname=fqdn)
+        except AiToolsPdbNotFoundError:
+            logging.warn("Host not found in PDB, some parts of the hierarchy "
+                "won't be explored")
+        except AiToolsPdbError:
+            logging.warn("PDB is not available, some parts of the hierarchy "
+                "won't be explored")
     except AiToolsForemanError, error:
         logging.error("Couldn't fetch Foreman entry (%s)" % error)
         return 10

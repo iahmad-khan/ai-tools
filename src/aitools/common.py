@@ -178,11 +178,6 @@ def append_domain(hostname):  # todo: replace by fqndify
     return hostname
 
 
-def extract_fact(name, facts, fqdn):
-    if fqdn in facts and name in facts[fqdn]:
-        return facts[fqdn][name]
-    return None
-
 def is_valid_UUID(value):
     try:
         UUID(value, version=4)
