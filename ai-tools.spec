@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.0
+Version: 9.1
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -83,6 +83,17 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Apr 21 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.1-1
+- [ai-bs-vm] Add support for deleting volumes upon instance termination.
+- [ai-bs-vm] Name created volumes after the instance using them.
+- [ai-bs-vm] Add option to dump the generated userdata to a file.
+- [ai-kill-vm] Add --disable-* options.
+- [ai-hiera] Get facts from PDB instead of Foreman.
+- [ai-installhost] Add support for new RHEL AIMS targets.
+- [ai-installhost] Drop support for Ferora AIMS targets.
+- [ai-installhost] Differentiate between minor CentOS versions.
+- [ai-foreman] Fix a couple of typos in the manpage.
+
 * Wed Apr 01 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.0-1
 - [ai-foreman] New!
 - [ai-add-param] New!
