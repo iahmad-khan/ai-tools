@@ -8,6 +8,7 @@ from suds.client import Client
 from suds.sax.element import Element
 from suds.xsd.doctor import ImportDoctor, Import
 from suds import WebFault
+from suds import null
 
 from aitools.config import LandbConfig
 from aitools.common import shortify
@@ -60,17 +61,35 @@ class LandbClient():
         auth_header = Element('Auth').insert(authTok)
         self.client.set_options(soapheaders=auth_header)
 
-    def change_responsible(self, fqdn, login, egroup=True):
+    def change_responsible(self, fqdn, name, firstname=None):
         if self.dryrun:
             logging.info("Would have changed responsible to '%s'", login)
             return
 
+        logging.debug("Getting object representation...")
         hostname = shortify(fqdn)
         try:
             device = self.client.service.getDeviceInfo(hostname)
         except WebFault, error:
-            raise AiToolsLandbError(error)
+            logging.debug(error)
+            raise AiToolsLandbError("getDeviceInfo failed (-v for more info)")
 
-        # Generate a DeviceInput with the new resposible
+        new_responsible = self.client.factory.create("types:PersonInput")
+        if not firstname:
+            new_responsible.FirstName = 'E-GROUP'
+        else:
+            new_responsible.FirstName = firstname.upper()
+        new_responsible.Name = name.upper()
+        new_responsible.Department = null()
+        new_responsible.Group = null()
 
-        # Call deviceUpdate
+        logging.debug("Current responsible: %s",  device.ResponsiblePerson)
+        logging.debug("New responsible: %s",  new_responsible)
+        device.ResponsiblePerson = new_responsible
+
+        logging.debug("Calling deviceUpdate...")
+        try:
+            response = self.client.service.deviceUpdate(hostname, device)
+        except WebFault, error:
+            logging.debug(error)
+            raise AiToolsLandbError("deviceUpdate failed (-v for more info)")
