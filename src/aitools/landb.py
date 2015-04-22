@@ -77,8 +77,8 @@ class LandbClient():
         new_responsible.Department = null()
         new_responsible.Group = null()
 
-        logging.debug("Current responsible: %s",  device.ResponsiblePerson)
-        logging.debug("New responsible: %s",  new_responsible)
+        logging.debug("Current responsible: %s", device.ResponsiblePerson)
+        logging.debug("New responsible: %s", new_responsible)
         device.ResponsiblePerson = new_responsible
 
         if self.dryrun:
