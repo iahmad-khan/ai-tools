@@ -3,8 +3,8 @@
 
 import logging
 import getpass
+import suds
 
-from suds.client import Client 
 from suds.sax.element import Element
 from suds.xsd.doctor import ImportDoctor, Import
 from suds import WebFault
@@ -49,8 +49,8 @@ class LandbClient():
         self.__init_soap_client()
 
     def __init_soap_client(self):
-        self.client = Client(WSDL_URL, 
-            doctor=ImportDoctor(Import(XMLSOAP_SCHEMA_URL)), cache=None) 
+        self.client = suds.client.Client(WSDL_URL,
+            doctor=ImportDoctor(Import(XMLSOAP_SCHEMA_URL)), cache=None)
 
         try:
             token = self.client.service.getAuthToken(self.username,
