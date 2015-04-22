@@ -20,7 +20,7 @@ XMLSOAP_SCHEMA_URL = 'http://schemas.xmlsoap.org/soap/encoding/'
 
 class LandbClient():
 
-    def __init__(self, username, host=None, port=None, timeout=None, 
+    def __init__(self, username, password, host=None, port=None, timeout=None,
         dryrun=False, deref_alias=False):
         """
         Landb client for interacting with the network database. Autoconfigures via the AiConfig
@@ -40,8 +40,11 @@ class LandbClient():
         self.deref_alias = deref_alias
         self.cache = {}
         self.username = username
-        logging.info("This tool talks to LANDB so your password is required")
-        self.password = getpass.getpass()
+        if not password:
+            logging.info("This tool talks to LANDB so your password is required")
+            self.password = getpass.getpass()
+        else:
+            self.password = password
         self.__init_soap_client()
 
     def __init_soap_client(self):
