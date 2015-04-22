@@ -55,7 +55,14 @@ class TestLandbClient(unittest.TestCase):
         self.assertEqual("FOO", actual_new_device.ResponsiblePerson.Name)
         self.assertEqual("BAR", actual_new_device.ResponsiblePerson.FirstName)
 
-    def test_change_responsible_failure(self):
+    def test_change_responsible_getinfo_failure(self):
+        self.sudsc_mock.return_value.service.getDeviceInfo.side_effect = \
+            suds.WebFault("foo", "bar")
+        self.assertRaises(AiToolsLandbError, self.client.change_responsible,
+            "foo.cern.ch", "foo", None)
+        self.assertFalse(self.sudsc_mock.return_value.service.deviceUpdate.called)
+
+    def test_change_responsible_update_failure(self):
         self.sudsc_mock.return_value.service.deviceUpdate.side_effect = \
             suds.WebFault("foo", "bar")
         self.assertRaises(AiToolsLandbError, self.client.change_responsible,
