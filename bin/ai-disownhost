@@ -164,7 +164,8 @@ def main():
     roger = RogerClient(deref_alias=args.dereference_alias)
     try:
         landb = LandbClient(dryrun=args.dryrun,
-            username=krb_principal.replace("@CERN.CH", ""))
+            username=krb_principal.replace("@CERN.CH", ""),
+            password=None)
     except AiToolsLandbError, error:
         logging.error(error)
         return 10
