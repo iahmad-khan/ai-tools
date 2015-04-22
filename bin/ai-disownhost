@@ -16,6 +16,8 @@ import logging
 import argparse
 import argcomplete
 
+from prettytable import PrettyTable
+
 from aitools.foreman import ForemanClient
 from aitools.roger import RogerClient
 from aitools.landb import LandbClient
@@ -107,18 +109,19 @@ def alarms(fqdn, roger):
         logging.error("Received unexpected error trying to switch off alarms in roger: %s" % error)
         logging.info("Please update roger for machine to switch alarms off if necessary")
 
-def disown(hostname, args, foreman, roger, landb):
+def disown(hostname, args, foreman, roger, landb, table):
     fqdn = fqdnify(hostname)
     if not fqdn:
-        logging.error("Couldn't fqdnify %s, skipping...", hostname)
-        return
+        table.add_row([hostname, 'KO', "Couldn't fqdnify"])
+        return 1
 
     logging.info("Starting disown procedure for %s...", fqdn)
-    logging.info("Getting current hostgroup...")
+    logging.debug("Getting current hostgroup...")
     try:
         old_hostgroup = foreman.gethost(fqdn, toexpand=[])['hostgroup_name']
     except AiToolsForemanError, error:
-        logging.error("Foreman: %s", error)
+        table.add_row([fqdn, 'KO', "Couldn't get current hostgroup (%s)" % error])
+        return 2
 
     logging.debug("Current hostgroup: %s", old_hostgroup)
 
@@ -128,22 +131,34 @@ def disown(hostname, args, foreman, roger, landb):
         try:
             foreman.updatehost(fqdn, hostgroup=args.hostgroup)
         except AiToolsForemanError, error:
-            logging.error("Foreman: %s", error)
+            table.add_row([fqdn, 'KO', "Couldn't change hostgroup (%s)" % error])
+            return 3
 
     # 2. Disable alarms and change appstate
     if not args.roger_disable:
+        # This is not essential, thus we continue if it fails
         alarms(fqdn, roger)
 
     # 3. Change LANDB reponsible
     if not args.landb_disable:
         logging.info("Changing LANDB responsible...")
         try:
-            landb.change_responsible(fqdn, args.owner, egroup=True)
+            landb.change_responsible(fqdn, name=args.owner, firstname=None)
         except AiToolsLandbError, error:
-            logging.error(error)
-            # Put host back in old_hostgroup
+            err_msg = "Couldn't change LANDB responsible (%s)" % error
+            if not args.foreman_disable:
+                logging.debug("Moving host back to %s...", old_hostgroup)
+                try:
+                    foreman.updatehost(fqdn, hostgroup=args.hostgroup)
+                except AiToolsForemanError, error:
+                    err_msg = "%s and couldn't move it back to origin hostgroup (%s)" % \
+                        (error_msg, error)
+            table.add_row([fqdn, 'KO', err_msg])
+            return 4
 
     logging.info("Done")
+    table.add_row([fqdn, 'OK', ':)'])
+    return 0
 
 def main():
     """Application entrypoint"""
@@ -170,8 +185,10 @@ def main():
         logging.error(error)
         return 10
 
+    table = PrettyTable(['FQDN/Hostname', 'Status', 'Details'])
     for hostname in args.hostname:
-        disown(hostname, args, foreman, roger, landb)
+        disown(hostname, args, foreman, roger, landb, table)
+    print table
 
     return 0
 
