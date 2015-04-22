@@ -60,10 +60,6 @@ class LandbClient():
         self.client.set_options(soapheaders=auth_header)
 
     def change_responsible(self, fqdn, name, firstname=None):
-        if self.dryrun:
-            logging.info("Would have changed responsible to '%s'", login)
-            return
-
         logging.debug("Getting object representation...")
         hostname = shortify(fqdn)
         try:
@@ -84,6 +80,10 @@ class LandbClient():
         logging.debug("Current responsible: %s",  device.ResponsiblePerson)
         logging.debug("New responsible: %s",  new_responsible)
         device.ResponsiblePerson = new_responsible
+
+        if self.dryrun:
+            logging.info("Would have changed responsible to '%s'", name)
+            return
 
         logging.debug("Calling deviceUpdate...")
         try:
