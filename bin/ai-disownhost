@@ -190,12 +190,14 @@ def main():
         logging.error(error)
         return 10
 
+    failures = False
     table = PrettyTable(['FQDN/Hostname', 'Status', 'Details'])
     for hostname in args.hostname:
-        disown(hostname, args, foreman, roger, landb, table)
+        if disown(hostname, args, foreman, roger, landb, table) > 0:
+           failures = True
     print table
 
-    return 0
+    return 1 if failures else 0
 
 if __name__ == '__main__':
     sys.exit(main())
