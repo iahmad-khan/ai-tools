@@ -31,7 +31,7 @@ from aitools.common import fqdnify
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsLandbError
-from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotFoundError
+from aitools.errors import AiToolsRogerNotAllowedError
 
 from aitools.completer import ForemanCompleter
 
@@ -156,7 +156,7 @@ def disown(hostname, args, foreman, roger, landb, table):
                     foreman.updatehost(fqdn, hostgroup=args.hostgroup)
                 except AiToolsForemanError, error:
                     err_msg = "%s and couldn't move it back to origin hostgroup (%s)" % \
-                        (error_msg, error)
+                        (err_msg, error)
             table.add_row([fqdn, 'KO', err_msg])
             return 4
 
