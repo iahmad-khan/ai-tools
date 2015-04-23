@@ -96,7 +96,7 @@ def parse_cmdline_args():
     return args
 
 def alarms(fqdn, roger):
-    logging.info("Disabling alarms and setting appstate...")
+    logging.info("Disabling alarms and setting appstate to \"disabled\"...")
     try:
         state = roger.update_or_create_state(fqdn, appstate="disabled", nc_alarmed="false",
             hw_alarmed="false", app_alarmed="false", os_alarmed="false",
