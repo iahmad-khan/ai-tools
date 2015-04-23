@@ -89,10 +89,7 @@ def parse_cmdline_args():
         help="Disable Landb actions")
 
     argcomplete.autocomplete(parser)
-    try:
-        args = parser.parse_args()
-    except IOError, error:
-        parser.exit(1, str(error))
+    args = parser.parse_args()
 
     return args
 
