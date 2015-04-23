@@ -42,6 +42,7 @@ class LandbClient():
             self.password = getpass.getpass()
         else:
             self.password = password
+        logging.getLogger('suds.client').setLevel(logging.CRITICAL)
         self.__init_soap_client()
 
     def __init_soap_client(self):
