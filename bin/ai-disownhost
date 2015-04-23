@@ -104,8 +104,6 @@ def alarms(fqdn, roger):
             message="alarms disabled by ai-disownhost")
     except AiToolsRogerNotAllowedError, error:
         logging.error("Couldn't switch off Roger alarms, not authorized (%s)" % error)
-    except AiToolsRogerNotFoundError, error:
-        logging.error("Couldn't find Roger entry to switch off alarms (%s)" % error)
     except Exception, error:
         logging.error("Received unexpected error trying to switch off alarms in roger: %s" % error)
         logging.info("Please update roger for machine to switch alarms off if necessary")
