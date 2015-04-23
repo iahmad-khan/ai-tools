@@ -7,6 +7,7 @@
 
 # Exit codes:
 #   0 all operations succeeded
+#   1 some operations failed
 #   2 bad command line
 #   4 Kerberos TGT not found or expired
 #  10 Landb authentication failed
