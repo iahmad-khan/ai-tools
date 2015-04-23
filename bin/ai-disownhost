@@ -183,7 +183,7 @@ def main():
             username=krb_principal.replace("@CERN.CH", ""),
             password=None)
     except AiToolsLandbError, error:
-        logging.error(error)
+        logging.error("Failed to initialize the Landb client (%s)", error)
         return 10
 
     failures = False
