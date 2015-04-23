@@ -62,7 +62,7 @@ def parse_cmdline_args():
         help="Target hostgroup after disowning (default: '%s')" % \
             DEFAULT_NEXT_HOSTGROUP)
     parser.add_argument('hostname', nargs='+',
-        help="Zero of more hostnames (qualified or not)").completer = \
+        help="One of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
     ##
     ## Foreman options
