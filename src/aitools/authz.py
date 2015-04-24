@@ -65,7 +65,7 @@ class AuthzClient(HTTPClient):
         authz_endpoint = self.fetch_authz_endpoint(entity, scope, requestor)
         (code, body) = self.__do_api_request("get", authz_endpoint)
         if code == requests.codes.not_found:
-            raise AiToolsPwnNotFoundError("%s %s not found in Authz" % (scope.title(), entity))
+            raise AiToolsAuthzNotFoundError("%s %s not found in Authz" % (scope.title(), entity))
         return body
 
     def __do_api_request(self, method, url, data=None):
