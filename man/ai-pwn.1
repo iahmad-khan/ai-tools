@@ -1,0 +1,165 @@
+.TH AI-PWN "1" "April 2015" "CERN" "User Commands"
+.SH NAME
+ai-pwn \- Manage hostgroup and module ownership
+.SH DESCRIPTION
+usage: ai-pwn [\-h] [\-\-pwn\-timeout PWN_TIMEOUT] [\-\-pwn\-hostname PWN_HOSTNAME]
+.IP
+[\-\-pwn\-port PWN_PORT] [\-\-config CONFIG] [\-\-show_url] [\-\-dereference_alias] [\-v] [\-d]
+{add,delete,remove,set,show,showkeys} ...
+.PP
+A tool for managing hostgroup and module
+.SS "positional arguments:"
+.IP
+{add,delete,remove,set,show,showkeys}
+.TP
+set
+Set the list of owners
+.TP
+delete
+Delete ownership information
+.TP
+show
+Show ownership information
+.TP
+add
+Add new owner(s) to the list of known owners
+.TP
+remove
+Remove owner(s) from the list of known owners
+.SH COMMAND OVERVIEW
+
+
+.SS ai-pwn set
+usage: ai-pwn set [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE) [\-\-options OPTIONS]
+.IP
+OWNER [OWNER ...]
+.TP
+.B "positional arguments:"
+.TP
+OWNER
+Owner entity (account or egroup)
+.TP
+.B "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-hg\fR HOSTGROUP
+The hostgroup to set the ownership for
+.TP
+\fB\-\-md\fR MODULE
+The module to set the ownership for
+.TP
+\fB\-\-options\fR OPTIONS
+Extra options, in JSON format
+
+
+.SS ai-pwn delete
+usage: ai-pwn delete [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE)
+.TP
+.B "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-hg\fR HOSTGROUP
+The hostgroup to delete the ownership for
+.TP
+\fB\-\-md\fR MODULE
+The module to delete the ownership for
+
+
+.SS ai-pwn show
+usage: ai-pwn show [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE)
+.TP
+.B "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-hg\fR HOSTGROUP
+The hostgroup to show the ownership for
+.TP
+\fB\-\-md\fR MODULE
+The module to show the ownership for
+
+
+.SS ai-pwn add
+usage: ai-pwn add [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE)
+.IP
+OWNER [OWNER ...]
+.TP
+.B "positional arguments:"
+.TP
+OWNER
+Owner entity (account or egroup)
+.TP
+.B "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-hg\fR HOSTGROUP
+The hostgroup to set the ownership for
+.TP
+\fB\-\-md\fR MODULE
+The module to set the ownership for
+
+
+.SS ai-pwn remove
+usage: ai-pwn remove [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE)
+.IP
+OWNER [OWNER ...]
+.TP
+.B "positional arguments:"
+.TP
+OWNER
+Owner entity (account or egroup)
+.TP
+.B "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-hg\fR HOSTGROUP
+The hostgroup to set the ownership for
+.TP
+\fB\-\-md\fR MODULE
+The module to set the ownership for
+
+
+.SH GLOBAL OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show this help message and exit
+.TP
+\fB\-\-pwn\-timeout\fR PWN_TIMEOUT
+Timeout for pwn operations
+.TP
+\fB\-\-pwn\-hostname\fR PWN_HOSTNAME
+Pwn server hostname
+.TP
+\fB\-\-pwn\-port\fR PWN_PORT
+Pwn server port
+.TP
+\fB\-\-config\fR CONFIG
+Configuration file
+.TP
+\fB\-\-dereference_alias\fR
+Dereference aliases in urls
+.TP
+\fB\-\-show_url\fR
+show REST urls
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Be chatty
+.TP
+\fB\-d\fR, \fB\-\-dryrun\fR
+Don't do the requests that alter data
+
+.SH REPORTING BUGS
+If you experience any problem with this tool, please open a support
+call on SNOW (Functional Element "Configuration Management").
+
+.SH AUTHOR
+Akos Hencz <akos.hencz@cern.ch>
