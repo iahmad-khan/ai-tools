@@ -51,19 +51,11 @@ class TestAuthz(unittest.TestCase):
         scope = 'hostgroup'
         entity = self.test_entities[scope]
         requestor = self.test_user
+        #Missing requestor
         self.assertRaises(TypeError, authz.get_authz, entity, scope)
+        #None reuqestor
         self.assertRaises(AttributeError, authz.get_authz, entity, scope, None)
-        set_trace()
-        resp = authz.get_authz('afsserv', 'hostgroup', self.test_user)
-        # self.assertRaises(AiToolsAuthzNotFoundError, authz.get_authz, 'idontexist', scope, requestor)
-
-
-    # def test_02_pwn_get_hostgroup_ownership(self):
-    #     pwn = PwnClient()
-    #     scope = 'hostgroup'
-    #     entity = self.test_entities[scope]
-    #     expected_owners = pwn.clean_owners(self.test_ownership[0])
-    #     expected_options = self.test_options
-    #     result = pwn.get_ownership(entity, scope)
-    #     self.assertEqual(expected_owners, result['owners'])
-    #     self.assertEqual(expected_options, result['options'])
+        #Nonexistent entity
+        self.assertRaises(AiToolsAuthzNotAllowedError, authz.get_authz, 'idontexist', scope, requestor)
+        #Unauthorized entity
+        self.assertRaises(AiToolsAuthzNotAllowedError, authz.get_authz, 'afssrv', scope, requestor)

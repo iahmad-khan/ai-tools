@@ -17,7 +17,6 @@ from aitools.httpclient import HTTPClient
 from aitools.config import AuthzConfig
 from aitools.common import deref_url
 
-
 logger = logging.getLogger(__name__)
 
 class AuthzClient(HTTPClient):
