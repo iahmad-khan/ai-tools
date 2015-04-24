@@ -64,6 +64,7 @@ def parse_cmdline_args():
     parser.add_argument('hostname', nargs='+',
         help="One of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
+
     ##
     ## Foreman options
     ##
