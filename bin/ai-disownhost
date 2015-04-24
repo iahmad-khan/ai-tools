@@ -177,7 +177,8 @@ def main():
 
     foreman = ForemanClient(dryrun=args.dryrun,
         deref_alias=args.dereference_alias)
-    roger = RogerClient(deref_alias=args.dereference_alias)
+    roger = RogerClient(dryrun=args.dryrun,
+        deref_alias=args.dereference_alias)
     try:
         landb = LandbClient(dryrun=args.dryrun,
             username=krb_principal.replace("@CERN.CH", ""),
