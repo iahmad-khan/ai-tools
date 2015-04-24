@@ -97,7 +97,7 @@ class AiToolsPwnNotImplementedError(AiToolsPwnError):
 class AiToolsPwnInternalServerError(AiToolsPwnError):
     pass
 
-class AiToolsAuthzError(AiToolsHTTPClientError):
+class AiToolsAuthzError(AiToolsError):
     pass
 
 class AiToolsAuthzNotFoundError(AiToolsAuthzError):
