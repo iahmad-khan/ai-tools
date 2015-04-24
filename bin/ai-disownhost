@@ -113,22 +113,23 @@ def disown(hostname, args, foreman, roger, landb, table):
         return 1
 
     logging.info("Starting disown procedure for %s...", fqdn)
-    logging.debug("Getting current hostgroup...")
-    try:
-        host = foreman.gethost(fqdn, toexpand=[])
-    except AiToolsForemanError, error:
-        table.add_row([fqdn, 'KO', "Couldn't get current hostgroup (%s)" % error])
-        return 2
-
-    if not host['managed']:
-        table.add_row([fqdn, 'KO', "Host is not managed (VM?)"])
-        return 2
-
-    old_hostgroup = host['hostgroup_name']
-    logging.debug("Current hostgroup: %s", old_hostgroup)
 
     # 1. Hostgroup update
     if not args.foreman_disable:
+        logging.debug("Getting current hostgroup...")
+        try:
+            host = foreman.gethost(fqdn, toexpand=[])
+        except AiToolsForemanError, error:
+            table.add_row([fqdn, 'KO', "Couldn't get current hostgroup (%s)" % error])
+            return 2
+
+        if not host['managed']:
+            table.add_row([fqdn, 'KO', "This host looks like a virtual machine"])
+            return 2
+
+        old_hostgroup = host['hostgroup_name']
+        logging.debug("Current hostgroup: %s", old_hostgroup)
+
         logging.info("Moving host to %s...", args.hostgroup)
         try:
             foreman.updatehost(fqdn, hostgroup=args.hostgroup)
