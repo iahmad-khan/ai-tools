@@ -81,7 +81,7 @@ class LandbClient():
         device.ResponsiblePerson = new_responsible
 
         if self.dryrun:
-            logging.info("Would have changed responsible to '%s'", name)
+            logging.info("Would have changed the responsible to '%s'", name)
             return
 
         logging.debug("Calling deviceUpdate...")

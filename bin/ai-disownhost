@@ -149,8 +149,9 @@ def disown(hostname, args, foreman, roger, landb, table):
             landb.change_responsible(fqdn, name=args.owner, firstname=None)
         except AiToolsLandbError, error:
             err_msg = "Couldn't change LANDB responsible (%s)" % error
+            logging.error(err_msg)
             if not args.foreman_disable:
-                logging.debug("Moving host back to %s...", old_hostgroup)
+                logging.warn("Moving host back to %s...", old_hostgroup)
                 try:
                     foreman.updatehost(fqdn, hostgroup=args.hostgroup)
                 except AiToolsForemanError, error:
