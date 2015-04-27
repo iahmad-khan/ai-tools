@@ -65,7 +65,7 @@ class LandbClient():
             device = self.client.service.getDeviceInfo(hostname)
         except WebFault, error:
             logging.debug(error)
-            raise AiToolsLandbError("getDeviceInfo failed (-v for more info)")
+            raise AiToolsLandbError("getDeviceInfo failed (%s)" % error)
 
         new_responsible = self.client.factory.create("types:PersonInput")
         if not firstname:
@@ -89,4 +89,4 @@ class LandbClient():
             response = self.client.service.deviceUpdate(hostname, device)
         except WebFault, error:
             logging.debug(error)
-            raise AiToolsLandbError("deviceUpdate failed (-v for more info)")
+            raise AiToolsLandbError("getDeviceInfo failed (%s)" % error)
