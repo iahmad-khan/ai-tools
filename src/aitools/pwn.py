@@ -76,6 +76,8 @@ class PwnClient(HTTPClient):
         return map( lambda owner: owner.lower().strip().replace('@cern.ch',''), mylist )
 
     def get_ownership(self, entity, scope):
+        if not entity or not scope:
+            raise AttributeError("both entity and scope must be provided")
         pwn_endpoint = self.fetch_pwn_endpoint(entity, scope)
         (code, body) = self.__do_api_request("get", pwn_endpoint)
         if code == requests.codes.not_found:
@@ -102,10 +104,13 @@ class PwnClient(HTTPClient):
     def remove_owners(self, entity, scope, owners, options=None, **kwargs):
         result = self.get_ownership(entity, scope)
         existing_owners = result['owners']
-        new_owners = [owner for owner in existing_owners if owner not in self.clean_owners(owners)]
+        rem = self.clean_owners(owners)
+        new_owners = [owner for owner in existing_owners if owner not in rem]
         return self.put_ownership(entity, scope, new_owners, options=options, **kwargs)
 
     def create_ownership(self, entity, scope, owners, options=None, **kwargs):
+        if not entity or not scope or not owners:
+            raise AttributeError("entity, scope, and owners must be all provided")
         if self.dryrun:
             logger.info("Not adding '%s' to Pwn as dryrun enabled" % entity)
             return True
@@ -129,6 +134,8 @@ class PwnClient(HTTPClient):
         return body
 
     def put_ownership(self, entity, scope, owners, options=None, **kwargs):
+        if not entity or not scope or not owners:
+            raise AttributeError("entity, scope, and owners must be all provided")
         if self.dryrun:
             logger.info("Not adding '%s' to Pwn as dryrun enabled" % entity)
             return True
@@ -151,6 +158,8 @@ class PwnClient(HTTPClient):
         return body
 
     def delete_ownership(self, entity, scope):
+        if not entity or not scope:
+            raise AttributeError("both entity and scope must be provided")
         if self.dryrun:
             logger.info("Not deleting '%s' from Pwn as dryrun selected" % entity)
             return True
