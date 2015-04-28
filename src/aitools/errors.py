@@ -82,7 +82,7 @@ class AiToolsTrustedBagInternalServerError(AiToolsTrustedBagError):
 class AiToolsAiForemanError(AiToolsError):
     pass
 
-class AiToolsPwnError(AiToolsHTTPClientError):
+class AiToolsPwnError(AiToolsError):
     pass
 
 class AiToolsPwnNotFoundError(AiToolsPwnError):
