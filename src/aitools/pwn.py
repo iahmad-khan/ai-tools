@@ -72,8 +72,7 @@ class PwnClient(HTTPClient):
             self.get_ownership(entity, scope)
         except AiToolsPwnNotFoundError:
             return self.create_ownership(entity, scope, owners, options=options, **kwargs)
-        else:
-            return self.put_ownership(entity, scope, owners, options=options, **kwargs)
+        return self.put_ownership(entity, scope, owners, options=options, **kwargs)
 
     def add_owners(self, entity, scope, owners, options=None, **kwargs):
         try:
