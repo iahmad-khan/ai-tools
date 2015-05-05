@@ -93,9 +93,6 @@ class PwnClient(HTTPClient):
     def create_ownership(self, entity, scope, owners, options=None, **kwargs):
         if not entity or not scope or not owners:
             raise AttributeError("entity, scope, and owners must be all provided")
-        if self.dryrun:
-            logger.info("Not adding '%s' to Pwn as dryrun enabled" % entity)
-            return True
         logger.info("Adding ownership of '%s' to Pwn" % entity)
         pwn_endpoint = self.fetch_pwn_endpoint(scope=scope)
         data = dict()
@@ -104,6 +101,9 @@ class PwnClient(HTTPClient):
         if options:
             data["options"] = options
         d = json.dumps(data)
+        if self.dryrun:
+            logger.info("Not adding '%s' to Pwn as dryrun enabled" % entity)
+            return True
         (code, body) = self.__do_api_request("post", pwn_endpoint, data=d)
         if code == requests.codes.not_found:
             raise AiToolsPwnNotFoundError("Ownership endpoint '%s' not found in Pwn" % pwn_endpoint)
@@ -118,9 +118,6 @@ class PwnClient(HTTPClient):
     def put_ownership(self, entity, scope, owners, options=None, **kwargs):
         if not entity or not scope or not owners:
             raise AttributeError("entity, scope, and owners must be all provided")
-        if self.dryrun:
-            logger.info("Not adding '%s' to Pwn as dryrun enabled" % entity)
-            return True
         pwn_endpoint = self.fetch_pwn_endpoint(entity, scope)
         data = dict()
         data[scope] = entity.replace("/", "-")
@@ -128,6 +125,9 @@ class PwnClient(HTTPClient):
         if options:
             data["options"] = options
         d = json.dumps(data)
+        if self.dryrun:
+            logger.info("Not adding '%s' to Pwn as dryrun enabled" % entity)
+            return True
         (code, body) = self.__do_api_request("put", pwn_endpoint, data=d)
         if code == requests.codes.not_found:
             raise AiToolsPwnNotFoundError("%s %s not found in Pwn" % (scope.title(), entity))
@@ -142,10 +142,10 @@ class PwnClient(HTTPClient):
     def delete_ownership(self, entity, scope):
         if not entity or not scope:
             raise AttributeError("both entity and scope must be provided")
+        pwn_endpoint = self.fetch_pwn_endpoint(entity, scope)
         if self.dryrun:
             logger.info("Not deleting '%s' from Pwn as dryrun selected" % entity)
             return True
-        pwn_endpoint = self.fetch_pwn_endpoint(entity, scope)
         (code, body) = self.__do_api_request("delete", pwn_endpoint)
         if code == requests.codes.not_found:
             raise AiToolsPwnNotFoundError("%s %s not found, can't delete" % (scope.title(), entity))
