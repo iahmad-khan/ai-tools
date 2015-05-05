@@ -67,30 +67,30 @@ class PwnClient(HTTPClient):
             raise AiToolsPwnNotFoundError("%s %s not found in Pwn" % (scope.title(), entity))
         return body
 
-    def update_or_create_ownership(self, entity, scope, owners, options=None, **kwargs):
+    def update_or_create_ownership(self, entity, scope, owners, options=None):
         try:
             self.get_ownership(entity, scope)
         except AiToolsPwnNotFoundError:
-            return self.create_ownership(entity, scope, owners, options=options, **kwargs)
-        return self.put_ownership(entity, scope, owners, options=options, **kwargs)
+            return self.create_ownership(entity, scope, owners, options=options)
+        return self.put_ownership(entity, scope, owners, options=options)
 
-    def add_owners(self, entity, scope, owners, options=None, **kwargs):
+    def add_owners(self, entity, scope, owners, options=None):
         try:
             result = self.get_ownership(entity, scope)
         except AiToolsPwnNotFoundError:
-            return self.create_ownership(entity, scope, owners, options=options, **kwargs)
+            return self.create_ownership(entity, scope, owners, options=options)
         existing_owners = result['owners']
         new_owners = existing_owners + self.clean_owners(owners)
-        return self.put_ownership(entity, scope, new_owners, options=options, **kwargs)
+        return self.put_ownership(entity, scope, new_owners, options=options)
 
-    def remove_owners(self, entity, scope, owners, options=None, **kwargs):
+    def remove_owners(self, entity, scope, owners, options=None):
         result = self.get_ownership(entity, scope)
         existing_owners = result['owners']
         rem = self.clean_owners(owners)
         new_owners = [owner for owner in existing_owners if owner not in rem]
-        return self.put_ownership(entity, scope, new_owners, options=options, **kwargs)
+        return self.put_ownership(entity, scope, new_owners, options=options)
 
-    def create_ownership(self, entity, scope, owners, options=None, **kwargs):
+    def create_ownership(self, entity, scope, owners, options=None):
         if not entity or not scope or not owners:
             raise AttributeError("entity, scope, and owners must be all provided")
         logger.info("Adding ownership of '%s' to Pwn" % entity)
@@ -115,7 +115,7 @@ class PwnClient(HTTPClient):
             raise AiToolsPwnInternalServerError("Received 500 trying to post to '%s'" % pwn_endpoint)
         return body
 
-    def put_ownership(self, entity, scope, owners, options=None, **kwargs):
+    def put_ownership(self, entity, scope, owners, options=None):
         if not entity or not scope or not owners:
             raise AttributeError("entity, scope, and owners must be all provided")
         pwn_endpoint = self.fetch_pwn_endpoint(entity, scope)
