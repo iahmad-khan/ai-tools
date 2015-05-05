@@ -65,9 +65,6 @@ class TestPwn(unittest.TestCase):
         self.assertTrue(isinstance(result, list))
         self.assertEqual(result, self.test_ownership_clean[0])
 
-    def test_pwn_clean_owners_wrong_type(self):
-        self.assertRaises(AttributeError, self.client.clean_owners, {'owners': ['a','b']})
-
     # __do_api_request
 
     @patch.object(HTTPClient, 'do_request', return_value=(requests.codes.OK, Mock(text=my_test_json_response,
