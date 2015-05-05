@@ -21,6 +21,8 @@ from aitools.common import deref_url
 
 logger = logging.getLogger(__name__)
 
+PWN_ENDPOINT = "pwn/v1/%s/%s"
+
 class PwnClient(HTTPClient):
 
     def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
@@ -44,23 +46,10 @@ class PwnClient(HTTPClient):
         self.deref_alias = deref_alias
 
     def fetch_pwn_endpoint(self, entity=None, scope=None):
-        if scope and not entity:
-            if scope == 'module':
-                pwn_endpoint = "pwn/v1/module/"
-            elif scope == 'hostgroup':
-                pwn_endpoint = "pwn/v1/hostgroup/"
-            else:
-                raise AttributeError("scope must be either 'module' or 'hostgroup'")
-        elif scope and entity:
-            if scope == 'module':
-                pwn_endpoint = "pwn/v1/module/%s/" % entity
-            elif scope == 'hostgroup':
-                pwn_endpoint = "pwn/v1/hostgroup/%s/" % entity.replace("/", "-")
-            else:
-                raise AttributeError("scope must be either 'module' or 'hostgroup'")
-        else:
-            raise AttributeError("scope must be provided")
-        return pwn_endpoint
+        if scope == 'module' or scope == 'hostgroup':
+            return PWN_ENDPOINT % (scope, entity.replace("/", "-") + '/' if entity else '')
+        raise AttributeError("Scope must be a module or a hostgroup")
+
 
     def clean_owners(self, owners):
         """
