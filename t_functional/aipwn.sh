@@ -21,33 +21,34 @@ function _expect {
 }
 
  echo "Arguments"
- _expect 2 ai-pwn --config $CONF set --hg myhg --md mymod meeee@cern.ch
+ _expect 2 ai-pwn --config $CONF show module hostgroup
+ _expect 2 ai-pwn --config $CONF show module asd qwe
  _expect 2 ai-pwn --config $CONF set meeee@cern.ch
- _expect 2 ai-pwn --config $CONF set --hg myhg meeee --options \"{\'invalid\':\'json\'}\"
+ _expect 2 ai-pwn --config $CONF set hostgroup myhg --owners meeee --options \"{\'invalid\':\'json\'}\"
  _expect 2 ai-pwn --config $CONF set
 
  echo "Set ownership..."
- _expect 0 ai-pwn --config $CONF set --hg punch/puppetdb/grover ahencz@CERN.CH --options \'{\"valid\": \"json\"}\'
- _expect 0 ai-pwn --config $CONF set --md my_module ahencz@CERN.CH ai-config-robots
+ _expect 0 ai-pwn --config $CONF set hostgroup punch/puppetdb/grover --owners ahencz@CERN.CH --options \'{\"valid\": \"json\"}\'
+ _expect 0 ai-pwn --config $CONF set module my_module --owners ahencz@CERN.CH ai-config-robots
 
  echo "Add owners..."
- _expect 0 ai-pwn --config $CONF add --hg punch/puppetdb/grover bejones@CERN.CH nacho@CERN.CH
- _expect 0 ai-pwn --config $CONF add --md teigi bejones@CERN.CH
+ _expect 0 ai-pwn --config $CONF add hostgroup punch/puppetdb/grover --owners bejones@CERN.CH nacho@CERN.CH
+ _expect 0 ai-pwn --config $CONF add module teigi --owners bejones@CERN.CH
 
  echo "Remove owners..."
- _expect 0 ai-pwn --config $CONF remove --hg punch/puppetdb/grover ahencz@CERN.CH
- _expect 2 ai-pwn --config $CONF remove --md idontexist bejones@CERN.CH
+ _expect 0 ai-pwn --config $CONF remove hostgroup punch/puppetdb/grover --owners ahencz@CERN.CH
+ _expect 3 ai-pwn --config $CONF remove module idontexist --owners bejones@CERN.CH
 
  echo "Show ownership..."
- _expect 0 ai-pwn --config $CONF show --hg punch/puppetdb/grover
- _expect 0 ai-pwn --config $CONF show --md teigi
- _expect 0 ai-pwn --config $CONF -v show --md my_module
- _expect 2 ai-pwn --config $CONF show --md idontexist
+ _expect 0 ai-pwn --config $CONF show hostgroup punch/puppetdb/grover
+ _expect 0 ai-pwn --config $CONF show module teigi
+ _expect 0 ai-pwn --config $CONF -v show module my_module
+ _expect 3 ai-pwn --config $CONF show module idontexist
 
  echo "Delete ownership..."
- _expect 0 ai-pwn --config $CONF delete --hg punch/puppetdb/grover
- _expect 0 ai-pwn --config $CONF delete --md teigi
- _expect 0 ai-pwn --config $CONF delete --md my_module
+ _expect 0 ai-pwn --config $CONF delete hostgroup punch/puppetdb/grover
+ _expect 0 ai-pwn --config $CONF delete module teigi
+ _expect 0 ai-pwn --config $CONF delete module my_module
 
 
 echo "Tearing down..."
