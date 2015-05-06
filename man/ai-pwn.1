@@ -3,38 +3,54 @@
 ai-pwn \- Manage hostgroup and module ownership
 .SH DESCRIPTION
 usage: ai-pwn [\-h] [\-\-pwn\-timeout PWN_TIMEOUT] [\-\-pwn\-hostname PWN_HOSTNAME]
-.IP
-[\-\-pwn\-port PWN_PORT] [\-\-config CONFIG] [\-\-show_url] [\-\-dereference_alias] [\-v] [\-d]
-{add,delete,remove,set,show,showkeys} ...
+[\-\-pwn\-port PWN_PORT] [\-\-config CONFIG] [\-\-owners OWNER [OWNER ...]]
+[\-\-show_url] [\-\-dereference_alias] [\-v] [\-d]
+{delete, add, set, remove, show} {hostgroup, module} ENTITY
 .PP
 A tool for managing hostgroup and module
 .SS "positional arguments:"
-.IP
-{add,delete,remove,set,show,showkeys}
-.TP
-set
-Set the list of owners
-.TP
+.HP
+.B
+{delete, add, set, remove, show}
+.TP 12
 delete
 Delete ownership information
-.TP
-show
-Show ownership information
 .TP
 add
 Add new owner(s) to the list of known owners
 .TP
+set
+Set the list of owners
+.TP
 remove
 Remove owner(s) from the list of known owners
+.TP
+show
+Show ownership information
+.HP
+.B
+{hostgroup, module}
+.TP
+hostgroup
+The ownership information is set for a hostgroup
+.TP
+module
+The ownership information is set for a hostgroup
+.TP
+.B
+ENTITY
+The name of the hostgroup/module
+
+
 .SH COMMAND OVERVIEW
-
-
 .SS ai-pwn set
-usage: ai-pwn set [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE) [\-\-options OPTIONS]
-.IP
-OWNER [OWNER ...]
+usage: ai-pwn set [\-h] {hostgroup,module} ENTITY \-\-owners OWNER [OWNER ...]
+[\-\-options OPTIONS]
 .TP
 .B "positional arguments:"
+.TP
+ENTITY
+The name of the hostgroup/module
 .TP
 OWNER
 Owner entity (account or egroup)
@@ -43,89 +59,71 @@ Owner entity (account or egroup)
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 show this help message and exit
-.TP
-\fB\-\-hg\fR HOSTGROUP
-The hostgroup to set the ownership for
-.TP
-\fB\-\-md\fR MODULE
-The module to set the ownership for
 .TP
 \fB\-\-options\fR OPTIONS
 Extra options, in JSON format
 
 
 .SS ai-pwn delete
-usage: ai-pwn delete [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE)
+usage: ai-pwn delete [\-h] {hostgroup,module} ENTITY
+.TP
+.B "positional arguments:"
+.TP
+ENTITY
+The name of the hostgroup/module
 .TP
 .B "optional arguments:"
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 show this help message and exit
-.TP
-\fB\-\-hg\fR HOSTGROUP
-The hostgroup to delete the ownership for
-.TP
-\fB\-\-md\fR MODULE
-The module to delete the ownership for
 
 
 .SS ai-pwn show
-usage: ai-pwn show [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE)
+usage: ai-pwn show [\-h] {hostgroup,module} ENTITY
+.TP
+.B "positional arguments:"
+.TP
+ENTITY
+The name of the hostgroup/module
 .TP
 .B "optional arguments:"
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 show this help message and exit
-.TP
-\fB\-\-hg\fR HOSTGROUP
-The hostgroup to show the ownership for
-.TP
-\fB\-\-md\fR MODULE
-The module to show the ownership for
 
 
 .SS ai-pwn add
-usage: ai-pwn add [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE)
-.IP
-OWNER [OWNER ...]
+usage: ai-pwn add [\-h] {hostgroup,module} ENTITY \-\-owners OWNER [OWNER ...]
 .TP
 .B "positional arguments:"
 .TP
+ENTITY
+The name of the hostgroup/module
+.TP
 OWNER
-Owner entity (account or egroup)
+Owner entity (account or egroup) to add
 .TP
 .B "optional arguments:"
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 show this help message and exit
-.TP
-\fB\-\-hg\fR HOSTGROUP
-The hostgroup to set the ownership for
-.TP
-\fB\-\-md\fR MODULE
-The module to set the ownership for
 
 
 .SS ai-pwn remove
-usage: ai-pwn remove [\-h] (\-\-hg HOSTGROUP | \-\-md MODULE)
-.IP
-OWNER [OWNER ...]
+usage: ai-pwn remove [\-h] {hostgroup,module} ENTITY \-\-owners OWNER [OWNER ...]
 .TP
 .B "positional arguments:"
 .TP
+ENTITY
+The name of the hostgroup/module
+.TP
 OWNER
-Owner entity (account or egroup)
+Owner entity (account or egroup) to remove
 .TP
 .B "optional arguments:"
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 show this help message and exit
-.TP
-\fB\-\-hg\fR HOSTGROUP
-The hostgroup to set the ownership for
-.TP
-\fB\-\-md\fR MODULE
-The module to set the ownership for
 
 
 .SH GLOBAL OPTIONS
