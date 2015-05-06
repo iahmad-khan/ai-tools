@@ -1,10 +1,8 @@
 #!/usr/bin/python
 
 from argparse import ArgumentParser
-import re
 import argcomplete
 
-from urllib import urlencode
 from aitools.errors import AiToolsPwnError
 
 try:
@@ -13,39 +11,33 @@ except ImportError:
     import json
 import logging
 import sys
-import datetime
 from aitools.pwn import PwnClient
-from aitools.config import PwnConfig, AiConfig, PdbConfig
-from aitools.pdb import PdbClient
-from aitools.completer import ForemanCompleter
-from aitools.common import fqdnify
+from aitools.config import PwnConfig, AiConfig
 from aitools.common import configure_logging
-import base64
 
 logger = logging.getLogger(__name__)
 
 
-OPERATION_CHOICES = { 'set': 'update_or_create_ownership',
-        'show': 'get_ownership',
-        'delete': 'delete_ownership',
-        'add': 'add_owners',
-        'remove': 'remove_owners'
-}
+OPERATION_CHOICES = {'set': 'update_or_create_ownership',
+    'show': 'get_ownership',
+    'delete': 'delete_ownership',
+    'add': 'add_owners',
+    'remove': 'remove_owners'}
 
-SCOPE_CHOICES = ['hostgroup','module']
+SCOPE_CHOICES = ['hostgroup', 'module']
 
 def pwn(pargs):
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
-    args = { "entity": pargs.entity, "scope":pargs.scope, "options": pargs.options }
+    args = {"entity": pargs.entity, "scope":pargs.scope, "options": pargs.options}
     if pargs.owners:
         args["owners"] = pargs.owners
     if pargs.operation in ['show', 'delete']:
         del(args['options'])
     try:
-        pwn = PwnClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
-        getattr(pwn, OPERATION_CHOICES[pargs.operation])(**args)
+        pwn_client = PwnClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
+        getattr(pwn_client, OPERATION_CHOICES[pargs.operation])(**args)
         logging.info("Ownership operation %s successful for %s '%s'" % (pargs.operation, pargs.scope, pargs.entity))
     except AiToolsPwnError as e:
         logging.error(e)
@@ -77,7 +69,7 @@ def main():
     argcomplete.autocomplete(parser)
 
     pargs = parser.parse_args()
-    if pargs.operation in ['show','delete'] and pargs.owners:
+    if pargs.operation in ['show', 'delete'] and pargs.owners:
         parser.error('Ownership information only needed for set, add, and remove operations')
     if pargs.operation in ['set', 'add', 'remove'] and not pargs.owners:
         parser.error('Ownership information is needed for set, add, and remove operations')

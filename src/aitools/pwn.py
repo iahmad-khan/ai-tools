@@ -7,7 +7,6 @@ except ImportError:
 import requests
 import logging
 import re
-from collections import OrderedDict
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsPwnNotFoundError
 from aitools.errors import AiToolsPwnError
@@ -56,7 +55,7 @@ class PwnClient(HTTPClient):
         Make the owners into a list (if it was a single string)
         Strip @cern.ch from the owners list
         """
-        return map( lambda owner: owner.lower().strip().replace('@cern.ch',''), list(owners) )
+        return map(lambda owner: owner.lower().strip().replace('@cern.ch', ''), list(owners))
 
     def get_ownership(self, entity, scope):
         if not entity or not scope:
@@ -158,7 +157,7 @@ class PwnClient(HTTPClient):
         return body
 
     def __do_api_request(self, method, url, data=None):
-        url="https://%s:%u/%s" % \
+        url = "https://%s:%u/%s" % \
             (self.host, self.port, url)
         if self.deref_alias:
             url = deref_url(url)
