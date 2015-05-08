@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# This program sets the appropiate environment variables
+# This program helps setting the appropiate environment variables
 # to interact with the OpenStack Service.
 # Authors:
 #  Alberto Rodriguez Peon <alberto.rodriguez.peon@cern.ch>
