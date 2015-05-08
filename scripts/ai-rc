@@ -10,12 +10,12 @@
 #   1 Host not found in DNS
 #   3 Host doesn't have "cern_os_tenant" fact in PuppetDB
 
-from argcomplete import autocomplete
-from getpass import getuser
 import logging
 import sys
 
 from argparse import ArgumentParser
+from argcomplete import autocomplete
+from getpass import getuser
 
 from aitools.errors import AiToolsPdbError
 from aitools.common import append_domain, configure_logging, fqdnify
