@@ -1,5 +1,5 @@
 # This is a not very nice bash script to do some kind
-# of naive functional testing for ai-add-param
+# of naive functional testing for ai-rc
 
 CONF=$(mktemp)
 cat > $CONF << EOF
