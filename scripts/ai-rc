@@ -31,13 +31,13 @@ OPENRC_ENV = {
 ENV_TO_UNSET = ['OS_PROJECT_ID', 'OS_TENANT_ID', 'OS_TENANT_NAME']
 
 def parse_cmd_args():
-    parser = ArgumentParser(description="Set OpenStack project credentials "
+    parser = ArgumentParser(description="Set OpenStack project variables "
                                         "based on a single host")
     pdb_config = PdbConfig()
     pdb_config.add_standard_args(parser)
     options = parser.add_mutually_exclusive_group()
     options.add_argument('-s', '--same-project-as', type=str, metavar="HOST",
-                        help="Hostname to get the OS Project credentials from")
+                        help="Hostname to get the OS Project variables from")
     options.add_argument("project", nargs='?', metavar="OS_PROJECT",
                         help="OpenStack project name")
     parser.add_argument('-v', '--verbose', action="store_true",
