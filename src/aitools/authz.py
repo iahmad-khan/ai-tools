@@ -19,6 +19,8 @@ from aitools.common import deref_url
 
 logger = logging.getLogger(__name__)
 
+AUTHZ_ENDPOINT = "authz/v1/%s/%s/username/%s/"
+
 class AuthzClient(HTTPClient):
 
     def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
@@ -41,28 +43,13 @@ class AuthzClient(HTTPClient):
         self.show_url = show_url
         self.deref_alias = deref_alias
 
-    def fetch_authz_endpoint(self, entity=None, scope=None, requestor=None):
-        # if scope and entity and not requestor:
-        #     if scope == 'hostname':
-        #         authz_endpoint = "authz/v1/hostname/%s/"%entity
-        #     elif scope == 'hostgroup':
-        #         authz_endpoint = "authz/v1/hostgroup/%s/"%entity.replace('/','-')
-        #     else:
-        #         raise AttributeError("scope must be either 'hostname' or 'hostgroup'")
-        if scope and entity and requestor:
-            if scope == 'hostname':
-                authz_endpoint = "authz/v1/hostname/%s/username/%s/" % (entity, requestor)
-            elif scope == 'hostgroup':
-                authz_endpoint = "authz/v1/hostgroup/%s/username/%s/" % (entity.replace('/','-'), requestor)
-            else:
-                raise AttributeError("scope must be either 'hostname' or 'hostgroup'")
-        else:
-            raise AttributeError("At least scope and entity must be provided")
-        return authz_endpoint
-
     def get_authz(self, entity, scope, requestor):
-        authz_endpoint = self.fetch_authz_endpoint(entity, scope, requestor)
-        (code, body) = self.__do_api_request("get", authz_endpoint)
+        if entity is None or scope is None or requestor is None:
+            raise AttributeError("Entity, scope, and requestor are all required parameters.")
+        if scope not in ['hostname', 'hostgroup']:
+            raise AttributeError("Invalid scope %s, scope must be either 'hostname' or 'hostgroup'" % scope)
+        (code, body) = self.__do_api_request("get",
+            AUTHZ_ENDPOINT % (scope, entity.replace('/', '-'), requestor))
         if code == requests.codes.not_found:
             raise AiToolsAuthzNotFoundError("%s %s not found in Authz" % (scope.title(), entity))
         return body
