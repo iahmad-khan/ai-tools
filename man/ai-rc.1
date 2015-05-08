@@ -36,7 +36,7 @@ Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
 Path to the config file (default /etc/ai/ai.conf).
 .TP
 .B --same-project-as
-Host to get OpenStack environment variables from
+Host to get the Openstack project name from.
 .TP
 .B -h, --help
 Display usage and exit.
@@ -72,15 +72,15 @@ Host doesn't have "cern_os_tenant" fact in PuppetDB
 
 .SH EXAMPLES
 .TP
-.B Print in stdout environment variables for your project "LXPLUS"
+.B Print to STDOUT environment variables for the project "LXPLUS"
 $ ai-rc "LXPLUS"
 
 .TP
-.B Evaluate environment variable for Openstack project where foo1.cern.ch belongs to
+.B Generate (and evaluate) variables for the Openstack project where foo1.cern.ch belongs to
 $ eval $(ai-rc --same-project-as foo1.cern.ch)
 
 .TP
-.B Evaluate environment variable for your personal OpenStack project
+.B Generate (and evaluate) variables for your personal OpenStack project
 $ eval $(ai-rc)
 
 .SH REPORTING BUGS
