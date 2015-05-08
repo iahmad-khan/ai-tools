@@ -35,17 +35,15 @@ def parse_cmd_args():
                                         "based on a single host")
     pdb_config = PdbConfig()
     pdb_config.add_standard_args(parser)
+    options = parser.add_mutually_exclusive_group()
+    options.add_argument('-s', '--same-project-as', type=str, metavar="HOST",
+                        help="Hostname to get the OS Project credentials from")
+    options.add_argument("project", nargs='?', metavar="OS_PROJECT",
+                        help="OpenStack project name")
     parser.add_argument('-v', '--verbose', action="store_true",
                         help="Verbose output")
-    parser.add_argument('-s', '--same-project-as', type=str, metavar="HOST",
-                        help="Hostname to get the OS Project credentials from")
-    parser.add_argument("project", nargs='?', metavar="OS_PROJECT",
-                        help="OpenStack project name")
     autocomplete(parser)
     args = parser.parse_args()
-
-    if args.same_project_as and args.project:
-        parser.error("'--same-project-as' and 'OS_PROJECT' are mutually exclusive")
     return args
 
 def print_env_variables(project_name=None):
