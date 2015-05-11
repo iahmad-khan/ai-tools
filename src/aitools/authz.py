@@ -1,9 +1,5 @@
 __author__ = 'ahencz'
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
 import requests
 import logging
 import re
@@ -55,7 +51,7 @@ class AuthzClient(HTTPClient):
         return body
 
     def __do_api_request(self, method, url, data=None):
-        url="https://%s:%u/%s" % \
+        url = "https://%s:%u/%s" % \
             (self.host, self.port, url)
         if self.deref_alias:
             url = deref_url(url)
@@ -71,6 +67,10 @@ class AuthzClient(HTTPClient):
             body = response.text
             if code == requests.codes.unauthorized or code == requests.codes.forbidden:
                 raise AiToolsAuthzNotAllowedError("Unauthorized trying '%s' at '%s'" % (method, url))
+            if code == requests.codes.not_implemented:
+                raise AiToolsAuthzNotImplementedError("Server response 501 - Not Implemented")
+            if code == requests.codes.internal_server_error:
+                raise AiToolsAuthzInternalServerError("Server response 500 - Internal server error")
             if code == requests.codes.ok:
                 if re.match('application/json', response.headers['content-type']):
                     body = response.json()
