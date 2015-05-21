@@ -96,3 +96,18 @@ class AiToolsPwnNotImplementedError(AiToolsPwnError):
 
 class AiToolsPwnInternalServerError(AiToolsPwnError):
     pass
+
+class AiToolsAuthzError(AiToolsError):
+    pass
+
+class AiToolsAuthzNotFoundError(AiToolsAuthzError):
+    pass
+
+class AiToolsAuthzNotAllowedError(AiToolsAuthzError):
+    pass
+
+class AiToolsAuthzNotImplementedError(AiToolsAuthzError):
+    pass
+
+class AiToolsAuthzInternalServerError(AiToolsAuthzError):
+    pass
