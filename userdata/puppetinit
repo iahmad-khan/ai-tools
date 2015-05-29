@@ -158,9 +158,9 @@ function install_dependencies {
 execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependencies"
 
 function install_puppet {
-  echo "Trying to install puppet from AI repositories..."
-  yum remove -y puppet
-  yum install -y --enablerepo=$AIREPO puppet
+  echo "Trying to install puppet and facter from AI repositories..."
+  yum remove -y puppet facter
+  yum install -y --enablerepo=$AIREPO puppet facter
   rpm -ql puppet > /dev/null
 }
 execute_shell_block install_puppet 60 5 || unrecoverable_error "puppet"
