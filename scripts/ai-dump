@@ -27,6 +27,8 @@ from aitools.enc import EncClient
 from aitools.errors import AiToolsPdbError, AiToolsEncError
 from aitools.errors import AiToolsInitError
 from aitools.common import deref_url
+from teigi.errors import TeigiNotFound
+from teigi.errors import TeigiBadUrl, TeigiNotAuthorized
 
 def location_name(lan_dblocation):
     if not lan_dblocation:
@@ -52,13 +54,12 @@ def get_roger_client(host):
         url = deref_url(url)
     try:
         answer = roger.open_url(url)
-    except urllib2.HTTPError, e:
-        if e.code == 401:
-            sys.stderr.write("Not authorized to view '%s' in Roger" % host)
-            sys.exit(3)
-        elif e.code == 404:
-            return None
-    except urllib2.URLError, e:
+    except TeigiNotAuthorized:
+        sys.stderr.write("Not authorized to view '%s' in Roger" % host)
+        sys.exit(3)
+    except TeigiNotFound:
+        return None
+    except TeigiBadUrl, e:
         sys.stderr.write("Cannot open url '%s' for Roger: '%s'" % (url, e))
         sys.exit(3)
     return answer
