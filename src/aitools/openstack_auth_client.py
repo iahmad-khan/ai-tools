@@ -2,6 +2,7 @@
 #  Alberto Rodriguez Peon <alberto.rodriguez.peon@cern.ch>
 
 import logging
+from keystoneclient.v2_0 import client
 from openstackclient.common import clientmanager
 from keystoneclient import exceptions
 from keystoneclient.openstack.common.apiclient import exceptions as api_exceptions
@@ -46,6 +47,13 @@ class OpenstackAuthClient():
             raise AiToolsOpenstackAuthError("- Are you using the wrong tenant?\n"
                 " - Is your Kerberos ticket expired?")
 
+    def get_tenants_list(self):
+        token = str(self.client._token)
+        endpoint = 'https://keystone.cern.ch/main/v2.0'
+        keystone = client.Client(token=token, endpoint=endpoint)
+        tenants = keystone.tenants.list()
+        return tenants
+            
     @property
     def token(self):
         logging.debug('Getting token from OpenStack ClientManager')
