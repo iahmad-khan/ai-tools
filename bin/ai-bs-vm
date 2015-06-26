@@ -405,14 +405,8 @@ def main():
 
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
             meta['tenant-name'] = openstack_env.get('project_name')
-            if 'project_id' in openstack_env:
-                meta['tenant-id'] = openstack_env.get('project_id')
-            else:
-                tenants_dump = auth_client.get_tenants_list()
-                name_id = {}
-                for i in range(0, len(tenants_dump)):
-                    name_id[tenants_dump[i].name] = tenants_dump[i].id
-                meta['tenant-id'] = name_id[meta['tenant-name']]
+            project_id = openstack_env.get('project_id') or auth_client.get_tenant_id(openstack_env.get('project_name'))
+            meta['tenant-id'] = project_id
             if args.landb_responsible:
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:

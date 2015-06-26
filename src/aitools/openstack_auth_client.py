@@ -47,12 +47,15 @@ class OpenstackAuthClient():
             raise AiToolsOpenstackAuthError("- Are you using the wrong tenant?\n"
                 " - Is your Kerberos ticket expired?")
 
-    def get_tenants_list(self):
+    def get_tenants_list(self, proj_name):
         token = str(self.client._token)
         endpoint = 'https://keystone.cern.ch/main/v2.0'
         keystone = client.Client(token=token, endpoint=endpoint)
         tenants = keystone.tenants.list()
-        return tenants
+        name_id = {}
+        for i in range(0, len(tenants)):
+            name_id[tenants[i].name] = tenants[i].id
+        return name_id[proj_name]
             
     @property
     def token(self):
