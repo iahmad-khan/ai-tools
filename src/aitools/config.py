@@ -204,3 +204,15 @@ class LandbConfig(AiConfig):
         parser.add_argument('--landb-hostname', help="Landb hostname")
         parser.add_argument('--landb-port', type=int, help="Landb port")
         self.add_global_args(parser)
+
+class AiDisownHostConfig(AiConfig):
+
+    def _get_from_configfile(self, key, section="aidisownhost"):
+        return super(AiDisownHostConfig, self)._get_from_configfile(key, section=section)
+
+    def add_standard_args(self, parser):
+        parser.add_argument('-o', '--owner', type=str,
+            help="LANDB resposible after disowning (default: see /etc/ai/)")
+        parser.add_argument('-g', '--hostgroup', type=str,
+            help="Target hostgroup after disowning (default: see /etc/ai/)")
+        self.add_global_args(parser)

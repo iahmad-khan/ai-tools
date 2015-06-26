@@ -24,6 +24,7 @@ from aitools.roger import RogerClient
 from aitools.landb import LandbClient
 from aitools.config import ForemanConfig, RogerConfig
 from aitools.config import LandbConfig
+from aitools.config import LandbConfig, AiDisownHostConfig
 
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
@@ -34,10 +35,6 @@ from aitools.errors import AiToolsLandbError
 from aitools.errors import AiToolsRogerNotAllowedError
 
 from aitools.completer import ForemanCompleter
-
-# Read from conf?
-DEFAULT_NEXT_OWNER = "sysadmin-team"
-DEFAULT_NEXT_HOSTGROUP = "retirement/incoming"
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -53,14 +50,6 @@ def parse_cmdline_args():
     parser.add_argument('-d', '--dryrun',
         action="store_true",
         help="Don't execute actions that alter data")
-    parser.add_argument('-o', '--owner', type=str,
-        default=DEFAULT_NEXT_OWNER,
-        help="LANDB resposible after disowning (default: '%s')" % \
-            DEFAULT_NEXT_OWNER)
-    parser.add_argument('-g', '--hostgroup', type=str,
-        default=DEFAULT_NEXT_HOSTGROUP,
-        help="Target hostgroup after disowning (default: '%s')" % \
-            DEFAULT_NEXT_HOSTGROUP)
     parser.add_argument('hostname', nargs='+',
         help="One of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
@@ -89,10 +78,16 @@ def parse_cmdline_args():
     parser.add_argument('--landb-disable', action="store_true",
         help="Disable Landb actions")
 
+    ##
+    ## Local options
+    ##
+    config = AiDisownHostConfig()
+    config.add_standard_args(parser)
+
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
-    return args
+    return args, config
 
 def disable_alarms(fqdn, roger):
     logging.info("Disabling alarms and setting appstate to \"disabled\"...")
@@ -123,7 +118,7 @@ def restore_alarms(fqdn, roger, previous_state):
         logging.error("Received unexpected error trying to restore alarm state in roger: %s" % error)
         logging.info("Please update roger for machine to restore alarms if necessary")
 
-def disown(hostname, args, foreman, roger, landb, table):
+def disown(hostname, args, config, foreman, roger, landb, table):
     fqdn = fqdnify(hostname)
     if not fqdn:
         table.add_row([hostname, 'KO', "Couldn't fqdnify"])
@@ -147,9 +142,9 @@ def disown(hostname, args, foreman, roger, landb, table):
         old_hostgroup = host['hostgroup_name']
         logging.debug("Current hostgroup: %s", old_hostgroup)
 
-        logging.info("Moving host to %s...", args.hostgroup)
+        logging.info("Moving host to %s...", config.hostgroup)
         try:
-            foreman.updatehost(fqdn, hostgroup=args.hostgroup)
+            foreman.updatehost(fqdn, hostgroup=config.hostgroup)
         except AiToolsForemanError, error:
             table.add_row([fqdn, 'KO', "Couldn't change hostgroup (%s)" % error])
             return 3
@@ -163,7 +158,7 @@ def disown(hostname, args, foreman, roger, landb, table):
     if not args.landb_disable:
         logging.info("Changing LANDB responsible...")
         try:
-            landb.change_responsible(fqdn, name=args.owner, firstname=None)
+            landb.change_responsible(fqdn, name=config.owner, firstname=None)
         except AiToolsLandbError, error:
             err_msg = "Couldn't change LANDB responsible (%s)" % error
             logging.error(err_msg)
@@ -185,7 +180,7 @@ def disown(hostname, args, foreman, roger, landb, table):
 
 def main():
     """Application entrypoint"""
-    args = parse_cmdline_args()
+    args, config = parse_cmdline_args()
     fconfig = ForemanConfig()
     fconfig.read_config_and_override_with_pargs(args)
 
@@ -212,7 +207,7 @@ def main():
     failures = False
     table = PrettyTable(['FQDN/Hostname', 'Status', 'Details'])
     for hostname in args.hostname:
-        if disown(hostname, args, foreman, roger, landb, table) > 0:
+        if disown(hostname, args, config, foreman, roger, landb, table) > 0:
            failures = True
     print table
 
