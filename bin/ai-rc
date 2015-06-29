@@ -22,12 +22,6 @@ from aitools.common import append_domain, configure_logging, fqdnify
 from aitools.config import AiConfig, PdbConfig
 from aitools.pdb import PdbClient
 
-OPENRC_ENV = {
-    'OS_AUTH_URL':'https://keystone.cern.ch/krb/v3',
-    'OS_IDENTITY_API_VERSION':'3',
-    'OS_PROJECT_DOMAIN_ID':'default',
-    'OS_USERNAME':getuser()
-}
 ENV_TO_UNSET = ['OS_PROJECT_ID', 'OS_TENANT_ID', 'OS_TENANT_NAME']
 
 def parse_cmd_args():
@@ -47,16 +41,12 @@ def parse_cmd_args():
     return args
 
 def print_env_variables(project_name=None):
-    if not project_name:
-        project_name = "Personal %s" % OPENRC_ENV['OS_USERNAME']
-    OPENRC_ENV['OS_PROJECT_NAME'] = "'%s'" % project_name
-
     # First unset potentially clashing variables
     for name in ENV_TO_UNSET:
         print "unset %s;" % name
 
-    for name, value in OPENRC_ENV.items():
-        print "export %s=%s;" % (name, value)
+    project_name = project_name or "Personal %s" % getuser()
+    print "export OS_PROJECT_NAME='%s';" % project_name
 
     logging.info("OpenStack environment variables set for Project = '%s'"
                  "" % project_name)
