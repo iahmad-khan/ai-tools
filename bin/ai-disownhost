@@ -208,7 +208,7 @@ def main():
     table = PrettyTable(['FQDN/Hostname', 'Status', 'Details'])
     for hostname in args.hostname:
         if disown(hostname, args, config, foreman, roger, landb, table) > 0:
-           failures = True
+            failures = True
     print table
 
     return 1 if failures else 0
