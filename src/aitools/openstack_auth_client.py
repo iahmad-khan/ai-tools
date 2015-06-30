@@ -63,8 +63,6 @@ class OpenstackAuthClient():
             raise AiToolsOpenstackAuthError(error)
         except exceptions.ClientException, error:
             raise AiToolsOpenstackAuthError(error)
-        except exceptions.ConnectionRefused, error:
-            raise AiToolsNovaError(error)
 
     @property
     def token(self):
