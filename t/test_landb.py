@@ -1,11 +1,10 @@
 import unittest
 import suds
 
-from mock import Mock, patch, ANY, call
+from mock import patch, ANY
 
 from aitools.landb import LandbClient
 from aitools.errors import AiToolsLandbError
-from aitools.errors import AiToolsLandbInitError
 
 TEST_HOST="127.0.0.1"
 TEST_PORT=1
