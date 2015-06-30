@@ -86,7 +86,7 @@ class LandbClient():
 
         logging.debug("Calling deviceUpdate...")
         try:
-            response = self.client.service.deviceUpdate(hostname, device)
+            self.client.service.deviceUpdate(hostname, device)
         except WebFault, error:
             logging.debug(error)
             raise AiToolsLandbError("getDeviceInfo failed (%s)" % error)
