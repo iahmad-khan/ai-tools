@@ -212,7 +212,7 @@ class AiDisownHostConfig(AiConfig):
 
     def add_standard_args(self, parser):
         parser.add_argument('-o', '--owner', type=str,
-            help="LANDB resposible after disowning (default: see /etc/ai/)")
+            help="LANDB responsible after disowning (default: see /etc/ai/)")
         parser.add_argument('-g', '--hostgroup', type=str,
             help="Target hostgroup after disowning (default: see /etc/ai/)")
         self.add_global_args(parser)
