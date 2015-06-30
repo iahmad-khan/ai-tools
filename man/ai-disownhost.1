@@ -1,0 +1,127 @@
+.TH ai-disownhost "1" "April 2015" "ai-disownhost" "User Commands"
+.SH NAME
+ai-disownhost \- Command-like tool to "give back" a physical host
+
+.SH SYNOPSIS
+.B "ai-disownhost" [OPTIONS] HOSTNAME [HOSTNAME ...]
+
+.SH DESCRIPTION
+ai-disownhost is a Python command line tool to do all the necessary
+steps to get rid of a physical box.
+
+.LP
+Once executed, this tool will perform the following steps:
+
+.LP
+* Move the box to a special hostgroup
+.LP
+* Disable all alarms and change the appstate to "disabled"
+.LP
+* Change the LANDB responsible
+
+These operations are aimed to leave the box prepared so the procurement
+and the sysadmins teams can inspect, evaluate and either repurpose or
+retire the box afterwards.
+
+Once finished, the box will be reinstalled and all the disks wiped in the
+next few hours.
+
+.LP
+.I Prerequisites:
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+
+.TP
+.B Your CERN password
+As this tool interacts with LANDB and it does not provide a Kerberos
+entrypoint, you will be prompted for your CERN password.
+
+.SH OPTIONS
+The behaviour of the tool can be customised by the following
+parameters:
+
+.TP
+.B -d, --dryrun
+Don't do the requests that alter data.
+
+.TP
+.B --foreman-hostname
+FQDN of the Foreman instance to use.
+
+.TP
+.B --foreman-port
+Port of the Foreman instance to use -- must support Kerberos.
+
+.TP
+.B --foreman-timeout
+Timeout (in seconds) for Foreman operations.
+
+.TP
+.B -g, --hostgroup HOSTGROUP
+The Foreman hostgroup where the machine will be moved.
+Defaults to "retirement/incoming".
+
+.TP
+.B -h, --help
+Display usage and exit.
+
+.TP
+.B --landb-hostname
+FQDN of the Landb instance to use.
+
+.TP
+.B --landb-port
+Port of the Landb instance to use.
+
+.TP
+.B -o, --owner E-GROUP
+The LANDB responsible to be set. Defaults to "sysadmin-team".
+
+.TP
+.B --roger-hostname
+FQDN of the Roger instance to use.
+
+.TP
+.B --roger-port
+Port of the Roger instance to use -- must support Kerberos.
+
+.TP
+.B --roger-timeout
+Timeout (in seconds) for Roger operations.
+
+.TP
+.B -v, --verbose
+Be chatty.
+
+.SH EXAMPLES
+
+.TP
+.B Disown hosts foo.cern.ch and bar.cern.ch
+ai-disownhost foo.cern.ch bar.cern.ch
+
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 1
+Some operations that modify data failed.
+.TP
+.B 2
+Bad command line.
+.TP
+.B 4
+Kerberos TGT not-existent or expired.
+
+.SH REPORTING BUGS
+If you experience any problem when using this tool, please open a support
+call on SNOW (Functional Element "Configuration Management").
+
+.SH AUTHORS
+Nacho Barrientos <nacho.barrientos@cern.ch>
+
+.SH SEE ALSO
+ai-remote-power-control (1), ai-foreman (1)

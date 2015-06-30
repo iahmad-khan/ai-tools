@@ -15,5 +15,5 @@ setup(name='ai-tools',
         'bin/ai-ipmi','bin/ai-remote-power-control', 'bin/ai-hiera',
         'bin/ai-rename-host', 'bin/ai-set-fe', 'bin/tbag',
         'bin/ai-qai', 'bin/ai-whatfe', 'bin/ai-installhost',
-        'bin/ai-foreman'],
+        'bin/ai-foreman', 'bin/ai-disownhost'],
      )
