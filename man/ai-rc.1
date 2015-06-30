@@ -1,0 +1,94 @@
+.TH AI-RC "1" "April 2015" "ai-rc" "User Commands"
+.SH NAME
+ai-rc \- Generate OpenStack environment variables
+
+.SH SYNOPSIS
+.B "ai-rc [OPTION]... \fI--same-project-as HOST\fR | [OS_PROJECT]"
+
+.SH DESCRIPTION
+ai-rc is a tool which generates the environment variables used to interact with the OpenStack
+service via command line. Setting these variables in your terminal will allow you to use the
+"openstack" CLI and also "ai-bs-vm" and "ai-kill-vm" to create and destroy puppetized VMs,
+respectively.
+.LP
+Users can provide direcly the name of the OpenStack project they want to generate environment
+variables for as a positional argument. Alternatively, using option
+.B [-s|--same-project-as]
+followed by a hostname will
+generate variables for the project this host belongs to.
+
+In addition to these two optional arguments, 'ai-rc'
+can also be run without providing any, in which case variables for the user's personal
+project will be printed.
+Please note that in most cases you would like to evaluate the output returned by 'ai-rc'
+e.g.
+.B eval $(ai-rc *options)
+.LP
+.I Prerequisites:
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+.SH OPTIONS
+.TP
+.B --config
+Path to the config file (default /etc/ai/ai.conf).
+.TP
+.B --same-project-as
+Host to get the Openstack project name from.
+.TP
+.B -h, --help
+Display usage and exit.
+.LP
+.I Advanced options:
+.TP
+The following parameters are for advanced users and debugging.
+.TP
+.B --pdb-hostname
+FQDN of the PuppetDB instance to use.
+.TP
+.B --pdb-port
+Port of the PuppetDB instance to use.
+.TP
+.B --pdb-timeout
+Timeout (in seconds) for PuppetDB operations.
+.TP
+.B --dereference_alias
+Dereference aliases in urls
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Enable debug messages.
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 1
+Host not found in DNS
+.TP
+.B 3
+Host doesn't have "cern_os_tenant" fact in PuppetDB
+
+.SH EXAMPLES
+.TP
+.B Print to STDOUT environment variables for the project "LXPLUS"
+$ ai-rc "LXPLUS"
+
+.TP
+.B Generate (and evaluate) variables for the Openstack project where foo1.cern.ch belongs to
+$ eval $(ai-rc --same-project-as foo1.cern.ch)
+
+.TP
+.B Generate (and evaluate) variables for your personal OpenStack project
+$ eval $(ai-rc)
+
+.SH REPORTING BUGS
+If you experience any problem with this tool, please open a support
+call on SNOW (Functional Element "Configuration Management").
+
+.SH AUTHOR
+Alberto Rodriguez Peon <alberto.rodriguez.peon@cern.ch>
+
+.SH SEE ALSO
+ai-bs-vm (1), ai-kill-vm (1)
