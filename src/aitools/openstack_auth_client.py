@@ -2,6 +2,7 @@
 #  Alberto Rodriguez Peon <alberto.rodriguez.peon@cern.ch>
 
 import logging
+import requests
 from keystoneclient.v2_0 import client
 from openstackclient.common import clientmanager
 from keystoneclient import exceptions
@@ -47,16 +48,24 @@ class OpenstackAuthClient():
             raise AiToolsOpenstackAuthError("- Are you using the wrong tenant?\n"
                 " - Is your Kerberos ticket expired?")
 
-    def get_tenants_list(self, proj_name):
-        token = str(self.client._token)
-        endpoint = 'https://keystone.cern.ch/main/v2.0'
-        keystone = client.Client(token=token, endpoint=endpoint)
-        tenants = keystone.tenants.list()
-        name_id = {}
-        for i in range(0, len(tenants)):
-            name_id[tenants[i].name] = tenants[i].id
-        return name_id[proj_name]
-            
+    def get_tenant_uuid(self, proj_name):
+        try:
+            keystone = client.Client(token=str(self.client._token), endpoint='https://keystone.cern.ch/main/v2.0')
+            projects_id = [tenant.id for tenant in keystone.tenants.list() if tenant.name == proj_name]
+            if not projects_id:
+                raise AiToolsOpenstackAuthError("There is no Openstack project with name:"
+                    " '%s'" % proj_name)
+            if len(projects_id) > 1:
+                raise AiToolsOpenstackAuthError("There are more than one Openstack project with name:"
+                    " '%s'" % proj_name)
+            return projects_id[0]
+        except requests.exceptions.Timeout, error:
+            raise AiToolsOpenstackAuthError(error)
+        except exceptions.ClientException, error:
+            raise AiToolsOpenstackAuthError(error)
+        except exceptions.ConnectionRefused, error:
+            raise AiToolsNovaError(error)
+
     @property
     def token(self):
         logging.debug('Getting token from OpenStack ClientManager')
