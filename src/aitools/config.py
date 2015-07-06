@@ -194,6 +194,7 @@ class AuthzConfig(AiConfig):
         parser.add_argument('--authz-timeout', type=int, help="Timeout for authz operations")
         parser.add_argument('--authz-hostname', help="Authz hostname")
         parser.add_argument('--authz-port', type=int, help="Authz port")
+        self.add_global_args(parser)
 
 class LandbConfig(AiConfig):
 
