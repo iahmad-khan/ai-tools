@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.1
+Version: 9.2
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -86,6 +86,17 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Jul 06 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.2-1
+- [ai-disownhost] Released.
+- [ai-rc] Released.
+- [ai-pwn] Released.
+- [ai-dump] Exception handling improved.
+- [ai-bs-vm] Inject tenant id via the VM metadata.
+- [ai-bs-vm] Ensure Facter is installed from AI.
+- [ai-foreman] Minor corrections to the manpage.
+- [ai-foreman-cli] Support new RHEL AIMS targets.
+- Add Authz library.
+
 * Tue Apr 21 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.1-1
 - [ai-bs-vm] Add support for deleting volumes upon instance termination.
 - [ai-bs-vm] Name created volumes after the instance using them.
