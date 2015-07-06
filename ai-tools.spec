@@ -67,6 +67,7 @@ install -m 644 man/ai-installhost.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-foreman.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-rc.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-disownhost.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-pwn.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/bash_completion.d
 install -m 0644 -p addons/bash_completion.d/ai-tools $RPM_BUILD_ROOT/%{_sysconfdir}/bash_completion.d
