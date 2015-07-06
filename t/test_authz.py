@@ -101,36 +101,35 @@ class TestAuthz(unittest.TestCase):
         self.assertRaises(AttributeError, self.client.get_authz, self.test_entities['hostgroup'], 'hostgroup', None)
 
 
-
-# Function like tests using the test service
-
-    def test_00_default_args(self):
-        self.assertEqual(self.authz_config.authz_hostname, "teigitest.cern.ch")
-
-    def test_01_authz_get_info(self):
-        authz = AuthzClient()
-
-        scope = 'hostgroup'
-        entity = self.test_entities[scope]
-        # set_trace()
-        resp = authz.get_authz(entity, scope, self.test_user)
-        self.assertTrue(resp['authorized'])
-
-        scope = 'hostname'
-        entity = self.test_entities[scope]
-        resp = authz.get_authz(entity, scope, self.test_user)
-        self.assertTrue(resp['authorized'])
-
-    def test_02_authz_get_info_fail(self):
-        authz = AuthzClient()
-        scope = 'hostgroup'
-        entity = self.test_entities[scope]
-        requestor = self.test_user
-        #Missing requestor
-        self.assertRaises(TypeError, authz.get_authz, entity, scope)
-        #None reuqestor
-        self.assertRaises(AttributeError, authz.get_authz, entity, scope, None)
-        #Nonexistent entity
-        self.assertRaises(AiToolsAuthzNotAllowedError, authz.get_authz, 'idontexist', scope, requestor)
-        #Unauthorized entity
-        self.assertRaises(AiToolsAuthzNotAllowedError, authz.get_authz, 'afssrv', scope, requestor)
+# # Function like tests using the test service
+#
+#     def test_00_default_args(self):
+#         self.assertEqual(self.authz_config.authz_hostname, "teigitest.cern.ch")
+#
+#     def test_01_authz_get_info(self):
+#         authz = AuthzClient()
+#
+#         scope = 'hostgroup'
+#         entity = self.test_entities[scope]
+#         # set_trace()
+#         resp = authz.get_authz(entity, scope, self.test_user)
+#         self.assertTrue(resp['authorized'])
+#
+#         scope = 'hostname'
+#         entity = self.test_entities[scope]
+#         resp = authz.get_authz(entity, scope, self.test_user)
+#         self.assertTrue(resp['authorized'])
+#
+#     def test_02_authz_get_info_fail(self):
+#         authz = AuthzClient()
+#         scope = 'hostgroup'
+#         entity = self.test_entities[scope]
+#         requestor = self.test_user
+#         #Missing requestor
+#         self.assertRaises(TypeError, authz.get_authz, entity, scope)
+#         #None reuqestor
+#         self.assertRaises(AttributeError, authz.get_authz, entity, scope, None)
+#         #Nonexistent entity
+#         self.assertRaises(AiToolsAuthzNotAllowedError, authz.get_authz, 'idontexist', scope, requestor)
+#         #Unauthorized entity
+#         self.assertRaises(AiToolsAuthzNotAllowedError, authz.get_authz, 'afssrv', scope, requestor)
