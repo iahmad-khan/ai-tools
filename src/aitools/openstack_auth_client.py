@@ -44,7 +44,8 @@ class OpenstackAuthClient():
 
         except exceptions.SSLError:
             raise AiToolsOpenstackAuthError("x509 client certificate error")
-        except (api_exceptions.Unauthorized, api_exceptions.Forbidden):
+        except (api_exceptions.Unauthorized, api_exceptions.Forbidden,
+            api_exceptions.NotFound):
             raise AiToolsOpenstackAuthError("- Are you using the wrong tenant?\n"
                 " - Is your Kerberos ticket expired?")
 
