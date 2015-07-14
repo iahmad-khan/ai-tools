@@ -66,9 +66,13 @@ DEFAULT_PREFIX = "vm"
 DEFAULT_GROW_PARTITION = 2
 
 VOLUME_VALIDATION_REGEX = {
-    'boot_new_volume': r'^(?P<size>[1-9]\d*(TB|GB))(:(?P<dot>delete-on-terminate))?$',
+    'boot_new_volume': r"^(?P<size>[1-9]\d*(TB|GB))"
+        "(:(?P<dot>delete-on-terminate))?"
+        "(:type=(?P<type>\w+))?$",
     'boot_existing_volume': r'^(?P<uuid>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})(?P<dot>:delete-on-terminate)?$',
-    'attach_new_volume': r'^(?P<device>\w+)=(?P<value>[1-9]\d*(TB|GB))(:(?P<dot>delete-on-terminate))?$',
+    'attach_new_volume': r"^(?P<device>\w+)=(?P<value>[1-9]\d*(TB|GB))"
+        "(:(?P<dot>delete-on-terminate))?"
+        "(:type=(?P<type>\w+))?$",
     'attach_existing_volume': r'^(?P<device>\w+)=(?P<value>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})(?P<dot>:delete-on-terminate)?$'
 }
 
@@ -223,15 +227,16 @@ def parse_cmdline_args():
         match = validate_arg_with_regex('boot_existing_volume', args.nova_boot_from_existing_volume)
         if not match:
             parser.error("--nova-boot-from-existing-volume must be a valid UUID4")
-        ATTACHMENTS['vda'] = (match.group('uuid'), 1 if match.group('dot') is not None else 0)
+        ATTACHMENTS['vda'] = (match.group('uuid'), 1 if match.group('dot') is
+            not None else 0, None)
 
     if args.nova_boot_from_new_volume:
         match = validate_arg_with_regex('boot_new_volume', args.nova_boot_from_new_volume)
         if not match:
             parser.error("--nova-boot-from-new-volume must be a valid size in "
                 "GB or TB (e.g. '100GB', '1TB')")
-        ATTACHMENTS['vda'] = (match.group('size'), 1 if match.group('dot') is not None else 0)
-
+        ATTACHMENTS['vda'] = (match.group('size'), 1 if match.group('dot') is
+            not None else 0, match.group('type'))
 
     auto_devices = []
     for index, volume in enumerate(args.nova_attach_existing_volume + args.nova_attach_new_volume):
@@ -253,17 +258,19 @@ def parse_cmdline_args():
                 "TB (e.g. '100GB', '1TB')")
         if is_valid_UUID(volume_info) and volume_info in (ATTACHMENTS.values() + auto_devices):
             parser.error("It is not possible to attach same volume twice")
+        volume_data = (volume_info, delete_on_terminate,
+            None if not 'type' in match.groupdict() else match.group('type'))
         if device == 'auto':
-            auto_devices.append((volume_info, delete_on_terminate))
+            auto_devices.append(volume_data)
         else:
-            ATTACHMENTS[device] = (volume_info, delete_on_terminate)
+            ATTACHMENTS[device] = volume_data
 
     device_names = generator_device_names()
-    for volume_info, delete_on_terminate in auto_devices:
+    for volume_info, delete_on_terminate, volume_type in auto_devices:
         device = device_names.next()
         while device in ATTACHMENTS:
             device = device_names.next()
-        ATTACHMENTS[device] = (volume_info, delete_on_terminate)
+        ATTACHMENTS[device] = (volume_info, delete_on_terminate, volume_type)
 
     for parameter in args.foreman_parameter + args.nova_parameter:
         if not re.match(r'\S+?=\S+?', parameter):
@@ -309,13 +316,14 @@ def print_summary(args, fqdn, openstack_env):
 def _manage_volumes(cinder, hostname, image=None, attachments={}):
     volumes = {}
     n_created_volumes = 0
-    for device, (volume_info, delete_on_terminate) in attachments.iteritems():
+    for device, (volume_info, delete_on_terminate, volume_type) in attachments.iteritems():
         volume = None
         if is_valid_size_format(volume_info):
             n_created_volumes += 1
             volume = cinder.create(size=volume_info,
                 imageRef=image if device == 'vda' else None,
-                display_name='%s_vol_%s' % (hostname, str(n_created_volumes).zfill(3)))
+                display_name='%s_vol_%s' % (hostname, str(n_created_volumes).zfill(3)),
+                volume_type=volume_type)
         volume_id = volume.id if volume else volume_info
         if is_valid_UUID(volume_id):
             volume = cinder.is_ready(volume_id=volume_id,
