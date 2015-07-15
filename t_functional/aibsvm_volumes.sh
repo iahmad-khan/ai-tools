@@ -64,6 +64,7 @@ _expect 2 ai-bs-vm -g playground/aitoolstest --nova-boot-from-new-volume '1GB' -
 echo "Testing wrong values..."
 _expect 2 ai-bs-vm -g playground/aitoolstest --nova-boot-from-existing-volume 'no UUID!'
 _expect 2 ai-bs-vm -g playground/aitoolstest --nova-boot-from-new-volume 'wrongsize'
+_expect 2 ai-bs-vm -g playground/aitoolstest -i "$IMAGE" --nova-boot-from-new-volume '1GB:type=foo:delete-on-terminate'
 _expect 2 ai-bs-vm -g playground/aitoolstest -i "$IMAGE" --nova-attach-new-volume 'devicemissing'
 _expect 2 ai-bs-vm -g playground/aitoolstest -i "$IMAGE" --nova-attach-new-volume 'vdb=noSize'
 _expect 2 ai-bs-vm -g playground/aitoolstest -i "$IMAGE" --nova-attach-new-volume 'vdb=1GB:wrong-flag'
