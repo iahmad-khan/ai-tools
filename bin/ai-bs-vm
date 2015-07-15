@@ -169,13 +169,15 @@ def parse_cmdline_args():
     bootable_elements.add_argument('--nova-boot-from-existing-volume',
         type=str, help="Cinder Volume UUID to boot from", default=None)
     parser.add_argument('--nova-boot-from-new-volume', type=str,
-        help="Size (in GB or TB) of the cinder volume to be created (e.g. '100GB', '1TB')",
+        help="Size (in GB or TB) of the cinder volume to be created"
+            " (e.g. '100GB', '1TB'). See manpage for more options.",
         default=None)
     parser.add_argument('--nova-attach-existing-volume', type=str,
         help="Cinder Volume UUID to attach to the new server",
         action='append', default=[])
     parser.add_argument('--nova-attach-new-volume', type=str,
-        help="Size (in GB or TB) of the cinder volume to be attached (e.g. '100GB', '1TB')",
+        help="Size (in GB or TB) of the cinder volume to be attached"
+            " (e.g. '100GB', '1TB'). See manpage for more options.",
         action='append', default=[])
     parser.add_argument('--nova-parameter', type=str,
         help="Openstack metaparameter", action='append', default=[])
