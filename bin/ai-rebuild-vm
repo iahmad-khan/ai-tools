@@ -167,7 +167,7 @@ def main():
 
     if not args.nova_disable:
         try:
-            auth_client = OpenstackAuthClient(**openstack_env)
+            auth_client = OpenstackAuthClient(openstack_env)
             nova = NovaClient(auth_client, dryrun=args.dryrun)
 
             image = args.nova_image

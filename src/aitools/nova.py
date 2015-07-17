@@ -141,9 +141,8 @@ class NovaClient():
         if self.nova is None:
             try:
                 self.nova = client.Client(username='', api_key='', project_id='',
-                    auth_url='', timeout=self.timeout)
-                self.nova.client.auth_token = self.auth_client.token
-                self.nova.client.management_url = self.auth_client.nova_endpoint
+                    auth_url='', timeout=self.timeout,
+                    session=self.auth_client.session)
             except novaclient.exceptions.ClientException, error:
                 raise AiToolsNovaError(error)
             except novaclient.exceptions.ConnectionRefused, error:

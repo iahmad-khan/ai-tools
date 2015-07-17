@@ -61,25 +61,33 @@ def get_openstack_environment():
     :raise AiToolsInitError: User doesn't have the basic environments set.
     """
     # We get all environment variables that start with 'OS_'
-    res = dict((re.sub(r'^OS_', '', env).lower(), os.getenv(env))
+    res = dict((env.lower(), os.getenv(env))
         for env in os.environ.keys() if env.startswith('OS_'))
 
     # Removing tenant_name and tenant_id if they are present
-    if res.get('tenant_name'):
-        if not res.get('project_name'):
-            res['project_name'] = res['tenant_name']
-        del res['tenant_name']
+    if res.get('os_tenant_name'):
+        if not res.get('os_project_name'):
+            res['os_project_name'] = res['os_tenant_name']
+        del res['os_tenant_name']
 
-    if res.get('tenant_id'):
-        if not res.get('project_id'):
-            res['project_id'] = res['tenant_id']
-        del res['tenant_id']
+    if res.get('os_tenant_id'):
+        if not res.get('os_project_id'):
+            res['os_project_id'] = res['os_tenant_id']
+        del res['os_tenant_id']
 
     if not res:
         raise AiToolsInitError("OpenStack envionment variables are "
             "missing (did you source openrc?)")
 
-    return res
+    res['os_url'] = ''
+    res['os_region_name'] = ''
+    res['timing'] = ''
+
+    return OpenstackEnvironmentVariables(**res)
+
+class OpenstackEnvironmentVariables(object):
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
 
 def verify_kerberos_environment():
     """

@@ -5,6 +5,7 @@ import time
 import logging
 import requests
 import cinderclient.exceptions
+import keystoneclient.openstack.common as keystone_common
 from cinderclient.v1 import client
 from aitools.errors import AiToolsCinderError
 
@@ -75,7 +76,8 @@ class CinderClient():
                 "'{1}' and is {2}bootable".format(volume.id, volume.status,
                     ('NOT ' if volume.bootable == 'false' else '')))
             return volume
-        except cinderclient.exceptions.NotFound:
+        except (cinderclient.exceptions.NotFound,
+            keystone_common.apiclient.exceptions.NotFound):
             # Cinder volume doesn't exist
             raise AiToolsCinderError("Volume '%s' doesn't exist" % volume_id)
         except requests.exceptions.Timeout, error:
@@ -122,9 +124,9 @@ class CinderClient():
     def __init_client(self):
         if self.cinder is None:
             try:
-                self.cinder = client.Client(username='', api_key='', project_id='', auth_url='')
-                self.cinder.client.auth_token = self.auth_client.token
-                self.cinder.client.management_url = self.auth_client.cinder_endpoint
+                self.cinder = client.Client(username='', api_key='',
+                    project_id='', auth_url='',
+                    session=self.auth_client.session)
             except requests.exceptions.Timeout, error:
                 raise AiToolsCinderError(error)
             except cinderclient.exceptions.ClientException, error:
