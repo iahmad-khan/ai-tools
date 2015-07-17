@@ -422,9 +422,10 @@ def main():
             meta = dict(map(lambda x: x.split('=', 1), args.nova_parameter))
             meta['tenant-name'] = openstack_env.os_project_name
             # Commenting out as I'm apparently unauthorized to do this
-            #project_id = getattr(openstack_env, 'os_project_id', None) or \
-            #    auth_client.get_tenant_uuid(openstack_env.os_project_name)
-            #meta['tenant-id'] = project_id
+            project_id = getattr(openstack_env, 'os_project_id', None) or \
+                auth_client.get_tenant_uuid(openstack_env.os_project_name,
+                    username=krb_principal.replace("@CERN.CH", ""))
+            meta['tenant-id'] = project_id
             if args.landb_responsible:
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:

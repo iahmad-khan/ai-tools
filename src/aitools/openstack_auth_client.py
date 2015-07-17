@@ -3,7 +3,7 @@
 
 import logging
 import requests
-from keystoneclient.v2_0 import client as keystoneclient
+from keystoneclient.v3 import client as keystoneclient
 from openstackclient.common import clientmanager
 from keystoneclient import exceptions
 from keystoneclient.openstack.common.apiclient import exceptions as api_exceptions
@@ -28,10 +28,12 @@ class OpenstackAuthClient():
             raise AiToolsOpenstackAuthError("- Are you using the wrong tenant?\n"
                 " - Is your Kerberos ticket expired?")
 
-    def get_tenant_uuid(self, proj_name):
+    def get_tenant_uuid(self, proj_name, username):
         try:
             keystone = keystoneclient.Client(session=self.client.session)
-            projects_id = [tenant.id for tenant in keystone.tenants.list() if tenant.name == proj_name]
+            projects_id = [tenant.id for tenant in
+                keystone.projects.list(user=username) \
+                if tenant.name == proj_name]
             if not projects_id:
                 raise AiToolsOpenstackAuthError("There is no Openstack project with name:"
                     " '%s'" % proj_name)
