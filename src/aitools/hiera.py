@@ -69,7 +69,8 @@ class HieraClient():
         except OSError, error:
             raise AiToolsHieraError("Hiera call failed (%s)" % error)
         if process.returncode == os.EX_OK:
-            if stdout.splitlines()[-1] == 'nil': # Jeez...
+            chopped = stdout.splitlines()
+            if chopped and chopped[-1] == 'nil': # Jeez...
                 raise AiToolsHieraKeyNotFoundError()
             return stdout
         else:
