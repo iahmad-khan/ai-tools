@@ -249,9 +249,10 @@ def parse_cmdline_args():
         if not match:
             parser.error("Bad format for attaching a volume. The format must be "
                 "'<device>=<UUID>' or '<device>=<size>'")
-        volume_data = {'dot': 1 if match.group('dot') is not None else 0,
+        volume_data = {'info': match.group('value'),
+            'dot': 1 if match.group('dot') is not None else 0,
             'type': None if not 'type' in match.groupdict() else match.group('type')}
-        device, volume_data['info'] = match.group('device'), match.group('value')
+        device = match.group('device')
         if device == 'vda':
             parser.error("It is not possible to attach a volume in device 'vda' as this device is "
                 "used for booting")
