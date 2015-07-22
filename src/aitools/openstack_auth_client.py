@@ -8,6 +8,7 @@ from openstackclient.common import clientmanager
 from keystoneclient import exceptions
 from keystoneclient.openstack.common.apiclient import exceptions as api_exceptions
 from aitools.errors import AiToolsOpenstackAuthError
+from aitools.errors import AiToolsOpenstackAuthBadEnvError
 
 class OpenstackAuthClient():
     def __init__(self, auth_options):
@@ -16,6 +17,19 @@ class OpenstackAuthClient():
         authentication against Nova, Cinder and Glance.
         """
         try:
+
+            # This should prevent the program from continuing if an old
+            # openrc is sourced and there is nothing set globally.
+            if not hasattr(auth_options, 'os_identity_api_version') or \
+                auth_options.os_identity_api_version == "2":
+                    raise AiToolsOpenstackAuthBadEnvError()
+
+            # In case an old openrc is sourced, mixing up global configuration
+            # (v3) and local (v2).
+            if hasattr(auth_options, 'os_auth_url') and \
+                auth_options.os_auth_url.endswith('2.0'):
+                    raise AiToolsOpenstackAuthBadEnvError()
+
             self.client = clientmanager.ClientManager(auth_options=auth_options,
                 api_version={'identity': auth_options.os_identity_api_version},
                 verify=True,
