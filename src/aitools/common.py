@@ -76,7 +76,7 @@ def get_openstack_environment():
         del res['os_tenant_id']
 
     if not res:
-        raise AiToolsInitError("OpenStack envionment variables are "
+        raise AiToolsInitError("OpenStack environment variables are "
             "missing (did you source openrc?)")
 
     res['os_url'] = ''
