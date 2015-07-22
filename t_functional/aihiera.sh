@@ -64,10 +64,13 @@ echo "Arguments..."
 _expect 2 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE
 
 echo "Resolution..."
+_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo
 _expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo -t
 _expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo -a
 _expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo --foreman-hostgroup foo
-_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo --foreman-environment production
+_expect 1 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo --foreman-environment production
+_expect 1 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo bar
+_expect 1 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo bar -t
 
 echo "Tearing down..."
 _expect 0 ai-foreman --config $CONF delhost $TESTNODE

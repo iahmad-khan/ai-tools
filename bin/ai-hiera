@@ -30,7 +30,7 @@ from aitools.common import validate_fqdn
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsHieraError, AiToolsPdbNotFoundError
-from aitools.errors import AiToolsPdbError
+from aitools.errors import AiToolsPdbError, AiToolsHieraKeyNotFoundError
 
 from aitools.completer import ForemanCompleter
 
@@ -165,16 +165,20 @@ def main():
 
     hiera = HieraClient(args.hiera_config, args.trace, args.hash, args.array)
 
+    ret = 0
     try:
         for key in args.key:
             logging.info("Looking up '%s'..." % key)
             sys.stdout.write(hiera.lookupkey(key, fqdn, environment,
                 hostgroup, facts, args.module))
+    except AiToolsHieraKeyNotFoundError, error:
+        logging.info(error)
+        ret = 1
     except AiToolsHieraError, error:
         logging.error("Lookup failed (%s)" % error)
         return 20
 
-    return 0
+    return ret
 
 if __name__ == '__main__':
     sys.exit(main())

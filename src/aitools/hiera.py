@@ -6,6 +6,7 @@ import logging
 import subprocess
 
 from aitools.errors import AiToolsHieraError
+from aitools.errors import AiToolsHieraKeyNotFoundError
 
 DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
 HIERA_BINARY_PATH = "/usr/bin/hiera"
@@ -68,6 +69,9 @@ class HieraClient():
         except OSError, error:
             raise AiToolsHieraError("Hiera call failed (%s)" % error)
         if process.returncode == os.EX_OK:
+            chopped = stdout.splitlines()
+            if chopped and chopped[-1] == 'nil': # Jeez...
+                raise AiToolsHieraKeyNotFoundError()
             return stdout
         else:
             raise AiToolsHieraError("Hiera returned non-zero exit code (%d)" %
