@@ -3,6 +3,7 @@
 
 import logging
 import requests
+import re
 from keystoneclient.v3 import client as keystoneclient
 from openstackclient.common import clientmanager
 from keystoneclient import exceptions
@@ -27,7 +28,7 @@ class OpenstackAuthClient():
             # In case an old openrc is sourced, mixing up global configuration
             # (v3) and local (v2).
             if hasattr(auth_options, 'os_auth_url') and \
-                auth_options.os_auth_url.endswith('2.0'):
+                re.match(r'.*v2(\.0)?/?$', auth_options.os_auth_url):
                     raise AiToolsOpenstackAuthBadEnvError()
 
             self.client = clientmanager.ClientManager(auth_options=auth_options,
