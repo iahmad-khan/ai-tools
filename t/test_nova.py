@@ -4,6 +4,7 @@ import unittest
 from mock import Mock, patch
 from aitools.errors import AiToolsNovaError
 from aitools.nova import NovaClient as NovaWrapper
+from aitools.openstack_auth_client import OpenstackAuthClient
 from novaclient.v1_1 import client as novaAPI
 from novaclient.v1_1 import servers
 from novaclient.exceptions import ClientException, ConnectionRefused
@@ -12,7 +13,8 @@ from uuid import uuid4
 class TestNova(unittest.TestCase):
 
     def setUp(self):
-        self.tenant = NovaWrapper(auth_client=None, timeout=10)
+        OpenstackAuthClient = Mock(session='')
+        self.tenant = NovaWrapper(auth_client=OpenstackAuthClient(), timeout=10)
         self.fake_uuid = lambda: str(uuid4())
 
     def set_up_for_rebuild(test):

@@ -14,7 +14,8 @@ from aitools.openstack_auth_client import OpenstackAuthClient
 class TestCinder(unittest.TestCase):
 
     def setUp(self):
-        self.tenant = CinderWrapper(auth_client=None)
+        OpenstackAuthClient = Mock(session='')
+        self.tenant = CinderWrapper(auth_client=OpenstackAuthClient())
 
     @patch.object(cinderAPI.Client, '__init__', side_effect=ClientException('Client exception!'))
     def test_client_error_in_cinder_init_client(self, mock_client):
