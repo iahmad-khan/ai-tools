@@ -54,11 +54,11 @@ def deref_url(url):
 def get_openstack_environment():
     """
     Verify the user has provided the needed environment for Openstack and
-    returns a dictionary containing this environment.
+    returns a OpenstackEnvironmentVariables object containing this environment.
     The returned values are filled from the **OS_** environement variables
     when present. This function does not validate the correctness of the
     returned values.
-    :raise AiToolsInitError: User doesn't have the basic environments set.
+    :raise AiToolsInitError: User doesn't have the basic environment set.
     """
     # We get all environment variables that start with 'OS_'
     res = dict((env.lower(), os.getenv(env))
@@ -76,8 +76,8 @@ def get_openstack_environment():
         del res['os_tenant_id']
 
     if not res:
-        raise AiToolsInitError("OpenStack environment variables are "
-            "missing (did you source openrc?)")
+        raise AiToolsInitError("There are no Openstack environment "
+            " variables set")
 
     res['os_url'] = ''
     res['os_region_name'] = ''
