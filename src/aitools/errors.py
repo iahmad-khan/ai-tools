@@ -45,7 +45,7 @@ class AiToolsOpenstackAuthBadEnvError(AiToolsOpenstackAuthError):
         return """
 Corrupt or invalid Openstack environment. This is normally because you have
 sourced a Password-based Openstack RC file which is no longer compatible with
-ai-tools.  The fastest way to get a working environment back is to get a new
+ai-tools. The fastest way to get a working environment back is to get a new
 shell by, for instance, logging out and back in again.
 
 Please bear in mind that it is no longer necessary to source a different OpenRC
