@@ -89,6 +89,9 @@ class OpenstackEnvironmentVariables(object):
     def __init__(self, **entries):
         self.__dict__.update(entries)
 
+    def get(self, key):
+        return self.__dict__.get(key)
+
 def verify_kerberos_environment():
     """
     Verify the user has a valid Kerberos token and associated environment.
