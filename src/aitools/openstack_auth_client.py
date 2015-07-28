@@ -23,13 +23,13 @@ class OpenstackAuthClient():
             # openrc is sourced and there is nothing set globally.
             if not hasattr(auth_options, 'os_identity_api_version') or \
                 auth_options.os_identity_api_version != "3":
-                    raise AiToolsOpenstackAuthBadEnvError('os_identity_api_version')
+                raise AiToolsOpenstackAuthBadEnvError('os_identity_api_version')
 
             # In case an old openrc is sourced, mixing up global configuration
             # (v3) and local (v2).
             if hasattr(auth_options, 'os_auth_url') and \
                 re.match(r'.*v2(\.0)?/?$', auth_options.os_auth_url):
-                    raise AiToolsOpenstackAuthBadEnvError('os_auth_url')
+                raise AiToolsOpenstackAuthBadEnvError('os_auth_url')
 
             self.client = clientmanager.ClientManager(auth_options=auth_options,
                 api_version={'identity': auth_options.os_identity_api_version},
