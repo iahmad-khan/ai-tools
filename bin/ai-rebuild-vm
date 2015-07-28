@@ -108,7 +108,7 @@ def print_summary(args, fqdn, openstack_env, host):
         logging.info("VM image: %s" % args.nova_image)
     else:
         logging.info("VM image: No changes. Current one will be used.")
-    logging.info("VM tenant: %s" % openstack_env.get('project_name'))
+    logging.info("VM tenant: %s" % openstack_env.os_project_name)
     if host:
         logging.info("Foreman environment: %s" %
             host['environment']['name'])
