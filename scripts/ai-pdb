@@ -114,6 +114,13 @@ def main():
                             help="output a plain, unformatted list of hostnames")
     hg_parser.set_defaults(func=hg_main)
 
+    hgfacts_parser = subparsers.add_parser("hostgroup_fact", help="query a single fact across a hostgroup")
+    hgfacts_parser.add_argument("hostgroup", metavar="HG", help="hostgroup string")
+    hgfacts_parser.add_argument("fact", metavar="FACT", help="fact")
+    hgfacts_parser.add_argument("--subgroups", action="store_true", default=False, dest="subgroups",
+                            help="return facts for nodes from subgroups")
+    hgfacts_parser.set_defaults(func=hgfacts_main)
+
     facts_parser = subparsers.add_parser("facts", help="get facts for a node")
     facts_parser.add_argument("hostname", metavar="HOST", help="hostname to fetch facts for").completer = ForemanCompleter()
     facts_parser.add_argument("--fact", help="specific fact to fetch", default=None)
