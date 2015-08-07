@@ -37,8 +37,11 @@ def pwn(pargs):
         del(args['options'])
     try:
         pwn_client = PwnClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
-        getattr(pwn_client, OPERATION_CHOICES[pargs.operation])(**args)
-        logging.info("Ownership operation %s successful for %s '%s'" % (pargs.operation, pargs.scope, pargs.entity))
+        result = getattr(pwn_client, OPERATION_CHOICES[pargs.operation])(**args)
+        if pargs.operation == 'show':
+            print result
+        else:
+            logging.info("Ownership operation %s successful for %s '%s'" % (pargs.operation, pargs.scope, pargs.entity))
     except AiToolsPwnError as e:
         logging.error(e)
         sys.exit(3)
