@@ -70,8 +70,24 @@ def hg_main(pargs):
     else:
         print json.dumps(res, sort_keys=True, indent=5, separators=(',', ': '))
 
+def hgfacts_main(pargs):
 
-def hg_facts(pargs):
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
+    endpoint = "/v3/facts"
+    op = "~" if pargs.subgroups else "="
+    query_str = '["and",  ["=", "name", "%s"], ["in", "certname", ["extract", '\
+        '"certname", ["select-facts", ["and", ["=", "name", "hostgroup"], '\
+        '["%s", "value", "%s"]]]]]]' % (pargs.fact, op, pargs.hostgroup)
+    query = urlencode({"query": query_str})
+
+    pdb = PdbClient(show_url=pargs.show_url)
+    (code, j) = pdb.raw_request("%s?%s" % (endpoint,query))
+
+    print json.dumps(j, sort_keys=True, indent=5, separators=(',', ': '))
+
+def facts_main(pargs):
 
     config = AiConfig()
     config.read_config_and_override_with_pargs(pargs)
@@ -114,11 +130,18 @@ def main():
                             help="output a plain, unformatted list of hostnames")
     hg_parser.set_defaults(func=hg_main)
 
+    hgfacts_parser = subparsers.add_parser("hostgroup_fact", help="query a single fact across a hostgroup")
+    hgfacts_parser.add_argument("hostgroup", metavar="HG", help="hostgroup string")
+    hgfacts_parser.add_argument("fact", metavar="FACT", help="fact")
+    hgfacts_parser.add_argument("--subgroups", action="store_true", default=False, dest="subgroups",
+                            help="return facts for nodes from subgroups")
+    hgfacts_parser.set_defaults(func=hgfacts_main)
+
     facts_parser = subparsers.add_parser("facts", help="get facts for a node")
     facts_parser.add_argument("hostname", metavar="HOST", help="hostname to fetch facts for").completer = ForemanCompleter()
     facts_parser.add_argument("--fact", help="specific fact to fetch", default=None)
     argcomplete.autocomplete(parser)
-    facts_parser.set_defaults(func=hg_facts)
+    facts_parser.set_defaults(func=facts_main)
     pargs = parser.parse_args()
     pargs.func(pargs)
 
