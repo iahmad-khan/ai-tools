@@ -70,6 +70,22 @@ def hg_main(pargs):
     else:
         print json.dumps(res, sort_keys=True, indent=5, separators=(',', ': '))
 
+def hgfacts_main(pargs):
+
+    config = AiConfig()
+    config.read_config_and_override_with_pargs(pargs)
+
+    endpoint = "/v3/facts"
+    op = "~" if pargs.subgroups else "="
+    query_str = '["and",  ["=", "name", "%s"], ["in", "certname", ["extract", '\
+        '"certname", ["select-facts", ["and", ["=", "name", "hostgroup"], '\
+        '["%s", "value", "%s"]]]]]]' % (pargs.fact, op, pargs.hostgroup)
+    query = urlencode({"query": query_str})
+
+    pdb = PdbClient(show_url=pargs.show_url)
+    (code, j) = pdb.raw_request("%s?%s" % (endpoint,query))
+
+    print json.dumps(j, sort_keys=True, indent=5, separators=(',', ': '))
 
 def facts_main(pargs):
 
