@@ -137,6 +137,8 @@ ai-pdb raw <puppetdb \s-1REST\s0 endpoint> [ \-\-query <query> ]
 ai-pdb hostgroup <hostgroup_name> [ \-\-subgroups \-\-plain ]
 .PP
 ai-pdb facts <hostname>
+.PP
+ap-pdb hostgroup_fact <hostgroup_name> <fact_name> [ \-\-subgroups ]
 .SH "DESCRIPTION"
 .IX Header "DESCRIPTION"
 ai-pdb is a simple script to query puppetdb using kerberos creds.
@@ -193,6 +195,12 @@ The facts subcommand takes a hostname and returns a JSON list of facts for that 
 .IP "\fB\-\-facts\fR" 4
 .IX Item "--fact"
 Just return the single specified fact
+.SS "hostgroup_fact"
+.IX Subsection "hostgroup_fact"
+The hostgroup_fact subcommand takes a hostgroup and a fact, and returns a JSON list of that fact for the given hostgroup
+.IP "\fB\-\-subgroups\fR" 4
+.IX Item "--subgroups"
+With a supplied hostgroup string, will look for all subgroups
 .SH "EXAMPLES"
 .IX Header "EXAMPLES"
 ai-pdb facts aiadm041.cern.ch
@@ -202,6 +210,8 @@ ai-pdb raw /v2/nodes/benvm03.cern.ch
 ai-pdb raw /v2/facts/hostgroup \-\-query '[\*(L"~\*(R", \*(L"value\*(R", \*(L"punch/*\*(R"]'
 .PP
 ai-pdb hostgroup punch \-\-subgroups
+.PP
+ai-pdb hostgroup_fact punch/aijens uptime --subgroups
 .SH "AUTHOR"
 .IX Header "AUTHOR"
 Ben Jones <ben.dylan.jones@cern.ch>
