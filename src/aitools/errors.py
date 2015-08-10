@@ -37,6 +37,22 @@ class AiToolsCinderError(AiToolsError):
 class AiToolsOpenstackAuthError(AiToolsError):
     pass
 
+class AiToolsOpenstackAuthBadEnvError(AiToolsOpenstackAuthError):
+    def __init__(self, hint):
+        self.hint = hint
+
+    def __str__(self):
+        return """
+Corrupt or invalid Openstack environment. This is normally because you have
+sourced a Password-based Openstack RC file which is no longer compatible with
+ai-tools. The fastest way to get a working environment back is to get a new
+shell by, for instance, logging out and back in again.
+
+Please bear in mind that it is no longer necessary to source a different OpenRC
+file to switch between Openstack projects (ai-rc should be used instead).
+
+Conflicting variable: %s""" % self.hint
+
 class AiToolsRogerError(AiToolsHTTPClientError):
     pass
 
