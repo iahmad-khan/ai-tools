@@ -40,7 +40,7 @@ def pwn(pargs):
             deref_alias=pargs.dereference_alias)
         result = getattr(pwn_client, OPERATION_CHOICES[pargs.operation])(**args)
         if pargs.operation == 'show':
-            print result
+            print json.dumps(result, sort_keys=True, indent=5, separators=(',', ': '))
         else:
             logging.info("Ownership operation %s successful for %s '%s'" %
                 (pargs.operation, pargs.scope, pargs.entity))
