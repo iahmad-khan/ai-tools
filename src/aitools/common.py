@@ -30,8 +30,10 @@ def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
         logging_level = logging.DEBUG
     logging.basicConfig(level=logging_level, format="%(message)s")
     # Workaround to get rid of "Starting new HTTP connection..."
+    # and "Resetting dropped connection..."
     if logging_level > logging.DEBUG:
-        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        logging.getLogger("requests.packages.urllib3.connectionpool") \
+            .setLevel(logging.WARNING)
 
 
 def deref_url(url):
