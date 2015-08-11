@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.2
+Version: 9.3
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -86,6 +86,15 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Jul 06 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.3-1
+- [ai-bs-vm, ai-kill-vm] Add support for Juno clients.
+- [ai-bs-vm] Add support for volume types
+- [ai-installhost] Allow setting a custom Roger message.
+- [ai-pwn] Add console output for show operation.
+- [ai-hiera] Print some hints if the key was not found.
+- [all] Mask INFO messages genearated by urllib3.connectionpool.
+- [all] Small documentation fixes.
+
 * Mon Jul 06 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.2-1
 - [ai-disownhost] Released.
 - [ai-rc] Released.

@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='ai-tools',
-      version='9.2',
+      version='9.3',
       description='Tools for Agile Infrastructure project',
       author='AI Config Team',
       author_email='ai-config-team@cern.ch',
