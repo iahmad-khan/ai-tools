@@ -55,7 +55,7 @@ def hg_main(pargs):
         hg = pargs.hostgroup
     query = urlencode({"query": '["%s", "value", "%s"]' % (op, hg)})
 
-    pdb = PdbClient(show_url=pargs.show_url)
+    pdb = PdbClient(show_url=pargs.show_url, deref_alias=pargs.dereference_alias)
     (code, j) = pdb.raw_request("%s?%s" % (endpoint,query))
 
     res = list()
@@ -82,7 +82,7 @@ def hgfacts_main(pargs):
         '["%s", "value", "%s"]]]]]]' % (pargs.fact, op, pargs.hostgroup)
     query = urlencode({"query": query_str})
 
-    pdb = PdbClient(show_url=pargs.show_url)
+    pdb = PdbClient(show_url=pargs.show_url, deref_alias=pargs.dereference_alias)
     (code, j) = pdb.raw_request("%s?%s" % (endpoint,query))
 
     print json.dumps(j, sort_keys=True, indent=5, separators=(',', ': '))
@@ -101,7 +101,7 @@ def facts_main(pargs):
 
     endpoint = "/v3/nodes/%s/facts%s" % (fqdn, factoid)
 
-    pdb = PdbClient(show_url=pargs.show_url)
+    pdb = PdbClient(show_url=pargs.show_url, deref_alias=pargs.dereference_alias)
     (code, j) = pdb.raw_request("%s?" % (endpoint,))
 
     print json.dumps(j, sort_keys=True, indent=5, separators=(',', ': '))
