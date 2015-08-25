@@ -110,23 +110,19 @@ def main():
         logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
         return 5
 
-    foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
-
-    if not args.foreman_disable:
-        try:
-            foreman.delhost(fqdn)
-        except AiToolsForemanError, error:
-            logging.error("Couldn't delete Foreman entry (%s)." % error)
-            return 20
-
     if not args.nova_disable:
         try:
             auth_client = OpenstackAuthClient(openstack_env)
             nova = NovaClient(auth_client, dryrun=args.dryrun)
             nova.delete(fqdn)
         except AiToolsNovaError, error:
-            logging.error("Couldn't delete VM from Nova (%s). Please, make sure that "
-                "the machine is removed executing 'openstack server delete %s'" % (error, args.hostname[0]))
+            logging.error("Couldn't delete VM from Openstack (errormsg: %s)" % error)
+            logging.info("* If the machine was not found, then you're probably in the wrong")
+            logging.info("  project. What about eval $(ai-rc --same-project-as %s)?"
+                % args.hostname[0])
+            logging.info("* OTOH, if you're sure that the VM does not exist anymore")
+            logging.info("  then you can skip this step by adding --nova-disable")
+            logging.info("  in order to continue with the remaining steps.")
             return 10
         except AiToolsOpenstackAuthError, error:
             logging.error("Not authorized to delete '%s' (%s)." % (args.hostname[0], error))
@@ -146,6 +142,14 @@ def main():
         except Exception, error:
             logging.error("Received unexpected error trying to switch off alarms in roger: %s" % error)
             logging.info("Please update roger for machine to switch alarms off if necessary")
+
+    if not args.foreman_disable:
+        try:
+            foreman = ForemanClient(dryrun=args.dryrun, deref_alias=args.dereference_alias)
+            foreman.delhost(fqdn)
+        except AiToolsForemanError, error:
+            logging.error("Couldn't delete Foreman entry (%s)." % error)
+            return 20
 
     return 0
 
