@@ -27,7 +27,8 @@ ENV_TO_UNSET = ['OS_PROJECT_ID', 'OS_TENANT_ID', 'OS_TENANT_NAME']
 
 STDOUT_FORMAT = {
     'bash': ("unset %s;", 'export %s="%s";'),
-    'tcsh': ("unsetenv %s;", 'setenv %s "%s";')
+    'tcsh': ("unsetenv %s;", 'setenv %s "%s";'),
+    'csh': ("unsetenv %s;", 'setenv %s "%s";')
 }
 
 def parse_cmd_args():
