@@ -41,6 +41,10 @@ Host to get the Openstack project name from.
 .B -c, --cshell
 Generate C-shell commands on stdout.
 .TP
+.B -b, --bshell
+Generate Bourne shell commands on stdout. This is the default if SHELL
+does not look like it’s a tcsh shell
+.TP
 .B -h, --help
 Display usage and exit.
 .LP
@@ -77,6 +81,10 @@ Host doesn't have "cern_os_tenant" fact in PuppetDB
 .TP
 .B Print to STDOUT environment variables for the project "LXPLUS"
 $ ai-rc "LXPLUS"
+
+.TP
+.B Print to STDOUT environment variables for the project "LXPLUS" andforce the output to be Bourne shell commands
+$ ai-rc "LXPLUS" --bshell
 
 .TP
 .B Generate (and evaluate) variables for the Openstack project where foo1.cern.ch belongs to

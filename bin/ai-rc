@@ -12,6 +12,7 @@
 
 import logging
 import sys
+from os import environ
 
 from argparse import ArgumentParser
 from argcomplete import autocomplete
@@ -25,8 +26,8 @@ from aitools.pdb import PdbClient
 ENV_TO_UNSET = ['OS_PROJECT_ID', 'OS_TENANT_ID', 'OS_TENANT_NAME']
 
 STDOUT_FORMAT = {
-    'bsh': ("unset %s;", 'export %s="%s";'),
-    'csh': ("unsetenv %s;", 'setenv %s "%s";')
+    'bash': ("unset %s;", 'export %s="%s";'),
+    'tcsh': ("unsetenv %s;", 'setenv %s "%s";')
 }
 
 def parse_cmd_args():
@@ -39,18 +40,29 @@ def parse_cmd_args():
                         help="Hostname to get the OS Project variables from")
     options.add_argument("project", nargs='?', metavar="OS_PROJECT",
                         help="OpenStack project name")
+    shells = parser.add_mutually_exclusive_group(required=False)
+    shells.add_argument('-c', '--cshell', action="store_const",
+                        dest='shell', const='tcsh',
+                        help="Generate C-shell commands on stdout")
+    shells.add_argument('-b', '--bshell', action="store_const",
+                        dest='shell', const='bash',
+                        help="Generate Bourne shell commands on stdout")
+    shells.set_defaults(shell=None)
+
     parser.add_argument('-v', '--verbose', action="store_true",
                         help="Verbose output")
-    parser.add_argument('-c', '--cshell', action="store_const",
-                        dest='shell', const='csh',
-                        help="Generate C-shell commands on stdout")
-    parser.set_defaults(shell='bsh')
     autocomplete(parser)
     args = parser.parse_args()
     return args
 
-def print_env_variables(project_name=None, shell='bsh'):
+def print_env_variables(project_name=None, shell=None):
     project_name = project_name or "Personal %s" % getuser()
+
+    if '/' in shell:
+        shell = shell.split('/')[-1]
+    if not shell or not shell in STDOUT_FORMAT:
+        shell = 'bash'
+
     unsetenv, setenv = STDOUT_FORMAT[shell]
 
     # First unset potentially clashing variables
@@ -86,7 +98,7 @@ def main():
             logging.error(error)
             sys.exit(3)
 
-    print_env_variables(project_name, shell=args.shell)
+    print_env_variables(project_name, shell=args.shell or environ.get('SHELL'))
     sys.exit(0)
 
 if __name__ == "__main__":
