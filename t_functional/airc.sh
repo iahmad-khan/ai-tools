@@ -36,6 +36,8 @@ _expect 0 ai-rc
 _expect 0 ai-rc --same-project-as lxplus
 _expect 0 ai-rc -s lxplus
 _expect 0 ai-rc "LXPLUS"
+_expect 0 ai-rc -s lxplus -c
+_expect 0 ai-rc "LXPLUS" -c
 
 echo "Tearing down..."
 rm -f $CONF
