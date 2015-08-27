@@ -38,6 +38,9 @@ Path to the config file (default /etc/ai/ai.conf).
 .B --same-project-as
 Host to get the Openstack project name from.
 .TP
+.B -c, --cshell
+Generate C-shell commands on stdout
+.TP
 .B -h, --help
 Display usage and exit.
 .LP
@@ -82,6 +85,10 @@ $ eval $(ai-rc --same-project-as foo1.cern.ch)
 .TP
 .B Generate (and evaluate) variables for your personal OpenStack project
 $ eval $(ai-rc)
+
+.TP
+.B Generate (and evaluate) variables on C-Shell format for your personal OpenStack project
+$ eval $(ai-rc -c)
 
 .SH REPORTING BUGS
 If you experience any problem with this tool, please open a support
