@@ -36,6 +36,16 @@ _expect 0 ai-rc
 _expect 0 ai-rc --same-project-as lxplus
 _expect 0 ai-rc -s lxplus
 _expect 0 ai-rc "LXPLUS"
+_expect 0 "ai-rc --same-project-as lxplus -c | grep -q unsetenv"
+_expect 0 "ai-rc -s lxplus -c | grep -q unsetenv"
+_expect 0 "ai-rc 'LXPLUS' --cshell | grep -q unsetenv"
+_expect 0 "ai-rc --same-project-as lxplus -b | grep -q export"
+_expect 0 "ai-rc -s lxplus --bshell | grep -q export"
+_expect 0 "ai-rc 'LXPLUS' -b | grep -q export"
+_expect 0 "SHELL='/bin/tcsh' ai-rc 'LXBATCH' | grep -q unsetenv"
+_expect 0 "SHELL='/bin/bash' ai-rc 'LXBATCH' | grep -q export"
+_expect 0 "SHELL='' ai-rc 'LXBATCH' | grep -q export"
+_expect 0 "SHELL='diegocervero' ai-rc 'LXBATCH' | grep -q export"
 
 echo "Tearing down..."
 rm -f $CONF
