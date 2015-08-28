@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.3
+Version: 9.4
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -88,6 +88,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Fri Aug 28 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.4-1
+- [ai-rc] Add support for C-shell.
+- [ai-pdb] Pass deref_alias to all PdbClients.
+- [ai-hiera] Pass deref_alias to PdbClient.
+
 * Mon Jul 06 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.3-1
 - [ai-bs-vm, ai-kill-vm] Add support for Juno clients.
 - [ai-bs-vm] Add support for volume types
