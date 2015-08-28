@@ -15,9 +15,11 @@ License: GPL+
 URL: https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome
 
 BuildRequires: python-devel
-Requires: aims2-client, certmgr-client, python-novaclient, python-krbV, python-urllib2_kerberos
+Requires: aims2-client, certmgr-client, python-krbV, python-urllib2_kerberos
 Requires: perl-YAML-Syck, python-requests, python-requests-kerberos
 Requires: python-argcomplete, python-humanize, teigi-client, python-dateutil
+Requires: python-openstackclient, python-cinderclient
+Requires: python-keystoneclient, python-novaclient
 %if 0%{?el5} || 0%{?el6}
 Requires: python-argparse
 %endif
