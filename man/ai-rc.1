@@ -23,6 +23,9 @@ project will be printed.
 Please note that in most cases you would like to evaluate the output returned by 'ai-rc'
 e.g.
 .B eval $(ai-rc *options)
+in bash or
+.B eval \`ai-rc *options\`
+in tcsh.
 .LP
 .I Prerequisites:
 .TP
@@ -96,7 +99,7 @@ $ eval $(ai-rc)
 
 .TP
 .B Generate (and evaluate) variables in C-Shell format for your personal OpenStack project
-$ eval $(ai-rc -c)
+$ eval \`ai-rc -c\`
 
 .SH REPORTING BUGS
 If you experience any problem with this tool, please open a support
