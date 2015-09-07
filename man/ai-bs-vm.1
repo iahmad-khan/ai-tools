@@ -6,7 +6,8 @@ ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 .B "ai-bs-vm"
 [OPTION]...
 \fI-g HOSTGROUP\fR
-\fI-i IMAGE\fR | \fI--nova-boot-from-existing-volume VOLUMEID\fR
+\fI-i IMAGE\fR | \fI--slc5\fR | \fI --slc6\fR | \fI --cc7\fR
+| \fI--nova-boot-from-existing-volume VOLUMEID\fR
 [VMNAME]
 
 .SH DESCRIPTION
@@ -18,11 +19,11 @@ based on a trimmed SHA1 hashed UNIX timestamp. The length is
 limited to 60 characters (prefix included). Using a prefix is
 recommended (see --prefix).
 .LP
-The officially supported images are: CC7 Base, SLC6 Server
-and SLC5 Server, which contain a base system ready to be
+The officially supported images are: CC7 Base, SLC6 Base,
+SLC6 Server and SLC5 Server, which contain a base system ready to be
 managed by Puppet.
 .LP
-"SLCx CERN Server" and "CC7 Extra" ones \fBare not supported\fR.
+"SLCx CERN Server", "SLCx Extra" and "CC7 Extra" ones \fBare not supported\fR.
 .LP
 .I Prerequisites:
 .TP
@@ -63,14 +64,19 @@ Cinder Volume UUID to boot from. Format is '<volume UUID>[:delete-on-terminate]'
 where 'delete-on-terminate' is an optional flag that indicates that the
 volume will be deleted when the VM is destroyed. In order to boot from
 an existing volume, it has to be bootable and available (it will fail in any
-other case). This parameter is mutually exclusive with "--nova-image" and
-"--nova-boot-from-new-volume" as only one bootable element can be specified
-per VM. (see http://cern.ch/go/l9xP)
+other case). This parameter is mutually exclusive with { '--nova-image' | '--slc5'
+| '--slc6' | '--cc7' | '--nova-boot-from-new-volume' } as only one bootable element
+can be specified per VM. (see http://cern.ch/go/l9xP)
 .TP
 .B -i, --nova-image (AIBS_VMIMAGE_NAME)
-OpenStack image name of the virtual machine (get a list from
-'openstack image list'). This parameter is mutually exclusive with
-"--nova-boot-from-existing-volume".
+OpenStack image name of the virtual machine (get a list from 'openstack image list').
+This parameter is mutually exclusive with
+{ '--slc5' | '--slc6' | '--cc7' | '--nova-boot-from-existing-volume' }.
+.TP
+.B --slc5, --slc6, --cc7
+Latest released OpenStack image for the particular distribution. These
+parameteres are mutually exclusive with { '--nova-image'
+| '--nova-boot-from-existing-volume' }.
 .LP
 Although the synopsis indicates that -g and -i are mandatory
 parameters, both will become optional if the values are passed via
@@ -128,9 +134,9 @@ represented as "XGB" or "XTB", being X an integer larger than 0 and
 \'delete-on-terminate\' an optional flag that indicates that the volume will be
 deleted when the VM is destroyed. It's also possible to optionally specify the
 volume type via the \'type\' parameter. In order to create a bootable volume
-"--nova-image" must be specified.  This parameter is mutually exclusive with
-"--nova-boot-from-existing-volume", as only one bootable element can be
-specified per VM. (see http://cern.ch/go/l9xP)
+{ --nova-image | --slc5 | --slc6 | --cc7 } must be specified.  This parameter
+is mutually exclusive with "--nova-boot-from-existing-volume", as only one bootable
+element can be specified per VM. (see http://cern.ch/go/l9xP)
 .TP
 .B --nova-flavor (AIBS_VMFLAVOR_NAME)
 OpenStack flavor name of the virtual machine (defaults to "m1.small").
@@ -276,13 +282,17 @@ ai-bs-vm --foreman-hostgroup foo/bar --nova-image "SLC6 Server - x86_64 [130920]
 ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --foreman-environment qa higgsbox.cern.ch
 
 .TP
+.B Create a VM with the latest CC7 image availabe in hostgroup "foo/bar"
+ai-bs-vm -g foo/bar --cc7 higgsbox.cern.ch
+
+.TP
 .B Now with different VM flavor and SSH key:
 ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]"
 --foreman-environment qa --nova-sshkey my-key --nova-flavor m1.large higgsbox.cern.ch
 
 .TP
 .B Create a VM with random hostname prefixed by "foo":
-ai-bs-vm -g foo/bar -i "SLC6 Server - x86_64 [130920]" --prefix foo
+ai-bs-vm -g foo/bar --slc6 --prefix foo
 
 .TP
 .B Create a VM booting from an existing volume:
