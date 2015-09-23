@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.4
+Version: 9.5
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -88,6 +88,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Sep 23 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.5-1
+- [ai-bs-vm] Add --slc5, --slc6 and --cc7 options.
+- [ai-kill-vm] Swap Foreman and Openstack calls.
+- Documentation fixes.
+
 * Fri Aug 28 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.4-1
 - [ai-rc] Add support for C-shell.
 - [ai-pdb] Pass deref_alias to all PdbClients.
