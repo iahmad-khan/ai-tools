@@ -89,7 +89,7 @@ echo "Userdata dump..."
 _expect 7 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --userdata-dump /etc/passwd
 DUMP=$(mktemp -u)
 _expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --userdata-dump $DUMP
-_expect 0 stat $DUMP
+_expect 0 test -s $DUMP
 rm -rf $DUMP
 
 echo "Tearing down..."
