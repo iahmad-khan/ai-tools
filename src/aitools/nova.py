@@ -144,6 +144,7 @@ class NovaClient():
             images = [image.to_dict() for image in tenant.images.list()]
             filtered_images = [image for image in images if
                 'metadata' in image and
+                'release_date' in image['metadata'] and
                 image['metadata'].get('os_distro') == os_distro and
                 image['metadata'].get('os_distro_major') == str(os_distro_major) and
                 image['metadata'].get('os_edition') == os_edition and
@@ -155,7 +156,7 @@ class NovaClient():
 
             latest = max(filtered_images,
                 key=lambda image: (int(image['metadata']['os_distro_minor']),
-                                   image['metadata'].get('release_date')))
+                                   image['metadata']['release_date']))
 
             logging.info("Using '%s' as the latest '%s%s' image available"
                 "" % (latest.get('name') or latest['id'], os_distro, os_distro_major))
