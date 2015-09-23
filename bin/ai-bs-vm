@@ -76,6 +76,12 @@ VOLUME_VALIDATION_REGEX = {
     'attach_existing_volume': r'^(?P<device>\w+)=(?P<value>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})(?P<dot>:delete-on-terminate)?$'
 }
 
+IMAGES = {
+    'slc5': ('SLC', '5', 'Server'),
+    'slc6': ('SLC', '6', 'Base'),
+    'cc7' : ('CC',  '7', 'Base'),
+}
+
 ATTACHMENTS = {}
 
 validate_arg_with_regex = lambda name, value : re.match(VOLUME_VALIDATION_REGEX[name], value, re.I)
@@ -162,12 +168,20 @@ def parse_cmdline_args():
     ).completer = NovaCompleter(cache='flavor')
 
     bootable_elements = parser.add_mutually_exclusive_group(required=False)
-    bootable_elements.add_argument('-i', '--nova-image', type=str,
-        help="OpenStack image name",
-        default=os.environ.get('AIBS_VMIMAGE_NAME', None)
-    ).completer = NovaCompleter(cache='image')
     bootable_elements.add_argument('--nova-boot-from-existing-volume',
         type=str, help="Cinder Volume UUID to boot from", default=None)
+
+    images = bootable_elements.add_mutually_exclusive_group(required=False)
+    images.add_argument('-i', '--nova-image', type=str,
+        help="OpenStack image name").completer = NovaCompleter(cache='image')
+    images.add_argument('--slc5', action="store_const", dest='nova_image',
+        const='slc5', help="Select latest SLC5 image available")
+    images.add_argument('--slc6', action="store_const", dest='nova_image',
+        const='slc6', help="Select latest SLC6 image available")
+    images.add_argument('--cc7', action="store_const", dest='nova_image',
+        const='cc7', help="Select latest CC7 image available")
+    images.set_defaults(nova_image=os.environ.get('AIBS_VMIMAGE_NAME', None))
+
     parser.add_argument('--nova-boot-from-new-volume', type=str,
         help="Size (in GB or TB) of the cinder volume to be created"
             " (e.g. '100GB', '1TB'). See manpage for more options.",
@@ -215,7 +229,7 @@ def parse_cmdline_args():
             "In case you just specify one, check the env variable 'AIBS_VMIMAGE_NAME'")
 
     options_to_boot_from = """You can boot from:
-        - An image ('openstack image list')
+        - An image ('openstack image list') or an image alias {--slc5, --slc6, --cc7}
         - An existing bootable volume ('openstack volume list')
         - An image ('openstack image list') and the size of a volume to boot from"""
 
@@ -431,7 +445,9 @@ def main():
                 meta['landb-mainuser'] = args.landb_mainuser
 
             image = args.nova_image
-            if image and not is_valid_UUID(image):
+            if image in IMAGES:
+                image = nova.get_latest_image(*IMAGES[image])
+            elif image and not is_valid_UUID(image):
                 image = nova.find_image_by_name(name=image)
 
             volumes = _manage_volumes(cinder=cinder,

@@ -2,6 +2,7 @@ __author__ = 'Alberto Rodriguez Peon'
 
 import unittest
 from mock import Mock, patch
+from requests.exceptions import Timeout
 from aitools.errors import AiToolsNovaError
 from aitools.nova import NovaClient as NovaWrapper
 from aitools.openstack_auth_client import OpenstackAuthClient
@@ -94,3 +95,325 @@ class TestNova(unittest.TestCase):
         self.tenant._NovaClient__vmname_from_fqdn.assert_called_once_with('fake.cern.ch')
         self.tenant._NovaClient__init_client.assert_called_once()
         self.tenant._NovaClient__resolve_id.assert_called_once()
+
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_timeout(self, mock_tenant):
+        mock_tenant.return_value.images.list.side_effect = Timeout
+        self.assertRaises(AiToolsNovaError, self.tenant.get_latest_image, 'CC', '7')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_client_exception(self, mock_tenant):
+        mock_tenant.return_value.images.list.side_effect = ClientException('Error!')
+        self.assertRaises(AiToolsNovaError, self.tenant.get_latest_image, 'CC', '7')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_connection_refused(self, mock_tenant):
+        mock_tenant.return_value.images.list.side_effect = ConnectionRefused
+        self.assertRaises(AiToolsNovaError, self.tenant.get_latest_image, 'CC', '7')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_uncaught(self, mock_tenant):
+        mock_tenant.return_value.images.list.side_effect = Exception
+        try:
+            self.tenant.get_latest_image('CC', '7')
+        except AiToolsNovaError:
+            self.fail("It shouldn't be an AiToolsNovaError")
+        except Exception:
+            mock_tenant.assert_called_once()
+        else:
+            self.fail("It should throw an exception")
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_not_found(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'SLC',
+                'os_distro_major': '6',
+                'os_distro_minor': '2',
+                'os_edition': 'Server',
+                'architecture': 'x86_64',
+                'release_date': '2013-06-24'
+            }
+        })]
+        self.assertRaises(AiToolsNovaError, self.tenant.get_latest_image, 'CC', '7')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_wrong_arch(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'SLC',
+                'os_distro_major': 6,
+                'os_distro_minor': 2,
+                'os_edition': 'Server',
+                'architecture': 'x86_64',
+                'release_date': '2013-06-24'
+            }
+        })]
+        self.assertRaises(AiToolsNovaError, self.tenant.get_latest_image, 'SLC', '6', 'Server', 'i686')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_found1(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'SLC',
+                'os_distro_major': '6',
+                'os_distro_minor': '2',
+                'os_edition': 'Server',
+                'architecture': 'x86_64',
+                'release_date': '2013-06-24'
+            }
+        })]
+        self.assertTrue(self.tenant.get_latest_image('SLC', '6', 'Server'),
+            '49e166bb-68e1-4969-b26a-64022e87ef28')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_found2(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'SLC',
+                'os_distro_major': '6',
+                'os_distro_minor': '2',
+                'os_edition': 'Server',
+                'architecture': 'x86_64',
+                'release_date': '2015-06-24'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'SLC',
+                'os_distro_major': '6',
+                'os_edition': 'Server',
+                'architecture': 'x86_64',
+                'release_date': '2015-06-25',
+                'os_distro_minor': '2'
+            }
+        })]
+        self.assertTrue(self.tenant.get_latest_image('SLC', '6', 'Server'),
+            'abcd-68e1-4969-b26a-64022e87ef28')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_found_reverse(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2015-06-25',
+                'os_distro_minor': '2'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2015-06-24',
+                'os_distro_minor': '2'
+            }
+        })]
+        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+            'abcd-68e1-4969-b26a-64022e87ef28')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_found_minor_first_same_date(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2015-06-25',
+                'os_distro_minor': '2'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2015-06-25',
+                'os_distro_minor': '1',
+            }
+        })]
+        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+            'abcd-68e1-4969-b26a-64022e87ef28')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_image_found_minor_first_older(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2016-06-25',
+                'os_distro_minor': '2'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2015-06-25',
+                'os_distro_minor': '3',
+            }
+        })]
+        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+            '49e166bb-68e1-4969-b26a-64022e87ef28')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_different_os_distro(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'SLC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2016-06-25',
+                'os_distro_minor': '2'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2016-06-25',
+                'os_distro_minor': '2'
+            }
+        })]
+        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+            '49e166bb-68e1-4969-b26a-64022e87ef28')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_different_os_distro_major(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2016-06-25',
+                'os_distro_minor': '2'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '6',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2016-06-25',
+                'os_distro_minor': '2'
+            }
+        })]
+        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+            'abcd-68e1-4969-b26a-64022e87ef28')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_hours(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2015-09-03T15:31:59',
+                'os_distro_minor': '2'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2015-09-03T09:43:41',
+                'os_distro_minor': '2'
+            }
+        })]
+        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+            'abcd-68e1-4969-b26a-64022e87ef28')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_latest_hours2(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2015-09-03T08:31:59',
+                'os_distro_minor': '2'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2015-09-03T09:43:41',
+                'os_distro_minor': '2'
+            }
+        })]
+        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+            '49e166bb-68e1-4969-b26a-64022e87ef28')
+
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_image_no_metadata_is_ignored(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2016-06-25',
+                'os_distro_minor': '2'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+        })]
+        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+            'abcd-68e1-4969-b26a-64022e87ef28')
