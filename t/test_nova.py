@@ -284,3 +284,23 @@ class TestNova(unittest.TestCase):
         })]
         self.assertTrue(self.tenant.get_latest_image('CC', '7'),
             '49e166bb-68e1-4969-b26a-64022e87ef28')
+
+    @patch.object(NovaWrapper, '_NovaClient__init_client')
+    def test_get_image_no_metadata_is_ignored(self, mock_tenant):
+        mock_tenant.return_value.images.list.return_value = [
+        Mock(to_dict=lambda:{
+            'id': 'abcd-68e1-4969-b26a-64022e87ef28',
+            'metadata': {
+                'os_distro': 'CC',
+                'os_distro_major': '7',
+                'os_edition': 'Base',
+                'architecture': 'x86_64',
+                'release_date': '2016-06-25',
+                'os_distro_minor': '2'
+            }
+        }),
+        Mock(to_dict=lambda:{
+            'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
+        })]
+        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+            'abcd-68e1-4969-b26a-64022e87ef28')

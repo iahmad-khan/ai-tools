@@ -143,6 +143,7 @@ class NovaClient():
         try:
             images = [image.to_dict() for image in tenant.images.list()]
             filtered_images = [image for image in images if
+                'metadata' in image and
                 image['metadata'].get('os_distro') == os_distro and
                 image['metadata'].get('os_distro_major') == str(os_distro_major) and
                 image['metadata'].get('os_edition') == os_edition and
