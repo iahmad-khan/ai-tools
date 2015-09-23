@@ -5,6 +5,7 @@ import re
 import logging
 import novaclient.exceptions
 import requests
+import dateutil.parser
 from novaclient.v1_1 import client
 from aitools.config import NovaConfig
 from aitools.common import is_valid_UUID
@@ -156,7 +157,7 @@ class NovaClient():
 
             latest = max(filtered_images,
                 key=lambda image: (int(image['metadata']['os_distro_minor']),
-                                   image['metadata']['release_date']))
+                                   dateutil.parser.parse(image['metadata']['release_date'])))
 
             logging.info("Using '%s' as the latest '%s%s' image available"
                 "" % (latest.get('name') or latest['id'], os_distro, os_distro_major))
