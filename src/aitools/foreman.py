@@ -608,7 +608,7 @@ class ForemanClient(HTTPClient):
         try:
             return self.__resolve_model_id('operatingsystem',
                 match_object.group('name'),
-                results_filter=lambda x: x['fullname'] == fullname)
+                results_filter=lambda x: x['title'] == fullname)
         except AiToolsForemanNotFoundError, error:
             # This is necessary to avoid misleading the user showing just
             # the OS name when nothing has been found
