@@ -76,8 +76,9 @@ class ForemanClient(HTTPClient):
             payload['ptable_id'] = self.__resolve_ptable_id(ptable)
             payload['ip'] = ip
             payload['mac'] = mac
-        logging.debug("With payload: %s" % payload)
+        payload = {'host': payload}
 
+        logging.debug("With payload: %s" % payload)
         if not self.dryrun:
             (code, body) = self.__do_api_request("post", "hosts", data=json.dumps(payload))
             if code == requests.codes.ok:
@@ -131,8 +132,9 @@ class ForemanClient(HTTPClient):
             payload['mac'] = mac
         if ip:
             payload['ip'] = ip
-        logging.debug("With payload: %s" % payload)
+        payload = {'host': payload}
 
+        logging.debug("With payload: %s" % payload)
         if not self.dryrun:
             (code, body) = self.__do_api_request("put", "hosts/%s" % fqdn,
                 data=json.dumps(payload))
