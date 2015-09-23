@@ -158,7 +158,7 @@ class NovaClient():
                                    image['metadata'].get('release_date')))
 
             logging.info("Using '%s' as the latest '%s%s' image available"
-                "" % (latest['id'], os_distro, os_distro_major))
+                "" % (latest.get('name') or latest['id'], os_distro, os_distro_major))
             return latest['id']
 
         except (requests.exceptions.Timeout, novaclient.exceptions.ClientException,
