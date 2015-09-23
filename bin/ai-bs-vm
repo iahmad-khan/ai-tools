@@ -229,7 +229,7 @@ def parse_cmdline_args():
             "In case you just specify one, check the env variable 'AIBS_VMIMAGE_NAME'")
 
     options_to_boot_from = """You can boot from:
-        - An image ('openstack image list') or an image shorthand {--slc5, --slc6, --cc7}
+        - An image ('openstack image list') or an image alias {--slc5, --slc6, --cc7}
         - An existing bootable volume ('openstack volume list')
         - An image ('openstack image list') and the size of a volume to boot from"""
 
