@@ -183,8 +183,8 @@ class TestForemanClient(unittest.TestCase):
 
     @patch.object(HTTPClient, 'do_request', return_value=
             generate_response(requests.codes.OK,
-            [{"id": 1,"name":"Foo","major":"6","minor":"4","fullname":"Foo 6.4"},
-            {"id": 2,"name":"Foo","major":"6","minor":"3","fullname":"Foo 6.31"}],
+            [{"id": 1,"name":"Foo","major":"6","minor":"4","title":"Foo 6.4"},
+            {"id": 2,"name":"Foo","major":"6","minor":"3","title":"Foo 6.31"}],
             meta=True, page=1, page_size=5, subtotal=2))
     def test_resolve_operatingsystem_id(self, mock_client):
         result = self.client._ForemanClient__resolve_operatingsystem_id("Foo 6.31")
@@ -227,12 +227,12 @@ class TestForemanClient(unittest.TestCase):
             was_called_once_with("bar/baz")
         self.client._ForemanClient__resolve_user_id.\
             was_called_once_with("bob")
-        expected_payload = {'name': 'foo.cern.ch',
+        expected_payload = {'host':{'name': 'foo.cern.ch',
             'environment_id': 1,
             'hostgroup_id': 2,
             'owner_id': 3,
             'owner_type': 'User',
-            'managed': False}
+            'managed': False}}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('post', full_uri("hosts"), ANY,
                 json.dumps(expected_payload))
@@ -355,7 +355,7 @@ class TestForemanClient(unittest.TestCase):
             hostgroup='bar/baz')
         self.client._ForemanClient__resolve_hostgroup_id.\
             was_called_once_with("bar/baz")
-        expected_payload = {'hostgroup_id': 2}
+        expected_payload = {'host':{'hostgroup_id': 2}}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
                 ANY, json.dumps(expected_payload))
@@ -369,7 +369,7 @@ class TestForemanClient(unittest.TestCase):
             fqdn='foo.cern.ch', environment='foo1')
         self.client._ForemanClient__resolve_environment_id.\
             was_called_once_with("foo1")
-        expected_payload = {'environment_id': 6}
+        expected_payload = {'host':{'environment_id': 6}}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
                 ANY, json.dumps(expected_payload))
@@ -380,7 +380,7 @@ class TestForemanClient(unittest.TestCase):
     def test_updatehost_bad_data(self, *args):
         self.assertRaises(AiToolsForemanError, self.client.updatehost,
             fqdn='foo.cern.ch', mac='foo1')
-        expected_payload = {'mac': 'foo1'}
+        expected_payload = {'host':{'mac': 'foo1'}}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
                 ANY, json.dumps(expected_payload))
@@ -390,7 +390,7 @@ class TestForemanClient(unittest.TestCase):
     def test_updatehost_ise(self, *args):
         self.assertRaises(AiToolsForemanError, self.client.updatehost,
             fqdn='foo.cern.ch', mac='foo1')
-        expected_payload = {'mac': 'foo1'}
+        expected_payload = {'host':{'mac': 'foo1'}}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
                 ANY, json.dumps(expected_payload))
