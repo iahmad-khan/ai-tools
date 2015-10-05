@@ -945,6 +945,7 @@ sub SetupAims($$){
     # Run "aims2 showimg all" to get list of all available AIMS images
     my %AimsImg = (
 	# SLC
+        "SLC 6.7"     => "SLC67",
         "SLC 6.6"     => "SLC66",
         "SLC 6.5"     => "SLC65",
         "SLC 6.4"     => "SLC64",
