@@ -72,13 +72,16 @@ class AiToolsHieraError(AiToolsHTTPClientError):
     pass
 
 class AiToolsHieraKeyNotFoundError(AiToolsHieraError):
+    def __init__(self, header=""):
+        self.header = header
+
     def __str__(self):
         return \
-"""Key not found:
+"""%sKey not found:
   Either the key is not defined in the hostgroup-level hierarchy for the given
   node or it is defined at module-level and you're not passing any via -m. If for
   instance you're looking up a Lemon metric you definetely want to pass -m lemon
-  --hash. Use --trace to know what files this tool is looking into."""
+  --hash. Use --trace to know what files this tool is looking into.""" % self.header
 
 class AiToolsEncError(AiToolsHTTPClientError):
     pass

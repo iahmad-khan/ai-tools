@@ -71,7 +71,7 @@ class HieraClient():
         if process.returncode == os.EX_OK:
             chopped = stdout.splitlines()
             if chopped and chopped[-1] == 'nil': # Jeez...
-                raise AiToolsHieraKeyNotFoundError()
+                raise AiToolsHieraKeyNotFoundError(stdout if self.trace else "")
             return stdout
         else:
             raise AiToolsHieraError("Hiera returned non-zero exit code (%d)" %
