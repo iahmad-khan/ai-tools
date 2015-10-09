@@ -107,7 +107,7 @@ def host_main(pargs):
 
     ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['catalog_timestamp'])
 
-    if facts.get('is_virtual', 'true') == 'false':
+    if facts.get('is_virtual', 'false') == 'true':
         vtype = "virtual"
     else:
         vtype = "physical"
