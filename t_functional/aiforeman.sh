@@ -38,6 +38,9 @@ _expect 2 ai-foreman --config $CONF -z Fail showhost aifcliftest16.cern.ch
 _expect 2 ai-foreman --config $CONF -s Fail showhost aifcliftest16.cern.ch
 _expect 2 ai-foreman --config $CONF -z Name --longtable showhost aifcliftest16.cern.ch
 
+echo "Krb"
+_expect 4 KRB5CCNAME="FILE:blahblah" ai-foreman --config $CONF showhost foo.cern.ch
+
 echo "Addhost..."
 _expect 0 ai-foreman --config $CONF addhost -c playground/aitoolstest/test1 -e qa \
   -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -r -i $IN

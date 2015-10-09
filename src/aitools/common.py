@@ -8,14 +8,17 @@ import logging
 import hashlib
 import socket
 import time
+import random
+import krbV
+
 from string import Template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from uuid import UUID
 from urlparse import urlparse
-import random
+from collections import namedtuple
+from datetime import datetime
 
-import krbV
 from aitools.params import FQDN_VALIDATION_RE
 from aitools.params import HASHLEN
 from aitools.params import DEFAULT_LOGGING_LEVEL
@@ -94,6 +97,27 @@ class OpenstackEnvironmentVariables(object):
     def get(self, key):
         return self.__dict__.get(key)
 
+# Shamefully stolen from:
+# https://github.com/tkdchen/python-krbcontext
+# "Docs"
+# https://git.fedorahosted.org/cgit/python-krbV.git/tree/krb5module.c
+def get_tgt_time(ccache):
+    ''' Get specified TGT's credential time tuple.
+
+    Arguments:
+    - ccache, a CCache object
+    '''
+    CredentialTime = namedtuple('CredentialTime',
+        'authtime starttime endtime renew_till')
+    tgt_princ_name = 'krbtgt/%(realm)s@%(realm)s' % \
+        {'realm': ccache.principal().realm}
+    tgt_princ = krbV.Principal(tgt_princ_name, context=ccache.context)
+    creds = (ccache.principal(), tgt_princ,
+             (0, None), (0, 0, 0, 0), None, None, None, None,
+             None, None)
+    tgt = ccache.get_credentials(creds, krbV.KRB5_GC_CACHED, 0)
+    return CredentialTime._make([datetime.fromtimestamp(t) for t in tgt[3]])
+
 def verify_kerberos_environment():
     """
     Verify the user has a valid Kerberos token and associated environment.
@@ -104,9 +128,11 @@ def verify_kerberos_environment():
     context = krbV.default_context()
     ccache = context.default_ccache()
     try:
+        # If the TGT is expired the next call will raise krbV.Krb5Error
+        get_tgt_time(ccache)
         return ccache.principal().name
     except krbV.Krb5Error:
-        raise AiToolsInitError("Kerberos principal not found")
+        raise AiToolsInitError("Kerberos ticket not available or expired")
 
 def generate_random_fqdn(prefix):
     """
