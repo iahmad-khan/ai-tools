@@ -255,7 +255,8 @@ def process_host(hostname):
         return format_result(fqdn, 50, error)
 
     if not args.roger_disable:
-        roger_client = RogerClient(dryrun=args.dryrun)
+        roger_client = RogerClient(dryrun=args.dryrun,
+            deref_alias=args.dereference_alias)
         try:
             logging.info("Setting application state on Roger...")
             alarm_state = {}
