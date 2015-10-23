@@ -46,6 +46,7 @@ from aitools.errors import AiToolsAimsError, AiToolsEncError
 from aitools.completer import ForemanCompleter
 
 DEFAULT_AIMS_ATTEMPTS = 12
+DEFAULT_CONSOLE_DEVICE = "tty0"
 GIGETH_PARAMETER_NAME = 'use_legacy_gigeth_pxeboot'
 
 def parse_cmdline_args():
@@ -71,6 +72,10 @@ def parse_cmdline_args():
     parser.add_argument('-a', '--keepalarms',
         action="store_true",
         help="Don't disable alarms before triggering the installation")
+    parser.add_argument('-c', '--console', type=str,
+        default=DEFAULT_CONSOLE_DEVICE,
+        help="Device to route the console output to (default: '%s')" % \
+            DEFAULT_CONSOLE_DEVICE)
 
     ##
     ## Certmgr options
@@ -245,6 +250,7 @@ def process_host(hostname):
             architecture=host['architecture'],
             enc=encdata['parameters'],
             ksfilepath=ksfilepath,
+            console=args.console,
             user_kopts=args.aims_kopts)
         aims.pxeon(fqdn=fqdn,
             pxetarget=pxetarget)

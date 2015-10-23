@@ -17,7 +17,7 @@ from aitools.errors import AiToolsAimsError
 
 A2C_BIN_PATH = "/usr/bin/aims2client"
 AIMS_DEFAULT_KOPTS = ['text', 'network', 'ks', 'ksdevice=bootif',
-    'latefcload', 'nodmraid', 'console=tty0']
+    'latefcload', 'nodmraid']
 
 BOOT_TARGETS = {'SLC': "SLC%s%s",
                 'CentOS': "CC%s%s",
@@ -50,7 +50,7 @@ class AimsClient(object):
         logging.error("* aims2client before attempting to reinstall the host with its new name.")
 
     def addhost(self, fqdn, operatingsystem, architecture,
-            enc, ksfilepath, user_kopts=None):
+            enc, ksfilepath, console, user_kopts=None):
         """
         Registers a host in AIMS for installation.
 
@@ -68,6 +68,7 @@ class AimsClient(object):
         if user_kopts is not None:
             kopts.extend(re.split(r'\s+', user_kopts))
 
+        kopts.append("console=%s" % console)
         kopts.extend(AIMS_DEFAULT_KOPTS)
         logging.debug("Final kernel options: %s" % " ".join(kopts))
 
