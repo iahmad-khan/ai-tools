@@ -107,7 +107,7 @@ def host_main(pargs):
 
     ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['catalog_timestamp'])
 
-    if facts['is_virtual'] == 'true':
+    if facts.get('is_virtual', 'false') == 'true':
         vtype = "virtual"
     else:
         vtype = "physical"
@@ -177,7 +177,10 @@ def host_main(pargs):
 
         t = prettytable.PrettyTable(["Item","Value"])
         t.add_row(["Hostname:", "%s" % (hostname,)])
-        hardware80 = "\n".join(textwrap.wrap("%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts.get('processorcount'),
+        if facts.get('is_pdu', 'false') == 'true':
+            hardware80 = facts.get('pdu_brand','unknown PDU brand')
+        else:
+            hardware80 = "\n".join(textwrap.wrap("%s, %s cores, %s memory, %s swap, %i disks" % (vtype, facts.get('processorcount'),
                                                                                 facts.get('memorysize'), facts.get('swapsize', '-'), num_disks ), 62))
         t.add_row(["Hardware:", hardware80 ] )
         t.add_row(["Hostgroup:", facts.get('hostgroup', '-')])
