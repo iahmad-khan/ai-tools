@@ -11,6 +11,8 @@ from aitools.errors import AiToolsHieraKeyNotFoundError
 DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
 HIERA_BINARY_PATH = "/usr/bin/hiera"
 HIERA_HOSTGROUP_DEPTH = 5
+HIERA_FACT_LIST = ['operatingsystemmajorrelease', 'osfamily',
+                   'cern_hwvendor', 'datacentre']
 
 class HieraClient():
     def __init__(self, config, trace=False, hash=False, array=False):
@@ -36,7 +38,7 @@ class HieraClient():
         :param fqdn: the hostname to look it up for
         :param environment: the environment to do the lookup for
         :param hostgroup: the hostgroup to do the lookup for
-        :param facts: dictionary of the 'operatingsystemmajorrelease', 'osfamily', 'cern_hwvendor' facts
+        :param facts: dictionary containing fqdn's facts
         :param module: search also for this module
         :return: a (possibly empty) list of values
         :raise AiToolsHieraError: in the case the Hiera call failed
@@ -59,7 +61,7 @@ class HieraClient():
             logging.warn("You might be leaving behind some data")
         hiera_cmd.extend(["::encgroup_%d=%s" % (i,x) 
             for i,x in enumerate(hostgroup)])
-        for factname in ['operatingsystemmajorrelease', 'osfamily', 'cern_hwvendor']:
+        for factname in HIERA_FACT_LIST:
             self.__append_fact(factname, facts, hiera_cmd)
         logging.debug("About to execute: %s" % hiera_cmd)
         try:
