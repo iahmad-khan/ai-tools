@@ -12,6 +12,13 @@ foreman_timeout = 60
 pdb_hostname = judy.cern.ch
 pdb_port = 9081
 pdb_timeout = 15
+
+[hiera]
+hiera_config_path = /doesnt/exist
+hiera_binary_path = /usr/bin/hiera
+hiera_hostgroup_depth = 5
+hiera_fact_list = operatingsystemmajorrelease,osfamily,cern_hwvendor,datacentre
+
 EOF
 IN=$(mktemp)
 
@@ -61,16 +68,19 @@ _expect 0 ai-foreman --config $CONF addhost -c playground/aitoolstest/test1 -e q
   -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -r -i $IN
 
 echo "Arguments..."
-_expect 2 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE
+_expect 2 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE
 
 echo "Resolution..."
-_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo
-_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo -t
-_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo -a
-_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo --foreman-hostgroup foo
-_expect 1 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo --foreman-environment production
-_expect 1 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo bar
-_expect 1 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo bar -t
+_expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo
+_expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo -t
+_expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo -a
+_expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo --foreman-hostgroup foo
+_expect 0 ai-hiera --config $CONF --hiera-binary-path '/usr/bin/hiera' --hiera-config-path $HIERACONF -n $TESTNODE foo
+_expect 0 ai-hiera --config $CONF --hiera-binary-path '/usr/bin/hiera' --hiera-hostgroup-depth 1 --hiera-config-path $HIERACONF -n $TESTNODE foo
+_expect 0 ai-hiera --config $CONF --hiera-binary-path '/usr/bin/hiera' --hiera-hostgroup-depth 5 --hiera-fact-list 'datacentre,other' --hiera-config-path $HIERACONF -n $TESTNODE foo
+_expect 1 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo --foreman-environment production
+_expect 1 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo bar
+_expect 1 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo bar -t
 
 echo "Tearing down..."
 _expect 0 ai-foreman --config $CONF delhost $TESTNODE

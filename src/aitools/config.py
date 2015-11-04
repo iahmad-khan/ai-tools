@@ -217,3 +217,19 @@ class AiDisownHostConfig(AiConfig):
         parser.add_argument('-g', '--hostgroup', type=str,
             help="Target hostgroup after disowning (default: see /etc/ai/)")
         self.add_global_args(parser)
+
+class HieraConfig(AiConfig):
+
+    def _get_from_configfile(self, key, section="hiera"):
+        return super(HieraConfig, self)._get_from_configfile(key, section=section)
+
+    def add_standard_args(self, parser):
+        parser.add_argument('--hiera-config-path', type=str,
+            help="Location of the Hiera config file")
+        parser.add_argument('--hiera-binary-path', type=str,
+            help="Location of the Hiera binary file")
+        parser.add_argument('--hiera-hostgroup-depth', type=int,
+            help="Depth of hostgroup for hiera resolution")
+        parser.add_argument('--hiera-fact-list', type=str,
+            help="List of hiera facts that can be used to define hiera values")
+        self.add_global_args(parser)

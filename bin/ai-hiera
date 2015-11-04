@@ -21,9 +21,7 @@ from aitools.foreman import ForemanClient
 from aitools.hiera import HieraClient
 from aitools.pdb import PdbClient
 
-from aitools.hiera import DEFAULT_HIERA_CONF_PATH
-
-from aitools.config import ForemanConfig, PdbConfig
+from aitools.config import ForemanConfig, PdbConfig, HieraConfig
 from aitools.common import configure_logging
 from aitools.common import verify_kerberos_environment
 from aitools.common import validate_fqdn
@@ -51,6 +49,8 @@ def parse_cmdline_args():
     ##
     ## Hiera options
     ##
+    hiera_config = HieraConfig()
+    hiera_config.add_standard_args(parser)
     lookup_mode = parser.add_mutually_exclusive_group()
     lookup_mode.add_argument('-a', '--array',
         action="store_true",
@@ -63,10 +63,6 @@ def parse_cmdline_args():
         help="Prints out how the hierarchy is traversed")
     parser.add_argument('-m', '--module', type=str,
         default=None, help="Add also a module to the mix")
-    parser.add_argument('--hiera-config', type=str,
-        help="Hiera configuration file (default: %s)" % DEFAULT_HIERA_CONF_PATH,
-        default=DEFAULT_HIERA_CONF_PATH
-        ).completer = FilesCompleter(directories=False)
     ##
     ## Foreman options
     ##
@@ -80,7 +76,7 @@ def parse_cmdline_args():
         ).completer = ForemanCompleter(model='hostgroups',item='title')
 
     ##
-    ## Foreman options
+    ## PuppetDB options
     ##
     pdb_config = PdbConfig()
     pdb_config.add_standard_args(parser)
@@ -108,7 +104,8 @@ def main():
     fconfig.read_config_and_override_with_pargs(args)
     pdbconfig = PdbConfig()
     pdbconfig.read_config_and_override_with_pargs(args)
-
+    hiera_config = HieraConfig()
+    hiera_config.read_config_and_override_with_pargs(args)
     configure_logging(args)
 
     try:
@@ -163,7 +160,7 @@ def main():
         logging.error("Couldn't fetch Foreman entry (%s)" % error)
         return 10
 
-    hiera = HieraClient(args.hiera_config, args.trace, args.hash, args.array)
+    hiera = HieraClient(trace=args.trace, hash=args.hash, array=args.array)
 
     ret = 0
     try:
