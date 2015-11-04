@@ -160,9 +160,7 @@ def main():
         logging.error("Couldn't fetch Foreman entry (%s)" % error)
         return 10
 
-    hiera = HieraClient(args.hiera_config_path, args.hiera_binary_path,
-                        args.hiera_hostgroup_depth, args.hiera_fact_list, args.trace,
-                        args.hash, args.array)
+    hiera = HieraClient(trace=args.trace, hash=args.hash, array=args.array)
 
     ret = 0
     try:
