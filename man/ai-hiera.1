@@ -77,8 +77,17 @@ Port of the Foreman instance to use -- must support Kerberos (defaults to 8443).
 .B --foreman-timeout
 Timeout (in seconds) for Foreman operations (default: 15).
 .TP
-.B --hiera-config
+.B --hiera-config-path
 Hiera configuration file (defaults to "/etc/puppet/hiera.yaml")
+.TP
+.B --hiera-binary-path
+Hiera binary file (defaults to "/usr/bin/hiera")
+.TP
+.B --hiera-hostgroup-depth
+Hostgroup hierarchy lookup depth (defaults to "5")
+.TP
+.B --hiera-fact-list
+Comma-separated list of facts used to define hiera values (defaults to "operatingsystemmajorrelease,osfamily,cern_hwvendor,datacentre")
 .TP
 .B -t, --trace
 Prints out how the hierarchy is traversed. Useful to know exactly
