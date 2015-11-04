@@ -10,7 +10,8 @@ from aitools.errors import AiToolsHieraError
 from aitools.errors import AiToolsHieraKeyNotFoundError
 
 class HieraClient():
-    def __init__(self, config_path=None, trace=False, hash=False, array=False):
+    def __init__(self, config_path=None, binary_path=None, hostgroup_depth=None,
+                 fact_list=None, trace=False, hash=False, array=False):
         """
         Tool for looking up hiera keys
 
@@ -20,10 +21,10 @@ class HieraClient():
         :param array: look up in array mode
         """
         config = HieraConfig()
-        self.config_path = config_path or config.hiera_conf_path
-        self.binary_path = config.hiera_binary_path
-        self.hostgroup_depth = config.hiera_hostgroup_depth
-        self.fact_list = config.hiera_fact_list.split(',')
+        self.config_path = config_path or config.hiera_config_path
+        self.binary_path = binary_path or config.hiera_binary_path
+        self.hostgroup_depth = int(hostgroup_depth or config.hiera_hostgroup_depth)
+        self.fact_list = (fact_list or config.hiera_fact_list).split(',')
         self.trace = trace
         self.hash = hash
         self.array = array
