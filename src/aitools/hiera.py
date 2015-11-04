@@ -5,17 +5,12 @@ import os
 import logging
 import subprocess
 
+from aitools.config import HieraConfig
 from aitools.errors import AiToolsHieraError
 from aitools.errors import AiToolsHieraKeyNotFoundError
 
-DEFAULT_HIERA_CONF_PATH="/etc/puppet/hiera.yaml"
-HIERA_BINARY_PATH = "/usr/bin/hiera"
-HIERA_HOSTGROUP_DEPTH = 5
-HIERA_FACT_LIST = ['operatingsystemmajorrelease', 'osfamily',
-                   'cern_hwvendor', 'datacentre']
-
 class HieraClient():
-    def __init__(self, config, trace=False, hash=False, array=False):
+    def __init__(self, config_path=None, trace=False, hash=False, array=False):
         """
         Tool for looking up hiera keys
 
@@ -24,7 +19,11 @@ class HieraClient():
         :param hash: look up in hash mode
         :param array: look up in array mode
         """
-        self.config = config
+        config = HieraConfig()
+        self.config_path = config_path or config.hiera_conf_path
+        self.binary_path = config.hiera_binary_path
+        self.hostgroup_depth = config.hiera_hostgroup_depth
+        self.fact_list = config.hiera_fact_list.split(',')
         self.trace = trace
         self.hash = hash
         self.array = array
@@ -43,7 +42,7 @@ class HieraClient():
         :return: a (possibly empty) list of values
         :raise AiToolsHieraError: in the case the Hiera call failed
         """
-        hiera_cmd = [HIERA_BINARY_PATH, "-c", self.config, key]
+        hiera_cmd = [self.binary_path, "-c", self.config_path, key]
         if self.trace:
             hiera_cmd.append("-d")
         if self.array:
@@ -55,13 +54,13 @@ class HieraClient():
         hiera_cmd.append("::foreman_env=%s" % environment)
         hiera_cmd.append("::fqdn=%s" % fqdn)
         hostgroup = hostgroup.split("/")
-        if len(hostgroup) > HIERA_HOSTGROUP_DEPTH:
+        if len(hostgroup) > self.hostgroup_depth:
             logging.warn("The lookup depth for hostgroup keys is limited to %d levels"
-                % HIERA_HOSTGROUP_DEPTH)
+                % self.hostgroup_depth)
             logging.warn("You might be leaving behind some data")
         hiera_cmd.extend(["::encgroup_%d=%s" % (i,x) 
             for i,x in enumerate(hostgroup)])
-        for factname in HIERA_FACT_LIST:
+        for factname in self.fact_list:
             self.__append_fact(factname, facts, hiera_cmd)
         logging.debug("About to execute: %s" % hiera_cmd)
         try:

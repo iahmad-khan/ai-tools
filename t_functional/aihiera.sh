@@ -12,6 +12,13 @@ foreman_timeout = 60
 pdb_hostname = judy.cern.ch
 pdb_port = 9081
 pdb_timeout = 15
+
+[hiera]
+hiera_conf_path = /etc/puppet/hiera.yaml
+hiera_binary_path = /usr/bin/hiera
+hiera_hostgroup_depth = 5
+hiera_fact_list = operatingsystemmajorrelease,osfamily,cern_hwvendor,datacentre
+
 EOF
 IN=$(mktemp)
 
