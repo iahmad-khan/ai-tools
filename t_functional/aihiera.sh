@@ -68,16 +68,16 @@ _expect 0 ai-foreman --config $CONF addhost -c playground/aitoolstest/test1 -e q
   -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -r -i $IN
 
 echo "Arguments..."
-_expect 2 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE
+_expect 2 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE
 
 echo "Resolution..."
-_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo
-_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo -t
-_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo -a
-_expect 0 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo --foreman-hostgroup foo
-_expect 1 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo --foreman-environment production
-_expect 1 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo bar
-_expect 1 ai-hiera --config $CONF --hiera-config $HIERACONF -n $TESTNODE foo bar -t
+_expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo
+_expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo -t
+_expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo -a
+_expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo --foreman-hostgroup foo
+_expect 1 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo --foreman-environment production
+_expect 1 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo bar
+_expect 1 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo bar -t
 
 echo "Tearing down..."
 _expect 0 ai-foreman --config $CONF delhost $TESTNODE
