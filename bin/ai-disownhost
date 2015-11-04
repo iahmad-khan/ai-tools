@@ -77,6 +77,8 @@ def parse_cmdline_args():
     landb_config.add_standard_args(parser)
     parser.add_argument('--landb-disable', action="store_true",
         help="Disable Landb actions")
+    parser.add_argument('--landb-pass', default=None,
+        help="LANDB password for non-interactive sessions")
 
     ##
     ## Local options
@@ -199,7 +201,7 @@ def main():
     try:
         landb = LandbClient(dryrun=args.dryrun,
             username=krb_principal.replace("@CERN.CH", ""),
-            password=None)
+            password=args.landb_pass)
     except AiToolsLandbError, error:
         logging.error("Failed to initialize the Landb client (%s)", error)
         return 10
