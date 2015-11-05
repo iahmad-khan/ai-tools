@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import argcomplete
 import sys
 import signal
+import logging
 
 from aitools.rundeck import RundeckClient
 from aitools.config import RundeckConfig, AiConfig
@@ -11,7 +12,7 @@ from aitools.common import configure_logging
 from aitools.errors import AiToolsRundeckError
 
 def signal_handler(signal, frame):
-    print('Output streaming terminated.')
+    logging.info('Output streaming terminated.')
     sys.exit(0)
 
 def rename(pargs):
@@ -21,12 +22,12 @@ def rename(pargs):
     try:
         client = RundeckClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
         execution = client.run_job(job='rename',oldHostname=pargs.oldhostname, newHostname=pargs.newhostname)
-        sys.stdout.write("Job executed succesfully.\n")
-        sys.stdout.write("You can safely terminate this process"
-            " and follow the execution at: %s\n" % execution['href'])
+        logging.info("Job executed succesfully.")
+        logging.info("You can safely terminate this process"
+            " and follow the execution at: %s", execution['href'])
         client.show_execution(execution['id'], execution['jobid'])
     except AiToolsRundeckError as e:
-        sys.stderr.write(str(e))
+        logging.error(str(e))
         sys.exit(3)
 
 

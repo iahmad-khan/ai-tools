@@ -4,7 +4,6 @@ import requests
 import logging
 import re
 import time
-import sys
 from xml.etree import ElementTree
 from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsRundeckNotFoundError
@@ -53,7 +52,7 @@ class RundeckClient(HTTPClient):
 
 
 
-    def show_execution(self, execid, jobid, output=sys.stdout):
+    def show_execution(self, execid, jobid):
         execution_completed = False
         #first get step descriptions... a bit stupid
         (code, body) = self.__do_api_request("get",
@@ -76,13 +75,14 @@ class RundeckClient(HTTPClient):
             output_entries = body['entries']
             for entry in output_entries:
                 if entry['stepctx']:
-                    output.write("%s: %s\n" % (steps[int(entry['stepctx'].split('/')[0].split('@')[0])-1], entry['log']))
+                    logging.info("%s: %s",
+                        steps[int(entry['stepctx'].split('/')[0].
+                            split('@')[0])-1],
+                        entry['log'])
                 else:
-                    output.write("%s\n" % entry['log'])
-            output.flush()
+                    logging.info("%s", entry['log'])
             time.sleep(2)
-        output.write('Execution finished. You can also review the output on the link given above.\n')
-        output.flush()
+        logging.info('Execution finished. You can also review the output on the link given above.')
 
 
     def run_job(self, job='test', **kwargs):
@@ -113,7 +113,7 @@ class RundeckClient(HTTPClient):
         headers = {'Accept': "application/%s"%accept}
 
         if self.show_url:
-            print url
+            logging.info(url)
         try:
             code, response = super(RundeckClient, self).do_request(method, url, headers, data)
             body = response.text
