@@ -72,8 +72,7 @@ class RundeckClient(HTTPClient):
                 raise AiToolsRundeckNotFoundError("Execution '%s' is not found in Rundeck"%str(execid))
             execution_finished = body['completed']
             offset = body['offset']
-            if body.has_key('lastModified'):
-                lastmod = body['lastModified']
+            lastmod = body.get('lastModified',0)
             output_entries = body['entries']
             for entry in output_entries:
                 if entry['stepctx']:
