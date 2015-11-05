@@ -7,7 +7,7 @@ import signal
 import logging
 
 from aitools.rundeck import RundeckClient
-from aitools.config import RundeckConfig, AiConfig
+from aitools.config import RundeckConfig
 from aitools.common import configure_logging
 from aitools.errors import AiToolsRundeckError
 
@@ -16,8 +16,6 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 def rename(pargs):
-    config = AiConfig()
-    config.read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
     try:
         client = RundeckClient(show_url=pargs.show_url, dryrun=pargs.dryrun,
@@ -53,6 +51,7 @@ def main():
     parser.set_defaults(func=rename)
     argcomplete.autocomplete(parser)
     pargs = parser.parse_args()
+    rundeck_config.read_config_and_override_with_pargs(pargs)
     pargs.func(pargs)
 
 
