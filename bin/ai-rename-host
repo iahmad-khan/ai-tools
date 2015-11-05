@@ -16,7 +16,6 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 def rename(pargs):
-    configure_logging(pargs)
     try:
         client = RundeckClient(show_url=pargs.show_url, dryrun=pargs.dryrun,
             deref_alias=pargs.dereference_alias)
@@ -52,6 +51,7 @@ def main():
     argcomplete.autocomplete(parser)
     pargs = parser.parse_args()
     rundeck_config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
     pargs.func(pargs)
 
 
