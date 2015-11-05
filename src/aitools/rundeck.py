@@ -89,10 +89,8 @@ class RundeckClient(HTTPClient):
     def run_job(self, job='test', **kwargs):
         data = None
         if kwargs:
-            data = { 'argString' : ''}
-            for item in kwargs.items():
-                data['argString'] += "-%s %s "%item
-            data['argString'] = data['argString'][:-1]
+            data = { 'argString' : ' '.join(["-%s %s"%item for item in
+                kwargs.items()]) }
         (code, body) = self.__do_api_request("post",
             self.EXECUTIONS_ENDPOINT % self.job_hashes["rundeck_%s_job"%job], accept='xml', data=data )
         if code == requests.codes.not_found:
