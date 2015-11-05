@@ -54,7 +54,7 @@ class RundeckClient(HTTPClient):
 
 
     def show_execution(self, execid, jobid, output=sys.stdout):
-        execution_finished = False
+        execution_completed = False
         #first get step descriptions... a bit stupid
         (code, body) = self.__do_api_request("get",
             self.JOB_ENDPOINT % str(jobid), accept='xml')
@@ -65,12 +65,12 @@ class RundeckClient(HTTPClient):
         output_entries = []
         offset = 0
         lastmod = 0
-        while not execution_finished:
+        while not execution_completed:
             (code, body) = self.__do_api_request("post",
                 self.OUTPUT_ENDPOINT % str(execid), data={'offset':offset, 'lastmod':lastmod})
             if code == requests.codes.not_found:
                 raise AiToolsRundeckNotFoundError("Execution '%s' is not found in Rundeck"%str(execid))
-            execution_finished = body['completed']
+            execution_completed = body['completed']
             offset = body['offset']
             lastmod = body.get('lastModified',0)
             output_entries = body['entries']
