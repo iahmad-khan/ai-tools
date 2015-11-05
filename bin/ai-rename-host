@@ -17,7 +17,7 @@ def signal_handler(signal, frame):
 
 def rename(pargs):
     try:
-        client = RundeckClient(show_url=pargs.show_url, dryrun=pargs.dryrun,
+        client = RundeckClient(show_url=pargs.show_url,
             deref_alias=pargs.dereference_alias)
         execution = client.run_job(job='rename',oldHostname=pargs.oldhostname,
             newHostname=pargs.newhostname)
@@ -44,9 +44,6 @@ def main():
                     dest="show_url", help="show REST urls")
     parser.add_argument('-v', '--verbose',
                         action="store_true", help="Be chatty")
-    parser.add_argument('-d', '--dryrun',
-                        action="store_true",
-                        help="Don't do the requests that alter data")
     parser.set_defaults(func=rename)
     argcomplete.autocomplete(parser)
     pargs = parser.parse_args()

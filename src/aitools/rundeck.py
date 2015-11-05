@@ -26,7 +26,7 @@ class RundeckClient(HTTPClient):
     OUTPUT_ENDPOINT = "/output/%s"
 
     def __init__(self, host=None, port=None, timeout=None, show_url=False,
-        dryrun=False, deref_alias=False):
+        deref_alias=False):
         """
         Rundeck client for interacting with the Rundeck API.
         Autoconfigures via the AiConfig object.
@@ -35,14 +35,12 @@ class RundeckClient(HTTPClient):
         :param port: override the auto-configured Authz port
         :param timeout: override the auto-configured Authz timeout
         :param show_url: print the URLs used to sys.stdout
-        :param dryrun: create a dummy client
         :param deref_alias: dereference dns load balanced aliases
         """
         rundeck = RundeckConfig()
         self.host = host or rundeck.rundeck_hostname
         self.port = int(port or rundeck.rundeck_port)
         self.timeout = int(timeout or rundeck.rundeck_timeout)
-        self.dryrun = dryrun
         self.show_url = show_url
         self.deref_alias = deref_alias
         self.job_hashes = {}
