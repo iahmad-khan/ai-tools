@@ -85,7 +85,7 @@ class RundeckClient(HTTPClient):
                             split('@')[0])-1],
                         entry['log'])
                 else:
-                    logging.info("%s", entry['log'])
+                    logging.info(entry['log'])
             time.sleep(2)
         logging.info('Execution finished. You can also review the output on the'
             ' link given above.')
