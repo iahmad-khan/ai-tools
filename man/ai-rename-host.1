@@ -16,7 +16,7 @@ provide a hostname or a fully qualified domain name for the old hostname and the
 .I Effects:
 .RS
 .P
-Host renamed in Foreman
+Host renamed in Foreman (along with the IPMI-interface)
 .P
 Old hostname deactivated in PuppetDB
 .P
@@ -24,7 +24,13 @@ Alarms masked for both hostnames
 .P
 Old hostname removed from AIMS
 .P
-Host renamed in LANDDB
+Host renamed in LANDB
+.RE
+.TP
+.I Note:
+.RS
+.P
+This tool does not carry over secrets in Tbag (yet)
 .RE
 .LP
 .I Prerequisites:
@@ -67,6 +73,9 @@ All operations executed successfully.
 .B 1
 Bad command line.
 .TP
+.B 3
+Rundeck error
+.TP
 .B 10
 Error loading config file.
 
@@ -77,7 +86,7 @@ $ ai-rename-host foo1.cern.ch foo2.cern.ch
 
 .TP
 .B Rename host foo1.cern.ch to foo2.cern.ch using hostname
-$ ai-rename-host --jfdi foo1 foo2
+$ ai-rename-host foo1 foo2
 
 
 .SH REPORTING BUGS
