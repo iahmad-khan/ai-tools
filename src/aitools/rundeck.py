@@ -25,10 +25,11 @@ class RundeckClient(HTTPClient):
     EXECUTIONS_ENDPOINT = "job/%s/executions"
     OUTPUT_ENDPOINT = "/output/%s"
 
-    def __init__(self, host=None, port=None, timeout=None, show_url=False, dryrun=False, deref_alias=False):
+    def __init__(self, host=None, port=None, timeout=None, show_url=False,
+        dryrun=False, deref_alias=False):
         """
-        Rundeck client for interacting with the Rundeck API. Autoconfigures via the AiConfig
-        object.
+        Rundeck client for interacting with the Rundeck API.
+        Autoconfigures via the AiConfig object.
 
         :param host: override the auto-configured Authz host
         :param port: override the auto-configured Authz port
@@ -45,10 +46,10 @@ class RundeckClient(HTTPClient):
         self.show_url = show_url
         self.deref_alias = deref_alias
         self.job_hashes = {}
-        jobs = [ option for option in rundeck.parser.options('rundeck')\
+        jobs = [option for option in rundeck.parser.options('rundeck')\
             if re.match('rundeck.*job', option)]
         for job in jobs:
-            self.job_hashes[job] = getattr(rundeck,job)
+            self.job_hashes[job] = getattr(rundeck, job)
 
 
 
@@ -58,20 +59,24 @@ class RundeckClient(HTTPClient):
         (code, body) = self.__do_api_request("get",
             self.JOB_ENDPOINT % str(jobid), accept='xml')
         if code == requests.codes.not_found:
-            raise AiToolsRundeckNotFoundError("Job '%s' is not found in Rundeck"%jobid)
+            raise AiToolsRundeckNotFoundError("Job '%s' is not found in"
+                " Rundeck"%jobid)
         steps = [i.text for i in
-            ElementTree.fromstring(body)[0].find('sequence').getiterator('description')]
+            ElementTree.fromstring(body)[0].find('sequence').
+                getiterator('description')]
         output_entries = []
         offset = 0
         lastmod = 0
         while not execution_completed:
             (code, body) = self.__do_api_request("post",
-                self.OUTPUT_ENDPOINT % str(execid), data={'offset':offset, 'lastmod':lastmod})
+                self.OUTPUT_ENDPOINT % str(execid), data={'offset':offset,
+                    'lastmod':lastmod})
             if code == requests.codes.not_found:
-                raise AiToolsRundeckNotFoundError("Execution '%s' is not found in Rundeck"%str(execid))
+                raise AiToolsRundeckNotFoundError("Execution '%s' is not found"
+                    " in Rundeck"%str(execid))
             execution_completed = body['completed']
             offset = body['offset']
-            lastmod = body.get('lastModified',0)
+            lastmod = body.get('lastModified', 0)
             output_entries = body['entries']
             for entry in output_entries:
                 if entry['stepctx']:
@@ -82,16 +87,18 @@ class RundeckClient(HTTPClient):
                 else:
                     logging.info("%s", entry['log'])
             time.sleep(2)
-        logging.info('Execution finished. You can also review the output on the link given above.')
+        logging.info('Execution finished. You can also review the output on the'
+            ' link given above.')
 
 
     def run_job(self, job='test', **kwargs):
         data = None
         if kwargs:
-            data = { 'argString' : ' '.join(["-%s %s"%item for item in
-                kwargs.items()]) }
+            data = {'argString' : ' '.join(["-%s %s"%item for item in
+                kwargs.items()])}
         (code, body) = self.__do_api_request("post",
-            self.EXECUTIONS_ENDPOINT % self.job_hashes["rundeck_%s_job"%job], accept='xml', data=data )
+            self.EXECUTIONS_ENDPOINT % self.job_hashes["rundeck_%s_job"%job],
+                accept='xml', data=data)
         if code == requests.codes.not_found:
             raise AiToolsRundeckNotFoundError("The job is not found in Rundeck")
         respxml = ElementTree.fromstring(body)
@@ -101,7 +108,9 @@ class RundeckClient(HTTPClient):
         results["jobid"] = self.job_hashes["rundeck_%s_job"%job]
         # The API on this endpoint can only return XML
         # We need to JSONify it. The returned JSON looks like:
-        # '{"status": "running", "project": "DEV-AI-automation", "href": "https://rosita.cern.ch:4443/execution/follow/33864", "id": "33864", "jobid": "somehash"}'
+        # '{"status": "running", "project": "DEV-AI-automation",
+        #   "href": "https://rosita.cern.ch:4443/execution/follow/33864",
+        #   "id": "33864", "jobid": "somehash"}'
         return results
 
 
@@ -115,14 +124,19 @@ class RundeckClient(HTTPClient):
         if self.show_url:
             logging.info(url)
         try:
-            code, response = super(RundeckClient, self).do_request(method, url, headers, data)
+            code, response = super(RundeckClient, self).do_request(method, url,
+                headers, data)
             body = response.text
-            if code == requests.codes.unauthorized or code == requests.codes.forbidden:
-                raise AiToolsRundeckNotAllowedError("Unauthorized trying '%s' at '%s'" % (method, url))
+            if (code == requests.codes.unauthorized or
+                code == requests.codes.forbidden):
+                raise AiToolsRundeckNotAllowedError("Unauthorized trying '%s'"
+                    " at '%s'" % (method, url))
             if code == requests.codes.not_implemented:
-                raise AiToolsRundeckNotImplementedError("Server response 501 - Not Implemented")
+                raise AiToolsRundeckNotImplementedError("Server response 501 -"
+                    " Not Implemented")
             if code == requests.codes.internal_server_error:
-                raise AiToolsRundeckInternalServerError("Server response 500 - Internal server error")
+                raise AiToolsRundeckInternalServerError("Server response 500 -"
+                    " Internal server error")
             if code == requests.codes.ok:
                 if re.match('application/json', response.headers['content-type']):
                     body = response.json()

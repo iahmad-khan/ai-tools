@@ -20,8 +20,10 @@ def rename(pargs):
     config.read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
     try:
-        client = RundeckClient(show_url=pargs.show_url, dryrun=pargs.dryrun, deref_alias=pargs.dereference_alias)
-        execution = client.run_job(job='rename',oldHostname=pargs.oldhostname, newHostname=pargs.newhostname)
+        client = RundeckClient(show_url=pargs.show_url, dryrun=pargs.dryrun,
+            deref_alias=pargs.dereference_alias)
+        execution = client.run_job(job='rename',oldHostname=pargs.oldhostname,
+            newHostname=pargs.newhostname)
         logging.info("Job executed succesfully.")
         logging.info("You can safely terminate this process"
             " and follow the execution at: %s", execution['href'])
@@ -41,12 +43,13 @@ def main():
                     help="The machine to be renamed")
     parser.add_argument("newhostname", metavar="NEWHOST",
                     help="The new name of the machine")
-    parser.add_argument("--show_url", action="store_true", default=False, dest="show_url",
-                    help="show REST urls")
+    parser.add_argument("--show_url", action="store_true", default=False,
+                    dest="show_url", help="show REST urls")
     parser.add_argument('-v', '--verbose',
                         action="store_true", help="Be chatty")
     parser.add_argument('-d', '--dryrun',
-                        action="store_true", help="Don't do the requests that alter data")
+                        action="store_true",
+                        help="Don't do the requests that alter data")
     parser.set_defaults(func=rename)
     argcomplete.autocomplete(parser)
     pargs = parser.parse_args()
