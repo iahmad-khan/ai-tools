@@ -1,171 +1,56 @@
-#!/usr/bin/env python
-from aitools.aims import AimsClient
-
-import sys
-import argcomplete
-import getpass
-
-from suds import WebFault
-from suds.client import Client
-from suds.sax.element import Element
-from suds.xsd.doctor import ImportDoctor, Import
+#!/usr/bin/python
 
 from argparse import ArgumentParser
-from aitools.pdb import PdbClient
-from aitools.roger import RogerClient
-from aitools.common import fqdnify
-from aitools.config import ForemanConfig, RogerConfig, PdbConfig, AiConfig
-from aitools.completer import ForemanCompleter
-from aitools.errors import AiToolsPdbNotFoundError
-from aitools.errors import AiToolsForemanNotFoundError
-from aitools.errors import AiToolsForemanError
-from aitools.errors import AiToolsRogerNotFoundError
-from aitools.foreman import ForemanClient
-from aitools.common import configure_logging
+import argcomplete
+import sys
+import signal
+import logging
 
-def sanity_check_for_alarms(old_name):
+from aitools.rundeck import RundeckClient
+from aitools.config import RundeckConfig
+from aitools.common import configure_logging
+from aitools.errors import AiToolsRundeckError
+
+def signal_handler(signal, frame):
+    logging.info('Output streaming terminated.')
+    sys.exit(0)
+
+def rename(pargs):
     try:
-        roger = RogerClient(deref_alias=pargs.dereference_alias)
-        state = roger.get_state(old_name)
-    except AiToolsRogerNotFoundError:
-        return # ignore if the host can't be fund in Roger
-    hwa = state['hw_alarmed']
-    nca = state['nc_alarmed']
-    osa = state['os_alarmed']
-    appa = state['app_alarmed']
-    appstate = state['appstate']
-    if hwa or nca or osa or appa or appstate == "production":
-        sys.stderr.write("Renaming host is a destructive operation for the host. Please ensure that\n")
-        sys.stderr.write("all alarms have been disabled in Roger and the application state of the nodes\n")
-        sys.stderr.write("is not production. To ignore this check, run this command with the --jfdi flag.\n")
+        client = RundeckClient(show_url=pargs.show_url,
+            deref_alias=pargs.dereference_alias)
+        execution = client.run_job(job='rename',oldHostname=pargs.oldhostname,
+            newHostname=pargs.newhostname)
+        logging.info("Rundeck job triggered successfully.")
+        logging.info("You can safely terminate this process"
+            " and follow the execution at: %s", execution['href'])
+        client.show_execution(execution['id'], execution['jobid'])
+    except AiToolsRundeckError as e:
+        logging.error(str(e))
         sys.exit(3)
 
-def sanity_check_for_virtual_machine(oldhost):
-    pdb = PdbClient(deref_alias=pargs.dereference_alias)
-    try:
-        facts = pdb.get_facts(oldhost)
-        if facts["is_virtual"] == u"true":
-            sys.stderr.write("The host %s is a virtual machine and cannot be renamed with this tool.\n" % oldhost)
-            sys.exit(4)
-    except AiToolsPdbNotFoundError:
-        pass # assume it's a new host which has not run Puppet yet - it'll fail on updating Foreman later
-    except KeyError:
-        pass # no is_virtual fact - assume it's OK and physical
 
-def sanity_check_for_foreman(foreman, oldhost):
-    try:
-        f = foreman.gethost(oldhost)
-    except AiToolsForemanNotFoundError:
-        sys.stderr.write("The host (%s) is not registered in Foreman. This tool is only suitable for hosts already\n" % oldhost)
-        sys.stderr.write("registered in the Puppet infrastructure.\n")
-        sys.exit(5)
+def main():
+    signal.signal(signal.SIGINT, signal_handler)
+    parser = ArgumentParser(description="Tool for renaming physical hosts")
+    rundeck_config = RundeckConfig()
+    rundeck_config.add_standard_args(parser)
 
-
-def host_rename(pargs):
-
-    config = AiConfig()
-    config.read_config_and_override_with_pargs(pargs)
+    parser.add_argument("oldhostname", metavar="OLDHOST",
+                    help="The machine to be renamed")
+    parser.add_argument("newhostname", metavar="NEWHOST",
+                    help="The new name of the machine")
+    parser.add_argument("--show_url", action="store_true", default=False,
+                    dest="show_url", help="show REST urls")
+    parser.add_argument('-v', '--verbose',
+                        action="store_true", help="Be chatty")
+    parser.set_defaults(func=rename)
+    argcomplete.autocomplete(parser)
+    pargs = parser.parse_args()
+    rundeck_config.read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
-
-    print pargs.oldhostname
-    oldhost = fqdnify(pargs.oldhostname)
-
-    print "Renaming host '%s' to '%s'..." % (oldhost, pargs.newhostname)
-
-    print "Checking hostnames..."
-
-    if oldhost == False:
-        sys.stderr.write("Error: the current host (%s) is not registered in DNS.\n" % pargs.oldhostname)
-        sys.exit(1)
-
-    test_for_newhost = fqdnify(pargs.newhostname)
-    if test_for_newhost:
-        sys.stderr.write("Error: the new host name (%s) is already registered in DNS.\n" % pargs.newhostname)
-        sys.exit(2)
-
-    sanity_check_for_virtual_machine(oldhost)
-
-    if not pargs.jfdi:
-        sanity_check_for_alarms(oldhost)
-
-    foreman = ForemanClient()
-    sanity_check_for_foreman(foreman, oldhost)
-
-    print "Please enter your CERN username and password for updating LANDB"
-    username = raw_input("Username: ")
-    password = getpass.getpass("Password: ")
-    print "Renaming host in LANDB..."
-    result = rename_in_landb(oldhost, pargs.newhostname, username, password)
-    if not result:
-        sys.stderr.write("The host %s could not be renamed to %s in LANDB.\n" % (oldhost, pargs.newhostname))
-        sys.exit(6)
-
-    try:
-        print "Renaming host in Foreman..."
-        foreman.renamehost(oldhost, pargs.newhostname)
-    except AiToolsForemanError:
-        sys.stderr.write("ERROR: your host was renamed from '%s' to '%s' in DNS but could not be renamed in Foreman.\n" % (oldhost, pargs.newhostname))
-        sys.stderr.write("Please contact your Foreman support and have a nice day.\n")
-        sys.exit(7)
-
-    print "Removing old hostname from AIMS - installhost will add new hostname to AIMS when you run it."
-    aims = AimsClient()
-    aims.delhost(oldhost)
-
-    print "Host '%s' was successfully renamed as '%s'." %(oldhost, pargs.newhostname)
-    print "Please wait at least 1 hour before reinstalling the host to ensure all"
-    print "infrastructure services have synced the new name."
-
-
-def rename_in_landb(oldhost, newhost, username, password):
-    oldhostshort = oldhost.split('.')[0].upper()
-    newhostshort = newhost.split('.')[0].upper()
-    url = 'https://network.cern.ch/sc/soap/soap.fcgi?v=5&WSDL'
-
-    imp = Import('http://schemas.xmlsoap.org/soap/encoding/')
-    d = ImportDoctor(imp)
-    client = Client(url, doctor=d, cache=None)
-
-    token = client.service.getAuthToken(username,password,"NICE")
-    authTok = Element('token').setText(token)
-    authHeader = Element('Auth').insert(authTok)
-
-    client.set_options(soapheaders=authHeader)
-    try:
-        result = client.service.deviceGlobalRename(oldhostshort, newhostshort)
-        return result
-    except WebFault as soapytwank:
-        sys.stderr.write("%s\n" % soapytwank)
-        return False
+    pargs.func(pargs)
 
 
 if __name__ == "__main__":
-    # needs landb
-    # needs foreman
-    # relies on foreman to drop from puppetdb ? or explicit?
-    # needs roger
-    # refuse to do it if roger says alarms are on
-    # refuse to do it if host is running puppet- how?
-
-    parser = ArgumentParser(description="Rename a host (destructively)")
-    parser.add_argument('-d', '--dryrun', action="store_true", help="Don't do the requests that alter data")
-    parser.add_argument('-v', '--verbose', action="store_true", help="Be chatty")
-
-    foreman_config = ForemanConfig()
-    foreman_config.add_standard_args(parser)
-    pdb_config = PdbConfig()
-    pdb_config.add_standard_args(parser)
-    roger_config = RogerConfig()
-    roger_config.add_standard_args(parser)
-
-    parser.add_argument("oldhostname", metavar="HOST", help="host to rename").completer = ForemanCompleter()
-    parser.add_argument("newhostname", metavar="HOST", help="the new name for the host")
-    parser.add_argument("--jfdi", action='store_true', help="Just do it - don't check for alarmed states")
-
-    argcomplete.autocomplete(parser)
-    parser.set_defaults(func=host_rename)
-
-    pargs = parser.parse_args()
-    pargs.func(pargs)
-
-    sys.exit()
+    main()

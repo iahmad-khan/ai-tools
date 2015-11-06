@@ -145,3 +145,18 @@ class AiToolsLandbError(AiToolsError):
 
 class AiToolsLandbInitError(AiToolsLandbError):
     pass
+
+class AiToolsRundeckError(AiToolsError):
+    pass
+
+class AiToolsRundeckNotFoundError(AiToolsRundeckError):
+    pass
+
+class AiToolsRundeckNotAllowedError(AiToolsRundeckError):
+    pass
+
+class AiToolsRundeckNotImplementedError(AiToolsRundeckError):
+    pass
+
+class AiToolsRundeckInternalServerError(AiToolsRundeckError):
+    pass

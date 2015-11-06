@@ -233,3 +233,17 @@ class HieraConfig(AiConfig):
         parser.add_argument('--hiera-fact-list', type=str,
             help="List of hiera facts that can be used to define hiera values")
         self.add_global_args(parser)
+
+class RundeckConfig(AiConfig):
+
+    def _get_from_configfile(self, key, section="rundeck"):
+        return super(RundeckConfig, self)._get_from_configfile(key, section=section)
+
+    def add_standard_args(self, parser):
+        parser.add_argument('--rundeck-timeout', type=int,
+            help="Timeout for rundeck operations")
+        parser.add_argument('--rundeck-hostname',
+            help="Rundeck hostname")
+        parser.add_argument('--rundeck-port', type=int,
+            help="Rundeck port")
+        self.add_global_args(parser)

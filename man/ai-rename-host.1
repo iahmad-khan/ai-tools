@@ -1,16 +1,37 @@
-.TH AI-RENAME-HOST "1" "February 2013" "AI-RENAME-HOST" "User Commands"
+.TH AI-RENAME-HOST "5" "November 2015" "AI-RENAME-HOST" "User Commands"
 .SH NAME
 ai-rename-host \- Rename a physical host before reinstall
 
 .SH SYNOPSIS
-.B "ai-rename-host [OPTION]... HOSTNAME"
+.B "ai-rename-host [OPTION]... OLDHOST NEWHOST"
 
 .SH DESCRIPTION
 ai-rename-host is a tool to rename a physical host before reinstalling it. It will not rename a host 'live', and the host
-must be immediately reinstalled after using the tool. It has no effect on virtual nodes.
+must be immediately reinstalled after using the tool. It does not work with virtual nodes.
 .LP
 Apart from some of the options described below, the user has to
 provide a hostname or a fully qualified domain name for the old hostname and the new hostname.
+.LP
+.TP
+.I Effects:
+.RS
+.P
+Host renamed in Foreman (along with the IPMI-interface)
+.P
+Old hostname deactivated in PuppetDB
+.P
+Alarms masked for both hostnames
+.P
+Old hostname removed from AIMS
+.P
+Host renamed in LANDB
+.RE
+.TP
+.I Note:
+.RS
+.P
+This tool does not carry over secrets in Tbag (yet)
+.RE
 .LP
 .I Prerequisites:
 .TP
@@ -23,9 +44,6 @@ Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
 .B --config
 Path to the config file (default /etc/ai/ai.conf).
 .TP
-.B --jfdi
-Don't check alarmed state before renaming the host.
-.TP
 .B -h, --help
 Display usage and exit.
 .LP
@@ -33,33 +51,14 @@ Display usage and exit.
 .TP
 The following parameters are for advanced users and debugging.
 .TP
-\fB\-\-foreman-hostname\fR FQDN
-FQDN of the Foreman instance to use.
+\fB\-\-rundeck-hostname\fR FQDN
+FQDN of the Rundeck instance to use.
 .TP
-\fB\-\-foreman-port\fR PORT
-Port of the Foreman instance to use.
+\fB\-\-rundeck-port\fR PORT
+Port of the Rundeck instance to use.
 .TP
-\fB\-\-foreman-timeout\fR INT
-Timeout (in seconds) for Foreman operations.
-.TP
-.B --pdb-hostname
-FQDN of the PuppetDB instance to use.
-.TP
-.B --pdb-port
-Port of the PuppetDB instance to use.
-.TP
-.B --pdb-timeout
-Timeout (in seconds) for PuppetDB operations.
-.TP
-.B --roger-hostname
-Hostname of the Roger server
-.TP
-.B --roger-port
-Port of the Roger server
-from.
-.TP
-.B --roger-timeout
-Timeout (in seconds) for the Roger server
+\fB\-\-rundeck-timeout\fR INT
+Timeout (in seconds) for Rundeck operations.
 .TP
 .B --dereference_alias
 Dereference aliases in urls
@@ -74,17 +73,20 @@ All operations executed successfully.
 .B 1
 Bad command line.
 .TP
+.B 3
+Rundeck error
+.TP
 .B 10
 Error loading config file.
 
 .SH EXAMPLES
 .TP
-.B Rename host foo1.cern.ch to foo2.cern.ch
+.B Rename host foo1.cern.ch to foo2.cern.ch using FQDN
 $ ai-rename-host foo1.cern.ch foo2.cern.ch
 
 .TP
-.B Rename host foo1.cern.ch to foo2.cern.ch, and don't bother checking alarm states
-$ ai-rename-host --jfdi foo1.cern.ch foo2.cern.ch
+.B Rename host foo1.cern.ch to foo2.cern.ch using hostname
+$ ai-rename-host foo1 foo2
 
 
 .SH REPORTING BUGS
@@ -92,5 +94,4 @@ If you experience any problem with this tool, please open a support
 call on SNOW (Functional Element "Configuration Management").
 
 .SH AUTHOR
-Gavin McCance <gavin.mccance@cern.ch>
-
+Akos Hencz <akos.hencz@cern.ch>
