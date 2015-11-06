@@ -21,7 +21,7 @@ def rename(pargs):
             deref_alias=pargs.dereference_alias)
         execution = client.run_job(job='rename',oldHostname=pargs.oldhostname,
             newHostname=pargs.newhostname)
-        logging.info("Job executed succesfully.")
+        logging.info("Rundeck job triggered successfully.")
         logging.info("You can safely terminate this process"
             " and follow the execution at: %s", execution['href'])
         client.show_execution(execution['id'], execution['jobid'])

@@ -44,7 +44,7 @@ class RundeckClient(HTTPClient):
         self.show_url = show_url
         self.deref_alias = deref_alias
         self.job_hashes = {}
-        jobs = [option for option in rundeck.parser.options('rundeck')\
+        jobs = [option for option in rundeck.parser.options('rundeck')
             if re.match('rundeck.*job', option)]
         for job in jobs:
             self.job_hashes[job] = getattr(rundeck, job)
