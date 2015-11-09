@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.5
+Version: 9.6
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -88,6 +88,15 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Nov 09 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.6-1
+- [ai-hiera] Add support for $::datacentre.
+- [ai-hiera] Don't leave the output behind if --trace.
+- [all] Prevent a crash from happening if the TGT is expired.
+- [ai-disownhost] Add --landb-pass for non-inter sessions.
+- [ai-installhost] Add --console to override the def. console redirection.
+- [ai-dump] Fix crash when the object was a PDU.
+- [ai-foreman-cli] Add SLC 6.7.
+
 * Wed Sep 23 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.5-1
 - [ai-bs-vm] Add --slc5, --slc6 and --cc7 options.
 - [ai-kill-vm] Swap Foreman and Openstack calls.
