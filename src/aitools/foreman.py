@@ -487,6 +487,22 @@ class ForemanClient(HTTPClient):
         except AiToolsHTTPClientError, error:
           raise AiToolsForemanError(error)
 
+    def rename_ipmi_interface_name(self, fqdn, new_ipmi_intf_fqdn):
+        ipmi_interface_id = self.get_ipmi_interface_id(fqdn)
+        payload = { 'name': new_ipmi_intf_fqdn }
+        if ipmi_interface_id is None:
+          logging.error("Unable to find the ID of the IPMI interface in Foreman")
+          raise AiToolsForemanNotFoundError("Unable to find an IPMI interface for %s" % fqdn)
+        try:
+          code, response = self.__do_api_request('put',
+            "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id),
+            json.dumps(payload))
+          if code == requests.codes.ok:
+            logging.info("IPMI interface renamed for device %s to %s" % (fqdn, payload['name']))
+          else:
+            raise AiToolsForemanError("%d: %s" % (code, response))
+        except AiToolsHTTPClientError, error:
+          raise AiToolsForemanError(error)
 
     def change_ipmi_credentials(self, fqdn, username, password):
         ipmi_interface_id = self.get_ipmi_interface_id(fqdn)
