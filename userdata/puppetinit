@@ -182,6 +182,7 @@ rundir = /var/run/puppet
 ssldir = /var/lib/puppet/ssl
 
 [agent]
+stringify_facts = false
 report = true
 ignoreschedules = true
 certificate_revocation = false
