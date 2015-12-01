@@ -444,12 +444,9 @@ class ForemanClient(HTTPClient):
           raise AiToolsForemanError(error)
 
 
-    def add_ipmi_interface(self, fqdn, mac, username, password):
-        # Ugly hack as the public API does not support
-        # adding IPMI interfaces yet :)
-        ipmi_name = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
-        payload = {'name': ipmi_name,
-          'ip': socket.gethostbyname(ipmi_name),
+    def add_ipmi_interface(self, host_fqdn, ipmi_fqdn, mac, username, password):
+        payload = {'name': ipmi_fqdn,
+          'ip': socket.gethostbyname(ipmi_fqdn),
           'mac':mac,
           'username': username,
           'password': password,
@@ -459,7 +456,7 @@ class ForemanClient(HTTPClient):
 
         try:
           code, response = self.__do_api_request('post',
-            "hosts/%s/interfaces" % fqdn,
+            "hosts/%s/interfaces" % host_fqdn,
             json.dumps(payload))
           if code == requests.codes.created:
             logging.info("%s added" % payload['name'])

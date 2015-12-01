@@ -11,6 +11,7 @@
 #   4 Kerberos TGT not found or expired
 
 import sys
+
 import logging
 import argparse
 import argcomplete
@@ -196,7 +197,7 @@ def parse_cmdline_args():
 
 def addhost(foreman, args):
     errors = False
-    ipmi_fieldnames = ['i_mac', 'i_user', 'i_pass']
+    ipmi_fieldnames = ['i_fqdn', 'i_mac', 'i_user', 'i_pass']
     basefieldnames = ['fqdn', 'ip', 'mac']
     fieldnames = basefieldnames + ipmi_fieldnames
     reader = csv.DictReader(args.input,
@@ -235,9 +236,11 @@ def addhost(foreman, args):
 
         if all(record[f] is not None for f in ipmi_fieldnames):
             try:
-                foreman.add_ipmi_interface(record['fqdn'],
+                foreman.add_ipmi_interface(record['fqdn'], 
+                    record['i_fqdn'],
                     record['i_mac'].replace('-', ':'),
-                    record['i_user'], record['i_pass'])
+                    record['i_user'], 
+                    record['i_pass'])
             except (socket.gaierror, AiToolsForemanError), error:
                 errors = True
                 logging.error("Couldn't add %s's IPMI iface': %s",
