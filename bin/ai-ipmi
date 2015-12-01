@@ -4,6 +4,7 @@ from aitools.foreman import ForemanClient
 from aitools.config import ForemanConfig
 from aitools.common import configure_logging
 from aitools.errors import AiToolsForemanError
+from aitools.errors import AiToolsForemanNotFoundError
 from aitools.common import shortify
 
 import argparse
@@ -36,29 +37,18 @@ def change_main(pargs):
     logging.info("Successfully changed IPMI credentials %s" % (pargs.fqdn))
 
 
-def correct_main(pargs):
-    ForemanConfig().read_config_and_override_with_pargs(pargs)
-    configure_logging(pargs)
-
-    f = ForemanClient()
-    try:
-        f.correct_ipmi_interface_name(pargs.fqdn)
-    except AiToolsForemanError:
-        logging.error("Failed when correcting IPMI interface name on %s" % (pargs.fqdn))
-        sys.exit(1)
-    logging.info("Successfully corrected IPMI interface name on %s" % (pargs.fqdn))
-
 def rename_main(pargs):
     ForemanConfig().read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
-
     f = ForemanClient()
     try:
-        f.rename_ipmi_interface_name(pargs.fqdn, pargs.new_ipmi_fqdn)
-    except AiToolsForemanError:
-        logging.error("Failed when renaming IPMI interface on %s" % (pargs.fqdn))
+       f.rename_ipmi_interface_name(pargs.fqdn, pargs.new_ipmi_fqdn)
+    except AiToolsForemanError as e:
+        m = repr(e)
+        logging.error("Error: failed when renaming IPMI interface on %s \n%s" % (pargs.fqdn, m))
         sys.exit(1)
     logging.info("Successfully renamed IPMI interface name on %s" % (pargs.fqdn))
+
 
 def getcred_main(pargs):
     ForemanConfig().read_config_and_override_with_pargs(pargs)
@@ -99,13 +89,10 @@ def main():
     getcred_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
     getcred_parser.set_defaults(func=getcred_main)
 
-    correct_parser = subparsers.add_parser("correct-ipmi", help="Correct the IPMI interface name in Foreman")
-    correct_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
-    correct_parser.set_defaults(func=correct_main)
-
-    rename_parser = subparsers.add_parser("rename-ipmi", help="Rename the IPMI interface name in Foreman")
+    rename_parser = subparsers.add_parser("rename-ipmi", help="Rename the IPMI interface name in Foreman.")
+    rename_parser.add_argument("-n", "--new_ipmi_fqdn", metavar="new_BMC_FQDN", help="The new FQDN of the BMC.\
+        If not mentioned, it will be generated automatically like host_FQDN-ipmi.cern.ch. ")
     rename_parser.add_argument("fqdn", metavar="host_FQDN", help="The FQDN of the node (not the BMC)")
-    rename_parser.add_argument("new_ipmi_fqdn", metavar="new_BMC_FQDN", help="The new FQDN of the BMC")
     rename_parser.set_defaults(func=rename_main)
 
     change_parser = subparsers.add_parser("change-ipmi-creds", help="Change the IPMI credentials stored in Foreman for a node")
