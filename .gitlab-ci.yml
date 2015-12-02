@@ -7,6 +7,8 @@ before_script:
 
 # Matricies not supported?
 nosetests6:
+  tags: 
+    - docker
   image: centos:centos6
   script:
     - yum-config-manager --add-repo http://linuxsoft.cern.ch//epel/6/x86_64
@@ -16,6 +18,8 @@ nosetests6:
     - nosetests --exclude roger --exclude tbag
 
 nosetests7:
+  tags: 
+    - docker
   image: centos:centos7
   script:
     - yum-config-manager --add-repo http://linuxsoft.cern.ch//epel/7/x86_64
