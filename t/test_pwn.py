@@ -33,7 +33,7 @@ class TestPwn(unittest.TestCase):
         self.pwn_config.read_config_and_override_with_pargs(pargs)
         self.client = PwnClient()
         self.test_entities = { "hostgroup": "punch/puppetdb", "module": "my_module" }
-        self.test_ownership = [["aHencz@cerN.ch ", "ai-config-team"], ["ai-robots@CERN.CH"]]
+        self.test_ownership = [["aHencz@cerN.ch ", "ai-config-team"], "ai-robOts@CERN.CH"]
         self.test_ownership_clean = [["ahencz", "ai-config-team"], ["ai-robots"]]
         self.test_options = { "hasPhysical": True }
 
@@ -60,10 +60,15 @@ class TestPwn(unittest.TestCase):
 
     # clean_owners
 
-    def test_pwn_clean_owners(self):
+    def test_pwn_clean_owners_list_input(self):
         result = self.client.clean_owners(self.test_ownership[0])
         self.assertTrue(isinstance(result, list))
         self.assertEqual(result, self.test_ownership_clean[0])
+
+    def test_pwn_clean_owners_string_input(self):
+        result = self.client.clean_owners(self.test_ownership[1])
+        self.assertTrue(isinstance(result, list))
+        self.assertEqual(result, self.test_ownership_clean[1])
 
     # __do_api_request
 
