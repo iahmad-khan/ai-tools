@@ -10,7 +10,7 @@ usage: ai-ipmi [\-h] [\-\-foreman\-timeout FOREMAN_TIMEOUT] [\-\-foreman\-hostna
 HW procurement tool to manipulate Foreman IPMI internal interface. Internal tool: don't use unless you know what you're doing.
 .SS "positional arguments:"
 .IP
-{add-ipmi,get-creds,correct-ipmi,change-ipmi-creds}
+{add-ipmi,get-creds,rename-ipmi,change-ipmi-creds}
 .TP
 add-ipmi
 Add an IPMI interface definition to a node
@@ -18,16 +18,15 @@ Add an IPMI interface definition to a node
 get-creds
 Retrieve the IPMI username and password
 .TP
-correct-ipmi
-Correct the IPMI interface name in Foreman
+rename-ipmi
+Change the name of the IPMI interface name in Foreman 
 .TP
 change-ipmi-creds
 Change the IPMI credentials (in Foreman) for a node
-.SH COMMAND OVERVIEW
+.SH COMMANDS OVERVIEW
 .SS ai-ipmi add-ipmi
 usage: ai-ipmi add-ipmi FQDN MAC username password 
 .IP
-KEY
 .TP
 .B "positional arguments:"
 .TP
@@ -42,38 +41,40 @@ the IPMI username stored on the BMC
 .TP
 password
 the IPMI password stored on the BMC
-.SS ai-ipmi delete
-usage: ai-ipmi get-creds FQDN
+.SS ai-ipmi get-creds
+usage: ai-ipmi get-creds host_FQDN
 .IP
-KEY
 .TP
 .B "positional arguments:"
 .TP
-FQDN
+host_FQDN
 The host whose IPMI credentials you want to fetch
-.SS ai-ipmi 
-usage: ai-ipmi correct-ipmi FQDN 
+.SS ai-ipmi rename-ipmi
+usage: ai-ipmi rename-ipmi host_FQDN [IPMI_FQDN]
 .IP
-KEY
 .TP
 .B "positional arguments:"
 .TP
-FQDN
-The host whose IPMI interface you'd like to correct.
+host_FQDN
+The host whose IPMI interface name you'd like to correct
+.TP
+IPMI_FQDN
+The new FQDN of the IPMI interface. 
+If not specified, it will be automatically generated from the hostname, e.g. hostname-ipmi.cern.ch
 .SS ai-ipmi change-ipmi-creds
-usage: ai-ipmi change-ipmi-creds FQDN username password 
+usage: ai-ipmi change-ipmi-creds host_FQDN username password 
 .IP
-KEY
 .TP
 .B "positional arguments:"
 .TP
-FQDN
-the host to add the interface to
+host_FQDN
+the host to change the IPMI credentials for
 .TP
 username
-the IPMI username stored on the BMC
+the IPMI username
 .TP
 password
+the IPMI password
 .SH GLOBAL OPTIONS
 .TP
 \fB\-h\fR, \fB\-\-help\fR

@@ -15,7 +15,7 @@ def add_main(pargs):
     ForemanConfig().read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
 
-    f = ForemanClient()
+    f = ForemanClient(deref_alias=pargs.dereference_alias)
     try:
         f.add_ipmi_interface(pargs.fqdn, pargs.mac, pargs.user, pargs.pw)
     except AiToolsForemanError:
@@ -28,7 +28,7 @@ def change_main(pargs):
     ForemanConfig().read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
 
-    f = ForemanClient()
+    f = ForemanClient(deref_alias=pargs.dereference_alias)
     try:
         f.change_ipmi_credentials(pargs.fqdn, pargs.user, pargs.pw)
     except AiToolsForemanError:
@@ -40,7 +40,8 @@ def change_main(pargs):
 def rename_main(pargs):
     ForemanConfig().read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
-    f = ForemanClient()
+
+    f = ForemanClient(deref_alias=pargs.dereference_alias)
     try:
        f.rename_ipmi_interface_name(pargs.fqdn, pargs.new_ipmi_fqdn)
     except AiToolsForemanError as e:
@@ -53,8 +54,8 @@ def rename_main(pargs):
 def getcred_main(pargs):
     ForemanConfig().read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
-
-    f = ForemanClient()
+    
+    f = ForemanClient(deref_alias=pargs.dereference_alias)
     try:
         (user, pw) = f.get_ipmi_credentials(pargs.fqdn)
         print "Username: %s" % user
@@ -91,7 +92,7 @@ def main():
 
     rename_parser = subparsers.add_parser("rename-ipmi", help="Rename the IPMI interface name in Foreman.")
     rename_parser.add_argument("-n", "--new_ipmi_fqdn", metavar="new_BMC_FQDN", help="The new FQDN of the BMC.\
-        If not mentioned, it will be generated automatically like host_FQDN-ipmi.cern.ch. ")
+        If not mentioned, it will be generated automatically like host_DN-ipmi.cern.ch. ")
     rename_parser.add_argument("fqdn", metavar="host_FQDN", help="The FQDN of the node (not the BMC)")
     rename_parser.set_defaults(func=rename_main)
 
