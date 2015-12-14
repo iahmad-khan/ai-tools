@@ -1,3 +1,6 @@
+#!/bin/bash
+source "$(dirname "$0")/common.sh"
+
 CONF=$(mktemp)
 TESTNODE="aifcliftest99.cern.ch"
 cat > $CONF << EOF
@@ -15,18 +18,6 @@ roger_timeout = 15
 nova_timeout = 45
 EOF
 IN=$(mktemp)
-
-function _expect {
-  ret=$1
-  shift
-  cmd=$*
-  eval $cmd
-  if [ $ret -ne $? ]
-  then
-    echo "$cmd didn't return the expected return code ($ret)"
-    exit
-  fi
-}
 
 echo "Setting up..."
 echo "$TESTNODE 192.168.0.1 aa:bb:cc:dd:ee:ff" >> $IN

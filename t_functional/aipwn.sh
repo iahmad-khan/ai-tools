@@ -1,3 +1,5 @@
+#!/bin/bash
+source "$(dirname "$0")/common.sh"
 
 CONF=$(mktemp)
 cat > $CONF << EOF
@@ -6,19 +8,6 @@ pwn_hostname = woger.cern.ch
 pwn_port = 8201
 pwn_timeout = 15
 EOF
-
-
-function _expect {
-  ret=$1
-  shift
-  cmd=$*
-  eval $cmd
-  if [ $ret -ne $? ]
-  then
-    echo "$cmd didn't return the expected return code ($ret)"
-    exit
-  fi
-}
 
  echo "Arguments"
  _expect 2 ai-pwn --config $CONF show module hostgroup

@@ -1,6 +1,9 @@
 before_script:
   - yum install -y yum-utils yum-plugin-priorities
-  - cd t
+
+stages:
+- test
+- cleanup_test
 
 # Matricies not supported?
 nosetests6:
@@ -8,10 +11,11 @@ nosetests6:
     - docker
   image: docker.cern.ch/linuxsupport/slc6-base:latest
   script:
+    - cd t
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-6
     - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
-    - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-nose python-suds python-requests
-    - yum install -y --nogpgcheck python-openstackclient python-nose python-mock python-dateutil PyYAML
+    - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-argcomplete python-nose python-suds python-requests
+    - yum install -y --nogpgcheck python-openstackclient python-keystoneclient python-keystoneclient-kerberos python-cinderclient python-novaclient python-stevedore python-nose python-mock python-dateutil PyYAML
     - nosetests --exclude roger --exclude tbag
 
 nosetests7:
@@ -19,10 +23,11 @@ nosetests7:
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
   script:
+    - cd t
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-7
     - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
-    - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-nose python-suds python-requests
-    - yum install -y --nogpgcheck python-openstackclient python-nose python-mock python-dateutil PyYAML
+    - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-argcomplete python-nose python-suds python-requests
+    - yum install -y --nogpgcheck python-openstackclient python-keystoneclient python-keystoneclient-kerberos python-cinderclient python-novaclient python-stevedore python-nose python-mock python-dateutil PyYAML
     - nosetests --exclude roger --exclude tbag
 
 nosetests7cr:
@@ -30,6 +35,7 @@ nosetests7cr:
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
   script:
+    - cd t
     - yum --enablerepo=cr --enablerepo={updates,extras,cern}-testing -y  update
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-7
     - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
@@ -41,3 +47,30 @@ nosetests7cr:
 
 
 
+# Ignore pwn tests for now. They need to be run by admins i.e. ai-config-team
+functionaltests6:
+  tags:
+    - docker
+  image: docker.cern.ch/linuxsupport/slc6-base:latest
+  script:
+    - export OS_AUTH_URL=https://keystone.cern.ch/krb/v3
+    - export OS_AUTH_TYPE=v3kerberos
+    - export OS_IDENTITY_API_VERSION=3
+    - export OS_PROJECT_DOMAIN_ID=default
+    - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-6
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai6-qa/x86_64/os
+    - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
+    - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-argcomplete python-nose python-suds python-requests
+    - yum install -y --nogpgcheck python-openstackclient python-keystoneclient python-keystoneclient-kerberos python-cinderclient python-novaclient python-stevedore python-nose python-mock python-dateutil PyYAML bc hiera
+    - echo $AITOOLCIPWD | kinit aitoolci@CERN.CH
+    - export PATH=$PWD/bin:$PWD/scripts:$PATH
+    - export PYTHONPATH=$PWD/src
+    - cd t_functional
+    - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
+
+cleanup_test:
+  stage: cleanup_test
+  when: always
+  script:
+  - kdestroy

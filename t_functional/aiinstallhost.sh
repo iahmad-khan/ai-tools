@@ -1,5 +1,8 @@
+#!/bin/bash
 # This is a not very nice bash script to do some kind
 # of naive functional testing for ai-installhost.
+
+source "$(dirname "$0")/common.sh"
 
 CONF=$(mktemp)
 cat > $CONF << EOF
@@ -19,18 +22,6 @@ certmgr_port = 8008
 certmgr_timeout = 15
 EOF
 IN=$(mktemp)
-
-function _expect {
-  ret=$1
-  shift
-  cmd=$*
-  eval $cmd
-  if [ $ret -ne $? ]
-  then
-    echo "$cmd didn't return the expected return code ($ret)"
-    exit
-  fi
-}
 
 echo "Setting up..."
 
