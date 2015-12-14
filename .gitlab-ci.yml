@@ -1,18 +1,15 @@
 before_script:
-  - yum install -y yum-utils
+  - yum install -y yum-utils yum-plugin-priorities
   - cd t
-
-
-
 
 # Matricies not supported?
 nosetests6:
   tags: 
     - docker
-  image: centos:centos6
+  image: docker.cern.ch/linuxsupport/slc6-base:latest
   script:
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch//epel/6/x86_64
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-6
+    - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
     - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-nose python-suds python-requests
     - yum install -y --nogpgcheck python-openstackclient python-nose python-mock python-dateutil PyYAML
     - nosetests --exclude roger --exclude tbag
@@ -20,13 +17,12 @@ nosetests6:
 nosetests7:
   tags: 
     - docker
-  image: centos:centos7
+  image: docker.cern.ch/linuxsupport/cc7-base:latest
   script:
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch//epel/7/x86_64
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-7
+    - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
     - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-nose python-suds python-requests
     - yum install -y --nogpgcheck python-openstackclient python-nose python-mock python-dateutil PyYAML
     - nosetests --exclude roger --exclude tbag
-
 
 
