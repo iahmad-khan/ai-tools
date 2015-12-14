@@ -115,7 +115,9 @@ def parse_cmdline_args():
         help="Number of attempts to check if the boot is synced (default: '%s')" % \
         DEFAULT_AIMS_ATTEMPTS,
         default=DEFAULT_AIMS_ATTEMPTS)
-
+    parser.add_argument('--report-to', type=str,
+        help="Username to send the installation report to \
+              (defaults to to Kerberos TGT principal)")
     ##
     ## Positional
     ##
@@ -206,7 +208,11 @@ def process_host(hostname):
 
     try:
         ks = foreman.getks(host['ip'])
-        ks = ks.replace("{$USER}", krb_principal.replace("@CERN.CH", ""))
+        if not args.report_to:
+            args.report_to = krb_principal.replace("@CERN.CH", "")
+        logging.info("Editing KS to send installation report to: %s@cern.ch..." %
+                     args.report_to)
+        ks = ks.replace("{$USER}", args.report_to)
         # TODO: After migrating to this guy, this replaces should be
         # erased and the KS templates on Foreman fixed.
         ks = ks.replace("\\{", '{').replace("\\}", '}')
