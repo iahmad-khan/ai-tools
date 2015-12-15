@@ -236,10 +236,10 @@ def addhost(foreman, args):
 
         if all(record[f] is not None for f in ipmi_fieldnames):
             try:
-                foreman.add_ipmi_interface(record['fqdn'], 
+                foreman.add_ipmi_interface(record['fqdn'],
                     record['i_fqdn'],
                     record['i_mac'].replace('-', ':'),
-                    record['i_user'], 
+                    record['i_user'],
                     record['i_pass'])
             except (socket.gaierror, AiToolsForemanError), error:
                 errors = True
