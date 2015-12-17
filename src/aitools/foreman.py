@@ -445,6 +445,8 @@ class ForemanClient(HTTPClient):
 
 
     def add_ipmi_interface(self, host_fqdn, ipmi_fqdn, mac, username, password):
+        # Implementing this as the public API does not support
+        # adding IPMI interfaces with the host
         payload = {'name': ipmi_fqdn,
           'ip': socket.gethostbyname(ipmi_fqdn),
           'mac':mac,
@@ -468,7 +470,7 @@ class ForemanClient(HTTPClient):
 
 
     def rename_ipmi_interface_name(self, fqdn, new_ipmi_intf_fqdn = None):
-        # If new_ipmi_intf_fqdn is not mentioned, 
+        # If new_ipmi_intf_fqdn is not mentioned,
         # it will be generated from the host fqdn
         if not new_ipmi_intf_fqdn:
           new_ipmi_intf_fqdn = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
