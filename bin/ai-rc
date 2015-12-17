@@ -59,7 +59,7 @@ def parse_cmd_args():
 def print_env_variables(project_name=None, shell=None):
     project_name = project_name or "Personal %s" % getuser()
 
-    if '/' in shell:
+    if shell and '/' in shell:
         shell = shell.split('/')[-1]
     if not shell or not shell in STDOUT_FORMAT:
         shell = 'bash'
