@@ -9,6 +9,7 @@ from aitools.foreman import ForemanClient
 from aitools.httpclient import HTTPClient
 from aitools.errors import AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
+from aitools.errors import AiToolsForemanNotAllowedError
 
 TEST_HOST='localhost'
 TEST_PORT=1
@@ -593,3 +594,47 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('get',
                 full_uri("hosts/%s/facts/?per_page=500" % fqdn), ANY, ANY)
+
+    #### TOPLVL HG CREATE ####
+
+    def test_createhostgroup_unimplemented(self, *args):
+        hg = "foobar"
+        pt = "lukeimyourfater"
+        self.assertRaises(AiToolsForemanError, self.client.createhostgroup,
+            hostgroup=hg, parent=pt)
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.unprocessable_entity, []))
+    def test_createhostgroup_hg_exists_already(self, *args):
+        hg = "foobar"
+        self.assertRaises(AiToolsForemanNotAllowedError, self.client.createhostgroup,
+            hostgroup=hg)
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.internal_server_error, []))
+    def test_createhostgroup_uncontrolled_status_code(self, *args):
+        hg = "foobar"
+        self.assertRaises(AiToolsForemanError, self.client.createhostgroup,
+            hostgroup=hg)
+        expected_payload = {'hostgroup': {'name': hg}}
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post',
+                full_uri("hostgroups"), ANY, json.dumps(expected_payload))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.ok, {"id":111}))
+    def test_createhostgroup_success(self, *args):
+        hg = "foobar"
+        self.assertEquals(111, self.client.createhostgroup(hostgroup=hg))
+        expected_payload = {'hostgroup': {'name': hg}}
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post',
+                full_uri("hostgroups"), ANY, json.dumps(expected_payload))
+
+    @patch.object(HTTPClient, 'do_request')
+    def test_createhostgroup_dryrun(self, *args):
+        hg = "foobar"
+        self.client.dryrun = True
+        self.assertEquals(None, self.client.createhostgroup(hostgroup=hg))
+        super(ForemanClient, self.client).do_request\
+            .assert_not_called()
