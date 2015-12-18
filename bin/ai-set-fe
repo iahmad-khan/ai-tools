@@ -14,9 +14,6 @@ import json
 import sys
 import logging
 
-FECACHE = '/var/cache/femap/femap.json'
-
-
 def set_fe_for_hostgroup(hostgroup, fe, deref_alias):
     f = ForemanClient(deref_alias=deref_alias)
     try:
@@ -37,10 +34,10 @@ def fe_set(pargs):
 
     entries = {}
     try:
-        with open(FECACHE, 'r') as cachefile:
+        with open(pargs.fecache, 'r') as cachefile:
             entries = json.load(cachefile)
     except:
-        logging.error("Cannot open SNOW FE cache file: %s" % FECACHE)
+        logging.error("Cannot open SNOW FE cache file: %s" % pargs.fecache)
         sys.exit(2)
 
     if pargs.jfdi:
@@ -87,6 +84,8 @@ def main():
                         help="Ignore checking of FE name against SNOW")
     parser.add_argument("--hostgroup", default=None,
                         help="Set the given FE as responsible for this hostgroup")
+    parser.add_argument("--fecache", default='/var/cache/femap/femap.json',
+                        help="Path for the FE cache")
     parser.add_argument("FEname", metavar="snowfe",
                         help="FE name (can be a substring)").completer = FENameCompleter()
     argcomplete.autocomplete(parser)
