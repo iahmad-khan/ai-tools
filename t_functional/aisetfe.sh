@@ -29,5 +29,5 @@ _expect 0 ai-set-fe --fecache $FECACHE --hostgroup playground/aitoolstest Ignore
 _expect 4 ai-set-fe --fecache $FECACHE --hostgroup hope/this/will/never/exist Ignore
 
 echo "Tearing down..."
-rm -f $CONF
+rm -f $CONF $FECACHE
 echo "All tests passed :)"
