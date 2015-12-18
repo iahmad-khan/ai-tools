@@ -327,6 +327,40 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
+    def createhostgroup(self, hostgroup, parent=None):
+        """
+        Create new hostgroup. If no parent is given, a top level hostgroup is
+        created. Creating hostgroups with parents is not implemented yet.
+        :param hostgroup: the name of the hostgroup to be created
+        :param parent: the name of the hostgrop under which the new one is created
+        :raise AiToolsForemanNotAllowedError: the hostgroup exists already
+        :raise AiToolsForemanError: if the operation failed
+        :return: The id of the hostgroup created, or None if dry run is enabled
+        """
+        if parent:
+            raise AiToolsForemanError("This feature is not implemented yet")
+
+        logging.info("Creating hostgroup '%s'..." % hostgroup)
+        payload = {'hostgroup': {'name': hostgroup}}
+        logging.debug("With payload: %s" % payload)
+
+        if not self.dryrun:
+            (code, body) = self.__do_api_request("post", "hostgroups",
+                                data=json.dumps(payload))
+            if code == requests.codes.ok:
+                logging.info("Hostgroup '%s' created in Foreman" % hostgroup)
+                return body['id']
+            elif code == requests.codes.unprocessable_entity:
+                raise AiToolsForemanNotAllowedError(
+                    "Hostgroup '%s' already exists in Foreman" % hostgroup)
+            else:
+                raise AiToolsForemanError(
+                    "Could not create hostgroup '%s' in Foreman" % hostgroup)
+        else:
+            logging.info("Hostgroup '%s' not created because dryrun is enabled" %
+                hostgroup)
+            return None
+
     def gethostgroupparameters(self, hostgroup):
         """
         Get all parameters for the given hostgroup.
