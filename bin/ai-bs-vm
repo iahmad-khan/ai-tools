@@ -68,11 +68,11 @@ DEFAULT_GROW_PARTITION = 2
 VOLUME_VALIDATION_REGEX = {
     'boot_new_volume': r"^(?P<size>[1-9]\d*(TB|GB))"
         "(:(?P<dot>delete-on-terminate))?"
-        "(:type=(?P<type>\w+))?$",
+        "(:type=(?P<type>[\w-]+))?$",
     'boot_existing_volume': r'^(?P<uuid>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})(?P<dot>:delete-on-terminate)?$',
     'attach_new_volume': r"^(?P<device>\w+)=(?P<value>[1-9]\d*(TB|GB))"
         "(:(?P<dot>delete-on-terminate))?"
-        "(:type=(?P<type>\w+))?$",
+        "(:type=(?P<type>[\w-]+))?$",
     'attach_existing_volume': r'^(?P<device>\w+)=(?P<value>[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12})(?P<dot>:delete-on-terminate)?$'
 }
 

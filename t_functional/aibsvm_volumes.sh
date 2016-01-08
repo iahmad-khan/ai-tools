@@ -83,7 +83,7 @@ _expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --nova-boot-from-new
 _expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --nova-boot-from-new-volume '10GB:delete-on-terminate'
 _expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --nova-boot-from-new-volume '10GB:type=cp1'
 _expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --nova-boot-from-new-volume '10GB' --nova-attach-new-volume 'vdb=1GB' --nova-attach-new-volume 'vdc=1GB'
-_expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --nova-attach-new-volume 'vdb=1GB:delete-on-terminate' --nova-attach-new-volume 'auto=1GB:type=cp1' --nova-attach-new-volume 'vdd=1GB:delete-on-terminate:type=io1'
+_expect 0 ai-bs-vm -d -g playground/aitoolstest -i "$IMAGE" --nova-attach-new-volume 'vdb=1GB:delete-on-terminate' --nova-attach-new-volume 'auto=1GB:type=cp1' --nova-attach-new-volume 'vdd=1GB:delete-on-terminate:type=io1' --nova-attach-new-volume 'vde=10GB:delete-on-terminate:type=wig-cp1'
 
 
 echo "Userdata dump..."
