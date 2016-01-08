@@ -88,7 +88,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
-* Fri Jan 08 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.7-1
+* Fri Jan 08 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.7-1
 - [ai-bs-vm] stringify_facts to false during the first run.
 - [ai-installhost] Add option to override the e-mail addr.
 - [ai-rc] Don't crash if $SHELL is not set.
