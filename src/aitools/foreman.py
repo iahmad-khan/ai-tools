@@ -471,18 +471,18 @@ class ForemanClient(HTTPClient):
                     return interface['id']
             return None
           else:
-            raise AiToolsForemanError("%d: %s" % (code, response))
-
+            error_message = """Action: check if host %s and its ipmi interface exist in Foreman. [%d, %s]"""\
+                             % (fqdn, code, response["error"]["message"])
+            raise AiToolsForemanNotFoundError(error_message)
         except AiToolsHTTPClientError, error:
           raise AiToolsForemanError(error)
 
 
-    def add_ipmi_interface(self, fqdn, mac, username, password):
-        # Ugly hack as the public API does not support
-        # adding IPMI interfaces yet :)
-        ipmi_name = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
-        payload = {'name': ipmi_name,
-          'ip': socket.gethostbyname(ipmi_name),
+    def add_ipmi_interface(self, host_fqdn, ipmi_fqdn, mac, username, password):
+        # Implementing this as the public API does not support
+        # adding IPMI interfaces with the host
+        payload = {'name': ipmi_fqdn,
+          'ip': socket.gethostbyname(ipmi_fqdn),
           'mac':mac,
           'username': username,
           'password': password,
@@ -492,7 +492,7 @@ class ForemanClient(HTTPClient):
 
         try:
           code, response = self.__do_api_request('post',
-            "hosts/%s/interfaces" % fqdn,
+            "hosts/%s/interfaces" % host_fqdn,
             json.dumps(payload))
           if code == requests.codes.created:
             logging.info("%s added" % payload['name'])
@@ -503,13 +503,15 @@ class ForemanClient(HTTPClient):
           raise AiToolsForemanError(error)
 
 
-    def correct_ipmi_interface_name(self, fqdn):
+    def rename_ipmi_interface_name(self, fqdn, new_ipmi_intf_fqdn = None):
+        # If new_ipmi_intf_fqdn is not mentioned,
+        # it will be generated from the host fqdn
+        if not new_ipmi_intf_fqdn:
+          new_ipmi_intf_fqdn = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
         ipmi_interface_id = self.get_ipmi_interface_id(fqdn)
-        ipmi_name = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
-        payload = { 'name': ipmi_name }
         if ipmi_interface_id is None:
-          logging.error("Unable to find the ID of the IPMI interface in Foreman")
-          raise AiToolsForemanNotFoundError("Unable to find the ID of the IPMI interface in Foreman")
+          raise AiToolsForemanError("Action: add the IPMI interface for %s" % fqdn)
+        payload = { 'name': new_ipmi_intf_fqdn }
         try:
           code, response = self.__do_api_request('put',
             "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id),
@@ -557,7 +559,6 @@ class ForemanClient(HTTPClient):
 
         except AiToolsHTTPClientError, error:
           raise AiToolsForemanError(error)
-
 
 
     def get_environment_by_name(self, name):
