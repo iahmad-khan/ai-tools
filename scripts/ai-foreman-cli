@@ -944,6 +944,8 @@ sub SetupAims($$){
 
     # Run "aims2 showimg all" to get list of all available AIMS images
     my %AimsImg = (
+	# CC
+        "CentOS 7.1"  => "CC71",
 	# SLC
         "SLC 6.7"     => "SLC67",
         "SLC 6.6"     => "SLC66",
@@ -959,6 +961,9 @@ sub SetupAims($$){
         "SLC 5.8"     => "SLC58",
         "SLC 5.7"     => "SLC57",
 	# RedHat
+        "RedHat 7.2"  => "RHEL_7_2",
+        "RedHat 7.1"  => "RHEL_7_1",
+        "RedHat 6.7"  => "RHEL_6_7",
         "RedHat 6.6"  => "RHEL_6_6",
         "RedHat 6.5"  => "RHEL_6_5",
         "RedHat 6.4"  => "RHEL_6_4",
