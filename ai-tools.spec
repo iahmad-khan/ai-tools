@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.6
+Version: 9.7
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -88,6 +88,19 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Fri Jan 08 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.7-1
+- [ai-bs-vm] stringify_facts to false during the first run.
+- [ai-installhost] Add option to override the e-mail addr.
+- [ai-rc] Don't crash if $SHELL is not set.
+- [ai-set-fe] Allow overriding the FE cache path via a parameter.
+- [ai-foreman] Add IPMI FQDN to the list of fields when doing addhost.
+- [ai-ipmi] Support IPMI interface renaming.
+- [ai-foreman-cli] Add support for CC71, RHEL7 and RHEL67 targets.
+- [ai-bs-vm] Allow dashes in volume types.
+- [libs] Add createhostgroup function to ForemanClient.
+- [libs] Handle strings properly if passed to clean_owners()
+- Add support for Gitlab CI.
+
 * Mon Nov 09 2015 Nacho Barrientos <nacho.barrientos@cern.ch> 9.6-1
 - [ai-hiera] Add support for $::datacentre.
 - [ai-hiera] Don't leave the output behind if --trace.
