@@ -25,4 +25,19 @@ nosetests7:
     - yum install -y --nogpgcheck python-openstackclient python-nose python-mock python-dateutil PyYAML
     - nosetests --exclude roger --exclude tbag
 
+nosetests7cr:
+  tags: 
+    - docker
+  image: docker.cern.ch/linuxsupport/cc7-base:latest
+  script:
+    - yum --enablerepo=cr --enablerepo={updates,extras,cern}-testing -y  update
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-7
+    - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
+    - yum --enablerepo=cr --enablerepo={updates,extras,cern}-testing install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-nose python-suds python-requests
+    - yum --enablerepo=cr --enablerepo={updates,extras,cern}-testing install -y --nogpgcheck python-openstackclient python-nose python-mock python-dateutil PyYAML
+    - nosetests --exclude roger --exclude tbag
+
+
+
+
 
