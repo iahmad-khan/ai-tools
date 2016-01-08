@@ -55,7 +55,10 @@ class PwnClient(HTTPClient):
         Make the owners into a list (if it was a single string)
         Strip @cern.ch from the owners list
         """
-        return map(lambda owner: owner.lower().strip().replace('@cern.ch', ''), list(owners))
+        if isinstance(owners, basestring):
+            owners = [owners]
+        return [owner.lower().strip().replace('@cern.ch', '') for owner in
+            owners]
 
     def get_ownership(self, entity, scope):
         if not entity or not scope:
