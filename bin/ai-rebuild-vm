@@ -33,6 +33,7 @@ from aitools.common import get_openstack_environment
 from aitools.common import validate_fqdn
 from aitools.common import append_domain
 from aitools.common import is_valid_UUID
+from aitools.common import IMAGES_METADATA
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
@@ -81,8 +82,15 @@ def parse_cmdline_args():
     nova_config.add_standard_args(parser)
     parser.add_argument('--nova-disable', action="store_true",
         help="Disable Nova actions")
-    parser.add_argument('-i', '--nova-image', type=str,
+    images = parser.add_mutually_exclusive_group(required=False)
+    images.add_argument('-i', '--nova-image', type=str,
         help="OpenStack image name").completer = NovaCompleter(cache='image')
+    images.add_argument('--slc5', action="store_const", dest='nova_image',
+        const='slc5', help="Select latest SLC5 image available")
+    images.add_argument('--slc6', action="store_const", dest='nova_image',
+        const='slc6', help="Select latest SLC6 image available")
+    images.add_argument('--cc7', action="store_const", dest='nova_image',
+        const='cc7', help="Select latest CC7 image available")
     ##
     ## Foreman options
     ##
@@ -171,7 +179,9 @@ def main():
             nova = NovaClient(auth_client, dryrun=args.dryrun)
 
             image = args.nova_image
-            if image and not is_valid_UUID(image):
+            if image in IMAGES_METADATA:
+                image = nova.get_latest_image(*IMAGES_METADATA[image])
+            elif image and not is_valid_UUID(image):
                 image = nova.find_image_by_name(name=image)
             nova.rebuild(fqdn, image=image)
         except AiToolsNovaError, error:
