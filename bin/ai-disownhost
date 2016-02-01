@@ -33,6 +33,7 @@ from aitools.common import fqdnify
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsLandbError
 from aitools.errors import AiToolsRogerNotAllowedError
+from aitools.errors import AiToolsRogerNotFoundError
 
 from aitools.completer import ForemanCompleter
 
@@ -93,17 +94,22 @@ def parse_cmdline_args():
 
 def disable_alarms(fqdn, roger):
     logging.info("Disabling alarms and setting appstate to \"disabled\"...")
-    current_state = roger.get_state(fqdn)
+    current_state = None
     try:
+        current_state = roger.get_state(fqdn)
         roger.update_or_create_state(fqdn, appstate="disabled", nc_alarmed="false",
             hw_alarmed="false", app_alarmed="false", os_alarmed="false",
             message="alarms disabled by ai-disownhost")
-        return current_state
     except AiToolsRogerNotAllowedError, error:
         logging.error("Couldn't switch off Roger alarms, not authorized (%s)" % error)
+        logging.info("Please update roger for machine to switch alarms off if necessary")
+    except AiToolsRogerNotFoundError:
+        logging.error("The host could not be found in roger")
+        logging.info("Please update roger for machine to switch alarms off if necessary")
     except Exception, error:
         logging.error("Received unexpected error trying to switch off alarms in roger: %s" % error)
         logging.info("Please update roger for machine to switch alarms off if necessary")
+    return current_state
 
 def restore_alarms(fqdn, roger, previous_state):
     logging.info("Restoring previous alarm state...")
@@ -171,7 +177,7 @@ def disown(hostname, args, config, foreman, roger, landb, table):
                 except AiToolsForemanError, error:
                     err_msg = "%s and couldn't move it back to origin hostgroup (%s)" % \
                         (err_msg, error)
-            if not args.roger_disable:
+            if not args.roger_disable and previous_state:
                 restore_alarms(fqdn, roger, previous_state)
             table.add_row([fqdn, 'KO', err_msg])
             return 4
