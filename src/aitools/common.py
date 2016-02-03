@@ -30,6 +30,7 @@ IMAGES_METADATA = {
     'slc6': ('SLC', '6', 'Base'),
     'cc7' : ('CC',  '7', 'Base'),
 }
+
 def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
     """Configures application log level based on cmdline arguments"""
     logging_level = default_lvl
