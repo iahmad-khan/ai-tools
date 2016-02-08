@@ -52,12 +52,12 @@ parameters.
 .TP
 .B -i, --nova-image
 OpenStack image name or id to base the rebuild on. If no image is specified
-the existing one will be used. These argument is mutually exclusive with
+the existing one will be used. This argument is mutually exclusive with
 { --slc5 | --slc6 | --cc7 }
 .TP
 .B --slc5, --slc6, --cc7
-Latest released OpenStack image for the particular distribution. If no image is
-specified the existing one will be used. These arguments are mutually exclusive with '--nova-image'.
+Latest released OpenStack image for the particular distribution.
+These arguments are mutually exclusive with '--nova-image'.
 .TP
 .B -a, --keepalarms
 Don't disable alarms before triggering the rebuild process.
