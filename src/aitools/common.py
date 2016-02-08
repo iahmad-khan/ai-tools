@@ -25,6 +25,11 @@ from aitools.params import DEFAULT_LOGGING_LEVEL
 from aitools.errors import AiToolsInitError
 from aitools.config import CertmgrConfig
 
+IMAGES_METADATA = {
+    'slc5': ('SLC', '5', 'Server'),
+    'slc6': ('SLC', '6', 'Base'),
+    'cc7' : ('CC',  '7', 'Base'),
+}
 
 def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
     """Configures application log level based on cmdline arguments"""

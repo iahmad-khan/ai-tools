@@ -51,9 +51,13 @@ parameters.
 .I Optional parameters:
 .TP
 .B -i, --nova-image
-OpenStack image name or id to base the rebuild on. If this option
-is not specified the current image will be used (get a list from
-"openstack image list").
+OpenStack image name or id to base the rebuild on. If no image is specified
+the existing one will be used. This argument is mutually exclusive with
+{ --slc5 | --slc6 | --cc7 }
+.TP
+.B --slc5, --slc6, --cc7
+Latest released OpenStack image for the particular distribution.
+These arguments are mutually exclusive with '--nova-image'.
 .TP
 .B -a, --keepalarms
 Don't disable alarms before triggering the rebuild process.
@@ -150,8 +154,8 @@ ai-rebuild-vm higgsbox.cern.ch
 ai-rebuild-vm -i "SLC6 Server - x86_64 [130920]" higgsbox.cern.ch
 
 .TP
-.B Rebuild a VM using an user-specified image and keep the alarm state
-ai-rebuild-vm -i "SLC6 Server - x86_64 [130920]" higgsbox.cern.ch -a
+.B Rebuild a VM with the latest CC7 image available and keep the alarm state
+ai-rebuild-vm --cc7 higgsbox.cern.ch -a
 
 .SH REPORTING BUGS
 If you experience any issue please open a support call on SNOW (Functional
