@@ -31,6 +31,9 @@ class AiToolsCertmgrError(AiToolsHTTPClientError):
 class AiToolsNovaError(AiToolsError):
     pass
 
+class AiToolsGlanceError(AiToolsError):
+    pass
+
 class AiToolsCinderError(AiToolsError):
     pass
 

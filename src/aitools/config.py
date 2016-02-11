@@ -247,3 +247,12 @@ class RundeckConfig(AiConfig):
         parser.add_argument('--rundeck-port', type=int,
             help="Rundeck port")
         self.add_global_args(parser)
+
+class GlanceConfig(AiConfig):
+
+    def _get_from_configfile(self, key, section="glance"):
+        return super(GlanceConfig, self)._get_from_configfile(key, section=section)
+
+    def add_standard_args(self, parser):
+        parser.add_argument('--glance-timeout', type=int, help="Timeout for Glance operations")
+        self.add_global_args(parser)
