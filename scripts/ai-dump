@@ -105,7 +105,10 @@ def host_main(pargs):
     else:
         cnaliases = '-'
 
-    ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['catalog_timestamp'])
+    if host_info['report_timestamp']:
+        ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['report_timestamp'])
+    else:
+        ago = "PuppetDB does not have any report for this node"
 
     if facts.get('is_virtual', 'false') == 'true':
         vtype = "virtual"
