@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.7
+Version: 9.8
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -88,6 +88,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Feb 16 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.8-1
+- [ai-disownhost] Handle AiToolsRogerNotFoundError.
+- [ai-rebuild-vm] Support --cc7 and friends a-la-ai-bs-vm.
+- [ai-dump] Fix a crash when there was no catalog yet in PDB.
+
 * Fri Jan 08 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.7-1
 - [ai-bs-vm] stringify_facts to false during the first run.
 - [ai-installhost] Add option to override the e-mail addr.
