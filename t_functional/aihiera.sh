@@ -1,3 +1,7 @@
+#!/bin/bash
+
+source "$(dirname "$0")/common.sh"
+
 CONF=$(mktemp)
 HIERACONF=$(mktemp)
 HIERADATA=$(mktemp -d)
@@ -21,18 +25,6 @@ hiera_fact_list = operatingsystemmajorrelease,osfamily,cern_hwvendor,datacentre
 
 EOF
 IN=$(mktemp)
-
-function _expect {
-  ret=$1
-  shift
-  cmd=$*
-  eval $cmd
-  if [ $ret -ne $? ]
-  then
-    echo "$cmd didn't return the expected return code ($ret)"
-    exit
-  fi
-}
 
 echo "Setting up..."
 cat > $HIERACONF << EOF

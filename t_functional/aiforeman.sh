@@ -1,5 +1,8 @@
+#!/bin/bash
 # This is a not very nice bash script to do some kind
 # of naive functional testing for ai-foreman.
+
+source "$(dirname "$0")/common.sh"
 
 CONF=$(mktemp)
 cat > $CONF << EOF
@@ -9,18 +12,6 @@ foreman_port = 8443
 foreman_timeout = 60
 EOF
 IN=$(mktemp)
-
-function _expect {
-  ret=$1
-  shift
-  cmd=$*
-  eval $cmd
-  if [ $ret -ne $? ]
-  then
-    echo "$cmd didn't return the expected return code ($ret)"
-    exit
-  fi
-}
 
 echo "Setting up..."
 for i in `seq 16 18`
