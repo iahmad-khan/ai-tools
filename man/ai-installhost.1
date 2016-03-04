@@ -144,6 +144,10 @@ ai-installhost foo.cern.ch bar.cern.ch
 .B Same but keeping the autogenrated Kickstart files on disk
 ai-installhost -k foo.cern.ch bar.cern.ch
 
+.TP
+.B Prepare foo.cern.ch for installation (UEFI mode)
+ai-installhost foo.cern.ch --mode uefi
+
 .SH ROLLING BACK
 It is possible to undo the process of preparing a physical machine
 for installation using the 'aims2client' command.
