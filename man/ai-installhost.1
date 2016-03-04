@@ -53,6 +53,15 @@ afterwards.
 .TP
 .B -c, --console STRING
 Device to route the console output to. Defaults to "tty0".
+.TP
+.B -m, --mode STRING
+Sets the boot mode. The possible options are: "auto", "bios", "bioslgcy",
+"uefi" and "arm64" (man aims2client for more information). This option defaults
+to "auto" which tries to guess the correct mode based on metadata available on
+Foreman.
+
+Please note that the autodiscovery is not implemented yet and it will
+always default to "bios".
 
 .LP
 .I Other optional parameters:
@@ -134,6 +143,10 @@ ai-installhost foo.cern.ch bar.cern.ch
 .TP
 .B Same but keeping the autogenrated Kickstart files on disk
 ai-installhost -k foo.cern.ch bar.cern.ch
+
+.TP
+.B Prepare foo.cern.ch for installation (UEFI mode)
+ai-installhost foo.cern.ch --mode uefi
 
 .SH ROLLING BACK
 It is possible to undo the process of preparing a physical machine

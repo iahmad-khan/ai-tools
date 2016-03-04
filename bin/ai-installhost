@@ -48,6 +48,8 @@ from aitools.completer import ForemanCompleter
 DEFAULT_AIMS_ATTEMPTS = 12
 DEFAULT_CONSOLE_DEVICE = "tty0"
 GIGETH_PARAMETER_NAME = 'use_legacy_gigeth_pxeboot'
+BOOT_MODES = ['auto', 'bios', 'bioslgcy', 'uefi', 'arm64']
+DEFAULT_BOOT_MODE = 'auto'
 
 def parse_cmdline_args():
     """Parses and validates cmdline arguments"""
@@ -76,6 +78,11 @@ def parse_cmdline_args():
         default=DEFAULT_CONSOLE_DEVICE,
         help="Device to route the console output to (default: '%s')" % \
             DEFAULT_CONSOLE_DEVICE)
+    parser.add_argument('-m', '--mode', type=str,
+        choices=BOOT_MODES,
+        default=DEFAULT_BOOT_MODE,
+        help="Boot mode (see manpage) (default: '%s')" % \
+            DEFAULT_BOOT_MODE)
 
     ##
     ## Certmgr options
@@ -257,6 +264,7 @@ def process_host(hostname):
             enc=encdata['parameters'],
             ksfilepath=ksfilepath,
             console=args.console,
+            mode=args.mode,
             user_kopts=args.aims_kopts)
         aims.pxeon(fqdn=fqdn,
             pxetarget=pxetarget)

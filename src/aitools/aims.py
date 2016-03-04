@@ -23,6 +23,11 @@ BOOT_TARGETS = {'SLC': "SLC%s%s",
                 'CentOS': "CC%s%s",
                 'RedHat': "RHEL_%s_%s"}
 
+BOOT_MODES_TO_AIMS_OPTS = {'bios': ['--bios'],
+                    'bioslgcy': ['--bios', '--lgcy'],
+                    'uefi': ['--uefi'],
+                    'arm64': ['--arm64']}
+
 class AimsClient(object):
     def __init__(self, dryrun=False):
         self.dryrun = dryrun
@@ -50,7 +55,7 @@ class AimsClient(object):
         logging.error("* aims2client before attempting to reinstall the host with its new name.")
 
     def addhost(self, fqdn, operatingsystem, architecture,
-            enc, ksfilepath, console, user_kopts=None):
+            enc, ksfilepath, console, mode, user_kopts=None):
         """
         Registers a host in AIMS for installation.
 
@@ -75,8 +80,8 @@ class AimsClient(object):
         target = self._translate_foreman_os_to_target(operatingsystem,
             architecture)
 
-        args = ["addhost", "--pxe",
-            "--hostname", shortify(fqdn),
+        args = ["addhost"] + self._resolv_boot_mode(mode) +\
+            ["--hostname", shortify(fqdn),
             "--name", target,
             "--kickstart", ksfilepath,
             "--kopts", "%s" % " ".join(kopts)]
@@ -144,6 +149,15 @@ class AimsClient(object):
 
         logging.error(hoststatus.strip())
         raise AiToolsAimsError("Sync status is not Y after all the attempts")
+
+    def _resolv_boot_mode(self, mode):
+        if mode == 'auto':
+            logging.info("Discovering boot mode...")
+            logging.warn("Autodiscovery not implemented yet. Defaulting to 'BIOS'")
+            mode = 'bios'
+
+        logging.info("Boot mode: '%s' (use --mode to override)" % mode)
+        return BOOT_MODES_TO_AIMS_OPTS[mode]
 
     def _translate_foreman_os_to_target(self, operatingsystem, architecture):
         """

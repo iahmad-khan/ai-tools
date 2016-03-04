@@ -27,6 +27,7 @@ echo "Setting up..."
 
 echo "Arguments"
 _expect 2 ai-installhost --config $CONF
+_expect 2 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode fail
 
 # Basically to test parameters :/
 echo "Installhost..."
@@ -34,6 +35,11 @@ _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --console tt
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch -k -a
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --report-to someuser
+_expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode auto
+_expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode uefi
+_expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode arm64
+_expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode bios
+_expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode bioslgcy
 
 echo "Tearing down..."
 rm -f $CONF
