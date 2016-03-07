@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.8
+Version: 9.9.0
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -88,6 +88,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Mar 7 2016 Steve Traylen <steve.traylen@cern.ch> 9.9.0-1
+- [ai-installhost] Adds new --mode to specify boot mode.
+
 * Tue Feb 16 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.8-1
 - [ai-disownhost] Handle AiToolsRogerNotFoundError.
 - [ai-rebuild-vm] Support --cc7 and friends a-la-ai-bs-vm.
