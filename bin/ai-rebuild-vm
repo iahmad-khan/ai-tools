@@ -13,21 +13,18 @@
 #  10 Foreman query failed
 #  20 Host staging failed
 #  30 Nova rebuild failed
-#  40 Glance call failed
 #  50 Openstack authorization error
 
 import sys
 import logging
 import argparse
 import argcomplete
-from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig
-from aitools.config import RogerConfig, GlanceConfig
+from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig, RogerConfig
 
 from aitools.foreman import ForemanClient
 from aitools.certmgr import CertmgrClient
 from aitools.roger import RogerClient
 from aitools.nova import NovaClient
-from aitools.glance import GlanceClient
 from aitools.openstack_auth_client import OpenstackAuthClient
 
 from aitools.common import configure_logging
@@ -43,7 +40,6 @@ from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
 from aitools.errors import AiToolsRogerNotAllowedError
 from aitools.errors import AiToolsRogerInternalServerError
 from aitools.errors import AiToolsOpenstackAuthError
-from aitools.errors import AiToolsGlanceError
 
 from aitools.completer import ForemanCompleter
 from aitools.completer import NovaCompleter
@@ -95,11 +91,6 @@ def parse_cmdline_args():
         const='slc6', help="Select latest SLC6 image available")
     images.add_argument('--cc7', action="store_const", dest='nova_image',
         const='cc7', help="Select latest CC7 image available")
-    ##
-    ## Glance options
-    ##
-    glance_config = GlanceConfig()
-    glance_config.add_standard_args(parser)
     ##
     ## Foreman options
     ##
@@ -189,17 +180,13 @@ def main():
 
             image = args.nova_image
             if image in IMAGES_METADATA:
-                glance = GlanceClient(auth_client, dryrun=args.dryrun)
-                image = glance.get_latest_image(*IMAGES_METADATA[image])
+                image = nova.get_latest_image(*IMAGES_METADATA[image])
             elif image and not is_valid_UUID(image):
                 image = nova.find_image_by_name(name=image)
             nova.rebuild(fqdn, image=image)
         except AiToolsNovaError, error:
             logging.error("Couldn't rebuild VM (%s)" % error)
             return 30
-        except AiToolsGlanceError, error:
-            logging.error("Glance operation failed (%s)" % error)
-            return 40
         except AiToolsOpenstackAuthError, error:
             logging.error("Authorization error: (%s)" % error)
             return 50
