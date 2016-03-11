@@ -5,6 +5,7 @@ import re
 import logging
 import novaclient.exceptions
 import requests
+import dateutil.parser
 from novaclient.v1_1 import client
 from aitools.config import NovaConfig
 from aitools.common import is_valid_UUID
@@ -135,6 +136,35 @@ class NovaClient():
         except novaclient.exceptions.ClientException, error:
             raise AiToolsNovaError(error)
         except novaclient.exceptions.ConnectionRefused, error:
+            raise AiToolsNovaError(error)
+
+    def get_latest_image(self, os_distro, os_distro_major, os_edition='Base',
+        architecture='x86_64'):
+        tenant = self.__init_client()
+        try:
+            images = [image.to_dict() for image in tenant.images.list()]
+            filtered_images = [image for image in images if
+                'metadata' in image and
+                'release_date' in image['metadata'] and
+                image['metadata'].get('os_distro') == os_distro and
+                image['metadata'].get('os_distro_major') == str(os_distro_major) and
+                image['metadata'].get('os_edition') == os_edition and
+                image['metadata'].get('architecture') == architecture]
+
+            if not filtered_images:
+                raise AiToolsNovaError("No available '%s%s' image for '%s' "
+                    "architecture" % (os_distro, os_distro_major, architecture))
+
+            latest = max(filtered_images,
+                key=lambda image: (int(image['metadata']['os_distro_minor']),
+                                   dateutil.parser.parse(image['metadata']['release_date'])))
+
+            logging.info("Using '%s' as the latest '%s%s' image available"
+                "" % (latest.get('name') or latest['id'], os_distro, os_distro_major))
+            return latest['id']
+
+        except (requests.exceptions.Timeout, novaclient.exceptions.ClientException,
+            novaclient.exceptions.ConnectionRefused) as error:
             raise AiToolsNovaError(error)
 
     def __init_client(self):

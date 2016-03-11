@@ -17,7 +17,6 @@
 #  30 Nova boot failed
 #  40 Cinder volume operation failed
 #  50 Openstack authorization error
-#  60 Glance call(s) failed
 
 import os
 import sys
@@ -25,15 +24,13 @@ import logging
 import argparse
 import argcomplete
 import re
-from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig
-from aitools.config import RogerConfig, GlanceConfig
+from aitools.config import ForemanConfig, CertmgrConfig, NovaConfig, RogerConfig
 
 from aitools.foreman import ForemanClient
 from aitools.certmgr import CertmgrClient
 from aitools.roger import RogerClient
 from aitools.nova import NovaClient
 from aitools.cinder import CinderClient
-from aitools.glance import GlanceClient
 from aitools.openstack_auth_client import OpenstackAuthClient
 
 from aitools.common import configure_logging
@@ -54,7 +51,6 @@ from aitools.errors import AiToolsRogerNotAllowedError, AiToolsRogerNotImplement
 from aitools.errors import AiToolsRogerInternalServerError
 from aitools.errors import AiToolsCinderError
 from aitools.errors import AiToolsOpenstackAuthError
-from aitools.errors import AiToolsGlanceError
 
 from aitools.completer import ForemanCompleter
 from aitools.completer import NovaCompleter
@@ -194,11 +190,6 @@ def parse_cmdline_args():
         action='append', default=[])
     parser.add_argument('--nova-parameter', type=str,
         help="Openstack metaparameter", action='append', default=[])
-    ##
-    ## Glance options
-    ##
-    glance_config = GlanceConfig()
-    glance_config.add_standard_args(parser)
     ##
     ## Foreman options
     ##
@@ -450,8 +441,7 @@ def main():
 
             image = args.nova_image
             if image in IMAGES_METADATA:
-                glance = GlanceClient(auth_client, dryrun=args.dryrun)
-                image = glance.get_latest_image(*IMAGES_METADATA[image])
+                image = nova.get_latest_image(*IMAGES_METADATA[image])
             elif image and not is_valid_UUID(image):
                 image = nova.find_image_by_name(name=image)
 
@@ -489,11 +479,6 @@ def main():
             if not args.foreman_disable:
                 foreman.delhost(fqdn)
             return 40
-        except AiToolsGlanceError, error:
-            logging.error("Glance operation failed (%s)" % error)
-            if not args.foreman_disable:
-                foreman.delhost(fqdn)
-            return 60
         except AiToolsOpenstackAuthError, error:
             logging.error("User not authorized to perform this operation:\n %s" % error)
             if not args.foreman_disable:
