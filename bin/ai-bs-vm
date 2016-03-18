@@ -375,7 +375,7 @@ def main():
         fqdn = generate_random_fqdn(args.prefix)
 
     if not validate_fqdn(fqdn):
-        logging.error("FQDN '%s' is not valid. See RFC 1123." % fqdn)
+        logging.error("'%s' is not valid (too long or not in the 'cern.ch' domain)" % fqdn)
         return 5
 
     print_summary(args, fqdn, openstack_env)

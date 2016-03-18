@@ -180,7 +180,7 @@ class NovaClient():
         return self.nova
 
     def __vmname_from_fqdn(self, fqdn):
-        return re.sub("\.cern\.ch$", "", fqdn)
+        return fqdn[:fqdn.index('.')]
 
     def __resolve_id(self, collection, resolvable):
         if is_valid_UUID(resolvable):
