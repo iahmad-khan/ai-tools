@@ -8,16 +8,20 @@ ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 \fI-g HOSTGROUP\fR
 \fI-i IMAGE\fR | \fI--slc5\fR | \fI --slc6\fR | \fI --cc7\fR
 | \fI--nova-boot-from-existing-volume VOLUMEID\fR
-[VMNAME]
+[FQDN]
 
 .SH DESCRIPTION
 ai-bs-vm is a Python command line tool to create Puppet-managed
 Foreman-enabled OpenStack VMs.
 .LP
-If no VM name is specified a random hostname will be generated
-based on a trimmed SHA1 hashed UNIX timestamp. The length is
-limited to 60 characters (prefix included). Using a prefix is
-recommended (see --prefix).
+The FQDN must be defined within the cern.ch domain and subdomains can be
+specified provided that they are no more than 64 characters long. If the input
+does not look like an FQDN, ai-bs-vm will append .cern.ch to it. Please don't
+use subdomains unless you're very sure about what you're doing.
+.LP
+If no FQDN is specified a random one will be generated based on a trimmed SHA1
+hashed UNIX timestamp and using cern.ch as its domain. The length is limited to
+60 characters (prefix included). Using a prefix is recommended (see --prefix).
 .LP
 The officially supported images are: CC7 Base, SLC6 Base,
 SLC6 Server and SLC5 Server, which contain a base system ready to be

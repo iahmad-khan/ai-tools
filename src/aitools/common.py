@@ -20,7 +20,7 @@ from collections import namedtuple
 from datetime import datetime
 
 from aitools.params import FQDN_VALIDATION_RE
-from aitools.params import HASHLEN
+from aitools.params import HASHLEN, MAX_FQDN_LEN
 from aitools.params import DEFAULT_LOGGING_LEVEL
 from aitools.errors import AiToolsInitError
 from aitools.config import CertmgrConfig
@@ -157,7 +157,7 @@ def validate_fqdn(fqdn):
     :param fqdn: the string to test
     :return: tests True if the string is an FQDN otherwise tests False
     """
-    return re.match(FQDN_VALIDATION_RE, fqdn)
+    return re.match(FQDN_VALIDATION_RE, fqdn) and len(fqdn) <= MAX_FQDN_LEN
 
 def fqdnify(h):
     """
@@ -217,10 +217,12 @@ def generate_userdata(args):
     return userdata.as_string()
 
 def append_domain(hostname):  # todo: replace by fqndify
-    if hostname is not None:
-        hostname = "%s.cern.ch" % hostname.split('.')[0].lower()
-    return hostname
+    if hostname is not None and '.' not in hostname:
+        logging.warning("Using default domain (cern.ch) as '%s' does not look "
+            "like an FQDN" % hostname)
+        return "%s.cern.ch" % hostname
 
+    return hostname
 
 def is_valid_UUID(value):
     try:
