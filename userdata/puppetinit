@@ -60,7 +60,7 @@ function set_repositories {
   echo "Setting AI repository..."
   curl http://linuxsoft.cern.ch/internal/repos/ai$OS_MAJOR_VERSION.repo > \
     /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
-  test -f /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
+  test -s /etc/yum.repos.d/ai$OS_MAJOR_VERSION.repo
 }
 execute_shell_block set_repositories 60 5 || unrecoverable_error "ai-repository"
 
