@@ -1,5 +1,5 @@
 before_script:
-  - yum install -y yum-utils yum-plugin-priorities
+  - yum install -y yum-utils yum-plugin-priorities krb5-workstation
 
 stages:
 - test
