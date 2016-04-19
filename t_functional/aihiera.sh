@@ -13,7 +13,7 @@ foreman_port = 8443
 foreman_timeout = 60
 
 [pdb]
-pdb_hostname = judy.cern.ch
+pdb_hostname = constable.cern.ch
 pdb_port = 9081
 pdb_timeout = 15
 
