@@ -96,21 +96,6 @@ class AimsClient(object):
         logging.info("KS for host '%s' uploaded to AIMS." % fqdn)
         return target
 
-    def pxeon(self, fqdn, pxetarget):
-        """
-        Makes sure that the host has the PXE flag on in AIMS
-
-        :param pxetarget: Boot target for the concerning host (e.g. "SLC65")
-        """
-        logging.info("Making sure PXE is ON for host '%s'..." % fqdn)
-        args = ["pxeon", shortify(fqdn), pxetarget]
-        if self.dryrun:
-            logging.info("pxeon not called because dryrun is enabled")
-            return
-
-        out, returncode = self._exec(args)
-        logging.info(out.strip())
-
     def showhost(self, fqdn):
         """ Gets what AIMS has to say about a given host. """
         logging.debug("Getting info for host '%s'..." % fqdn)
