@@ -266,8 +266,6 @@ def process_host(hostname):
             console=args.console,
             mode=args.mode,
             user_kopts=args.aims_kopts)
-        aims.pxeon(fqdn=fqdn,
-            pxetarget=pxetarget)
         aims.wait_for_readiness(fqdn=fqdn,
             attempts=args.aims_attempts)
     except AiToolsAimsError, error:
