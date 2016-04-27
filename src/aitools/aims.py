@@ -16,7 +16,7 @@ from aitools.common import shortify
 from aitools.errors import AiToolsAimsError
 
 A2C_BIN_PATH = "/usr/bin/aims2client"
-AIMS_DEFAULT_KOPTS = ['text', 'network', 'ks', 'ksdevice=bootif',
+AIMS_DEFAULT_KOPTS = ['text', 'network', 'ksdevice=bootif',
     'latefcload', 'nodmraid']
 
 BOOT_TARGETS = {'SLC': "SLC%s%s",
