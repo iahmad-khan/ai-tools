@@ -28,6 +28,8 @@ BOOT_MODES_TO_AIMS_OPTS = {'bios': ['--bios'],
                     'uefi': ['--uefi'],
                     'arm64': ['--arm64']}
 
+BIOSLGCY_PARAMETER_NAME = 'use_legacy_bios_pxeboot'
+
 class AimsClient(object):
     def __init__(self, dryrun=False):
         self.dryrun = dryrun
@@ -143,6 +145,10 @@ class AimsClient(object):
             if architecture['name'].upper() == 'AARCH64':
                 logging.debug("Architecture is AARCH64, boot mode: arm64")
                 mode = 'arm64'
+            elif BIOSLGCY_PARAMETER_NAME in enc:
+                logging.debug("%s is present, boot mode: bioslgcy" %
+                    BIOSLGCY_PARAMETER_NAME)
+                mode = 'bioslgcy'
             else:
                 mode = 'bios'
 
