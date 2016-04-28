@@ -80,7 +80,7 @@ class AimsClient(object):
         target = self._translate_foreman_os_to_target(operatingsystem,
             architecture)
 
-        args = ["addhost"] + self._resolv_boot_mode(mode) +\
+        args = ["addhost"] + self._resolv_boot_mode(mode, enc, architecture) +\
             ["--hostname", shortify(fqdn),
             "--name", target,
             "--kickstart", ksfilepath,
@@ -135,11 +135,16 @@ class AimsClient(object):
         logging.error(hoststatus.strip())
         raise AiToolsAimsError("Sync status is not Y after all the attempts")
 
-    def _resolv_boot_mode(self, mode):
+    def _resolv_boot_mode(self, mode, enc, architecture):
         if mode == 'auto':
             logging.info("Discovering boot mode...")
-            logging.warn("Autodiscovery not implemented yet. Defaulting to 'BIOS'")
-            mode = 'bios'
+            if 'name' not in architecture:
+                raise AiToolsAimsError("Unable to find architecture name")
+            if architecture['name'].upper() == 'AARCH64':
+                logging.debug("Architecture is AARCH64, boot mode: arm64")
+                mode = 'arm64'
+            else:
+                mode = 'bios'
 
         logging.info("Boot mode: '%s' (use --mode to override)" % mode)
         return BOOT_MODES_TO_AIMS_OPTS[mode]
