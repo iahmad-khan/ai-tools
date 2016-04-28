@@ -150,6 +150,7 @@ class AimsClient(object):
                     BIOSLGCY_PARAMETER_NAME)
                 mode = 'bioslgcy'
             else:
+                logging.debug("No hints found, defaulting to 'bios'")
                 mode = 'bios'
 
         logging.info("Boot mode: '%s' (use --mode to override)" % mode)
