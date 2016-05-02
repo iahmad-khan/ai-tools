@@ -16,7 +16,7 @@ from aitools.common import shortify
 from aitools.errors import AiToolsAimsError
 
 A2C_BIN_PATH = "/usr/bin/aims2client"
-AIMS_DEFAULT_KOPTS = ['text', 'network', 'ks', 'ksdevice=bootif',
+AIMS_DEFAULT_KOPTS = ['text', 'network', 'ksdevice=bootif',
     'latefcload', 'nodmraid']
 
 BOOT_TARGETS = {'SLC': "SLC%s%s",
@@ -27,6 +27,8 @@ BOOT_MODES_TO_AIMS_OPTS = {'bios': ['--bios'],
                     'bioslgcy': ['--bios', '--lgcy'],
                     'uefi': ['--uefi'],
                     'arm64': ['--arm64']}
+
+BIOSLGCY_PARAMETER_NAME = 'use_legacy_bios_pxeboot'
 
 class AimsClient(object):
     def __init__(self, dryrun=False):
@@ -80,7 +82,7 @@ class AimsClient(object):
         target = self._translate_foreman_os_to_target(operatingsystem,
             architecture)
 
-        args = ["addhost"] + self._resolv_boot_mode(mode) +\
+        args = ["addhost"] + self._resolv_boot_mode(mode, enc, architecture) +\
             ["--hostname", shortify(fqdn),
             "--name", target,
             "--kickstart", ksfilepath,
@@ -135,11 +137,21 @@ class AimsClient(object):
         logging.error(hoststatus.strip())
         raise AiToolsAimsError("Sync status is not Y after all the attempts")
 
-    def _resolv_boot_mode(self, mode):
+    def _resolv_boot_mode(self, mode, enc, architecture):
         if mode == 'auto':
             logging.info("Discovering boot mode...")
-            logging.warn("Autodiscovery not implemented yet. Defaulting to 'BIOS'")
-            mode = 'bios'
+            if 'name' not in architecture:
+                raise AiToolsAimsError("Unable to find architecture name")
+            if architecture['name'].upper() == 'AARCH64':
+                logging.debug("Architecture is AARCH64, boot mode: arm64")
+                mode = 'arm64'
+            elif BIOSLGCY_PARAMETER_NAME in enc:
+                logging.debug("%s is present, boot mode: bioslgcy" %
+                    BIOSLGCY_PARAMETER_NAME)
+                mode = 'bioslgcy'
+            else:
+                logging.debug("No hints found, defaulting to 'bios'")
+                mode = 'bios'
 
         logging.info("Boot mode: '%s' (use --mode to override)" % mode)
         return BOOT_MODES_TO_AIMS_OPTS[mode]
