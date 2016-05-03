@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.10.0
+Version: 9.11.0
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -88,6 +88,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue May 03 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.11.0-1
+- [ai-installhost] Stop passing 'ks' via the default kopts.
+- [ai-installhost] Auto discover ARM64 nodes.
+- [ai-installhost] Auto discover BIOS legacy nodes.
+
 * Mon Apr 25 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.10.0-1
 - [ai-installhost] Stop doing pxeon. Fixes AI-4533.
 - [ai-bs-vm] Fix pointer to documentation about availability zones.
