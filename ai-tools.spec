@@ -20,6 +20,7 @@ Requires: perl-YAML-Syck, python-requests, python-requests-kerberos
 Requires: python-argcomplete, python-humanize, teigi-client, python-dateutil
 Requires: python-openstackclient, python-cinderclient
 Requires: python-keystoneclient, python-novaclient
+Requires: python-keystoneclient-kerberos
 %if 0%{?el5} || 0%{?el6}
 Requires: python-argparse
 %endif
