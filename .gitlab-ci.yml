@@ -1,54 +1,62 @@
 before_script:
-  - yum install -y yum-utils yum-plugin-priorities krb5-workstation
+  - yum install -y yum-utils yum-plugin-priorities krb5-workstation make tar rpm-build python-devel bc
 
 stages:
 - test
 - cleanup_test
 
 # Matricies not supported?
-nosetests6:
+nosetests6_juno:
   tags: 
     - docker
   image: docker.cern.ch/linuxsupport/slc6-base:latest
   script:
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients6-juno-stable/x86_64/os
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/mirror.centos.org/centos/6/cloud/x86_64/openstack-juno/
+    - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-juno*
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai6-qa/x86_64/os
+    - make -f Makefile.koji rpm
+    - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
+    - yum --enablerepo=epel install -y --nogpgcheck  python-nose python-mock python-suds
     - cd t
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-6
-    - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
-    - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-argcomplete python-nose python-suds python-requests
-    - yum install -y --nogpgcheck python-openstackclient python-keystoneclient python-keystoneclient-kerberos python-cinderclient python-novaclient python-stevedore python-nose python-mock python-dateutil PyYAML
     - nosetests --exclude roger --exclude tbag
 
-nosetests7:
+nosetests7_juno:
   tags: 
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
   script:
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/repos.fedorapeople.org/repos/openstack/EOL/openstack-juno/epel-7/
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-juno-stable/x86_64/os/
+    - echo 'priority=1' >> /etc/yum.repos.d/*EOL*
+    - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
+    - make -f Makefile.koji rpm
+    - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
+    - yum install --nogpgcheck -y python-nose python2-mock python-suds
     - cd t
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-7
-    - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
-    - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-argcomplete python-nose python-suds python-requests
-    - yum install -y --nogpgcheck python-openstackclient python-keystoneclient python-keystoneclient-kerberos python-cinderclient python-novaclient python-stevedore python-nose python-mock python-dateutil PyYAML
     - nosetests --exclude roger --exclude tbag
 
-nosetests7cr:
+nosetests7_liberty:
   tags: 
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
   script:
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-liberty
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-liberty-stable/x86_64/os/
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstackclients*
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-liberty*
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
+    - make -f Makefile.koji rpm
+    - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
+    - yum install -y --nogpgcheck  python-nose python2-mock python-suds
     - cd t
-    - yum --enablerepo=cr --enablerepo={updates,extras,cern}-testing -y  update
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-7
-    - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
-    - yum --enablerepo=cr --enablerepo={updates,extras,cern}-testing install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-nose python-suds python-requests
-    - yum --enablerepo=cr --enablerepo={updates,extras,cern}-testing install -y --nogpgcheck python-openstackclient python-nose python-mock python-dateutil PyYAML
     - nosetests --exclude roger --exclude tbag
-
-
-
-
+  allow_failure: true
 
 # Ignore pwn tests for now. They need to be run by admins i.e. ai-config-team
-functionaltests6:
+functionaltests6_juno:
   tags:
     - docker
   image: docker.cern.ch/linuxsupport/slc6-base:latest
@@ -58,16 +66,42 @@ functionaltests6:
     - export OS_IDENTITY_API_VERSION=3
     - export OS_PROJECT_DOMAIN_ID=default
     - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/rdo/rdo-x86_64-stable/RPMS.openstack-rdo-juno-epel-6
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients6-juno-stable/x86_64/os
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/mirror.centos.org/centos/6/cloud/x86_64/openstack-juno/
+    - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-juno*
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai6-qa/x86_64/os
-    - echo 'priority=1' >> /etc/yum.repos.d/*rdo*
-    - yum install -y --nogpgcheck python-krbV python-requests-kerberos python-argparse python-argcomplete python-nose python-suds python-requests
-    - yum install -y --nogpgcheck python-openstackclient python-keystoneclient python-keystoneclient-kerberos python-cinderclient python-novaclient python-stevedore python-nose python-mock python-dateutil PyYAML bc hiera
+    - make -f Makefile.koji rpm
+    - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
     - echo $AITOOLCIPWD | kinit aitoolci@CERN.CH
     - export PATH=$PWD/bin:$PWD/scripts:$PATH
     - export PYTHONPATH=$PWD/src
     - cd t_functional
     - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
+
+functionaltests7_liberty:
+  tags: 
+    - docker
+  image: docker.cern.ch/linuxsupport/cc7-base:latest
+  script:
+    - export OS_AUTH_URL=https://keystone.cern.ch/krb/v3
+    - export OS_AUTH_TYPE=v3kerberos
+    - export OS_IDENTITY_API_VERSION=3
+    - export OS_PROJECT_DOMAIN_ID=default
+    - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-liberty
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-liberty-stable/x86_64/os/
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstackclients*
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-liberty*
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
+    - make -f Makefile.koji rpm
+    - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
+    - echo $AITOOLCIPWD | kinit aitoolci@CERN.CH
+    - export PATH=$PWD/bin:$PWD/scripts:$PATH
+    - export PYTHONPATH=$PWD/src
+    - cd t_functional
+    - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
+  allow_failure: true
 
 cleanup_test:
   stage: cleanup_test
