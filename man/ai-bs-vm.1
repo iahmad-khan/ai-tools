@@ -186,12 +186,16 @@ Timeout (in seconds) for Foreman operations.
 .TP
 .B --grow-partition
 Partition of the image disk (/dev/vda) to grow (default: 2).
+This option will have no effect if used alongside a CC7 image.
 .TP
 .B -h, --help
 Display usage and exit.
 .TP
 .B --nogrow
 Don't grow the image disk (/dev/vda) after the Puppet initialization.
+This option will have no effect if used alongside a CC7 image.
+A cloud-init file can be supplied using --userdata-dir argument
+to achieve the same result (see http://cern.ch/go/8rlT).
 .TP
 .B --noreboot
 Don't reboot after the Puppet initialization.
