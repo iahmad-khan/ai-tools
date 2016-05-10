@@ -521,10 +521,8 @@ sub InstallHost(@){
      	
     if ($dryrun){
 	print STDOUT "[INFO] Dryrun: build request for \"@host\" deliberately not submitted\n";
-    } else {
-	SetBuild(@host);
     }
- 
+
     # Are machines enabled in LAS?
     my @alarmed = ();
     for my $host (@host){
