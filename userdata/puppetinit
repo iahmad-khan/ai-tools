@@ -300,8 +300,8 @@ if [ $OS_MAJOR_VERSION -ge 6 ]
       && /usr/local/sbin/distro_sync.sh && cat /var/log/distro_sync.log \
       || echo "Distro_sync.sh not found. Either disabled or Puppet failed to install it."
     [[ $_NO_GROW -eq 0 ]] && [[ $OS_MAJOR_VERSION -lt 7 ]] \
-      && (echo "Growing /dev/vda$_GROWPART_VDA_PARTITION to use all the available space..." \
-      && growpart /dev/vda $_GROWPART_VDA_PARTITION)
+      && echo "Growing /dev/vda$_GROWPART_VDA_PARTITION to use all the available space..." \
+      && growpart /dev/vda $_GROWPART_VDA_PARTITION
     date
     cp /var/log/boot.log /var/log/firstboot.log
     chmod 600 /var/log/firstboot.log
