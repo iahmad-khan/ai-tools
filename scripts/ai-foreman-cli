@@ -521,10 +521,8 @@ sub InstallHost(@){
      	
     if ($dryrun){
 	print STDOUT "[INFO] Dryrun: build request for \"@host\" deliberately not submitted\n";
-    } else {
-	SetBuild(@host);
     }
- 
+
     # Are machines enabled in LAS?
     my @alarmed = ();
     for my $host (@host){
@@ -946,6 +944,7 @@ sub SetupAims($$){
     my %AimsImg = (
 	# CC
         "CentOS 7.1"  => "CC71",
+        "CentOS 7.2"  => "CC72",
 	# SLC
         "SLC 6.7"     => "SLC67",
         "SLC 6.6"     => "SLC66",
