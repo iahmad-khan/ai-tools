@@ -55,7 +55,7 @@ from aitools.errors import AiToolsOpenstackAuthError
 from aitools.completer import ForemanCompleter
 from aitools.completer import NovaCompleter
 
-DEFAULT_OPENSTACK_FLAVOR="m1.small"
+DEFAULT_OPENSTACK_FLAVOR="m2.small"
 DEFAULT_OPENSTACK_SECUTIRYGROUPS="default"
 
 DEFAULT_FOREMAN_ENVIRONMENT = 'production'
