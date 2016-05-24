@@ -218,8 +218,8 @@ def generate_userdata(args):
 
 def append_domain(hostname):  # todo: replace by fqndify
     if hostname is not None and '.' not in hostname:
-        logging.warning("Using default domain (cern.ch) as '%s' does not look "
-            "like an FQDN" % hostname)
+        print("Using default domain (cern.ch) as '%s' "
+              "does not look like an FQDN" % hostname)
         return "%s.cern.ch" % hostname
 
     return hostname
