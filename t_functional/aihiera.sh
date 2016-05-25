@@ -8,7 +8,7 @@ HIERADATA=$(mktemp -d)
 TESTNODE="aifcliftest99.cern.ch"
 cat > $CONF << EOF
 [foreman]
-foreman_hostname = judy.cern.ch
+foreman_hostname = ${FOREMAN_HOSTNAME}
 foreman_port = 8443
 foreman_timeout = 60
 

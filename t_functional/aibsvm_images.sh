@@ -10,7 +10,7 @@ cat > $CONF << EOF
 dereference_alias = true
 
 [foreman]
-foreman_hostname = judy.cern.ch
+foreman_hostname = ${FOREMAN_HOSTNAME}
 foreman_port = 8443
 foreman_timeout = 60
 
@@ -20,7 +20,7 @@ pdb_port = 9081
 pdb_timeout = 15
 
 [enc]
-enc_hostname = judy.cern.ch
+enc_hostname = ${FOREMAN_HOSTNAME}
 enc_port = 8443
 enc_timeout = 15
 
