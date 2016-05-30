@@ -79,6 +79,32 @@ functionaltests6_juno:
     - cd t_functional
     - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
 
+functionaltests6_juno_foremantest:
+  tags:
+    - docker
+  image: docker.cern.ch/linuxsupport/slc6-base:latest
+  script:
+    - export OS_AUTH_URL=https://keystone.cern.ch/krb/v3
+    - export OS_AUTH_TYPE=v3kerberos
+    - export OS_IDENTITY_API_VERSION=3
+    - export OS_PROJECT_DOMAIN_ID=default
+    - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients6-juno-stable/x86_64/os
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/mirror.centos.org/centos/6/cloud/x86_64/openstack-juno/
+    - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-juno*
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai6-qa/x86_64/os
+    - make -f Makefile.koji rpm
+    - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
+    - echo $AITOOLCIPWD | kinit aitoolci@CERN.CH
+    - export PATH=$PWD/bin:$PWD/scripts:$PATH
+    - export PYTHONPATH=$PWD/src
+    - export FOREMAN_HOSTNAME=foreman-test.cern.ch
+    - cd t_functional
+    - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
+  allow_failure: true
+
+
 functionaltests7_liberty:
   tags: 
     - docker
