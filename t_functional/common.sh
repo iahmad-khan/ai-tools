@@ -1,3 +1,5 @@
+FOREMAN_HOSTNAME=${FOREMAN_HOSTNAME:-"judy.cern.ch"}
+
 function _expect {
   ret=$1
   shift

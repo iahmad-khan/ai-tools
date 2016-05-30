@@ -4,7 +4,7 @@ source "$(dirname "$0")/common.sh"
 CONF=$(mktemp)
 cat > $CONF << EOF
 [foreman]
-foreman_hostname = judy.cern.ch
+foreman_hostname = ${FOREMAN_HOSTNAME}
 foreman_port = 8443
 foreman_timeout = 60
 EOF
