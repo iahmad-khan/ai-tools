@@ -28,7 +28,7 @@ def param_set(pargs):
             logging.error("The hostgroup '%s' could not be found in Foreman." % pargs.target)
             sys.exit(4)
         except AiToolsForemanError as e:
-            logging.error("Problem setting parameter in Foreman.")
+            logging.error("Problem setting parameter in Foreman. %s" % e)
             sys.exit(5)
     else:
         try:
@@ -39,7 +39,7 @@ def param_set(pargs):
             logging.error("The host '%s' could not be found in Foreman." % pargs.target)
             sys.exit(4)
         except AiToolsForemanError as e:
-            logging.error("Problem setting parameter in Foreman.")
+            logging.error("Problem setting parameter in Foreman. %s" % e)
             sys.exit(5)
 
 
