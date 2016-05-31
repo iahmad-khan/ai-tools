@@ -9,13 +9,17 @@ ai-create-environment-metadata \- Helper tool to create Puppet environment defin
 ai-create-environment-metadata is a command line tool to create YAML
 Puppet environment definitions to be consumed by the Puppet masters.
 .LP
-With it you can basically define what is the default branch and add
-overrides for modules and top-level hostgroups. The output is a YAML
-file ready to be added, committed and pushed. After some minutes, the
-new environment will show up in Foreman. Snapshots (static environments)
-are also supported.
+With it you can basically define what is the default branch and add overrides
+for modules and top-level hostgroups. The output is a YAML file ready to be
+added, committed and pushed to a topic branch. Instructions to follow on how
+to do this are printed on the screen.
 .LP
-More information: http://cern.ch/go/NF9S
+After some minutes once the merge request has been validated and automerged,
+the new environment will show up in Foreman.
+.LP
+Snapshots (static environments) are also supported.
+.LP
+More information: http://configdocs.web.cern.ch/configdocs/details/environments.html
 
 .TP
 .I Prerequisites:
