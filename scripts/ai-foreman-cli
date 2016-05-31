@@ -946,6 +946,7 @@ sub SetupAims($$){
         "CentOS 7.1"  => "CC71",
         "CentOS 7.2"  => "CC72",
 	# SLC
+        "SLC 6.8"     => "SLC68",
         "SLC 6.7"     => "SLC67",
         "SLC 6.6"     => "SLC66",
         "SLC 6.5"     => "SLC65",
@@ -962,6 +963,7 @@ sub SetupAims($$){
 	# RedHat
         "RedHat 7.2"  => "RHEL_7_2",
         "RedHat 7.1"  => "RHEL_7_1",
+        "RedHat 6.8"  => "RHEL_6_8",
         "RedHat 6.7"  => "RHEL_6_7",
         "RedHat 6.6"  => "RHEL_6_6",
         "RedHat 6.5"  => "RHEL_6_5",
