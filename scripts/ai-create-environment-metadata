@@ -15,6 +15,7 @@ import logging
 import yaml
 import re
 import datetime
+import time
 
 from aitools.git import GitClient
 
@@ -172,15 +173,11 @@ characters and underscore")
     environment_file.close()
 
     logging.info("Done.")
-    logging.info("To publish it just execute:")
-    logging.info("\tgit add %s.yaml && git commit -m \"Add environment %s\"" % \
-        (opts.environment, opts.environment))
-    logging.info("\tgit pull --rebase origin master && git push origin master")
 
     if opts.module or opts.hostgroup:
         logging.info("IMPORTANT: Please note that you're overriding \
-some modules/hostgroups.")
-        logging.info("Make sure that the specified branches \
+some modules/hostgroups:")
+        logging.info("Please make sure that the specified branches \
 exist in the corresponding repositories before pushing the new environment.")
 
     if opts.default is not None and opts.default not in ("master", "qa"):
@@ -192,6 +189,15 @@ have that branch.")
     if opts.snapshot is not None and opts.snapshot not in ('production', 'qa'):
         logging.info("IMPORTANT: You're basing your snapshot on a unconventional \
 environment ('%s')." % opts.snapshot)
+
+    logging.info("To publish the changes please execute:")
+    suggested_branch_name = str(int(time.time()))
+    logging.info("\tgit checkout -b %s" % suggested_branch_name)
+    logging.info("\tgit add %s.yaml && git commit -m \"Add environment %s\"" % \
+        (opts.environment, opts.environment))
+    logging.info("\tgit push origin %s" % suggested_branch_name)
+    logging.info("And now open a merge request by visiting:")
+    logging.info("\thttps://gitlab.cern.ch/ai/it-puppet-environments")
 
 if __name__ == '__main__':
     sys.exit(main())
