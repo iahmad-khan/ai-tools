@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.11.0
+Version: 9.12.0
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -89,6 +89,16 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Jun 02 2016 Steve Traylen <steve.traylen@cern.ch> 9.12.0-1
+- [ai-module-type] Command removed as not working.
+- [ai-create-environments-metadata] Use merge requests on gitlab.
+- [ai-foreman-cli] Add RHEL and SLC 6.8
+- [ai-hiera] Now correctly requires hiera.
+- [ai-bs-vm] Default flavor is now m2.small.
+- [ai-foreman-cli] Add CC 7.2
+- [ai-foreman-cli] Build flag no longer set when building.
+- [ai-bs-vm] --grow-partition ignored on CC7 since it happens anyway.
+
 * Tue May 03 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.11.0-1
 - [ai-installhost] Stop passing 'ks' via the default kopts.
 - [ai-installhost] Auto discover ARM64 nodes.
