@@ -81,7 +81,7 @@ class ForemanClient(HTTPClient):
         logging.debug("With payload: %s" % payload)
         if not self.dryrun:
             (code, body) = self.__do_api_request("post", "hosts", data=json.dumps(payload))
-            if code == requests.codes.ok:
+            if code == requests.codes.created:
                 logging.info("Host '%s' created in Foreman" % fqdn)
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['error']['full_messages'])

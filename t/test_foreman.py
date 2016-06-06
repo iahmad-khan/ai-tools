@@ -215,7 +215,7 @@ class TestForemanClient(unittest.TestCase):
     @patch.object(ForemanClient, '_ForemanClient__resolve_user_id',
         return_value=3)
     @patch.object(HTTPClient, 'do_request',
-        return_value=generate_response(requests.codes.OK, []))
+        return_value=generate_response(requests.codes.CREATED, []))
     def test_addhost_unmanaged(self, *args):
         self.client.addhost(fqdn='foo.cern.ch',
             environment='foo',
@@ -252,7 +252,7 @@ class TestForemanClient(unittest.TestCase):
     @patch.object(ForemanClient, '_ForemanClient__resolve_ptable_id',
         return_value=7)
     @patch.object(HTTPClient, 'do_request',
-        return_value=generate_response(requests.codes.OK, []))
+        return_value=generate_response(requests.codes.CREATED, []))
     def test_addhost_managed(self, *args):
         self.client.addhost(fqdn='foo.cern.ch',
             environment='foo',
@@ -311,7 +311,7 @@ class TestForemanClient(unittest.TestCase):
     @patch.object(ForemanClient, '_ForemanClient__resolve_ptable_id',
         return_value=7)
     @patch.object(HTTPClient, 'do_request',
-        return_value=generate_response(requests.codes.OK, []))
+        return_value=generate_response(requests.codes.CREATED, []))
     def test_addhost_unmanaged_fails_if_missing_fields_and_managed(self, *args):
         self.assertRaises(AiToolsForemanError, self.client.addhost,
             fqdn='foo.cern.ch',
