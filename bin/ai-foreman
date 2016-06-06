@@ -251,7 +251,7 @@ def delhost(foreman, args):
     errors = False
     try:
         data = get_hosts_by_filter_and_explicit_list(foreman, args)
-    except AiToolsAiForemanError, error:
+    except AiToolsForemanError, error:
         logging.warn(error)
         return 1
 
@@ -271,7 +271,7 @@ def delhost(foreman, args):
 def showhost(foreman, args):
     try:
         data = get_hosts_by_filter_and_explicit_list(foreman, args)
-    except AiToolsAiForemanError, error:
+    except AiToolsForemanError, error:
         logging.warn(error)
         return 1
 
@@ -282,7 +282,7 @@ def updatehost(foreman, args):
     errors = False
     try:
         data = get_hosts_by_filter_and_explicit_list(foreman, args)
-    except AiToolsAiForemanError, error:
+    except AiToolsForemanError, error:
         logging.warn(error)
         return 1
 
