@@ -78,6 +78,7 @@ functionaltests6_juno:
     - export PYTHONPATH=$PWD/src
     - cd t_functional
     - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
+  allow_failure: true
 
 functionaltests6_juno_foremantest:
   tags:
@@ -102,7 +103,7 @@ functionaltests6_juno_foremantest:
     - export FOREMAN_HOSTNAME=foreman-test.cern.ch
     - cd t_functional
     - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
-  allow_failure: true
+  allow_failure: false
 
 
 functionaltests7_liberty:
