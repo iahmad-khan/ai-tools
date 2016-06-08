@@ -73,8 +73,9 @@ _expect 5 ai-bs-vm --puppetinit-path $PUPPETINIT --config $CONF -d -g \
 
 echo "Testing Foreman integration..."
 ai-foreman --config $CONF delhost aifcliftest16.cern.ch # Can fail
-_expect 0 ai-bs-vm --puppetinit-path $PUPPETINIT --config $CONF --nova-disable \
-  --caserver-disable --roger-disable -g playground/aitoolstest --cc7 aifcliftest16.cern.ch
+_expect 0 ai-bs-vm -v --puppetinit-path $PUPPETINIT --config $CONF --nova-disable \
+  --caserver-disable --roger-disable -g playground/aitoolstest \
+  --foreman-parameter "foo=bar" --cc7 aifcliftest16.cern.ch
 _expect 0 ai-kill-vm --config $CONF --nova-disable --roger-disable aifcliftest16.cern.ch
 
 echo "Tearing down..."
