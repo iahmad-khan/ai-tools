@@ -7,6 +7,7 @@
 
 # Exit codes:
 #   0 all operations succeeded
+#   1 some operations failed
 #   2 bad command line
 #   4 Kerberos TGT not found or expired
 
@@ -251,7 +252,7 @@ def delhost(foreman, args):
     errors = False
     try:
         data = get_hosts_by_filter_and_explicit_list(foreman, args)
-    except AiToolsForemanError, error:
+    except (AiToolsForemanError, AiToolsAiForemanError), error:
         logging.warn(error)
         return 1
 
@@ -271,7 +272,7 @@ def delhost(foreman, args):
 def showhost(foreman, args):
     try:
         data = get_hosts_by_filter_and_explicit_list(foreman, args)
-    except AiToolsForemanError, error:
+    except (AiToolsForemanError, AiToolsAiForemanError), error:
         logging.warn(error)
         return 1
 
@@ -282,7 +283,7 @@ def updatehost(foreman, args):
     errors = False
     try:
         data = get_hosts_by_filter_and_explicit_list(foreman, args)
-    except AiToolsForemanError, error:
+    except (AiToolsForemanError, AiToolsAiForemanError), error:
         logging.warn(error)
         return 1
 
