@@ -48,6 +48,7 @@ _expect 0 ai-foreman --config $CONF showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF --no-header showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test1 showhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF --longtable -g playground/aitoolstest/test1 showhost
+_expect 1 ai-foreman --config $CONF -g willneverexist5555 showhost
 _expect 0 ai-foreman --config $CONF -z Name -z Environment -g playground/aitoolstest/test1 showhost
 _expect 0 ai-foreman --config $CONF -z Name -z Environment -s Environment -g playground/aitoolstest/test1 showhost
 
