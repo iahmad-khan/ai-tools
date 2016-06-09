@@ -4,7 +4,7 @@
 # Prerequesites:
 # - The script is executed inside of a clone of
 #   it-puppet-enviroments
-#   https://:@git.cern.ch/kerberos/it-puppet-environments
+#   https://:@gitlab.cern.ch:8443/ai/it-puppet-environments.git
 # Nacho Barrientos <nacho.barrientos@cern.ch>
 
 import sys
@@ -104,7 +104,7 @@ def main():
         logging.error("Current directory does not look like \
 a clone of it-puppet-environments")
         logging.error("git clone \
-https://:@git.cern.ch/kerberos/it-puppet-environments")
+https://:@gitlab.cern.ch:8443/ai/it-puppet-environments.git")
         return 3
 
     if os.path.exists(opts.environment + ".yaml"):
