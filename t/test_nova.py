@@ -6,7 +6,7 @@ from requests.exceptions import Timeout
 from aitools.errors import AiToolsNovaError
 from aitools.nova import NovaClient as NovaWrapper
 from aitools.openstack_auth_client import OpenstackAuthClient
-from novaclient.v1_1 import client as novaAPI
+from novaclient import client as novaAPI
 from novaclient.v1_1 import servers
 from novaclient.exceptions import ClientException, ConnectionRefused
 from uuid import uuid4
@@ -27,17 +27,18 @@ class TestNova(unittest.TestCase):
         return run_test_for_rebuild
 
 
-    @patch.object(novaAPI.Client, '__init__', side_effect=ClientException('Client exception!'))
+    @patch.object(novaAPI, 'Client', side_effect=ClientException('Client exception!'))
     def test_client_error_in_cinder_init_client(self, mock_client):
         self.assertRaises(AiToolsNovaError, self.tenant._NovaClient__init_client)
         mock_client.assert_called_once()
 
-    @patch.object(novaAPI.Client, '__init__', side_effect=ConnectionRefused)
+    @patch.object(novaAPI, 'Client', side_effect=ConnectionRefused)
     def test_connection_error_in_cinder_init_client(self, mock_client):
+        print novaAPI.Client
         self.assertRaises(AiToolsNovaError, self.tenant._NovaClient__init_client)
         mock_client.assert_called_once()
 
-    @patch.object(novaAPI.Client, '__init__', side_effect=Exception)
+    @patch.object(novaAPI, 'Client', side_effect=Exception)
     def test_uncaught_exception_in_cinder_init_client(self, mock_client):
         try:
             self.tenant._NovaClient__init_client()
