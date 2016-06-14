@@ -6,7 +6,7 @@ import logging
 import requests
 import cinderclient.exceptions
 import keystoneclient.openstack.common as keystone_common
-from cinderclient.v1 import client
+from cinderclient.v2 import client
 from aitools.errors import AiToolsCinderError
 
 class CinderClient():
@@ -23,19 +23,19 @@ class CinderClient():
         self.auth_client = auth_client
         self.dryrun = dryrun
 
-    def create(self, size, display_name=None, display_description=None,
+    def create(self, size, name=None, description=None,
                volume_type=None, imageRef=None):
         """
         Execute the Cinder create api call to create a Volume.
 
         :param size: the size used to create the volume
-        :param display_name: the name of the volume
-        :param display_description: the description of the volume
+        :param name: the name of the volume
+        :param description: the description of the volume
         :param volume_type: the type of the volume
         :param imageRef: the image to be turned into a volume
         :raise AiToolsCinderError: in case the API call fails
         """
-        vol_name = "'" + display_name + "' " if display_name else ''
+        vol_name = "'" + name + "' " if name else ''
         try:
             size_in_GB = int(size)
         except ValueError:
@@ -49,8 +49,8 @@ class CinderClient():
         try:
             if not self.dryrun:
                 volume = tenant.volumes.create(size=size_in_GB,
-                    display_name=display_name,
-                    display_description=display_description,
+                    name=name,
+                    description=description,
                     volume_type=volume_type,
                     imageRef=imageRef)
                 logging.info("Request to create volume %ssent" % vol_name)

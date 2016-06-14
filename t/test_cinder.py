@@ -6,8 +6,8 @@ from requests.exceptions import Timeout
 from aitools.cinder import CinderClient as CinderWrapper
 from aitools.errors import AiToolsCinderError
 from cinderclient.exceptions import ClientException, ConnectionError, NotFound
-from cinderclient.v1 import client as cinderAPI
-from cinderclient.v1 import volumes
+from cinderclient.v2 import client as cinderAPI
+from cinderclient.v2 import volumes
 from aitools.openstack_auth_client import OpenstackAuthClient
 
 
@@ -107,7 +107,7 @@ class TestCinder(unittest.TestCase):
         self.assertRaises(AiToolsCinderError, self.tenant.create, size=1)
         mock_tenant.assert_called_once_with()
         mock_tenant.return_value.volumes.create.assert_called_once_with(size=1, volume_type=None,
-            display_name=None, imageRef=None, display_description=None)
+            name=None, imageRef=None, description=None)
 
     @patch.object(CinderWrapper, '_CinderClient__init_client')
     def test_client_exception_in_cinder_create(self, mock_tenant):
@@ -115,7 +115,7 @@ class TestCinder(unittest.TestCase):
         self.assertRaises(AiToolsCinderError, self.tenant.create, size=1)
         mock_tenant.assert_called_once_with()
         mock_tenant.return_value.volumes.create.assert_called_once_with(size=1, volume_type=None,
-            display_name=None, imageRef=None, display_description=None)
+            name=None, imageRef=None, description=None)
 
     @patch.object(CinderWrapper, '_CinderClient__init_client')
     def test_connection_error_in_cinder_create(self, mock_tenant):
@@ -123,7 +123,7 @@ class TestCinder(unittest.TestCase):
         self.assertRaises(AiToolsCinderError, self.tenant.create, size='1TB')
         mock_tenant.assert_called_once_with()
         mock_tenant.return_value.volumes.create.assert_called_once_with(size=1024, volume_type=None,
-            display_name=None, imageRef=None, display_description=None)
+            name=None, imageRef=None, description=None)
 
     @patch.object(CinderWrapper, '_CinderClient__init_client')
     def test_uncaught_exception_in_cinder_create(self, mock_tenant):
@@ -135,7 +135,7 @@ class TestCinder(unittest.TestCase):
         except Exception:
             mock_tenant.assert_called_once_with()
             mock_tenant.return_value.volumes.create.assert_called_once_with(size=1, volume_type=None,
-            display_name=None, imageRef=None, display_description=None)
+            name=None, imageRef=None, description=None)
         else:
             self.fail("It should throw an exception")
 
@@ -145,7 +145,7 @@ class TestCinder(unittest.TestCase):
         volume = self.tenant.create(size='50GB')
         mock_tenant.assert_called_once_with()
         mock_tenant.return_value.volumes.create.assert_called_once_with(size=50, volume_type=None,
-            display_name=None, imageRef=None, display_description=None)
+            name=None, imageRef=None, description=None)
         self.assertTrue(isinstance(volume, volumes.Volume))
 
     @patch.object(CinderWrapper, 'get')
