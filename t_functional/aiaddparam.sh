@@ -5,6 +5,9 @@
 source "$(dirname "$0")/common.sh"
 
 CONF=$(mktemp)
+IN=$(mktemp)
+TESTNODE="aifcliftest99.cern.ch"
+
 cat > $CONF << EOF
 [foreman]
 foreman_hostname = ${FOREMAN_HOSTNAME}
@@ -19,10 +22,17 @@ cat $CONF
 _expect 0 ai-add-param --config $CONF --hg playground/aitoolstest foo bar
 _expect 0 ai-add-param --config $CONF --hg playground/aitoolstest foo bar
 _expect 0 ai-add-param --config $CONF --hg playground/aitoolstest foo bar2
-_expect 0 ai-add-param --config $CONF nachodev03.cern.ch foo2 bar2
-_expect 0 ai-add-param --config $CONF nachodev03.cern.ch foo2 bar2
-_expect 0 ai-add-param --config $CONF nachodev03.cern.ch foo2 bar3
+
+
+echo "$TESTNODE 192.168.0.1 aa:bb:cc:dd:ee:ff" >> $IN
+_expect 0 ai-foreman --config $CONF addhost -c playground/aitoolstest -e qa \
+  -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -r -i $IN
+
+_expect 0 ai-add-param --config $CONF $TESTNODE foo2 bar2
+_expect 5 ai-add-param --config $CONF $TESTNODE foo2 bar2
+_expect 5 ai-add-param --config $CONF $TESTNODE foo2 bar3
 
 echo "Tearing down..."
+_expect 0 ai-foreman --config $CONF delhost $TESTNODE
 rm -f $CONF
 echo "All tests passed :)"

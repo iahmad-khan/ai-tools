@@ -509,6 +509,23 @@ class TestForemanClient(unittest.TestCase):
 
     #### PARAMETERS STUFF ####
 
+    @patch.object(ForemanClient, '_ForemanClient__do_api_request',
+        return_value=(requests.codes.unprocessable_entity, {"error": ""}))
+    def test_addhostparameter(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.addhostparameter,
+            'foo.cern.ch', 'foo', 'bar')
+
+    @patch.object(ForemanClient, '_ForemanClient__do_api_request',
+        return_value=(requests.codes.unprocessable_entity, {
+                "error": {
+                    "id": "null",
+                    "full_messages": ["Name has already been taken"]
+                }
+        }))
+    def test_addhostparameter_full_messages(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.addhostparameter,
+            'foo.cern.ch', 'foo', 'bar')
+
     @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
         return_value=2)
     @patch.object(HTTPClient, 'do_request', side_effect=
