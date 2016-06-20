@@ -6,12 +6,13 @@ import logging
 import novaclient.exceptions
 import requests
 import dateutil.parser
-from novaclient.v1_1 import client
+from novaclient import client
 from aitools.config import NovaConfig
 from aitools.common import is_valid_UUID
 
 from aitools.errors import AiToolsNovaError
 
+NOVA_API_VERSION = 2
 
 class NovaClient():
     def __init__(self, auth_client, timeout=0, dryrun=False):
@@ -170,8 +171,8 @@ class NovaClient():
     def __init_client(self):
         if self.nova is None:
             try:
-                self.nova = client.Client(username='', api_key='', project_id='',
-                    auth_url='', timeout=self.timeout,
+                self.nova = client.Client(NOVA_API_VERSION, username='', api_key='',
+                    project_id='', auth_url='', timeout=self.timeout,
                     session=self.auth_client.session)
             except novaclient.exceptions.ClientException, error:
                 raise AiToolsNovaError(error)
