@@ -324,6 +324,11 @@ class ForemanClient(HTTPClient):
                 logging.info("Parameter '%s' created in Foreman" % name)
             elif code == requests.codes.not_found:
                 raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
+            elif code == requests.codes.unprocessable_entity:
+                message = "Foreman returned 'Unprocessable entity'. Does the parameter already exist?"
+                if hasattr(body['error'], 'full_messages'):
+                    message = ','.join(body['error']['full_messages'])
+                raise AiToolsForemanError(message)
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
