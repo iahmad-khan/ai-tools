@@ -468,14 +468,14 @@ class ForemanClient(HTTPClient):
             return (requests.codes.ok, {'power': 'dryrun'})
 
 
-    def get_ipmi_interface_id(self, fqdn):
+    def get_ipmi_interface(self, fqdn):
         try:
           code, response = self.__do_api_request('get',
             "hosts/%s/interfaces" % (fqdn))
           if code == requests.codes.ok:
             for interface in response['results']:
                 if interface['name'][-13:] == "-ipmi.cern.ch":
-                    return interface['id']
+                    return interface
             return None
           else:
             error_message = """Action: check if host %s and its ipmi interface exist in Foreman. [%d, %s]"""\
@@ -483,6 +483,14 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanNotFoundError(error_message)
         except AiToolsHTTPClientError, error:
           raise AiToolsForemanError(error)
+
+
+    def get_ipmi_interface_id(self, fqdn):
+        try:
+          interface = self.get_ipmi_interface(fqdn)
+          return interface['id'] if interface is not None else None
+        except (AiToolsForemanNotFoundError, AiToolsForemanError):
+          raise
 
 
     def add_ipmi_interface(self, host_fqdn, ipmi_fqdn, mac, username, password):
@@ -532,18 +540,22 @@ class ForemanClient(HTTPClient):
 
 
     def change_ipmi_credentials(self, fqdn, username, password):
-        ipmi_interface_id = self.get_ipmi_interface_id(fqdn)
-        ipmi_name = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
-        payload = {'name': ipmi_name,
+        ipmi_interface = self.get_ipmi_interface(fqdn)
+        payload = {
+          'name': fqdn.replace(".cern.ch", "-ipmi.cern.ch"),
+          'ip': ipmi_interface['ip'],
+          'mac': ipmi_interface['mac'],
           'username': username,
           'password': password,
+          'provider': ipmi_interface['provider'],
+          'type': ipmi_interface['type'],
         }
-        if ipmi_interface_id is None:
+        if ipmi_interface is None:
           logging.error("Unable to find the ID of the IPMI interface in Foreman")
           raise AiToolsForemanNotFoundError("Unable to find the ID of the IPMI interface in Foreman")
         try:
           code, response = self.__do_api_request('put',
-            "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id),
+            "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface['id']),
             json.dumps(payload))
           if code == requests.codes.ok:
             logging.info("IPMI credentials changed for %s" % payload['name'])
@@ -560,7 +572,10 @@ class ForemanClient(HTTPClient):
           code, response = self.__do_api_request('get',
             "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id))
           if code == requests.codes.ok:
-            return response['username'], response['password']
+            try:
+              return response['username'], response['password']
+            except KeyError:
+              raise AiToolsForemanError('Username and password not found in the interface')
           else:
             raise AiToolsForemanError("%d: %s" % (code, response))
 
