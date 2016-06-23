@@ -19,13 +19,13 @@ get-creds
 Retrieve the IPMI username and password
 .TP
 rename-ipmi
-Change the name of the IPMI interface name in Foreman 
+Change the name of the IPMI interface name in Foreman
 .TP
 change-ipmi-creds
 Change the IPMI credentials (in Foreman) for a node
 .SH COMMANDS OVERVIEW
 .SS ai-ipmi add-ipmi
-usage: ai-ipmi add-ipmi FQDN MAC username password 
+usage: ai-ipmi add-ipmi FQDN MAC username password
 .IP
 .TP
 .B "positional arguments:"
@@ -41,6 +41,11 @@ the IPMI username stored on the BMC
 .TP
 password
 the IPMI password stored on the BMC
+.TP
+.B "optional arguments:"
+.TP
+--ipmi-ip ip
+Set the IP for the interface to avoid a DNS lookup. This option should only be used for testing purposes.
 .SS ai-ipmi get-creds
 usage: ai-ipmi get-creds host_FQDN
 .IP
@@ -59,10 +64,10 @@ host_FQDN
 The host whose IPMI interface name you'd like to correct
 .TP
 IPMI_FQDN
-The new FQDN of the IPMI interface. 
+The new FQDN of the IPMI interface.
 If not specified, it will be automatically generated from the hostname, e.g. hostname-ipmi.cern.ch
 .SS ai-ipmi change-ipmi-creds
-usage: ai-ipmi change-ipmi-creds host_FQDN username password 
+usage: ai-ipmi change-ipmi-creds host_FQDN --user username --pw password
 .IP
 .TP
 .B "positional arguments:"
@@ -70,10 +75,12 @@ usage: ai-ipmi change-ipmi-creds host_FQDN username password
 host_FQDN
 the host to change the IPMI credentials for
 .TP
-username
+.B "optional arguments:"
+.TP
+--user username
 the IPMI username
 .TP
-password
+--pw password
 the IPMI password
 .SH GLOBAL OPTIONS
 .TP
