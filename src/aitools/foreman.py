@@ -493,11 +493,11 @@ class ForemanClient(HTTPClient):
           raise
 
 
-    def add_ipmi_interface(self, host_fqdn, ipmi_fqdn, mac, username, password):
+    def add_ipmi_interface(self, host_fqdn, ipmi_fqdn, ipmi_ip, mac, username, password):
         # Implementing this as the public API does not support
         # adding IPMI interfaces with the host
         payload = {'name': ipmi_fqdn,
-          'ip': socket.gethostbyname(ipmi_fqdn),
+          'ip': ipmi_ip or socket.gethostbyname(ipmi_fqdn),
           'mac':mac,
           'username': username,
           'password': password,
