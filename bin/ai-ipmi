@@ -17,7 +17,7 @@ def add_main(pargs):
 
     f = ForemanClient(deref_alias=pargs.dereference_alias)
     try:
-        f.add_ipmi_interface(pargs.fqdn, pargs.ipmi_FQDN, pargs.mac, pargs.user, pargs.pw)
+        f.add_ipmi_interface(pargs.fqdn, pargs.ipmi_FQDN, pargs.ipmi_ip, pargs.mac, pargs.user, pargs.pw)
     except AiToolsForemanError:
         logging.error("Failed when adding IPMI interface to %s" % (pargs.fqdn))
         sys.exit(1)
@@ -54,7 +54,7 @@ def rename_main(pargs):
 def getcred_main(pargs):
     ForemanConfig().read_config_and_override_with_pargs(pargs)
     configure_logging(pargs)
-    
+
     f = ForemanClient(deref_alias=pargs.dereference_alias)
     try:
         (user, pw) = f.get_ipmi_credentials(pargs.fqdn)
@@ -81,7 +81,8 @@ def main():
 
     add_parser = subparsers.add_parser("add-ipmi", help="Add an IPMI interface definition to a node")
     add_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
-    add_parser.add_argument("ipmi_FQDN", metavar="ipmi_FQDN", help="The name of the IPMI interface") 
+    add_parser.add_argument("ipmi_FQDN", metavar="ipmi_FQDN", help="The name of the IPMI interface")
+    add_parser.add_argument("-i", "--ipmi-ip", metavar="ipmi_ip", default=None, help="Set the IP for the interface to avoid a DNS lookup")
     add_parser.add_argument("mac", metavar="MAC-address", help="MAC address of new interface")
     add_parser.add_argument("user", metavar="username", help="IPMI username")
     add_parser.add_argument("pw", metavar="password", help="IPMI password")

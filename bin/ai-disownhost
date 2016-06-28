@@ -204,13 +204,15 @@ def main():
         deref_alias=args.dereference_alias)
     roger = RogerClient(dryrun=args.dryrun,
         deref_alias=args.dereference_alias)
-    try:
-        landb = LandbClient(dryrun=args.dryrun,
-            username=krb_principal.replace("@CERN.CH", ""),
-            password=args.landb_pass)
-    except AiToolsLandbError, error:
-        logging.error("Failed to initialize the Landb client (%s)", error)
-        return 10
+    landb = None
+    if not args.landb_disable:
+        try:
+            landb = LandbClient(dryrun=args.dryrun,
+                username=krb_principal.replace("@CERN.CH", ""),
+                password=args.landb_pass)
+        except AiToolsLandbError, error:
+            logging.error("Failed to initialize the Landb client (%s)", error)
+            return 10
 
     failures = False
     table = PrettyTable(['FQDN/Hostname', 'Status', 'Details'])
