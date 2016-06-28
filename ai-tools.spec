@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.12.1
+Version: 9.12.2
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -89,6 +89,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Jun 28 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.2-1
+- Foreman 1.11 compatibility.
+
 * Tue Jun 21 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.1-1
 - [ai-bs-vm, ai-rebuild-vm, ai-kill-vm] Use {Nova, Cinder}Client API v2.
 - [ai-foreman] Better exception handling.
