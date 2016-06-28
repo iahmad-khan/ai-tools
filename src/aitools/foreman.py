@@ -542,7 +542,7 @@ class ForemanClient(HTTPClient):
     def change_ipmi_credentials(self, fqdn, username, password):
         ipmi_interface = self.get_ipmi_interface(fqdn)
         payload = {
-          'name': fqdn.replace(".cern.ch", "-ipmi.cern.ch"),
+          'name': ipmi_interface['name'],
           'ip': ipmi_interface['ip'],
           'mac': ipmi_interface['mac'],
           'username': username,
