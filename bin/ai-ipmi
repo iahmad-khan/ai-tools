@@ -82,7 +82,7 @@ def main():
     add_parser = subparsers.add_parser("add-ipmi", help="Add an IPMI interface definition to a node")
     add_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
     add_parser.add_argument("ipmi_FQDN", metavar="ipmi_FQDN", help="The name of the IPMI interface")
-    add_parser.add_argument("-i", "--ipmi-ip", metavar="ipmi_ip", default=None, help="Set the IP for the interface to avoid DNS lookup")
+    add_parser.add_argument("-i", "--ipmi-ip", metavar="ipmi_ip", default=None, help="Set the IP for the interface to avoid a DNS lookup")
     add_parser.add_argument("mac", metavar="MAC-address", help="MAC address of new interface")
     add_parser.add_argument("user", metavar="username", help="IPMI username")
     add_parser.add_argument("pw", metavar="password", help="IPMI password")
