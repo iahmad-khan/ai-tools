@@ -351,49 +351,113 @@ class TestForemanClient(unittest.TestCase):
     @patch.object(HTTPClient, 'do_request',
         return_value=generate_response(requests.codes.OK, []))
     def test_updatehost_single_field(self, *args):
-        self.client.updatehost(fqdn='foo.cern.ch',
+        host_payload = {
+          'name': 'foo.cern.ch',
+          'environment_id': 1,
+          'hostgroup_id': 1,
+          'operatingsystem_id': 1,
+          'medium_id': 1,
+          'architecture_id': 1,
+          'comment': '',
+          'ptable_id': 1,
+          'mac': 'aa:bb:cc:dd:ee:ff',
+          'ip': '192.168.1.1',
+        }
+        self.client.updatehost(host=host_payload,
             hostgroup='bar/baz')
         self.client._ForemanClient__resolve_hostgroup_id.\
             was_called_once_with("bar/baz")
-        expected_payload = {'host':{'hostgroup_id': 2}}
+        host_payload['hostgroup_id'] = 2
+        expected_payload = {'host': host_payload}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
-                ANY, json.dumps(expected_payload))
+                ANY, ANY)
+        call = super(ForemanClient,self.client).do_request.call_args
+        returned_payload = json.loads(call[0][3])
+        self.assertEqual(expected_payload, returned_payload)
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',
         return_value=6)
     @patch.object(HTTPClient, 'do_request',
         return_value=generate_response(requests.codes.NOT_FOUND, []))
     def test_updatehost_not_found(self, *args):
+        host_payload = {
+          'name': 'foo.cern.ch',
+          'environment_id': 1,
+          'hostgroup_id': 1,
+          'operatingsystem_id': 1,
+          'medium_id': 1,
+          'architecture_id': 1,
+          'comment': '',
+          'ptable_id': 1,
+          'mac': 'aa:bb:cc:dd:ee:ff',
+          'ip': '192.168.1.1',
+        }
         self.assertRaises(AiToolsForemanError, self.client.updatehost,
-            fqdn='foo.cern.ch', environment='foo1')
+            host=host_payload, environment='foo1')
         self.client._ForemanClient__resolve_environment_id.\
             was_called_once_with("foo1")
-        expected_payload = {'host':{'environment_id': 6}}
+        host_payload['environment_id'] = 6
+        expected_payload = {'host': host_payload}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
-                ANY, json.dumps(expected_payload))
+                ANY, ANY)
+        call = super(ForemanClient,self.client).do_request.call_args
+        returned_payload = json.loads(call[0][3])
+        self.assertEqual(expected_payload, returned_payload)
 
     @patch.object(HTTPClient, 'do_request',
         return_value=generate_response(requests.codes.UNPROCESSABLE_ENTITY,
             {'error': {'full_messages': ['MAC not valid']}}))
     def test_updatehost_bad_data(self, *args):
+        host_payload = {
+          'name': 'foo.cern.ch',
+          'environment_id': 1,
+          'hostgroup_id': 1,
+          'operatingsystem_id': 1,
+          'medium_id': 1,
+          'architecture_id': 1,
+          'comment': '',
+          'ptable_id': 1,
+          'mac': 'aa:bb:cc:dd:ee:ff',
+          'ip': '192.168.1.1',
+        }
         self.assertRaises(AiToolsForemanError, self.client.updatehost,
-            fqdn='foo.cern.ch', mac='foo1')
-        expected_payload = {'host':{'mac': 'foo1'}}
+            host=host_payload, mac='foo1')
+        host_payload['mac'] = 'foo1'
+        expected_payload = {'host': host_payload}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
-                ANY, json.dumps(expected_payload))
+                ANY, ANY)
+        call = super(ForemanClient,self.client).do_request.call_args
+        returned_payload = json.loads(call[0][3])
+        self.assertEqual(expected_payload, returned_payload)
 
     @patch.object(HTTPClient, 'do_request',
         return_value=generate_response(requests.codes.INTERNAL_SERVER_ERROR, ""))
     def test_updatehost_ise(self, *args):
+        host_payload = {
+          'name': 'foo.cern.ch',
+          'environment_id': 1,
+          'hostgroup_id': 1,
+          'operatingsystem_id': 1,
+          'medium_id': 1,
+          'architecture_id': 1,
+          'comment': '',
+          'ptable_id': 1,
+          'mac': 'aa:bb:cc:dd:ee:ff',
+          'ip': '192.168.1.1',
+        }
         self.assertRaises(AiToolsForemanError, self.client.updatehost,
-            fqdn='foo.cern.ch', mac='foo1')
-        expected_payload = {'host':{'mac': 'foo1'}}
+            host=host_payload, mac='foo1')
+        host_payload['mac'] = 'foo1'
+        expected_payload = {'host': host_payload}
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
-                ANY, json.dumps(expected_payload))
+                ANY, ANY)
+        call = super(ForemanClient,self.client).do_request.call_args
+        returned_payload = json.loads(call[0][3])
+        self.assertEqual(expected_payload, returned_payload)
 
     #### GETHOST ####
 
