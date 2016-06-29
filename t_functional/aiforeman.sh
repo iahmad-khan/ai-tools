@@ -54,6 +54,13 @@ _expect 0 ai-foreman --config $CONF -z Name -z Environment -s Environment -g pla
 
 echo "Updatehost..."
 _expect 0 ai-foreman --config $CONF updatehost -e production aifcliftest16.cern.ch
+
+# Test if environment is preserved after update the host (targets issues with Foreman v2 API)
+_expect 1 ai-foreman --config $CONF updatehost aifcliftest16.cern.ch \
+  -c playground/aitoolstest --after | grep -i None
+_expect 1 ai-foreman --config $CONF updatehost aifcliftest16.cern.ch \
+  -e qa --after | grep -i None
+
 _expect 1 ai-foreman --config $CONF updatehost --mac foo aifcliftest16.cern.ch
 _expect 1 ai-foreman --config $CONF updatehost -o "\"CentOS 7.0\"" \
   aifcliftest17.cern.ch
