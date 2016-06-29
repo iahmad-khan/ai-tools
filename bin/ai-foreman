@@ -298,7 +298,7 @@ def updatehost(foreman, args):
     errors_table.align = 'l'
     for count, host in enumerate(data):
         try:
-            foreman.updatehost(host['name'], **to_update)
+            foreman.updatehost(host, **to_update)
             print_progress_meter(count, len(data))
         except AiToolsForemanError, error:
             errors_table.add_row([host['name'], error])

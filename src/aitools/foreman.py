@@ -92,13 +92,13 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Host '%s' not added because dryrun is enabled" % fqdn)
 
-    def updatehost(self, fqdn, environment=None, hostgroup=None,
+    def updatehost(self, host, environment=None, hostgroup=None,
             operatingsystem=None, medium=None, architecture=None,
             comment=None, ptable=None, mac=None, ip=None):
         """
         Updates a host entry in Foreman.
 
-        :param fqdn: the fqdn of the host to be modified
+        :param host: host data as returned by GET /api/hosts
         :param environment: the environment for the host ("production")
         :param hostgroup: the hostgroup for the host ("foo/bar")
         :param operatingsystem: the operatingsystem for the host ("SLC 6.6")
@@ -111,8 +111,10 @@ class ForemanClient(HTTPClient):
         ...
         :raise AiToolsForemanError: in case the host update fails
         """
-        logging.debug("Updating host '%s' in Foreman..." % fqdn)
-        payload = {}
+        logging.debug("Updating host '%s' in Foreman..." % host['name'])
+        payload_keys = ['name', 'environment_id', 'hostgroup_id', 'operatingsystem_id',
+                        'medium_id', 'architecture_id', 'comment', 'ptable_id', 'mac', 'ip' ]
+        payload = dict((key, host[key]) for key in payload_keys)
         if environment:
             payload['environment_id'] = self.__resolve_environment_id(environment)
         if hostgroup:
@@ -136,20 +138,20 @@ class ForemanClient(HTTPClient):
 
         logging.debug("With payload: %s" % payload)
         if not self.dryrun:
-            (code, body) = self.__do_api_request("put", "hosts/%s" % fqdn,
+            (code, body) = self.__do_api_request("put", "hosts/%s" % host['name'],
                 data=json.dumps(payload))
             if code == requests.codes.ok:
-                logging.debug("Host '%s' updated" % fqdn)
+                logging.debug("Host '%s' updated" % host['name'])
             elif code == requests.codes.not_found:
-                raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % fqdn)
+                raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % host['name'])
             elif code == requests.codes.unprocessable_entity:
                 error = ','.join(body['error']['full_messages'])
                 raise AiToolsForemanError(error)
             else:
                 raise AiToolsForemanError("Unexpected error code (%i) when trying to "
-                    "update '%s' in Foreman" % (code, fqdn))
+                    "update '%s' in Foreman" % (code, host['name']))
         else:
-            logging.info("Host '%s' not updated because dryrun is enabled" % fqdn)
+            logging.info("Host '%s' not updated because dryrun is enabled" % host['name'])
 
     def delhost(self, fqdn):
         """
