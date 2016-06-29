@@ -152,7 +152,7 @@ def disown(hostname, args, config, foreman, roger, landb, table):
 
         logging.info("Moving host to %s...", config.hostgroup)
         try:
-            foreman.updatehost(fqdn, hostgroup=config.hostgroup)
+            foreman.updatehost(host, hostgroup=config.hostgroup)
         except AiToolsForemanError, error:
             table.add_row([fqdn, 'KO', "Couldn't change hostgroup (%s)" % error])
             return 3
@@ -173,7 +173,7 @@ def disown(hostname, args, config, foreman, roger, landb, table):
             if not args.foreman_disable:
                 logging.warn("Moving host back to %s...", old_hostgroup)
                 try:
-                    foreman.updatehost(fqdn, hostgroup=old_hostgroup)
+                    foreman.updatehost(host, hostgroup=old_hostgroup)
                 except AiToolsForemanError, error:
                     err_msg = "%s and couldn't move it back to origin hostgroup (%s)" % \
                         (err_msg, error)
