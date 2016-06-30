@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.12.2
+Version: 9.12.3
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -89,6 +89,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Jun 30 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.3-1
+- [ai-foreman] Fix a bug that could lead to hosts with no environment after
+  updating them.
+
 * Tue Jun 28 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.2-1
 - Foreman 1.11 compatibility.
 
