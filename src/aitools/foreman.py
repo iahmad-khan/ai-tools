@@ -296,7 +296,13 @@ class ForemanClient(HTTPClient):
             new_interface_name = newfqdn.replace(".cern.ch", "-ipmi.cern.ch")
 
             # Now update the IPMI interface
-            payload = {"interface": {"name": new_interface_name}}
+            payload = {
+                "interface": {
+                    "name": new_interface_name,
+                    "provider": body['results'][0]["provider"],
+                    "type": body['results'][0]["type"],
+                }
+            }
             (code, body) = self.__do_api_request("put", "hosts/%s/interfaces/%s" % (newfqdn, interface_id),
                                 data=json.dumps(payload))
             if code == requests.codes.ok:
