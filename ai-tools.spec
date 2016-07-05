@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.12.3
+Version: 9.12.4
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -89,6 +89,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Jul 05 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.4-1
+- [ai-rename-host] Preserve the type and the provider of IPMI interfaces when
+  renaming.
+- [all] Send warning to STDERR instead when the host is not an FQDN.
+
 * Thu Jun 30 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.3-1
 - [ai-foreman] Fix a bug that could lead to hosts with no environment after
   updating them.
