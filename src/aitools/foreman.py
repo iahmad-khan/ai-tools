@@ -270,6 +270,11 @@ class ForemanClient(HTTPClient):
                 logging.info("Rename '%s' to '%s' OK in Foreman" % (oldfqdn,newfqdn))
             elif code == requests.codes.not_found:
                 raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % oldfqdn)
+            elif code == requests.codes.unprocessable_entity:
+                raise AiToolsForemanError("Rename of '%s' failed. Is '%s' already registered?"
+                    % (oldfqdn, newfqdn))
+            else:
+                raise AiToolsForemanError("An error occurred when changing host name to '%s'" % newfqdn)
 
             # update the certname on the new host name to ensure we have at least one aufit record on the
             # new host - needed to make YAML generation work
@@ -288,10 +293,15 @@ class ForemanClient(HTTPClient):
             if body['subtotal'] == 0:
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
-            if body['results'][0]["provider"] != "IPMI":
+            interface = None
+            for result in body['results']:
+                if 'provider' in result and result["provider"] == "IPMI":
+                    interface = result
+                    break
+            if not interface:
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
-            interface_id = body['results'][0]["id"]
+            interface_id = interface["id"]
 
             new_interface_name = newfqdn.replace(".cern.ch", "-ipmi.cern.ch")
 
@@ -299,8 +309,8 @@ class ForemanClient(HTTPClient):
             payload = {
                 "interface": {
                     "name": new_interface_name,
-                    "provider": body['results'][0]["provider"],
-                    "type": body['results'][0]["type"],
+                    "provider": interface["provider"],
+                    "type": interface["type"],
                 }
             }
             (code, body) = self.__do_api_request("put", "hosts/%s/interfaces/%s" % (newfqdn, interface_id),
