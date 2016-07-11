@@ -274,7 +274,7 @@ class ForemanClient(HTTPClient):
                 raise AiToolsForemanError("Rename of '%s' failed. Is '%s' already registered?"
                     % oldfqdn, newfqdn)
             else:
-                raise AiToolsForemanError("Error while changing host name to '%s'" % newfqdn)
+                raise AiToolsForemanError("An error occurred when changing host name to '%s'" % newfqdn)
 
             # update the certname on the new host name to ensure we have at least one aufit record on the
             # new host - needed to make YAML generation work
