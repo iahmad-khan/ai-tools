@@ -270,6 +270,11 @@ class ForemanClient(HTTPClient):
                 logging.info("Rename '%s' to '%s' OK in Foreman" % (oldfqdn,newfqdn))
             elif code == requests.codes.not_found:
                 raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % oldfqdn)
+            elif code == requests.codes.unprocessable_entity:
+                raise AiToolsForemanError("Rename of '%s' failed. Is '%s' already registered?"
+                    % oldfqdn, newfqdn)
+            else:
+                raise AiToolsForemanError("Error while changing host name to '%s'" % newfqdn)
 
             # update the certname on the new host name to ensure we have at least one aufit record on the
             # new host - needed to make YAML generation work
