@@ -288,10 +288,15 @@ class ForemanClient(HTTPClient):
             if body['subtotal'] == 0:
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
-            if body['results'][0]["provider"] != "IPMI":
+            interface = None
+            for result in body['results']:
+                if 'provider' in result and result["provider"] == "IPMI":
+                    interface = result
+                    break
+            if not interface:
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
-            interface_id = body['results'][0]["id"]
+            interface_id = interface["id"]
 
             new_interface_name = newfqdn.replace(".cern.ch", "-ipmi.cern.ch")
 
@@ -299,8 +304,8 @@ class ForemanClient(HTTPClient):
             payload = {
                 "interface": {
                     "name": new_interface_name,
-                    "provider": body['results'][0]["provider"],
-                    "type": body['results'][0]["type"],
+                    "provider": interface["provider"],
+                    "type": interface["type"],
                 }
             }
             (code, body) = self.__do_api_request("put", "hosts/%s/interfaces/%s" % (newfqdn, interface_id),
