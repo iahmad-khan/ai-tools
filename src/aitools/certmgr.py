@@ -52,7 +52,7 @@ class CertmgrClient(HTTPClient):
             if code == requests.codes.created:
                 logging.info("Host '%s' staged" % fqdn)
             elif code == requests.codes.unauthorized or code == requests.codes.forbidden:
-                logging.info("Not authorized to stage host '%s'")
+                logging.info("Not authorized to stage host '%s'" % fqdn)
         else:
             logging.info("Host '%s' not staged because dryrun is enabled" % fqdn)
 
