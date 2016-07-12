@@ -115,6 +115,7 @@ $browser->default_header('Accept' => "application/json");
 $browser->default_header('Content-Type' => "application/json");
 # See commit log for further details
 
+my %fmdata = ();
 
 #
 # Easy things first.
@@ -130,12 +131,12 @@ if ($action eq "delhost"){
 #
 # Resolve Foreman ID's, update host data.
 #
-my %fmdata = ForemanConfig($browser,$url);
+#my %fmdata = ForemanConfig($browser,$url);
 
-if (not keys %fmdata) {
-    print "[ERROR] Foreman's config retrieval failed\n";
-    exit 1;
-}
+#if (not keys %fmdata) {
+#    print "[ERROR] Foreman's config retrieval failed\n";
+#    exit 1;
+#}
 
 #
 # More easy things.
@@ -147,7 +148,7 @@ if ($action eq "showhost"){
     InstallHost(\%opts,@host);
     exit 0;
 }elsif ($action eq "showconfig"){
-    ShowConfig(\%fmdata);
+#    ShowConfig(\%fmdata);
     exit 0;
 }
 
@@ -218,7 +219,7 @@ sub ShowHost($@){
     #
     # Are the hosts known to Foreman?
     #
-    my $table = Text::TabularDisplay->new(qw(Hostname LAS Hostgroup Environment OS Arch Model Ptable Owner Comment));
+    my $table = Text::TabularDisplay->new(qw(Hostname LAS Hostgroup Environment OS Arch Model Ptable Comment));
     #my @out = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
@@ -226,7 +227,6 @@ sub ShowHost($@){
 	next unless CheckAPIResponseStatus($response);
 	print "[DEBUG] JSON: ".$response->content."\n" if $debug;
 	my %data = %{from_json($response->content)};
-	%data = %{$data{host}};
 	my $ownertype = lc($data{owner_type}); # values: "user", "usergroup"
 	#print "\$ownertype = \"$ownertype\" \n".Dumper(\%{$fmdata{$ownertype}});
 	#print Dumper(\%data);exit;
@@ -237,13 +237,12 @@ sub ShowHost($@){
 	$data{comment} =~ s/\n//g;
 	$data{comment} =~ s/\s+/ /g;
 
-	$data{operatingsystem} = $fmdata{operatingsystem}{ $data{operatingsystem_id} || -1 } || "";
-	$data{architecture}    = $fmdata{architecture}   { $data{architecture_id}    || -1 } || "";
-	$data{hostgroup}       = $fmdata{hostgroup}      { $data{hostgroup_id}       || -1 } || "";
-	$data{environment}     = $fmdata{environment}    { $data{environment_id}     || -1 } || "";
-	$data{owner}           = $fmdata{$ownertype}     { $data{owner_id}           || -1 } || "";
-	$data{model}           = $fmdata{model}          { $data{model_id}           || -1 } || "";
-	$data{ptable}          = $fmdata{ptable}         { $data{ptable_id}          || -1 } || "";
+	$data{operatingsystem} = $data{operatingsystem_name} || "";
+	$data{architecture}    = $data{architecture_name} || "";
+	$data{hostgroup}       = $data{hostgroup_name} || "";
+	$data{environment}     = $data{environment_name} || "";
+	$data{model}           = $data{model_name} || "";
+	$data{ptable}          = $data{ptable_name} || "";
 
 	# get information from the Node Classifier as well
 	$request = HTTP::Request->new("GET","$encurl/node/$host.cern.ch?format=yml");
@@ -256,7 +255,7 @@ sub ShowHost($@){
 	    $data{alarmed} = "unkn";
 	}
 	#
-	$table->add($host, map {$data{$_}} qw(alarmed hostgroup environment operatingsystem architecture model ptable owner comment));
+	$table->add($host, map {$data{$_}} qw(alarmed hostgroup environment operatingsystem architecture model ptable comment));
     }
 
     if ($table->items){
@@ -377,26 +376,26 @@ sub InstallHost(@){
 	    next;
 	}
 	$iaddr = inet_ntoa($iaddr);
-	if ($data{host}{ip} ne $iaddr){
-	    push(@err,"IP-address differs between Foreman (\"$data{host}{ip}\") and DNS (\"$iaddr\"). Consider running \"ai-foreman-cli updatehost --network $host\"");
+	if ($data{ip} ne $iaddr){
+	    push(@err,"IP-address differs between Foreman (\"$data{ip}\") and DNS (\"$iaddr\").");
 	    next;
 	}
 	#
 	# Sanity check: is the host registered as a "Managed Host" in Foreman?
 	#
- 	if (not $data{host}->{managed}){
+ 	if (not $data{managed}){
 	    push(@err,"Host \"$host\" is registered as \"unmanaged\" in Foreman");
 	    next;
 	}
 	#
 	# All's well, so let's store relevant information
 	#
-	$todo{$host}{operatingsystem} = $fmdata{operatingsystem}{$data{host}{operatingsystem_id}};
-	$todo{$host}{architecture}    = $fmdata{architecture}   {$data{host}{architecture_id}   };
-	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          } if defined $data{host}{model_id};
+	$todo{$host}{operatingsystem} = $data{operatingsystem_name};
+	$todo{$host}{architecture}    = $data{architecture_name};
+	$todo{$host}{model}           = $data{model_name};
 	$todo{$host}{hostname}        = $host;
 
-	my ($owner_id,$owner_type) = ($data{host}{owner_id},$data{host}{owner_type});
+	my ($owner_id,$owner_type) = ($data{owner_id},$data{owner_type});
 	if ($owner_type eq "user"){
 	    $todo{$host}{owner} = $fmdata{user}{$owner_id};
 	}elsif ($owner_type eq "usergroup"){
@@ -526,7 +525,7 @@ sub InstallHost(@){
     # Are machines enabled in LAS?
     my @alarmed = ();
     for my $host (@host){
-	my $request = HTTP::Request->new("GET","$url/node/$host.cern.ch?format=yml");
+	my $request = HTTP::Request->new("GET","$encurl/node/$host.cern.ch?format=yml");
 	my $response = $browser->request($request);
 	next unless CheckAPIResponseStatus($response);
 	use YAML::Syck;
@@ -683,7 +682,7 @@ sub UpdateHost($@){
     #
     #
     #
-    print Dumper(\%fmdata) if $debug;#exit;
+#    print Dumper(\%fmdata) if $debug;#exit;
     my @done = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
