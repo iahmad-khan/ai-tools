@@ -43,6 +43,7 @@ sub SetBuild(@);
 
 use Term::ANSIColor;
 print color 'bold red';
+print "All options but 'installhost' has been disabled.\n";
 print "This CLI will disappear soon, please use the following instead:\n";
 print "\t - ai-foreman: for CRUD operations (showhost, updatehost...)\n";
 print "\t - ai-installhost: to prepare hosts for installation.\n";
@@ -117,38 +118,8 @@ $browser->default_header('Content-Type' => "application/json");
 
 my %fmdata = ();
 
-#
-# Easy things first.
-#
-if ($action eq "delhost"){
-    DeleteHost(\%opts,@host);
-    exit 0;
-}elsif ($action eq "chkhost"){
-    ChkHost(@host);
-    exit 0;
-}
-
-#
-# Resolve Foreman ID's, update host data.
-#
-#my %fmdata = ForemanConfig($browser,$url);
-
-#if (not keys %fmdata) {
-#    print "[ERROR] Foreman's config retrieval failed\n";
-#    exit 1;
-#}
-
-#
-# More easy things.
-#
-if ($action eq "showhost"){
-    ShowHost(\%opts,@host);
-    exit 0;
-}elsif ($action eq "installhost"){
+if ($action eq "installhost"){
     InstallHost(\%opts,@host);
-    exit 0;
-}elsif ($action eq "showconfig"){
-#    ShowConfig(\%fmdata);
     exit 0;
 }
 
@@ -1164,14 +1135,8 @@ sub HandleOptions(){
 
     $action = shift @ARGV;
 
-    my %options = (addhost     => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s reset)],
-		   updatehost  => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s network)],
-		   showhost    => [qw(all filter=s)],
-		   delhost     => [qw()],
-		   disownhost  => [qw()],
+    my %options = (
 		   installhost => [qw(ksopts=s)],
-		   chkhost     => [qw()],
-		   showconfig  => [qw()],
     );
     HelpMessage("Mandatory parameter [".join("|",sort keys %options)."] missing") unless exists $options{$action};
 
