@@ -43,6 +43,7 @@ sub SetBuild(@);
 
 use Term::ANSIColor;
 print color 'bold red';
+print "All options but 'installhost' have been disabled.\n";
 print "This CLI will disappear soon, please use the following instead:\n";
 print "\t - ai-foreman: for CRUD operations (showhost, updatehost...)\n";
 print "\t - ai-installhost: to prepare hosts for installation.\n";
@@ -115,39 +116,10 @@ $browser->default_header('Accept' => "application/json");
 $browser->default_header('Content-Type' => "application/json");
 # See commit log for further details
 
+my %fmdata = ();
 
-#
-# Easy things first.
-#
-if ($action eq "delhost"){
-    DeleteHost(\%opts,@host);
-    exit 0;
-}elsif ($action eq "chkhost"){
-    ChkHost(@host);
-    exit 0;
-}
-
-#
-# Resolve Foreman ID's, update host data.
-#
-my %fmdata = ForemanConfig($browser,$url);
-
-if (not keys %fmdata) {
-    print "[ERROR] Foreman's config retrieval failed\n";
-    exit 1;
-}
-
-#
-# More easy things.
-#
-if ($action eq "showhost"){
-    ShowHost(\%opts,@host);
-    exit 0;
-}elsif ($action eq "installhost"){
+if ($action eq "installhost"){
     InstallHost(\%opts,@host);
-    exit 0;
-}elsif ($action eq "showconfig"){
-    ShowConfig(\%fmdata);
     exit 0;
 }
 
@@ -218,7 +190,7 @@ sub ShowHost($@){
     #
     # Are the hosts known to Foreman?
     #
-    my $table = Text::TabularDisplay->new(qw(Hostname LAS Hostgroup Environment OS Arch Model Ptable Owner Comment));
+    my $table = Text::TabularDisplay->new(qw(Hostname LAS Hostgroup Environment OS Arch Model Ptable Comment));
     #my @out = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host" . ($host !~ /\./ ? ".cern.ch" : ""));
@@ -226,7 +198,6 @@ sub ShowHost($@){
 	next unless CheckAPIResponseStatus($response);
 	print "[DEBUG] JSON: ".$response->content."\n" if $debug;
 	my %data = %{from_json($response->content)};
-	%data = %{$data{host}};
 	my $ownertype = lc($data{owner_type}); # values: "user", "usergroup"
 	#print "\$ownertype = \"$ownertype\" \n".Dumper(\%{$fmdata{$ownertype}});
 	#print Dumper(\%data);exit;
@@ -237,13 +208,12 @@ sub ShowHost($@){
 	$data{comment} =~ s/\n//g;
 	$data{comment} =~ s/\s+/ /g;
 
-	$data{operatingsystem} = $fmdata{operatingsystem}{ $data{operatingsystem_id} || -1 } || "";
-	$data{architecture}    = $fmdata{architecture}   { $data{architecture_id}    || -1 } || "";
-	$data{hostgroup}       = $fmdata{hostgroup}      { $data{hostgroup_id}       || -1 } || "";
-	$data{environment}     = $fmdata{environment}    { $data{environment_id}     || -1 } || "";
-	$data{owner}           = $fmdata{$ownertype}     { $data{owner_id}           || -1 } || "";
-	$data{model}           = $fmdata{model}          { $data{model_id}           || -1 } || "";
-	$data{ptable}          = $fmdata{ptable}         { $data{ptable_id}          || -1 } || "";
+	$data{operatingsystem} = $data{operatingsystem_name} || "";
+	$data{architecture}    = $data{architecture_name} || "";
+	$data{hostgroup}       = $data{hostgroup_name} || "";
+	$data{environment}     = $data{environment_name} || "";
+	$data{model}           = $data{model_name} || "";
+	$data{ptable}          = $data{ptable_name} || "";
 
 	# get information from the Node Classifier as well
 	$request = HTTP::Request->new("GET","$encurl/node/$host.cern.ch?format=yml");
@@ -256,7 +226,7 @@ sub ShowHost($@){
 	    $data{alarmed} = "unkn";
 	}
 	#
-	$table->add($host, map {$data{$_}} qw(alarmed hostgroup environment operatingsystem architecture model ptable owner comment));
+	$table->add($host, map {$data{$_}} qw(alarmed hostgroup environment operatingsystem architecture model ptable comment));
     }
 
     if ($table->items){
@@ -377,26 +347,26 @@ sub InstallHost(@){
 	    next;
 	}
 	$iaddr = inet_ntoa($iaddr);
-	if ($data{host}{ip} ne $iaddr){
-	    push(@err,"IP-address differs between Foreman (\"$data{host}{ip}\") and DNS (\"$iaddr\"). Consider running \"ai-foreman-cli updatehost --network $host\"");
+	if ($data{ip} ne $iaddr){
+	    push(@err,"IP-address differs between Foreman (\"$data{ip}\") and DNS (\"$iaddr\").");
 	    next;
 	}
 	#
 	# Sanity check: is the host registered as a "Managed Host" in Foreman?
 	#
- 	if (not $data{host}->{managed}){
+ 	if (not $data{managed}){
 	    push(@err,"Host \"$host\" is registered as \"unmanaged\" in Foreman");
 	    next;
 	}
 	#
 	# All's well, so let's store relevant information
 	#
-	$todo{$host}{operatingsystem} = $fmdata{operatingsystem}{$data{host}{operatingsystem_id}};
-	$todo{$host}{architecture}    = $fmdata{architecture}   {$data{host}{architecture_id}   };
-	$todo{$host}{model}           = $fmdata{model}          {$data{host}{model_id}          } if defined $data{host}{model_id};
+	$todo{$host}{operatingsystem} = $data{operatingsystem_name};
+	$todo{$host}{architecture}    = $data{architecture_name};
+	$todo{$host}{model}           = $data{model_name};
 	$todo{$host}{hostname}        = $host;
 
-	my ($owner_id,$owner_type) = ($data{host}{owner_id},$data{host}{owner_type});
+	my ($owner_id,$owner_type) = ($data{owner_id},$data{owner_type});
 	if ($owner_type eq "user"){
 	    $todo{$host}{owner} = $fmdata{user}{$owner_id};
 	}elsif ($owner_type eq "usergroup"){
@@ -526,7 +496,7 @@ sub InstallHost(@){
     # Are machines enabled in LAS?
     my @alarmed = ();
     for my $host (@host){
-	my $request = HTTP::Request->new("GET","$url/node/$host.cern.ch?format=yml");
+	my $request = HTTP::Request->new("GET","$encurl/node/$host.cern.ch?format=yml");
 	my $response = $browser->request($request);
 	next unless CheckAPIResponseStatus($response);
 	use YAML::Syck;
@@ -683,7 +653,7 @@ sub UpdateHost($@){
     #
     #
     #
-    print Dumper(\%fmdata) if $debug;#exit;
+#    print Dumper(\%fmdata) if $debug;#exit;
     my @done = ();
     for my $host (sort @host){
 	my $request = HTTP::Request->new("GET","$url/hosts/$host.cern.ch");
@@ -1165,14 +1135,8 @@ sub HandleOptions(){
 
     $action = shift @ARGV;
 
-    my %options = (addhost     => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s reset)],
-		   updatehost  => [qw(operatingsystem=s  architecture=s  hostgroup=s  environment=s  model=s  owner=s  comment=s  domain=s ptable=s medium=s network)],
-		   showhost    => [qw(all filter=s)],
-		   delhost     => [qw()],
-		   disownhost  => [qw()],
+    my %options = (
 		   installhost => [qw(ksopts=s)],
-		   chkhost     => [qw()],
-		   showconfig  => [qw()],
     );
     HelpMessage("Mandatory parameter [".join("|",sort keys %options)."] missing") unless exists $options{$action};
 
@@ -1378,12 +1342,17 @@ __END__
 
 =head1 NAME
 
-ai-foreman-cli - Utility to update, retrieve, delete information for the Foreman setup of the Agile Infrastructure project
+ai-foreman-cli - Utility to prepare hosts for installation.
 
 =head1 DESCRIPTION
 
-ai-foreman-cli is a command line interface to the Foreman setup of the Agile Infrastructure project.
-It should be used to displaying information about hosts, to delete or update that information.
+ai-foreman-cli is a LEGACY command line interface to interact with Foreman and AIMS.
+
+This tool has been deprecated in favor of ai-installhost and it is very lazily
+maintained.  It's kept though still as part of ai-tools because it's the only
+way to install hosts that only boot from the -gigeth interface.
+
+Probably you don't want to use it.
 
 =head1 SYNOPSIS
 
@@ -1395,39 +1364,9 @@ B<ai-foreman-cli> I<ACTION> I<[OPTIONS]> I<[HOSTNAME]>
 
 =over 4
 
-=item B<showhost> HOSTNAME(S)
-
-Display information about host(s) HOSTNAME(S)
-
-=item B<addhost> [OPTIONS] HOSTNAME ...
-
-Add hosts to Foreman.
-
-Note: Network information (IP and MAC addresses etc.) is retrieved from Landb
-
-=item B<delhost> [OPTIONS] HOSTNAME ...
-
-Delete hosts
-
-=item B<updatehost> [OPTIONS] HOSTNAME ...
-
-Update information for hosts
-
 =item B<installhost> [OPTIONS] HOSTNAME ...
 
-Generates kickstart files for hosts, and upload them to AIMS
-
-=item B<chkhost> [OPTIONS] HOSTNAME ...
-
-Performs some basic consistency checks on the information about hosts
-
-=item B<disownhost> [OPTIONS] HOSTNAME ...
-
-Move the machine to the "disowned" hostgroup, assign ownership to SysAdmins. 
-
-=item B<showconfig> [OPTIONS]
-
-Show the Foreman configuration details 
+Gets kickstart files from Foreman, uploads them to AIMS and enables hosts for installation.
 
 =item B<help>
 
@@ -1438,96 +1377,6 @@ Display this help
 =head1 OPTIONS
 
 Action specific options
-
-=over 4 
-
-=item B<addhost>
-
-=over 8
-
-=item B<--operatingssystem> NAME
-
-=item B<--architecture> NAME
-
-=item B<--hostgroup> NAME
-
-=item B<--environment> NAME
-
-default: "production"
-
-=item B<--model> NAME
-
-=item B<--owner> NAME
-
-Can be CERN account or E-group.
-
-=item B<--comment> COMMENT
-
-default: empty
-
-=item B<--domain> NAME
-
-default: "cern.ch"
-
-=item B<--ptable> NAME
-
-Partition table to be used at installation time
-
-=item B<--reset>
-
-delete existing entry before re-adding the host
-
-=back
-
-=back
-
-=over 4 
-
-=item B<updatehost>
-
-=over 8
-
-=item B<--operatingsystem> NAME
-
-=item B<--architecture> NAME
-
-=item B<--hostgroup> NAME
-
-=item B<--environment> NAME
-
-=item B<--model> NAME
-
-=item B<--owner> NAME
-
-Can be CERN account or E-group.
-
-=item B<--comment> COMMENT
-
-=item B<--network>
-
-IP and MAC addresses are retrieved from Landb
-
-=back
-
-=item B<showhost>
-
-=over 8
-
-=item B<--all>
-
-Display information for all hosts known to Foreman
-
-=item B<--filter> FILTER
-
-Use a Foreman filter to narrow your search.
-
-Examples: "facts.hostgroup_1 = punch", "os = Fedora".
-
-=back
-
-B<Note:> --all and --filter are mutually exclusive.
-
-=back
 
 =over 4
 
@@ -1548,25 +1397,6 @@ Examples: --ksopts "nousb nousbstorage"
 General options
 
 =over 4
-
-=item B<--cern-user> USERNAME
-
-CERN account to be used for LANdb lookups and Foreman access
-
-=item B<--foreman-host> HOSTNAME
-
-Foreman hostname (defaults to judy.cern.ch).
-
-=item B<--foreman-port> PORT
-
-Foreman port (defaults to 443). Please note that all connections
-will be HTTPS, regardless of the port specified.
-
-=item B<--foreman-cookiejar> FILE
-
-If a cookiejar is provided, authentication is performed using
-credentials stored in FILE. Still, in some cases the user may
-be prompted for user and password to talk to LanDB.
 
 =item B<--help>
 
@@ -1590,13 +1420,7 @@ All options can be abbreviated to shortest distinctive length. Single minus prec
 
 =head1 EXAMPLES
 
-ai-foreman-cli showhost janvm01
-
-ai-foreman-cli delhost janvm01
-
-ai-foreman-cli addhost janvm01 --cern-account heuer --oper "SLC 6" --model X8DT6 --arch x86_64 --hostgroup dg --owner jveldik
-
-ai-foreman-cli updatehost janvm01 --comment "no comment"
+ai-foreman-cli installhost janvm01.cern.ch --foreman-port 9443
 
 =head1 AUTHOR
 
