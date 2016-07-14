@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.12.4
+Version: 9.12.5
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -89,6 +89,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Jul 14 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.5-1
+- [ai-foreman-cli] Foreman 1.11 compatibility.
+- [ai-bs-vm] Fix error message if host cannot be staged.
+- [ai-rename-host] Handle hosts with no IPMI interfaces.
+
 * Thu Jul 05 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.4-1
 - [ai-rename-host] Preserve the type and the provider of IPMI interfaces when
   renaming.
