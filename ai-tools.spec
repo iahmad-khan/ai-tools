@@ -91,6 +91,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %changelog
 * Thu Jul 14 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.5-1
 - [ai-foreman-cli] Foreman 1.11 compatibility.
+- [ai-foreman-cli] Disable all subcommands but 'installhost'.
 - [ai-bs-vm] Fix error message if host cannot be staged.
 - [ai-rename-host] Handle hosts with no IPMI interfaces.
 
