@@ -1346,7 +1346,13 @@ ai-foreman-cli - Utility to prepare hosts for installation.
 
 =head1 DESCRIPTION
 
-ai-foreman-cli is a command line interface to the Foreman setup of the Agile Infrastructure project.
+ai-foreman-cli is a LEGACY command line interface to interact with Foreman and AIMS.
+
+This tool has been deprecated in favor of ai-installhost and it is very lazily
+maintained.  It's kept though still as part of ai-tools because it's the only
+way to install hosts that only boot from the -gigeth interface.
+
+Probably you don't want to use it.
 
 =head1 SYNOPSIS
 
@@ -1360,7 +1366,7 @@ B<ai-foreman-cli> I<ACTION> I<[OPTIONS]> I<[HOSTNAME]>
 
 =item B<installhost> [OPTIONS] HOSTNAME ...
 
-Gets kickstart files from Foreman, uploads them to AIMS and enables the host for installation.
+Gets kickstart files from Foreman, uploads them to AIMS and enables hosts for installation.
 
 =item B<help>
 
