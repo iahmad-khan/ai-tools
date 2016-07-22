@@ -703,7 +703,7 @@ class TestForemanClient(unittest.TestCase):
                 full_uri("hostgroups"), ANY, json.dumps(expected_payload))
 
     @patch.object(HTTPClient, 'do_request',
-        return_value=generate_response(requests.codes.ok, {"id":111}))
+        return_value=generate_response(requests.codes.created, {"id":111}))
     def test_createhostgroup_success(self, *args):
         hg = "foobar"
         self.assertEquals(111, self.client.createhostgroup(hostgroup=hg))
