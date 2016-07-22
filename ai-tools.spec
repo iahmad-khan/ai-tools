@@ -19,7 +19,7 @@ Requires: aims2-client >= 2.13.1, certmgr-client, python-krbV, python-urllib2_ke
 Requires: perl-YAML-Syck, python-requests, python-requests-kerberos
 Requires: python-argcomplete, python-humanize, teigi-client, python-dateutil
 Requires: python-openstackclient, python-cinderclient
-Requires: python-keystoneclient, python-novaclient
+Requires: python-keystoneclient, python2-keystoneauth1, python-novaclient
 Requires: python-keystoneclient-kerberos, python-suds
 Requires: hiera
 %if 0%{?el5} || 0%{?el6}
