@@ -372,7 +372,7 @@ class ForemanClient(HTTPClient):
         if not self.dryrun:
             (code, body) = self.__do_api_request("post", "hostgroups",
                                 data=json.dumps(payload))
-            if code == requests.codes.ok:
+            if code == requests.codes.created:
                 logging.info("Hostgroup '%s' created in Foreman" % hostgroup)
                 return body['id']
             elif code == requests.codes.unprocessable_entity:
