@@ -74,6 +74,21 @@ echo "Delhost..."
 _expect 0 ai-foreman --config $CONF delhost  aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test2 delhost
 
+echo "Createhostgroup..."
+_expect 0 ai-foreman --config $CONF addhostgroup tsetslootiaA
+_expect 1 ai-foreman --config $CONF addhostgroup nonexistingyet/tsetslootia1
+_expect 0 ai-foreman --config $CONF addhostgroup playground/tsetslootia1
+_expect 0 ai-foreman --config $CONF addhostgroup playground/aitoolstest/new1
+_expect 1 ai-foreman --config $CONF addhostgroup playground/nonexistingyet/new
+_expect 1 ai-foreman --config $CONF addhostgroup playground/aitoolstest/testA1/testB1/testC1/testD1/testE1
+
+_expect 0 ai-foreman --config $CONF addhostgroup -p tsetslootiaB
+_expect 0 ai-foreman --config $CONF addhostgroup -p nonexistingyet/tsetslootia2
+_expect 0 ai-foreman --config $CONF addhostgroup -p playground/tsetslootia2
+_expect 0 ai-foreman --config $CONF addhostgroup -p playground/aitoolstest/new2
+_expect 0 ai-foreman --config $CONF addhostgroup -p playground/nonexistingyet/new
+_expect 0 ai-foreman --config $CONF addhostgroup -p playground/aitoolstest/testA2/testB2/testC2/testD2/testE2
+
 echo "Tearing down..."
 rm -f $IN $CONF
 echo "All tests passed :)"

@@ -358,39 +358,61 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
-    def createhostgroup(self, hostgroup, parent=None):
-        """
-        Create new hostgroup. If no parent is given, a top level hostgroup is
-        created. Creating hostgroups with parents is not implemented yet.
-        :param hostgroup: the name of the hostgroup to be created
-        :param parent: the name of the hostgrop under which the new one is created
-        :raise AiToolsForemanNotAllowedError: the hostgroup exists already
-        :raise AiToolsForemanError: if the operation failed
-        :return: The id of the hostgroup created, or None if dry run is enabled
-        """
-        if parent:
-            raise AiToolsForemanError("This feature is not implemented yet")
-
+    def __createsinglehostgroup(self, hostgroup, parent=None):
         logging.info("Creating hostgroup '%s'..." % hostgroup)
         payload = {'hostgroup': {'name': hostgroup}}
+        if parent:
+            payload['hostgroup']['parent_id'] = parent
         logging.debug("With payload: %s" % payload)
 
-        if not self.dryrun:
-            (code, body) = self.__do_api_request("post", "hostgroups",
-                                data=json.dumps(payload))
-            if code == requests.codes.created:
-                logging.info("Hostgroup '%s' created in Foreman" % hostgroup)
-                return body['id']
-            elif code == requests.codes.unprocessable_entity:
-                raise AiToolsForemanNotAllowedError(
-                    "Hostgroup '%s' already exists in Foreman" % hostgroup)
-            else:
-                raise AiToolsForemanError(
-                    "Could not create hostgroup '%s' in Foreman" % hostgroup)
-        else:
+        if self.dryrun:
             logging.info("Hostgroup '%s' not created because dryrun is enabled" %
                 hostgroup)
             return None
+
+        (code, body) = self.__do_api_request("post", "hostgroups",
+                            data=json.dumps(payload))
+        if code == requests.codes.created:
+            logging.info("Hostgroup '%s' created in Foreman" % hostgroup)
+            return body['id']
+        elif code == requests.codes.unprocessable_entity:
+            raise AiToolsForemanNotAllowedError(
+                "Hostgroup '%s' already exists in Foreman" % hostgroup)
+        else:
+            raise AiToolsForemanError(
+                "Could not create hostgroup '%s' in Foreman" % hostgroup)
+
+    def __r_createhg(self, tree, parents):
+        if len(tree) == 1:
+            return self.__createsinglehostgroup(tree[-1])
+
+        parent_id = self.__resolve_hostgroup_id_or_none(tree[ :-1])
+        if not parent_id:
+            if not parents:
+                raise AiToolsForemanNotAllowedError(
+                    "Could not create hostgroup '%s' in Foreman because some"
+                    " parts of the hostgroup hierarchy(%s) do not exist"
+                    " (use -p to create hostgroups recursively)" % 
+                    (tree[-1], '/'.join(tree)))
+
+            parent_id = self.__r_createhg(tree[ :-1], parents)
+
+        return self.__createsinglehostgroup(tree[-1], parent_id)
+
+    def createhostgroup(self, hostgroup, parents=False):
+        """
+        Create new hostgroup. If parents is set to True, no error if existing,
+        make parent directories as needed
+        :param hostgroup: the name of the hostgroup to be created
+        :param parents: if True - creates needed parents if they don't exist
+        :raise AiToolsForemanNotAllowedError: the hostgroup exists already
+        or cannot recreate the whole true due to --parents restriction
+        :raise AiToolsForemanError: if the operation failed
+        :return: The id of the hostgroup created, or None if dry run is enabled
+        """
+
+        tree = hostgroup.strip('/').split('/')
+        return self.__r_createhg(tree, parents)
 
     def gethostgroupparameters(self, hostgroup):
         """
@@ -626,6 +648,18 @@ class ForemanClient(HTTPClient):
 
     def __resolve_hostgroup_id(self, name):
         return self.__resolve_model_id('hostgroup', name, search_key='label')
+
+    def __resolve_hostgroup_id_or_none(self, name_list):
+        """
+        Instead of the name accepts list hierarchy of the hostgroup name,
+        which is formated with '/' symbol
+        If hostgroup that exactly matches such name doesn't exist
+        then None is returned instead of raising exception
+        """
+        try:
+            return self.__resolve_hostgroup_id('/'.join(name_list))
+        except AiToolsForemanNotFoundError:
+            return None
 
     def __resolve_user_id(self, name):
         return self.__resolve_model_id('user', name, search_key='login')

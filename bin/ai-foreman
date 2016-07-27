@@ -31,6 +31,7 @@ from aitools.common import append_domain
 from aitools.common import print_progress_meter
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
+from aitools.errors import AiToolsForemanNotAllowedError
 from aitools.errors import AiToolsAiForemanError
 
 from aitools.completer import ForemanCompleter
@@ -171,6 +172,18 @@ def parse_cmdline_args():
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
 
+    ##
+    ## Addhostgroup
+    ##
+
+    addhostgroup_parser = subparsers.add_parser('addhostgroup',
+        help="Add new hostgroup")
+    addhostgroup_parser.add_argument('hostgroup', nargs='+',
+        help="One or more hostgroups (qualified or not)").completer = \
+            ForemanCompleter()
+    addhostgroup_parser.add_argument('-p', '--parents',
+        help="Create parent nodes", action='store_true')
+
     argcomplete.autocomplete(parser)
     try:
         args = parser.parse_args()
@@ -278,6 +291,18 @@ def showhost(foreman, args):
 
     print_summary_table_from_data(args, data)
     return 0
+
+def addhostgroup(foreman, args):
+    errors = False
+
+    for hg in args.hostgroup:
+        try:
+            foreman.createhostgroup(hg, args.parents)
+        except (AiToolsForemanNotAllowedError, AiToolsForemanError), error:
+            errors = True
+            logging.warn(error)
+
+    return 1 if errors else 0
 
 def updatehost(foreman, args):
     errors = False

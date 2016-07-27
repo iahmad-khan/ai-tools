@@ -678,12 +678,6 @@ class TestForemanClient(unittest.TestCase):
 
     #### TOPLVL HG CREATE ####
 
-    def test_createhostgroup_unimplemented(self, *args):
-        hg = "foobar"
-        pt = "lukeimyourfater"
-        self.assertRaises(AiToolsForemanError, self.client.createhostgroup,
-            hostgroup=hg, parent=pt)
-
     @patch.object(HTTPClient, 'do_request',
         return_value=generate_response(requests.codes.unprocessable_entity, []))
     def test_createhostgroup_hg_exists_already(self, *args):
@@ -712,9 +706,65 @@ class TestForemanClient(unittest.TestCase):
             .assert_called_once_with('post',
                 full_uri("hostgroups"), ANY, json.dumps(expected_payload))
 
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        return_value=2)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created, {"id":111}))
+    def test_createhostgroup_nested_success(self, *args):
+        hg = "playground/foobar"
+        self.assertEquals(111, self.client.createhostgroup(hostgroup=hg))
+        expected_payload = {'hostgroup': {'name': "foobar", 'parent_id': 2}}
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post',
+                full_uri("hostgroups"), ANY, json.dumps(expected_payload))
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        return_value=None)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created, {"id":111}))
+    def test_createhostgroup_nested_without_parents_fail(self, *args):
+        hg = "notexistingyet/foobar"
+        self.assertRaises(AiToolsForemanNotAllowedError, self.client.createhostgroup,
+            hostgroup=hg)
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        return_value=None)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created, {"id":111}))
+    def test_createhostgroup_nested_with_parents_success(self, *args):
+        hg = "notexistingyet/foobar"
+
+        self.assertEquals(111, self.client.createhostgroup(hostgroup=hg, parents=True))
+
+    def createhostgroup_nested_3_success_effect(hg):
+        if hg == 'foo':
+            return 42
+        if hg == 'foo/bar':
+            return 73
+        return None
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        side_effect=createhostgroup_nested_3_success_effect)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created, {"id":111}))
+    def test_createhostgroup_nested_3_success(self, *args):
+        hg = "foo/bar/baz"
+
+        self.assertEquals(111, self.client.createhostgroup(hostgroup=hg, parents=False))
+
     @patch.object(HTTPClient, 'do_request')
     def test_createhostgroup_dryrun(self, *args):
         hg = "foobar"
+        self.client.dryrun = True
+        self.assertEquals(None, self.client.createhostgroup(hostgroup=hg))
+        super(ForemanClient, self.client).do_request\
+            .assert_not_called()
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        return_value=2)
+    @patch.object(HTTPClient, 'do_request')
+    def test_createhostgroup_nested_dryrun(self, *args):
+        hg = "playground/foobar"
         self.client.dryrun = True
         self.assertEquals(None, self.client.createhostgroup(hostgroup=hg))
         super(ForemanClient, self.client).do_request\
