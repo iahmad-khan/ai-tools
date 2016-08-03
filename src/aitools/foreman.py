@@ -13,7 +13,7 @@ from aitools.errors import AiToolsHTTPClientError
 from aitools.errors import AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
 from aitools.errors import AiToolsForemanNotAllowedError
-from aitools.common import print_progress_meter
+from aitools.common import print_progress_meter, shortify
 from aitools.httpclient import HTTPClient
 from aitools.config import ForemanConfig
 from aitools.common import deref_url
@@ -301,6 +301,12 @@ class ForemanClient(HTTPClient):
             if not interface:
                 logging.info("No IPMI interfaces to update for new host %s" % (newfqdn))
                 return
+
+            # Don't rename special IPMI interfaces, see AI-4389
+            if interface['name'] != ("%s-ipmi.cern.ch" % shortify(oldfqdn)):
+                logging.info("Special IPMI interface name, not to be renamed.")
+                return
+
             interface_id = interface["id"]
 
             new_interface_name = newfqdn.replace(".cern.ch", "-ipmi.cern.ch")
