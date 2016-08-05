@@ -90,8 +90,3 @@ class OpenstackAuthClient():
             raise AiToolsOpenstackAuthError(error)
         except exceptions.ClientException, error:
             raise AiToolsOpenstackAuthError(error)
-
-    @property
-    def session(self):
-        logging.debug('Getting session from OpenStack ClientManager')
-        return self.session
