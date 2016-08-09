@@ -769,3 +769,111 @@ class TestForemanClient(unittest.TestCase):
         self.assertEquals(None, self.client.createhostgroup(hostgroup=hg))
         super(ForemanClient, self.client).do_request\
             .assert_not_called()
+
+    def delhostgroup_success_no_hosts_effect1(hg):
+        if hg == 'playground':
+            return 42
+        if hg == 'playground/foobar':
+            return 73
+
+    def delhostgroup_success_no_hosts_effect2(*req):
+        if req[1] == 'https://localhost:1/api/hosts':
+            return generate_response(requests.codes.ok, {"results": []})
+
+        if req[1] == 'https://localhost:1/api/hostgroups':
+            if json.loads(req[3])['search'] == 'playground/foobar/':
+                return generate_response(requests.codes.ok, {"results": []})
+
+        if req[0] == 'delete':
+            if req[1] == 'https://localhost:1/api/hostgroups/73':
+                return generate_response(requests.codes.ok, {"name": "foobar"})                
+
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        side_effect=delhostgroup_success_no_hosts_effect1)
+    @patch.object(HTTPClient, 'do_request',
+        side_effect=delhostgroup_success_no_hosts_effect2)
+
+    def test_delhostgroup_success_no_hosts(self, *args):
+        hg = "playground/foobar"
+
+        self.assertEquals('foobar', self.client.delhostgroup(hostgroup=hg))
+
+
+    def delhostgroup_fail_with_hosts_effect1(hg):
+        if hg == 'playground':
+            return 42
+        if hg == 'playground/foobar':
+            return 73
+
+    def delhostgroup_fail_with_hosts_effect2(*req):
+        if req[1] == 'https://localhost:1/api/hosts':
+            if json.loads(req[3])["hostgroup_id"] == "playground/foobar":
+                return generate_response(requests.codes.ok,
+                                         {"results": [{"name": "host1"},
+                                                      {"name": "host2"}]})
+            return generate_response(requests.codes.ok, {"results": []})
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        side_effect=delhostgroup_fail_with_hosts_effect1)
+    @patch.object(HTTPClient, 'do_request',
+        side_effect=delhostgroup_fail_with_hosts_effect2)
+
+    def test_delhostgroup_fail_with_hosts(self, *args):
+        hg = "playground/foobar"
+
+        self.assertRaises(AiToolsForemanNotAllowedError, self.client.delhostgroup,
+            hostgroup=hg)
+
+
+
+    def delhostgroup_with_children_effect1(hg):
+        if hg == 'playground':
+            return 42
+        if hg == 'playground/foobar':
+            return 73
+        if hg == 'playground/foobar/baz':
+            return 99
+
+    def delhostgroup_with_children_effect2(*req):
+        if req[1] == 'https://localhost:1/api/hosts':
+            return generate_response(requests.codes.ok, {"results": []})
+
+        if req[1] == 'https://localhost:1/api/hostgroups':
+            if json.loads(req[3])['search'] == 'playground/':
+                return generate_response(requests.codes.ok, {"results": [
+                    {"title": "playground/foobar", "parent_name": 'playground'}]})
+            if json.loads(req[3])['search'] == 'playground/foobar/':
+                return generate_response(requests.codes.ok, {"results": [
+                    {"title": "playground/foobar/baz",
+                     "parent_name": 'playground/foobar'}]})
+            return generate_response(requests.codes.ok, {"results": []})
+
+        if req[0] == 'delete':
+            if req[1] == 'https://localhost:1/api/hostgroups/73':
+                return generate_response(requests.codes.ok, {"name": "foobar"}) 
+            if req[1] == 'https://localhost:1/api/hostgroups/99':
+                return generate_response(requests.codes.ok, {"name": "baz"}) 
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        side_effect=delhostgroup_with_children_effect1)
+    @patch.object(HTTPClient, 'do_request',
+        side_effect=delhostgroup_with_children_effect2)
+
+    def test_delhostgroup_fail_with_children(self, *args):
+        hg = "playground/foobar"
+
+        self.assertRaises(AiToolsForemanNotAllowedError, self.client.delhostgroup,
+            hostgroup=hg)
+
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        side_effect=delhostgroup_with_children_effect1)
+    @patch.object(HTTPClient, 'do_request',
+        side_effect=delhostgroup_with_children_effect2)
+
+    def test_delhostgroup_success_with_children(self, *args):
+        hg = "playground/foobar"
+
+        self.assertEquals('foobar', self.client.delhostgroup(
+            hostgroup=hg, recursive=True))

@@ -31,8 +31,8 @@ from aitools.common import append_domain
 from aitools.common import print_progress_meter
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
-from aitools.errors import AiToolsForemanNotAllowedError
-from aitools.errors import AiToolsAiForemanError
+from aitools.errors import AiToolsAiForemanError, AiToolsForemanNotFoundError
+from aitools.errors import AiToolsForemanNotAllowedError 
 
 from aitools.completer import ForemanCompleter
 
@@ -184,6 +184,18 @@ def parse_cmdline_args():
     addhostgroup_parser.add_argument('-p', '--parents',
         help="Create parent nodes", action='store_true')
 
+    ##
+    ## Delhostgroup
+    ##
+
+    delhostgroup_parser = subparsers.add_parser('delhostgroup',
+        help="Delete hostgroup")
+    delhostgroup_parser.add_argument('hostgroup', nargs='+',
+        help="One or more hostgroups (qualified or not)").completer = \
+            ForemanCompleter()
+    delhostgroup_parser.add_argument('-r', '-R', '--recursive',
+        help="Remove recursively children hostgroups", action='store_true')
+
     argcomplete.autocomplete(parser)
     try:
         args = parser.parse_args()
@@ -299,6 +311,19 @@ def addhostgroup(foreman, args):
         try:
             foreman.createhostgroup(hg, args.parents)
         except (AiToolsForemanNotAllowedError, AiToolsForemanError), error:
+            errors = True
+            logging.warn(error)
+
+    return 1 if errors else 0
+
+def delhostgroup(foreman, args):
+    errors = False
+
+    for hg in args.hostgroup:
+        try:
+            foreman.delhostgroup(hg, args.recursive)
+        except (AiToolsForemanError, AiToolsForemanNotFoundError,
+                AiToolsForemanNotAllowedError), error:
             errors = True
             logging.warn(error)
 
