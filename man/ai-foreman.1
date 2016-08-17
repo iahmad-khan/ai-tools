@@ -27,7 +27,7 @@ Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
 
 .SH SUBCOMMANDS
 
-The available subcommands are: addhost, delhost, addhostgroup, delhostgroup showhost and updatehost.
+The available subcommands are: addhost, addhostgroup, delhost, delhostgroup, showhost and updatehost.
 You're most likely only interested in the last two.
 
 .SH OPTIONS
@@ -127,6 +127,22 @@ When this switch is enabled, the CLI will try to delete existing entries
 before creating new ones.
 
 .\""""""""""
+.\" ADDHOSTGROUP
+.\""""""""""
+
+.LP
+.I Addhostgroup options:
+
+.TP
+.B [HOSTGROUP]...
+A list of hostgroups to create. Example: "foo/bar"
+
+.TP
+.B -p, --parents PARENTS
+Create parent hostgroups if they don't exist yet.
+
+
+.\""""""""""
 .\" DELHOST
 .\""""""""""
 
@@ -137,6 +153,24 @@ before creating new ones.
 .B [HOSTNAME]...
 A list of hostnames (qualified or not) to delete. This option can be combined
 with a filtering option of your choice.
+
+
+.\""""""""""
+.\" DELHOSTGROUP
+.\""""""""""
+
+.LP
+.I Delhostgroup options:
+
+.TP
+.B [HOSTGROUP]...
+A list of hostgroups to remove. DELHOSTGROUP will never delete hostgroups if it
+finds any host, regardless of the presence of -r?. Example: "foo/bar"
+
+.TP
+.B -r, -R, --recursive RECURSIVE
+Remove the hostgroup and its children recursively.
+
 
 .\""""""""""
 .\" SHOWHOST
@@ -149,37 +183,6 @@ with a filtering option of your choice.
 .B [HOSTNAME]...
 A list of hostnames (qualified or not) to show. This option can be combined
 with a filtering option of your choice.
-
-.\""""""""""
-.\" ADDHOSTGROUP
-.\""""""""""
-
-.LP
-.I Addhostgroup options:
-
-.TP
-.B [HOSTNAME]...
-A list of hostgroups to create. Example: "foo/bar"
-
-.TP
-.B -p, --parents PARENTS
-Create parent nodes if they don't exist yet.
-
-
-.\""""""""""
-.\" DELHOSTGROUP
-.\""""""""""
-
-.LP
-.I Delhostgroup options:
-
-.TP
-.B [HOSTNAME]...
-A list of hostgroups to remove. Example: "foo/bar"
-
-.TP
-.B -r, -R, --recursive RECURSIVE
-Remove children hostgroups if option is enabled.
 
 
 .\"""""""""""""
@@ -326,12 +329,16 @@ ai-foreman -l "pants/2" updatehost bar.cern.ch --hostgroup pants/1
 ai-foreman -l castor/c2atlas delhost
 
 .TP
-.B Create hostgroup "bar" with parent as "playground/foo"(creating "foo" and "playground" in case they do not exist)
+.B Create "playground/foo/bar" creating all parents recursively if needed
 ai-foreman addhostgroup -p playground/foo/bar
 
 .TP
-.B Delete hostgroup "bar" with parent as "playground/foo"
+.B Delete "playground/foo/bar". As -r is not passed, this will fail if the hostgroup has any children (or hosts).
 ai-foreman delhostgroup playground/foo/bar
+
+.TP
+.B Delete "playground/foo/bar" and all children recursively.
+ai-foreman delhostgroup -r playground/foo/bar
 
 .SH FAQ
 

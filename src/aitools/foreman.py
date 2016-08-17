@@ -358,7 +358,11 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
-    def __createsinglehostgroup(self, hostgroup, parent=None):
+    def __create_single_hostgroup(self, hostgroup, parent=None):
+        """
+        Creates single hostgroup with selected parent hostgroup.
+        """
+
         logging.info("Creating hostgroup '%s'..." % hostgroup)
         payload = {'hostgroup': {'name': hostgroup}}
         if parent:
@@ -382,92 +386,87 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanError(
                 "Could not create hostgroup '%s' in Foreman" % hostgroup)
 
-    def __r_createhg(self, tree, parents):
+    def __create_hostgroup_hierarchy(self, tree, create_parents):
+        """
+        Recursively go up in the tree until the already created hostgroup
+        and create needed hostgroups if create_parents is set to True,
+        otherwise try to create low-level hostgroup.
+        """
+
         if len(tree) == 1:
-            return self.__createsinglehostgroup(tree[-1])
+            return self.__create_single_hostgroup(tree[-1])
 
         parent_id = self.__resolve_hostgroup_id_or_none(tree[ :-1])
         if not parent_id:
-            if not parents:
+            if not create_parents:
                 raise AiToolsForemanNotAllowedError(
                     "Could not create hostgroup '%s' in Foreman because some"
                     " parts of the hostgroup hierarchy(%s) do not exist"
-                    " (use -p to create hostgroups recursively)" % 
+                    " (use -p to create hostgroups recursively)" %
                     (tree[-1], '/'.join(tree)))
 
-            parent_id = self.__r_createhg(tree[ :-1], parents)
+            parent_id = self.__create_hostgroup_hierarchy(tree[ :-1], create_parents)
 
-        return self.__createsinglehostgroup(tree[-1], parent_id)
+        return self.__create_single_hostgroup(tree[-1], parent_id)
 
     def createhostgroup(self, hostgroup, parents=False):
         """
-        Create new hostgroup. If parents is set to True, no error if existing,
-        make parent directories as needed
+        Create new hostgroup. Parents are created recursively as needed if
+        option parents is enabled.
         :param hostgroup: the name of the hostgroup to be created
         :param parents: if True - creates needed parents if they don't exist
         :raise AiToolsForemanNotAllowedError: the hostgroup exists already
-        or cannot recreate the whole true due to --parents restriction
+        or cannot recreate the whole tree due to --parents restriction
         :raise AiToolsForemanError: if the operation failed
         :return: The id of the hostgroup created, or None if dry run is enabled
         """
 
         tree = hostgroup.strip('/').split('/')
-        return self.__r_createhg(tree, parents)
+        return self.__create_hostgroup_hierarchy(tree, parents)
 
-    def __hostgroup_children(self, hostgroup):
+
+    def __traverse_hostgroup_for_deletion(self, hostgroup, candidates, recursive):
         """
-        Returns list of hostgroups which parent is specified hostgroup
-        """
-
-        payload = {'search': "%s/" % hostgroup}
-        (code, body) = self.__do_api_request("get", "hostgroups",
-                            data=json.dumps(payload))
-
-        if code != requests.codes.ok:
-            raise AiToolsForemanError("Could not retrieve children of "
-                                      "hostgroup '%s'" % hostgroup)
-
-        return [r['title'] for r in body['results'] if r['parent_name'] == hostgroup]
-
-    def __hostgroup_hosts(self, hostgroup):
-        """
-        Returns list of hosts belonging to the specified hostgroup
+        Returns a list of hostgroups to be deleted.
+        Exception AiToolsForemanNotAllowedError will be raised if hostgroups
+        with hosts are found.
+        If recursive is set to False and hostgroup has children hostgroups - 
+        exception AiToolsForemanNotAllowedError will be raised.
         """
 
-        payload = {'hostgroup_id': hostgroup}
-        (code, body) = self.__do_api_request("get", "hosts",
-                            data=json.dumps(payload))
-
-        if code != requests.codes.ok:
-            raise AiToolsForemanError("Could not retrieve hosts of "
-                                      "hostgroup '%s'" % hostgroup)
-        
-        return [r['name'] for r in body['results']]
-
-    def __r_hg_to_delete(self, hostgroup, candidates, recursive):
         if not self.__resolve_hostgroup_id(hostgroup):
             raise AiToolsForemanNotFoundError("Hostgroup '%s' not found "
                                               "in Foreman" % hostgroup)
 
-        if self.__hostgroup_hosts(hostgroup):
-            raise AiToolsForemanNotAllowedError(
-                "Hostgroup '%s' can not be removed. Remove all "
-                "hosts firstly" % hostgroup)
+        logging.debug("Checking if hostgroup '%s' has any hosts..." % hostgroup)
+        body = self.search_query('hosts', 'hostgroup_fullname = %s' % hostgroup)
+        hosts = [r['name'] for r in body]
 
-        children = self.__hostgroup_children(hostgroup)
+        if hosts:
+            raise AiToolsForemanNotAllowedError(
+                "Hostgroup '%s' can't be removed as it contains hosts" % hostgroup)
+
+        logging.debug("Checking if hostgroup '%s' has any children..." % hostgroup)
+        body = self.search_query('hostgroups', '%s/' % hostgroup)
+        children = [r['title'] for r in body if r['parent_name'] == hostgroup]
+
         if children and not recursive:
             raise AiToolsForemanNotAllowedError(
                 "Hostgroup '%s' can not be removed since it contains children "
                 "hostgroups. Use --recursive option" % hostgroup)
 
         for ch in children:
-            self.__r_hg_to_delete(ch, candidates, recursive)
-        
+            self.__traverse_hostgroup_for_deletion(ch, candidates, recursive)
+
         candidates.append(hostgroup)
 
         return candidates
 
-    def __removesinglehg(self, hostgroup):
+    def __remove_single_hostgroup(self, hostgroup):
+        """
+        Removes single hostgroup by provided name of the hostgroup.
+        """
+
         logging.info("Removing hostgroup '%s'..." % hostgroup)
 
         if self.dryrun:
@@ -481,6 +480,8 @@ class ForemanClient(HTTPClient):
 
         if code != requests.codes.ok:
             raise AiToolsForemanError("Could not delete hostgroup '%s'" % hostgroup)
+
+        logging.info("Hostgroup '%s' removed" % hostgroup)
 
         return body['name']
 
@@ -496,14 +497,15 @@ class ForemanClient(HTTPClient):
         :raise AiToolsForemanNotFoundError: if subtree contains hosts or 
         hostgroups which cannot be removed
         :raise AiToolsForemanError: if operation failed
+        :return: the name of the highest removed hostgroup in the hierarchy
         """
 
-        candidates = self.__r_hg_to_delete(hostgroup.strip('/'), [], recursive)
-        names_removed = []
+        candidates = self.__traverse_hostgroup_for_deletion(hostgroup.strip('/'), [], recursive)
+        name_removed = []
         for hg in candidates:
-            names_removed.append(self.__removesinglehg(hg))
+            name_removed.append(self.__remove_single_hostgroup(hg))
 
-        return names_removed[-1]
+        return name_removed[-1]
 
     def gethostgroupparameters(self, hostgroup):
         """

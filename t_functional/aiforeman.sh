@@ -71,7 +71,7 @@ _expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test1 updatehost \
 _expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test2 showhost
 
 echo "Delhost..."
-_expect 0 ai-foreman --config $CONF delhost  aifcliftest16.cern.ch
+_expect 0 ai-foreman --config $CONF delhost aifcliftest16.cern.ch
 _expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test2 delhost
 
 echo "Createhostgroup..."
@@ -80,11 +80,14 @@ _expect 0 ai-foreman --config $CONF addhostgroup playground/tsetslootia1
 _expect 0 ai-foreman --config $CONF addhostgroup playground/aitoolstest/new1
 _expect 1 ai-foreman --config $CONF addhostgroup playground/nonexistingyet/new
 _expect 1 ai-foreman --config $CONF addhostgroup playground/aitoolstest/testA1/testB1/testC1/testD1/testE1
+_expect 1 ai-foreman --config $CONF addhostgroup playground/aitoolstest/nonexistingyet/new playground/aitoolstest/another1
 
 _expect 0 ai-foreman --config $CONF addhostgroup -p playground/tsetslootia2
 _expect 0 ai-foreman --config $CONF addhostgroup -p playground/aitoolstest/new2
 _expect 0 ai-foreman --config $CONF addhostgroup -p playground/nonexistingyet/new
 _expect 0 ai-foreman --config $CONF addhostgroup -p playground/aitoolstest/testA2/testB2/testC2/testD2/testE2
+_expect 0 ai-foreman --config $CONF addhostgroup -p playground/aitoolstest/nonexistingyet/new playground/aitoolstest/another2
+
 
 echo "Delhostgroup..."
 _expect 0 ai-foreman --config $CONF delhostgroup playground/tsetslootia1
@@ -93,6 +96,7 @@ _expect 0 ai-foreman --config $CONF delhostgroup playground/aitoolstest/new1
 _expect 0 ai-foreman --config $CONF delhostgroup playground/aitoolstest/new2
 _expect 1 ai-foreman --config $CONF delhostgroup playground/nonexistingyet
 _expect 0 ai-foreman --config $CONF delhostgroup playground/nonexistingyet -R
+_expect 0 ai-foreman --config $CONF delhostgroup playground/aitoolstest/nonexistingyet playground/aitoolstest/another1 playground/aitoolstest/another2 -R
 
 _expect 1 ai-foreman --config $CONF delhostgroup playground/aitoolstest/testA2/testB2/testC2/testD2
 _expect 1 ai-foreman --config $CONF delhostgroup playground/aitoolstest/testA2/testB2/testC2
@@ -102,7 +106,17 @@ _expect 1 ai-foreman --config $CONF delhostgroup playground/aitoolstest
 
 _expect 0 ai-foreman --config $CONF delhostgroup playground/aitoolstest/testA2 -R
 
+# deleting hostgroup with host
+_expect 0 ai-foreman --config $CONF addhostgroup playground/hgwithhost
+IN2=$(mktemp)
+echo "aifcliftest42.cern.ch 192.168.0.42 aa:bb:cc-dd:ee:42" >> $IN2
+_expect 0 ai-foreman --config $CONF addhost -c playground/hgwithhost -e qa \
+  -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -i $IN2
+_expect 1 ai-foreman --config $CONF delhostgroup playground/hgwithhost
+_expect 0 ai-foreman --config $CONF delhost aifcliftest42.cern.ch
+_expect 0 ai-foreman --config $CONF delhostgroup playground/hgwithhost
+
 
 echo "Tearing down..."
-rm -f $IN $CONF
+rm -f $IN $IN2 $CONF
 echo "All tests passed :)"

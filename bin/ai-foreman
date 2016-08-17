@@ -32,7 +32,7 @@ from aitools.common import print_progress_meter
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsAiForemanError, AiToolsForemanNotFoundError
-from aitools.errors import AiToolsForemanNotAllowedError 
+from aitools.errors import AiToolsForemanNotAllowedError
 
 from aitools.completer import ForemanCompleter
 
@@ -131,6 +131,18 @@ def parse_cmdline_args():
         type=argparse.FileType('r'), default=sys.stdin)
 
     ##
+    ## Addhostgroup
+    ##
+
+    addhostgroup_parser = subparsers.add_parser('addhostgroup',
+        help="Add new hostgroup")
+    addhostgroup_parser.add_argument('hostgroup', nargs='+',
+        help="One or more hostgroups").completer = \
+            ForemanCompleter()
+    addhostgroup_parser.add_argument('-p', '--parents',
+        help="Make parent hostgroups as needed", action='store_true')
+
+    ##
     ## Delhost
     ##
 
@@ -139,6 +151,18 @@ def parse_cmdline_args():
     delhost_parser.add_argument('hostname', nargs='*',
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
+
+    ##
+    ## Delhostgroup
+    ##
+
+    delhostgroup_parser = subparsers.add_parser('delhostgroup',
+        help="Delete hostgroup")
+    delhostgroup_parser.add_argument('hostgroup', nargs='+',
+        help="One or more hostgroups").completer = \
+            ForemanCompleter()
+    delhostgroup_parser.add_argument('-r', '-R', '--recursive',
+        help="Remove recursively children hostgroups", action='store_true')
 
     ##
     ## Showhost
@@ -171,30 +195,6 @@ def parse_cmdline_args():
     updatehost_parser.add_argument('hostname', nargs='*',
         help="Zero of more hostnames (qualified or not)").completer = \
             ForemanCompleter()
-
-    ##
-    ## Addhostgroup
-    ##
-
-    addhostgroup_parser = subparsers.add_parser('addhostgroup',
-        help="Add new hostgroup")
-    addhostgroup_parser.add_argument('hostgroup', nargs='+',
-        help="One or more hostgroups (qualified or not)").completer = \
-            ForemanCompleter()
-    addhostgroup_parser.add_argument('-p', '--parents',
-        help="Create parent nodes", action='store_true')
-
-    ##
-    ## Delhostgroup
-    ##
-
-    delhostgroup_parser = subparsers.add_parser('delhostgroup',
-        help="Delete hostgroup")
-    delhostgroup_parser.add_argument('hostgroup', nargs='+',
-        help="One or more hostgroups (qualified or not)").completer = \
-            ForemanCompleter()
-    delhostgroup_parser.add_argument('-r', '-R', '--recursive',
-        help="Remove recursively children hostgroups", action='store_true')
 
     argcomplete.autocomplete(parser)
     try:
@@ -273,6 +273,18 @@ def addhost(foreman, args):
 
     return 1 if errors else 0
 
+def addhostgroup(foreman, args):
+    errors = False
+
+    for hg in args.hostgroup:
+        try:
+            foreman.createhostgroup(hg, args.parents)
+        except (AiToolsForemanNotAllowedError, AiToolsForemanError), error:
+            errors = True
+            logging.warn(error)
+
+    return 1 if errors else 0
+
 def delhost(foreman, args):
     errors = False
     try:
@@ -294,28 +306,6 @@ def delhost(foreman, args):
 
     return 1 if errors else 0
 
-def showhost(foreman, args):
-    try:
-        data = get_hosts_by_filter_and_explicit_list(foreman, args)
-    except (AiToolsForemanError, AiToolsAiForemanError), error:
-        logging.warn(error)
-        return 1
-
-    print_summary_table_from_data(args, data)
-    return 0
-
-def addhostgroup(foreman, args):
-    errors = False
-
-    for hg in args.hostgroup:
-        try:
-            foreman.createhostgroup(hg, args.parents)
-        except (AiToolsForemanNotAllowedError, AiToolsForemanError), error:
-            errors = True
-            logging.warn(error)
-
-    return 1 if errors else 0
-
 def delhostgroup(foreman, args):
     errors = False
 
@@ -328,6 +318,16 @@ def delhostgroup(foreman, args):
             logging.warn(error)
 
     return 1 if errors else 0
+
+def showhost(foreman, args):
+    try:
+        data = get_hosts_by_filter_and_explicit_list(foreman, args)
+    except (AiToolsForemanError, AiToolsAiForemanError), error:
+        logging.warn(error)
+        return 1
+
+    print_summary_table_from_data(args, data)
+    return 0
 
 def updatehost(foreman, args):
     errors = False
