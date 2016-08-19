@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.12.5
+Version: 9.12.6
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -89,6 +89,13 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Aug 19 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.6-1
+- [ai-foreman] Fix regression when adding hosts with IPMI interfaces.
+- [ai-remote-power-control] Add more info on ISEs to the manpage.
+- [foreman.py] Fix status code when creating hostgroups.
+- [foreman.py] Do not rename the IPMI interface in all cases.
+- [ai-bs-vm] Fix default configuration file path (manpage)
+
 * Thu Jul 14 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.5-1
 - [ai-foreman-cli] Foreman 1.11 compatibility.
 - [ai-foreman-cli] Disable all subcommands but 'installhost'.
