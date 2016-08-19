@@ -135,8 +135,12 @@ because the host does not exist in the DNS server.
 Foreman didn't reply in the specified timeout.
 .TP
 .B Internal Server Error
-Something went very badly. Open a ticket against Foreman (paste verbose
-output if possible).
+Something went very badly. Either the BMC interface is not correctly configured
+(missing credentials, no interface...) or Foreman crashed. Before concluding
+the latter, please double check via the UI and open a ticket to the Procurement
+Team if there's no BMC tab on the concerned host or the power status is not
+being displayed. Otherwise, please report the issue to the Configuration
+Management team (see REPORTING BUGS).
 
 .SH JSON OUTPUT
 .TP
