@@ -22,7 +22,7 @@ nosetests6_juno:
     - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
     - yum --enablerepo=epel install -y --nogpgcheck  python-nose python-mock python-suds
     - cd t
-    - nosetests --exclude roger --exclude tbag
+    - nosetests
 
 nosetests7_juno:
   tags: 
@@ -38,7 +38,7 @@ nosetests7_juno:
     - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
     - yum install --nogpgcheck -y python-nose python2-mock python-suds
     - cd t
-    - nosetests --exclude roger --exclude tbag
+    - nosetests
 
 nosetests7_liberty:
   tags: 
@@ -54,7 +54,7 @@ nosetests7_liberty:
     - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
     - yum install -y --nogpgcheck  python-nose python2-mock python-suds
     - cd t
-    - nosetests --exclude roger --exclude tbag
+    - nosetests
   allow_failure: true
 
 # Ignore pwn tests for now. They need to be run by admins i.e. ai-config-team
