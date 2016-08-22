@@ -3,6 +3,8 @@ before_script:
 
 stages:
 - test
+- functional_7
+- functional_6
 - cleanup_test
 
 # Matricies not supported?
@@ -57,6 +59,7 @@ nosetests7_liberty:
 
 # Ignore pwn tests for now. They need to be run by admins i.e. ai-config-team
 functionaltests6_juno:
+  stage: functional_6
   tags:
     - docker
   image: docker.cern.ch/linuxsupport/slc6-base:latest
@@ -80,6 +83,7 @@ functionaltests6_juno:
     - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
 
 functionaltests6_juno_foremantest:
+  stage: functional_6
   tags:
     - docker
   image: docker.cern.ch/linuxsupport/slc6-base:latest
@@ -106,6 +110,7 @@ functionaltests6_juno_foremantest:
 
 
 functionaltests7_liberty:
+  stage: functional_7
   tags: 
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
