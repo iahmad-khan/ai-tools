@@ -726,7 +726,7 @@ class TestForemanClient(unittest.TestCase):
 
     def createhostgroup_nested_without_parents_fail_effect(hg):
         if hg == 'notexistingyet':
-            return None
+            raise AiToolsForemanNotFoundError
 
         raise AssertionError("You're not supposed to determine"
                              " id of this hostgroup '%s'" % hg)
@@ -748,7 +748,7 @@ class TestForemanClient(unittest.TestCase):
         return generate_response(requests.codes.created, {"id": nid})
 
     @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
-        return_value=None)
+        side_effect=AiToolsForemanNotFoundError)
     @patch.object(HTTPClient, 'do_request',
         side_effect=createhostgroup_nested_with_parents_success_effect)
     def test_createhostgroup_nested_with_parents_success(self, *args):
@@ -765,6 +765,7 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_any_call('post',
                 full_uri("hostgroups"), ANY, json.dumps(expected_payload))
+
 
     def createhostgroup_nested_3_success_effect(hg):
         if hg == 'foo':

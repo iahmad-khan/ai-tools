@@ -396,8 +396,10 @@ class ForemanClient(HTTPClient):
         if len(tree) == 1:
             return self.__create_single_hostgroup(tree[-1])
 
-        parent_id = self.__resolve_hostgroup_id_or_none(tree[ :-1])
-        if not parent_id:
+        try:
+            parent_id = self.__resolve_hostgroup_id('/'.join(tree[ :-1]))
+        except AiToolsForemanNotFoundError:
+
             if not create_parents:
                 raise AiToolsForemanNotAllowedError(
                     "Could not create hostgroup '%s' in Foreman because some"
@@ -741,18 +743,6 @@ class ForemanClient(HTTPClient):
 
     def __resolve_hostgroup_id(self, name):
         return self.__resolve_model_id('hostgroup', name, search_key='label')
-
-    def __resolve_hostgroup_id_or_none(self, name_list):
-        """
-        Instead of the name accepts list hierarchy of the hostgroup name,
-        which is formated with '/' symbol
-        If hostgroup that exactly matches such name doesn't exist
-        then None is returned instead of raising exception
-        """
-        try:
-            return self.__resolve_hostgroup_id('/'.join(name_list))
-        except AiToolsForemanNotFoundError:
-            return None
 
     def __resolve_user_id(self, name):
         return self.__resolve_model_id('user', name, search_key='login')
