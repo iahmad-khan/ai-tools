@@ -358,15 +358,20 @@ class ForemanClient(HTTPClient):
         else:
             logging.info("Parameter '%s' not added because dryrun is enabled" % name)
 
-    def __create_single_hostgroup(self, hostgroup, parent=None):
+    def __create_single_hostgroup(self, hostgroup, parent_id=None, parent_name=None):
         """
         Creates single hostgroup with selected parent hostgroup.
         """
 
-        logging.info("Creating hostgroup '%s'..." % hostgroup)
+        if parent_id:
+            hostgroup_fullname = "%s/%s" % (parent_name, hostgroup)
+        else:
+            hostgroup_fullname = hostgroup
+
+        logging.info("Creating hostgroup '%s'..." % hostgroup_fullname)
         payload = {'hostgroup': {'name': hostgroup}}
-        if parent:
-            payload['hostgroup']['parent_id'] = parent
+        if parent_id:
+            payload['hostgroup']['parent_id'] = parent_id
         logging.debug("With payload: %s" % payload)
 
         if self.dryrun:
@@ -377,14 +382,14 @@ class ForemanClient(HTTPClient):
         (code, body) = self.__do_api_request("post", "hostgroups",
                             data=json.dumps(payload))
         if code == requests.codes.created:
-            logging.info("Hostgroup '%s' created in Foreman" % hostgroup)
+            logging.info("Hostgroup '%s' created in Foreman" % hostgroup_fullname)
             return body['id']
         elif code == requests.codes.unprocessable_entity:
             raise AiToolsForemanNotAllowedError(
-                "Hostgroup '%s' already exists in Foreman" % hostgroup)
+                "Hostgroup '%s' already exists in Foreman" % hostgroup_fullname)
         else:
             raise AiToolsForemanError(
-                "Could not create hostgroup '%s' in Foreman" % hostgroup)
+                "Could not create hostgroup '%s' in Foreman" % hostgroup_fullname)
 
     def __create_hostgroup_hierarchy(self, tree, create_parents):
         """
@@ -396,8 +401,9 @@ class ForemanClient(HTTPClient):
         if len(tree) == 1:
             return self.__create_single_hostgroup(tree[-1])
 
+        parent_name = '/'.join(tree[ :-1])
         try:
-            parent_id = self.__resolve_hostgroup_id('/'.join(tree[ :-1]))
+            parent_id = self.__resolve_hostgroup_id(parent_name)
         except AiToolsForemanNotFoundError:
 
             if not create_parents:
@@ -409,7 +415,7 @@ class ForemanClient(HTTPClient):
 
             parent_id = self.__create_hostgroup_hierarchy(tree[ :-1], create_parents)
 
-        return self.__create_single_hostgroup(tree[-1], parent_id)
+        return self.__create_single_hostgroup(tree[-1], parent_id, parent_name)
 
     def createhostgroup(self, hostgroup, parents=False):
         """
