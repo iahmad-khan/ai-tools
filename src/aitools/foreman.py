@@ -441,7 +441,8 @@ class ForemanClient(HTTPClient):
         exception AiToolsForemanNotAllowedError will be raised.
         """
 
-        if not self.__resolve_hostgroup_id(hostgroup):
+        hgid = self.__resolve_hostgroup_id(hostgroup)
+        if not hgid:
             raise AiToolsForemanNotFoundError("Hostgroup '%s' not found "
                                               "in Foreman" % hostgroup)
 
@@ -455,7 +456,7 @@ class ForemanClient(HTTPClient):
 
         logging.debug("Checking if hostgroup '%s' has any children..." % hostgroup)
         body = self.search_query('hostgroups', '%s/' % hostgroup)
-        children = [r['title'] for r in body if r['parent_name'] == hostgroup]
+        children = [r['title'] for r in body if r['parent_id'] == hgid]
 
         if children and not recursive:
             raise AiToolsForemanNotAllowedError(

@@ -908,7 +908,7 @@ class TestForemanClient(unittest.TestCase):
         if req[0] == 'hostgroups':
             if req[1] == 'playground/foobar/':
                 return [{"title": "playground/foobar/baz",
-                         "parent_name": 'playground/foobar'}]
+                         "parent_id": 73}]
 
         raise AssertionError("Not allowed request")
 
@@ -947,7 +947,7 @@ class TestForemanClient(unittest.TestCase):
         if req[0] == 'hostgroups':
             if req[1] == 'playground/foobar/':
                 return [{"title": "playground/foobar/baz",
-                         "parent_name": 'playground/foobar'}]
+                         "parent_id": 73}]
             if req[1] == 'playground/foobar/baz/':
                 return []
 
@@ -967,7 +967,6 @@ class TestForemanClient(unittest.TestCase):
 
 
     def delhostgroup_nested_dryrun_resolve(hg):
-        print(hg)
         if hg == 'playground':
             return 42
         if hg == 'playground/foobar':
@@ -976,7 +975,6 @@ class TestForemanClient(unittest.TestCase):
         raise AssertionError("You are not allowed to delermine id of hostgroup '%s'" % hg)
 
     def delhostgroup_nested_dryrun_search(*req):
-        print(req)
         if req[0] == 'hosts':
             if req[1] in ['hostgroup_fullname = playground/foobar',
                           'hostgroup_fullname = playground']:
@@ -984,7 +982,7 @@ class TestForemanClient(unittest.TestCase):
 
         if req[0] == 'hostgroups':
             if req[1] == 'playground/':
-                return {"title": "playground/foobar", "parent_name": 'playground'}
+                return {"title": "playground/foobar", "parent_id": 42}
             if req[1] == 'playground/foobar/':
                 return []
 
@@ -1024,9 +1022,9 @@ class TestForemanClient(unittest.TestCase):
 
         if req[0] == 'hostgroups':
             if req[1] == 'playground/':
-                return [{"title": "playground/foo", "parent_name": 'playground'},
-                        {"title": "playground/bar", "parent_name": 'playground'},
-                        {"title": "playground/baz", "parent_name": 'playground'}]
+                return [{"title": "playground/foo", "parent_id": 42},
+                        {"title": "playground/bar", "parent_id": 42},
+                        {"title": "playground/baz", "parent_id": 42}]
 
         raise AssertionError("You are not allowed to determine %s of hostgroup '%s'" %
                              (req[0], req[1]))
