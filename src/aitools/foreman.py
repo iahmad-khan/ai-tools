@@ -502,12 +502,14 @@ class ForemanClient(HTTPClient):
         :return: the name of the highest removed hostgroup in the hierarchy
         """
 
+        candidates = self.__traverse_hostgroup_for_deletion(hostgroup.strip('/'), [], recursive)
+
         if self.dryrun:
             logging.info("Hostgroup '%s' was not removed because dryrun is enabled" %
                 hostgroup)
+            logging.info("I would have removed: %s" % ', '.join(candidates))
             return None
 
-        candidates = self.__traverse_hostgroup_for_deletion(hostgroup.strip('/'), [], recursive)
         name_removed = []
         for hg in candidates:
             name_removed.append(self.__remove_single_hostgroup(hg))
