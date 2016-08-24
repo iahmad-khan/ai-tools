@@ -697,7 +697,7 @@ class TestForemanClient(unittest.TestCase):
                 full_uri("hostgroups"), ANY, json.dumps(expected_payload))
 
     @patch.object(HTTPClient, 'do_request',
-        return_value=generate_response(requests.codes.created, {"id":111}))
+        return_value=generate_response(requests.codes.created, {"id": 111}))
     def test_create_top_level_hostgroup_success(self, *args):
         hg = "foobar"
         self.assertEquals(111, self.client.createhostgroup(hostgroup=hg))
@@ -783,7 +783,7 @@ class TestForemanClient(unittest.TestCase):
             return 42
         if hg == 'foo/bar':
             return 73
-        
+
         raise AiToolsForemanNotFoundError
 
     def createhostgroup_nested_3_success_request(*req):
@@ -839,8 +839,8 @@ class TestForemanClient(unittest.TestCase):
 
     def delhostgroup_success_no_hosts_request(*req):
         if req[0] == 'delete':
-             if req[1] == 'https://localhost:1/api/hostgroups/73':
-                 return generate_response(requests.codes.ok, {"name": "foobar"})
+            if req[1] == 'https://localhost:1/api/hostgroups/73':
+                return generate_response(requests.codes.ok, {"name": "foobar"})
 
         raise AssertionError('Trying to delete not allowed hostgroup')
 
@@ -934,7 +934,7 @@ class TestForemanClient(unittest.TestCase):
     def delhostgroup_success_with_children_request(*req):
         if req[0] == 'delete':
             if req[1] == 'https://localhost:1/api/hostgroups/73':
-                return generate_response(requests.codes.ok, {"name": "foobar"}) 
+                return generate_response(requests.codes.ok, {"name": "foobar"})
             if req[1] == 'https://localhost:1/api/hostgroups/99':
                 return generate_response(requests.codes.ok, {"name": "baz"})
 
@@ -966,8 +966,36 @@ class TestForemanClient(unittest.TestCase):
             hostgroup=hg, recursive=True))
 
 
-    @patch.object(HTTPClient, 'do_request',
-        return_value=AssertionError)
+    def delhostgroup_nested_dryrun_resolve(hg):
+        print(hg)
+        if hg == 'playground':
+            return 42
+        if hg == 'playground/foobar':
+            return 73
+
+        raise AssertionError("You are not allowed to delermine id of hostgroup '%s'" % hg)
+
+    def delhostgroup_nested_dryrun_search(*req):
+        print(req)
+        if req[0] == 'hosts':
+            if req[1] in ['hostgroup_fullname = playground/foobar',
+                          'hostgroup_fullname = playground']:
+                return []
+
+        if req[0] == 'hostgroups':
+            if req[1] == 'playground/':
+                return {"title": "playground/foobar", "parent_name": 'playground'}
+            if req[1] == 'playground/foobar/':
+                return []
+
+        raise AssertionError("You are not allowed to determine %s of hostgroup '%s'" %
+                             (req[0], req[1]))
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        side_effect=delhostgroup_nested_dryrun_resolve)
+    @patch.object(ForemanClient, 'search_query',
+        side_effect=delhostgroup_nested_dryrun_search)
+    @patch.object(HTTPClient, 'do_request')
     def test_delhostgroup_nested_dryrun(self, *args):
         hg = "playground/foobar"
         self.client.dryrun = True
@@ -991,7 +1019,7 @@ class TestForemanClient(unittest.TestCase):
     def delhostgroup_not_deleted_with_hosts_search(*req):
         if req[0] == 'hosts':
             if 'playground/bar' in req[1]:
-                return [{"name": "host1"}] 
+                return [{"name": "host1"}]
             return []
 
         if req[0] == 'hostgroups':
@@ -999,7 +1027,7 @@ class TestForemanClient(unittest.TestCase):
                 return [{"title": "playground/foo", "parent_name": 'playground'},
                         {"title": "playground/bar", "parent_name": 'playground'},
                         {"title": "playground/baz", "parent_name": 'playground'}]
-            
+
         raise AssertionError("You are not allowed to determine %s of hostgroup '%s'" %
                              (req[0], req[1]))
 
