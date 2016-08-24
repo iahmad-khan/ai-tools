@@ -363,7 +363,7 @@ class ForemanClient(HTTPClient):
         Creates single hostgroup with selected parent hostgroup.
         """
 
-        if parent_id:
+        if parent_name:
             hostgroup_fullname = "%s/%s" % (parent_name, hostgroup)
         else:
             hostgroup_fullname = hostgroup
@@ -405,13 +405,12 @@ class ForemanClient(HTTPClient):
         try:
             parent_id = self.__resolve_hostgroup_id(parent_name)
         except AiToolsForemanNotFoundError:
-
             if not create_parents:
                 raise AiToolsForemanNotAllowedError(
                     "Could not create hostgroup '%s' in Foreman because some"
-                    " parts of the hostgroup hierarchy(%s) do not exist"
+                    " parts of the hostgroup hierarchy (%s) do not exist"
                     " (use -p to create hostgroups recursively)" %
-                    (tree[-1], '/'.join(tree)))
+                    (tree[-1], '/'.join(tree[ :-1])))
 
             parent_id = self.__create_hostgroup_hierarchy(tree[ :-1], create_parents)
 
@@ -438,7 +437,7 @@ class ForemanClient(HTTPClient):
         Returns a list of hostgroups to be deleted.
         Exception AiToolsForemanNotAllowedError will be raised if hostgroups
         with hosts are found.
-        If recursive is set to False and hostgroup has children hostgroups - 
+        If recursive is set to False and hostgroup has children hostgroups -
         exception AiToolsForemanNotAllowedError will be raised.
         """
 
@@ -477,11 +476,6 @@ class ForemanClient(HTTPClient):
 
         logging.info("Removing hostgroup '%s'..." % hostgroup)
 
-        if self.dryrun:
-            logging.info("Hostgroup '%s' was not removed because dryrun is enabled" %
-                hostgroup)
-            return None
-
         hgid = self.__resolve_hostgroup_id(hostgroup)
         (code, body) = self.__do_api_request("delete",
                                              "hostgroups/%s" % (hgid))
@@ -507,6 +501,11 @@ class ForemanClient(HTTPClient):
         :raise AiToolsForemanError: if operation failed
         :return: the name of the highest removed hostgroup in the hierarchy
         """
+
+        if self.dryrun:
+            logging.info("Hostgroup '%s' was not removed because dryrun is enabled" %
+                hostgroup)
+            return None
 
         candidates = self.__traverse_hostgroup_for_deletion(hostgroup.strip('/'), [], recursive)
         name_removed = []
