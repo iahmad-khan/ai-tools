@@ -27,7 +27,7 @@ Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
 
 .SH SUBCOMMANDS
 
-The available subcommands are: addhost, delhost, showhost and updatehost.
+The available subcommands are: addhost, addhostgroup, delhost, delhostgroup, showhost and updatehost.
 You're most likely only interested in the last two.
 
 .SH OPTIONS
@@ -127,6 +127,22 @@ When this switch is enabled, the CLI will try to delete existing entries
 before creating new ones.
 
 .\""""""""""
+.\" ADDHOSTGROUP
+.\""""""""""
+
+.LP
+.I Addhostgroup options:
+
+.TP
+.B [HOSTGROUP]...
+A list of hostgroups to create. Example: "foo/bar"
+
+.TP
+.B -p, --parents PARENTS
+Create parent hostgroups if they don't exist yet.
+
+
+.\""""""""""
 .\" DELHOST
 .\""""""""""
 
@@ -137,6 +153,25 @@ before creating new ones.
 .B [HOSTNAME]...
 A list of hostnames (qualified or not) to delete. This option can be combined
 with a filtering option of your choice.
+
+
+.\""""""""""
+.\" DELHOSTGROUP
+.\""""""""""
+
+.LP
+.I Delhostgroup options:
+
+.TP
+.B [HOSTGROUP]...
+A list of hostgroups to remove. This subcommand will never delete hostgroups if it
+finds any host when traversing the hostgroup tree, regardless of the presence of
+-r flag. Example: "foo/bar"
+
+.TP
+.B -r, -R, --recursive RECURSIVE
+Remove the hostgroup and its children recursively.
+
 
 .\""""""""""
 .\" SHOWHOST
@@ -293,6 +328,18 @@ ai-foreman -l "pants/2" updatehost bar.cern.ch --hostgroup pants/1
 .TP
 .B Delete all CASTOR ATLAS hosts
 ai-foreman -l castor/c2atlas delhost
+
+.TP
+.B Create "playground/foo/bar" making all parents recursively if needed.
+ai-foreman addhostgroup -p playground/foo/bar
+
+.TP
+.B Delete "playground/foo/bar". As -r is not passed, this will fail if the hostgroup has any children (or hosts).
+ai-foreman delhostgroup playground/foo/bar
+
+.TP
+.B Delete "playground/foo/bar" and all children recursively.
+ai-foreman delhostgroup -r playground/foo/bar
 
 .SH FAQ
 
