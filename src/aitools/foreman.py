@@ -360,7 +360,14 @@ class ForemanClient(HTTPClient):
 
     def __create_single_hostgroup(self, hostgroup, parent_id=None, parent_name=None):
         """
-        Creates single hostgroup with selected parent hostgroup.
+        Creates a single hostgroup.
+        :param hostgroup: The name of the hostgroup to create (only the tip)
+        :param parent_id: The id of the parent (None if it's a top-level)
+        :param parent_name: The name of the parent (optional, only for beautification)
+        :raise AiToolsForemanNotAllowedError: If it exists already.
+        :raise AiToolsForemanError: Other errors.
+        :return: The id of the hostgroup that has been created, or None if
+          dry run is enabled.
         """
 
         if parent_name:
@@ -393,9 +400,12 @@ class ForemanClient(HTTPClient):
 
     def __create_hostgroup_hierarchy(self, tree, create_parents):
         """
-        Recursively go up in the tree until the already created hostgroup
-        and create needed hostgroups if create_parents is set to True,
-        otherwise try to create low-level hostgroup.
+        Recursively create a full hostgroup hierarchy, creating parent
+        hostgroups as needed.
+        :param tree: The hostgroup hierarchy to create (list)
+        :param create_parents: Create parents recursively.
+        :raise AiToolsForemanNotAllowedError: If parents do not exist and
+            create_parents is False.
         """
 
         if len(tree) == 1:
@@ -418,14 +428,15 @@ class ForemanClient(HTTPClient):
 
     def createhostgroup(self, hostgroup, parents=False):
         """
-        Create new hostgroup. Parents are created recursively as needed if
-        option parents is enabled.
-        :param hostgroup: the name of the hostgroup to be created
-        :param parents: if True - creates needed parents if they don't exist
-        :raise AiToolsForemanNotAllowedError: the hostgroup exists already
-        or cannot recreate the whole tree due to --parents restriction
-        :raise AiToolsForemanError: if the operation failed
-        :return: The id of the hostgroup created, or None if dry run is enabled
+        Create a new hostgroup. Parents are created recursively as needed if
+        the option 'parents' is True.
+        :param hostgroup: the fullname of the hostgroup to be created (string)
+        :param parents: if True, creates needed parents if they don't exist.
+        :raise AiToolsForemanNotAllowedError: If the hostgroup exists already
+          or cannot recreate the whole tree due to parents being set to False.
+        :raise AiToolsForemanError: If the operation failed.
+        :return: The id of the hostgroup that has been created, or None if
+          dry run is enabled.
         """
 
         tree = hostgroup.strip('/').split('/')
@@ -434,11 +445,17 @@ class ForemanClient(HTTPClient):
 
     def __traverse_hostgroup_for_deletion(self, hostgroup, candidates, recursive):
         """
-        Returns a list of hostgroups to be deleted.
-        Exception AiToolsForemanNotAllowedError will be raised if hostgroups
-        with hosts are found.
-        If recursive is set to False and hostgroup has children hostgroups -
-        exception AiToolsForemanNotAllowedError will be raised.
+        Returns a list of hostgroups to be deleted after figuring out if the
+        requested operation is legal.
+        :param hostgroup: the fullname of the hostgroup to remove (string)
+        :param candidates: the intermediate list of hostgroups that are okay
+          to be removed (list, set to [] to start the recursion)
+        :param recursive: set to True to allow deleting children hostgroups
+          recursively.
+        :raise AiToolsForemanNotFoundError: If the hostgroup does not exist.
+        :raise AiToolsForemanNotAllowedError: If hostgroups with hosts are found.
+        :raise AiToolsForemanNotAllowedError: If children is found and
+          recursive is set to False.
         """
 
         hgid = self.__resolve_hostgroup_id(hostgroup)
@@ -472,7 +489,9 @@ class ForemanClient(HTTPClient):
 
     def __remove_single_hostgroup(self, hostgroup):
         """
-        Removes single hostgroup by provided name of the hostgroup.
+        Removes a single hostgroup.
+        :param hostgroup: The fullname of the hostgroup to delete (string)
+        :raise AiToolsForemanError: if Foreman said no.
         """
 
         logging.info("Removing hostgroup '%s'..." % hostgroup)
@@ -491,16 +510,16 @@ class ForemanClient(HTTPClient):
     def delhostgroup(self, hostgroup, recursive=False):
         """
         Remove specified hostgroup and if recursive option is enabled - all
-        children hostgroups.
-        If the hostgroup or any children hostgroup
-        possesses hosts - operation fails. If it possesses children hostgroups
-        and recursive option is not specified - operation fails.
-        :param hostgroup: the name of the hostgroup to be deleted
+        children hostgroups. The operation will fail if either the hostgroup
+        or any children contains hosts or if the hostgroup has children and
+        recursive is set to False.
+        :param hostgroup: the fullname of the hostgroup to be deleted (string)
         :param recursive: if True - allows to remove children hostgroups
-        :raise AiToolsForemanNotFoundError: if subtree contains hosts or 
-        hostgroups which cannot be removed
-        :raise AiToolsForemanError: if operation failed
+        :raise AiToolsForemanNotFoundError: if the subtree contains hosts or
+          hostgroups which cannot be removed.
+        :raise AiToolsForemanError: if the operation failed.
         :return: the name of the highest removed hostgroup in the hierarchy
+          (string)
         """
 
         candidates = self.__traverse_hostgroup_for_deletion(hostgroup.strip('/'), [], recursive)
