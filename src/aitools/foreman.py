@@ -456,6 +456,8 @@ class ForemanClient(HTTPClient):
         :raise AiToolsForemanNotAllowedError: If hostgroups with hosts are found.
         :raise AiToolsForemanNotAllowedError: If children is found and
           recursive is set to False.
+        :return the initial candidates list plus extra hostgroups discovered
+          that can be removed (list)
         """
 
         hgid = self.__resolve_hostgroup_id(hostgroup)
