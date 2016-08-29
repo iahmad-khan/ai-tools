@@ -1038,3 +1038,189 @@ class TestForemanClient(unittest.TestCase):
 
         self.assertRaises(AiToolsForemanNotAllowedError, self.client.delhostgroup,
             hostgroup=hg)
+
+    #### RENAMEHOST ####
+
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.OK, []),
+            generate_response(requests.codes.OK, []),
+            generate_response(requests.codes.OK, {
+                  "total": 2,
+                  "subtotal": 2,
+                  "page": 1,
+                  "per_page": 50,
+                  "search": None,
+                  "sort": {
+                    "by": None,
+                    "order": None
+                  },
+                  "results": [
+                    {
+                      "id": 123,
+                      "identifier": None,
+                      "name": "bar.cern.ch",
+                      "primary": True,
+                      "provision": True,
+                      "type": "interface",
+                      "virtual": False
+                    },
+                    {
+                      "id": 124,
+                      "identifier": None,
+                      "name": "foo-ipmi.cern.ch",
+                      "primary": False,
+                      "provision": False,
+                      "type": "bmc",
+                      "provider": "IPMI",
+                      "virtual": False
+                    }
+                  ]
+                }),
+            generate_response(requests.codes.OK, [])])
+    @patch('aitools.foreman.shortify', return_value='foo')
+    def test_renamehost_ok(self, *args):
+        oldfqdn = "foo.cern.ch"
+        newfqdn = "bar.cern.ch"
+        expected_payloads = [{"host": {"name": newfqdn}},
+            {"host": {"certname": newfqdn}},
+            {"interface": {
+                    "name": "bar-ipmi.cern.ch",
+                    "provider": "IPMI",
+                    "type": "bmc"}}]
+        expected_calls = [ call('put', full_uri("hosts/%s" %
+                urllib.quote(oldfqdn)), ANY, json.dumps(expected_payloads[0])),
+            call('put', full_uri("hosts/%s" % urllib.quote(newfqdn)), ANY,
+                    json.dumps(expected_payloads[1])),
+            call('get', full_uri("hosts/%s/interfaces" % urllib.quote(newfqdn)),
+                    ANY, None),
+            call('put', full_uri("hosts/%s/interfaces/%d" %
+                (urllib.quote(newfqdn), 124)), ANY,
+                json.dumps(expected_payloads[2]))]
+        self.assertEquals(None, self.client.renamehost(oldfqdn, newfqdn))
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls(expected_calls)
+        #check that no calls were made other than expected
+        self.assertEquals(args[1].call_count, len(expected_calls))
+
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.OK, []),
+            generate_response(requests.codes.OK, []),
+            generate_response(requests.codes.OK, {
+                  "total": 2,
+                  "subtotal": 2,
+                  "page": 1,
+                  "per_page": 50,
+                  "search": None,
+                  "sort": {
+                    "by": None,
+                    "order": None
+                  },
+                  "results": [
+                    {
+                      "id": 123,
+                      "identifier": None,
+                      "name": "bar.cern.ch",
+                      "primary": True,
+                      "provision": True,
+                      "type": "interface",
+                      "virtual": False
+                    },
+                    {
+                      "id": 124,
+                      "identifier": None,
+                      "name": "special-ipmi.cern.ch",
+                      "primary": False,
+                      "provision": False,
+                      "type": "bmc",
+                      "provider": "IPMI",
+                      "virtual": False
+                    }
+                  ]
+                }),
+            generate_response(requests.codes.OK, [])])
+    @patch('aitools.foreman.shortify', return_value='foo')
+    def test_renamehost_ok_special_ipmi(self, *args):
+        oldfqdn = "foo.cern.ch"
+        newfqdn = "bar.cern.ch"
+        expected_payloads = [{"host": {"name": newfqdn}},
+            {"host": {"certname": newfqdn}}]
+        expected_calls = [ call('put', full_uri("hosts/%s" %
+                urllib.quote(oldfqdn)), ANY, json.dumps(expected_payloads[0])),
+            call('put', full_uri("hosts/%s" % urllib.quote(newfqdn)), ANY,
+                    json.dumps(expected_payloads[1])),
+            call('get', full_uri("hosts/%s/interfaces" % urllib.quote(newfqdn)),
+                    ANY, None)]
+        self.assertEquals(None, self.client.renamehost(oldfqdn, newfqdn))
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls(expected_calls)
+        #check that no calls were made other than expected
+        self.assertEquals(args[1].call_count, len(expected_calls))
+
+    @patch.object(HTTPClient, 'do_request', side_effect=
+        [
+            generate_response(requests.codes.OK, []),
+            generate_response(requests.codes.OK, []),
+            generate_response(requests.codes.OK, [], meta=True, subtotal=0)])
+    @patch('aitools.foreman.shortify', return_value='foo')
+    def test_renamehost_ok_no_ipmi(self, *args):
+        oldfqdn = "foo.cern.ch"
+        newfqdn = "bar.cern.ch"
+        expected_payloads = [{"host": {"name": newfqdn}},
+            {"host": {"certname": newfqdn}}]
+        expected_calls = [ call('put', full_uri("hosts/%s" %
+                urllib.quote(oldfqdn)), ANY, json.dumps(expected_payloads[0])),
+            call('put', full_uri("hosts/%s" % urllib.quote(newfqdn)), ANY,
+                    json.dumps(expected_payloads[1])),
+            call('get', full_uri("hosts/%s/interfaces" % urllib.quote(newfqdn)),
+                    ANY, None)]
+        self.assertEquals(None, self.client.renamehost(oldfqdn, newfqdn))
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls(expected_calls)
+        #check that no calls were made other than expected
+        self.assertEquals(args[1].call_count, len(expected_calls))
+
+    @patch.object(HTTPClient, 'do_request', return_value=
+        generate_response(requests.codes.not_found, [], meta=True))
+    def test_renamehost_host_not_found(self, *args):
+        oldfqdn = "foo.cern.ch"
+        newfqdn = "bar.cern.ch"
+        expected_payloads = [{"host": {"name": newfqdn}}]
+        expected_calls = [ call('put', full_uri("hosts/%s" %
+                urllib.quote(oldfqdn)), ANY, json.dumps(expected_payloads[0]))]
+        self.assertRaises(AiToolsForemanNotFoundError,
+            self.client.renamehost, oldfqdn, newfqdn)
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls(expected_calls)
+        #check that no calls were made other than expected
+        self.assertEquals(args[0].call_count, len(expected_calls))
+
+    @patch.object(HTTPClient, 'do_request', return_value=
+        generate_response(requests.codes.unprocessable_entity, [], meta=True))
+    def test_renamehost_host_unprocessable(self, *args):
+        oldfqdn = "foo.cern.ch"
+        newfqdn = "bar.cern.ch"
+        expected_payloads = [{"host": {"name": newfqdn}}]
+        expected_calls = [ call('put', full_uri("hosts/%s" %
+                urllib.quote(oldfqdn)), ANY, json.dumps(expected_payloads[0]))]
+        self.assertRaises(AiToolsForemanError,
+            self.client.renamehost, oldfqdn, newfqdn)
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls(expected_calls)
+        self.assertEquals(args[0].call_count, len(expected_calls))
+
+
+    @patch.object(HTTPClient, 'do_request', return_value=
+        generate_response(requests.codes.server_error, [], meta=True))
+    def test_renamehost_server_error(self, *args):
+        oldfqdn = "foo.cern.ch"
+        newfqdn = "bar.cern.ch"
+        expected_payloads = [{"host": {"name": newfqdn}}]
+        expected_calls = [ call('put', full_uri("hosts/%s" %
+                urllib.quote(oldfqdn)), ANY, json.dumps(expected_payloads[0]))]
+        self.assertRaises(AiToolsForemanError,
+            self.client.renamehost, oldfqdn, newfqdn)
+        super(ForemanClient, self.client).do_request\
+            .assert_has_calls(expected_calls)
+        self.assertEquals(args[0].call_count, len(expected_calls))
