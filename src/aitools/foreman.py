@@ -803,6 +803,42 @@ class ForemanClient(HTTPClient):
             logging.debug('Response:\n%s', response)
             raise AiToolsForemanError('Unexpected response')
 
+    def create_filter(self, role_id, search=None, permission_ids=None):
+        """
+        Create a new filter
+
+        :param role_id: the id of the role to which the filter will belong to
+        :param search: optional string for a search query limiting the filter
+            eg. "hostgroup_title ~ foo"
+        :param permission_ids: optional list of permission ids that will be
+            applied with the filter
+        :raise AiToolsForemanError: if the filter creation failed
+        :raise TypeError: if permission_ids is not a list
+        :return: the id of the newly created filter
+        """
+
+        payload = {"filter": {"role_id": str(role_id)}}
+        if search:
+            payload["filter"]["search"] = str(search)
+        if permission_ids:
+            if not isinstance(permission_ids, list):
+                raise TypeError("permission_ids has to be a list")
+            payload["filter"]["permission_ids"] = permission_ids
+
+        try:
+            code, response = self.__do_api_request('post', "filters",
+                json.dumps(payload))
+            if code == requests.codes.created:
+                return response['id']
+            else:
+                raise AiToolsForemanError("%d: %s" % (code, response))
+        except AiToolsForemanError, error:
+            raise AiToolsForemanError(error)
+        except KeyError, error:
+            logging.error('Id not found in response')
+            logging.debug('Response:\n%s', response)
+            raise AiToolsForemanError('Unexpected response')
+
     def __get_model_by_name(self, model, name):
         logging.debug("Requesting %s '%s' from Foreman" % (model, name))
 
