@@ -2,6 +2,7 @@ import unittest
 import requests
 import json
 import urllib
+import re
 
 from mock import Mock, patch, ANY, call
 
@@ -1224,3 +1225,39 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_has_calls(expected_calls)
         self.assertEquals(args[0].call_count, len(expected_calls))
+
+    #### CREATE_ROLE ####
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created, {
+            "builtin": 0,
+            "name": "foo",
+            "id": 123,
+            "filters": []}))
+    def test_create_role_ok(self, *args):
+        self.assertEquals(123, self.client.create_role("foo"))
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("roles"), ANY, json.dumps(
+                {"role":{"name": "foo"}}))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.server_error, []))
+    def test_create_role_not_ok(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.create_role, "foo")
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("roles"), ANY, json.dumps(
+                {"role":{"name": "foo"}}))
+
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created, {
+            "builtin": 0,
+            "name": "foo",
+            "filters": []}))
+    def test_create_role_keyerror(self, *args):
+        expected_msg = re.compile("Unexpected response")
+        self.assertRaisesRegexp(AiToolsForemanError, expected_msg,
+            self.client.create_role, "foo")
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("roles"), ANY, json.dumps(
+                {"role":{"name": "foo"}}))

@@ -756,6 +756,30 @@ class ForemanClient(HTTPClient):
     def get_environment_by_name(self, name):
         return self.__get_model_by_name('environment', name)
 
+    def create_role(self, name):
+        """
+        Creates a new role in Foreman.
+
+        :param name: the name of role to add
+        :raise AiToolsForemanError: if the role creation failed
+        :return: the id of the new role created
+        """
+        payload = {"role": {"name": name}}
+        try:
+            code, response = self.__do_api_request('post', "roles",
+                json.dumps(payload))
+            if code == requests.codes.created:
+                logging.info("Role '%s' added", name)
+                return response['id']
+            else:
+                raise AiToolsForemanError("%d: %s" % (code, response))
+        except AiToolsForemanError, error:
+            raise AiToolsForemanError(error)
+        except KeyError, error:
+            logging.error('Id not found in response')
+            logging.debug('Response:\n%s', response)
+            raise AiToolsForemanError('Unexpected response')
+
     def __get_model_by_name(self, model, name):
         logging.debug("Requesting %s '%s' from Foreman" % (model, name))
 
