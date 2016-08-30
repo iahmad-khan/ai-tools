@@ -756,6 +756,32 @@ class ForemanClient(HTTPClient):
     def get_environment_by_name(self, name):
         return self.__get_model_by_name('environment', name)
 
+    def create_hgmanager_role(self, hostgroup_name):
+        """
+        Creates a new hostgroup manager role in Foreman with the appropriate
+        filters.
+
+        :param hostgroup_name: the name of the hostgroup for which to add the
+            manager role
+        :raise AiToolsForemanError: if the role creation failed
+        :return: the id of the new role created
+        """
+
+        host_filter = "hostgroup_title ~ {0}/% or hostgroup_title = {0}".format(
+            hostgroup_name)
+        hostgroup_filter = "title ~ {0}/% or title = {0}".format(hostgroup_name)
+
+        try:
+            host_permissions = self.get_permissions_by_model("Host")
+            hostgroup_permissions = self.get_permissions_by_model("Hostgroup")
+            role_id = self.create_role("hgmanager_{0}".format(hostgroup_name))
+            self.create_filter(role_id, host_filter, host_permissions)
+            self.create_filter(role_id, hostgroup_filter, hostgroup_permissions)
+            return role_id
+        except AiToolsForemanError, error:
+            raise AiToolsForemanError(error)
+
+
     def create_role(self, name):
         """
         Creates a new role in Foreman.
