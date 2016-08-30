@@ -1261,3 +1261,68 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('post', full_uri("roles"), ANY, json.dumps(
                 {"role":{"name": "foo"}}))
+
+    #### GET_PERMISSIONS_BY_MODEL ####
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.ok,
+        {"total": 2,
+          "subtotal": 2,
+          "page": 1,
+          "per_page": 20,
+          "search": None,
+          "sort": {
+            "by": None,
+            "order": None
+          },
+          "results": [
+            {
+              "name": "perm1",
+              "id": 124,
+              "resource_type": "resource"
+            },
+            {
+              "name": "perm2",
+              "id": 123,
+              "resource_type": "resource"
+            }]}))
+    def test_getpermissionssbymodel_ok(self, *args):
+        self.assertEquals([123,124], self.client.get_permissions_by_model("resource"))
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get', full_uri("permissions"), ANY, json.dumps(
+                {"resource_type":"resource"}))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.server_error, []))
+    def test_getpermissionssbymodel_not_ok(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.get_permissions_by_model, "resource")
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get', full_uri("permissions"), ANY, json.dumps(
+                {"resource_type":"resource"}))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.ok,
+        {"total": 2,
+          "subtotal": 2,
+          "page": 1,
+          "per_page": 20,
+          "search": None,
+          "sort": {
+            "by": None,
+            "order": None
+          },
+          "results": [
+            {
+              "name": "perm1",
+              "resource_type": "resource"
+            },
+            {
+              "name": "perm2",
+              "resource_type": "resource"
+            }]}))
+    def test_getpermissionssbymodel_keyerror(self, *args):
+        expected_msg = re.compile("Unexpected response")
+        self.assertRaisesRegexp(AiToolsForemanError, expected_msg,
+            self.client.get_permissions_by_model, "resource")
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get', full_uri("permissions"), ANY, json.dumps(
+                {"resource_type":"resource"}))

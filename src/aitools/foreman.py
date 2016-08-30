@@ -780,6 +780,29 @@ class ForemanClient(HTTPClient):
             logging.debug('Response:\n%s', response)
             raise AiToolsForemanError('Unexpected response')
 
+    def get_permissions_by_model(self, model):
+        """
+        Get all permission for a certain resource type.
+
+        :param model: the name of th resource type, eg "Hostgroup"
+        :raise AiToolsForemanError: if lookup failed
+        :return: the sorted list of permission ids for the given resource type
+        """
+        payload = {"resource_type": model}
+        try:
+            code, response = self.__do_api_request('get', "permissions",
+                json.dumps(payload))
+            if code == requests.codes.ok:
+                return sorted([perm['id'] for perm in response['results']])
+            else:
+                raise AiToolsForemanError("%d: %s" % (code, response))
+        except AiToolsForemanError, error:
+            raise AiToolsForemanError(error)
+        except KeyError, error:
+            logging.error('Id not found in response')
+            logging.debug('Response:\n%s', response)
+            raise AiToolsForemanError('Unexpected response')
+
     def __get_model_by_name(self, model, name):
         logging.debug("Requesting %s '%s' from Foreman" % (model, name))
 
