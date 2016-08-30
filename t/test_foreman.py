@@ -2,7 +2,6 @@ import unittest
 import requests
 import json
 import urllib
-import re
 
 from mock import Mock, patch, ANY, call
 
@@ -1255,8 +1254,7 @@ class TestForemanClient(unittest.TestCase):
             "name": "foo",
             "filters": []}))
     def test_create_role_keyerror(self, *args):
-        expected_msg = re.compile("Unexpected response")
-        self.assertRaisesRegexp(AiToolsForemanError, expected_msg,
+        self.assertRaises(AiToolsForemanError,
             self.client.create_role, "foo")
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('post', full_uri("roles"), ANY, json.dumps(
@@ -1320,8 +1318,7 @@ class TestForemanClient(unittest.TestCase):
               "resource_type": "resource"
             }]}))
     def test_getpermissionssbymodel_keyerror(self, *args):
-        expected_msg = re.compile("Unexpected response")
-        self.assertRaisesRegexp(AiToolsForemanError, expected_msg,
+        self.assertRaises(AiToolsForemanError,
             self.client.get_permissions_by_model, "resource")
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('get', full_uri("permissions"), ANY, json.dumps(
@@ -1467,8 +1464,7 @@ class TestForemanClient(unittest.TestCase):
         }))
     def test_create_filter_keyerror(self, *args):
         expected_load = {"filter": { "role_id": "1"}}
-        expected_msg = re.compile("Unexpected response")
-        self.assertRaisesRegexp(AiToolsForemanError, expected_msg,
+        self.assertRaises(AiToolsForemanError,
             self.client.create_filter, 1)
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('post', full_uri("filters"), ANY,
