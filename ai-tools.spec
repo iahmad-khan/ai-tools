@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.12.6
+Version: 9.13.0
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -89,6 +89,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Sep 01 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.13.0-1
+- [ai-foreman] Add 'delhostgroup' and 'addhostgroup'.
+
 * Thu Aug 19 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.12.6-1
 - [ai-foreman] Fix regression when adding hosts with IPMI interfaces.
 - [ai-remote-power-control] Add more info on ISEs to the manpage.
