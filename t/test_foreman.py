@@ -1224,3 +1224,252 @@ class TestForemanClient(unittest.TestCase):
         super(ForemanClient, self.client).do_request\
             .assert_has_calls(expected_calls)
         self.assertEquals(args[0].call_count, len(expected_calls))
+
+    #### CREATE_ROLE ####
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created, {
+            "builtin": 0,
+            "name": "foo",
+            "id": 123,
+            "filters": []}))
+    def test_create_role_ok(self, *args):
+        self.assertEquals(123, self.client.create_role("foo"))
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("roles"), ANY, json.dumps(
+                {"role":{"name": "foo"}}))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.server_error, []))
+    def test_create_role_not_ok(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.create_role, "foo")
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("roles"), ANY, json.dumps(
+                {"role":{"name": "foo"}}))
+
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created, {
+            "builtin": 0,
+            "name": "foo",
+            "filters": []}))
+    def test_create_role_keyerror(self, *args):
+        self.assertRaises(AiToolsForemanError,
+            self.client.create_role, "foo")
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("roles"), ANY, json.dumps(
+                {"role":{"name": "foo"}}))
+
+    #### GET_PERMISSIONS_BY_MODEL ####
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.ok,
+        {"total": 2,
+          "subtotal": 2,
+          "page": 1,
+          "per_page": 20,
+          "search": None,
+          "sort": {
+            "by": None,
+            "order": None
+          },
+          "results": [
+            {
+              "name": "perm1",
+              "id": 124,
+              "resource_type": "resource"
+            },
+            {
+              "name": "perm2",
+              "id": 123,
+              "resource_type": "resource"
+            }]}))
+    def test_getpermissionssbymodel_ok(self, *args):
+        self.assertEquals([123,124], self.client.get_permissions_by_model("resource"))
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get', full_uri("permissions"), ANY, json.dumps(
+                {"resource_type":"resource"}))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.server_error, []))
+    def test_getpermissionssbymodel_not_ok(self, *args):
+        self.assertRaises(AiToolsForemanError, self.client.get_permissions_by_model, "resource")
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get', full_uri("permissions"), ANY, json.dumps(
+                {"resource_type":"resource"}))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.ok,
+        {"total": 2,
+          "subtotal": 2,
+          "page": 1,
+          "per_page": 20,
+          "search": None,
+          "sort": {
+            "by": None,
+            "order": None
+          },
+          "results": [
+            {
+              "name": "perm1",
+              "resource_type": "resource"
+            },
+            {
+              "name": "perm2",
+              "resource_type": "resource"
+            }]}))
+    def test_getpermissionssbymodel_keyerror(self, *args):
+        self.assertRaises(AiToolsForemanError,
+            self.client.get_permissions_by_model, "resource")
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('get', full_uri("permissions"), ANY, json.dumps(
+                {"resource_type":"resource"}))
+
+    #### CREATE_FILTER ####
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created,
+        {
+          "search": "hostgroup_title ~ foo",
+          "resource_type": "Architecture",
+          "unlimited?": True,
+          "created_at": "2016-03-10 15:51:57 UTC",
+          "updated_at": "2016-03-10 15:51:57 UTC",
+          "id": 123,
+          "role": {
+            "name": "Manager",
+            "id": 1
+          },
+          "permissions": [],
+          "organizations": [],
+          "locations": []
+        }))
+    def test_create_filter_ok_search(self, *args):
+        expected_load = {"filter": {"role_id": "1",
+            "search":"hostgroup_title ~ foo"}}
+        self.assertEquals(123, self.client.create_filter(1,
+            search="hostgroup_title ~ foo"))
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("filters"), ANY,
+            json.dumps(expected_load))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created,
+        {
+          "search": None,
+          "resource_type": "Architecture",
+          "unlimited?": True,
+          "created_at": "2016-03-10 15:51:57 UTC",
+          "updated_at": "2016-03-10 15:51:57 UTC",
+          "id": 123,
+          "role": {
+            "name": "Manager",
+            "id": 1
+          },
+          "permissions": [
+            {
+              "name": "view_architectures",
+              "id": 2,
+              "resource_type": "Architecture"
+            }
+          ],
+          "organizations": [],
+          "locations": []
+        }))
+    def test_create_filter_ok_permissions(self, *args):
+        expected_load = {"filter": { "role_id": "1","permission_ids": [2]}}
+        self.assertEquals(123, self.client.create_filter(1,permission_ids=[2]))
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("filters"), ANY,
+            json.dumps(expected_load))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created,
+        {
+          "search": "hostgroup_title ~ foo",
+          "resource_type": "Architecture",
+          "unlimited?": True,
+          "created_at": "2016-03-10 15:51:57 UTC",
+          "updated_at": "2016-03-10 15:51:57 UTC",
+          "id": 123,
+          "role": {
+            "name": "Manager",
+            "id": 1
+          },
+          "permissions": [
+            {
+              "name": "view_architectures",
+              "id": 2,
+              "resource_type": "Architecture"
+            }
+          ],
+          "organizations": [],
+          "locations": []
+        }))
+    def test_create_filter_ok_full(self, *args):
+        expected_load = {"filter": {"role_id": "1", "permission_ids": [2],
+            "search":"hostgroup_title ~ foo"}}
+        self.assertEquals(123, self.client.create_filter(1,
+            "hostgroup_title ~ foo", [2]))
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("filters"), ANY,
+            json.dumps(expected_load))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created,
+        {
+          "search": None,
+          "resource_type": "Architecture",
+          "unlimited?": True,
+          "created_at": "2016-03-10 15:51:57 UTC",
+          "updated_at": "2016-03-10 15:51:57 UTC",
+          "id": 123,
+          "role": {
+            "name": "Manager",
+            "id": 1
+          },
+          "permissions": [],
+          "organizations": [],
+          "locations": []
+        }))
+    def test_create_filter_ok(self, *args):
+        expected_load = {"filter": { "role_id": "1"}}
+        self.assertEquals(123, self.client.create_filter(1))
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("filters"), ANY,
+            json.dumps(expected_load))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.server_error, []))
+    def test_create_filter_not_ok(self, *args):
+        expected_load = {"filter": { "role_id": "1"}}
+        self.assertRaises(AiToolsForemanError, self.client.create_filter, 1)
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("filters"), ANY,
+            json.dumps(expected_load))
+
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.created,
+        {
+          "search": None,
+          "resource_type": "Architecture",
+          "unlimited?": True,
+          "created_at": "2016-03-10 15:51:57 UTC",
+          "updated_at": "2016-03-10 15:51:57 UTC",
+          "role": {
+            "name": "Manager",
+            "id": 1
+          },
+          "permissions": [],
+          "organizations": [],
+          "locations": []
+        }))
+    def test_create_filter_keyerror(self, *args):
+        expected_load = {"filter": { "role_id": "1"}}
+        self.assertRaises(AiToolsForemanError,
+            self.client.create_filter, 1)
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('post', full_uri("filters"), ANY,
+            json.dumps(expected_load))
+
+    def test_create_filter_typeerror(self, *args):
+        self.assertRaises(TypeError, self.client.create_filter, 1,
+            permission_ids="1,2")

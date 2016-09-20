@@ -756,6 +756,115 @@ class ForemanClient(HTTPClient):
     def get_environment_by_name(self, name):
         return self.__get_model_by_name('environment', name)
 
+    def create_hgmanager_role(self, hostgroup_name):
+        """
+        Creates a new hostgroup manager role in Foreman with the appropriate
+        filters.
+
+        :param hostgroup_name: the name of the hostgroup for which to add the
+            manager role
+        :raise AiToolsForemanError: if the role creation failed
+        :return: the id of the new role created
+        """
+
+        host_filter = "hostgroup_title ~ {0}/% or hostgroup_title = {0}".format(
+            hostgroup_name)
+        hostgroup_filter = "title ~ {0}/% or title = {0}".format(hostgroup_name)
+
+        try:
+            host_permissions = self.get_permissions_by_model("Host")
+            hostgroup_permissions = self.get_permissions_by_model("Hostgroup")
+            role_id = self.create_role("hgmanager_{0}".format(hostgroup_name))
+            self.create_filter(role_id, host_filter, host_permissions)
+            self.create_filter(role_id, hostgroup_filter, hostgroup_permissions)
+            return role_id
+        except AiToolsForemanError, error:
+            raise AiToolsForemanError(error)
+
+
+    def create_role(self, name):
+        """
+        Creates a new role in Foreman.
+
+        :param name: the name of role to add
+        :raise AiToolsForemanError: if the role creation failed
+        :return: the id of the new role created
+        """
+        payload = {"role": {"name": name}}
+        try:
+            code, response = self.__do_api_request('post', "roles",
+                json.dumps(payload))
+            if code == requests.codes.created:
+                logging.info("Role '%s' added", name)
+                return response['id']
+            else:
+                raise AiToolsForemanError("%d: %s" % (code, response))
+        except AiToolsForemanError, error:
+            raise AiToolsForemanError(error)
+        except KeyError, error:
+            logging.error('Id not found in response')
+            logging.debug('Response:\n%s', response)
+            raise AiToolsForemanError('Unexpected response')
+
+    def get_permissions_by_model(self, model):
+        """
+        Get all permission for a certain resource type.
+
+        :param model: the name of th resource type, eg "Hostgroup"
+        :raise AiToolsForemanError: if lookup failed
+        :return: the sorted list of permission ids for the given resource type
+        """
+        payload = {"resource_type": model}
+        try:
+            code, response = self.__do_api_request('get', "permissions",
+                json.dumps(payload))
+            if code == requests.codes.ok:
+                return sorted([perm['id'] for perm in response['results']])
+            else:
+                raise AiToolsForemanError("%d: %s" % (code, response))
+        except AiToolsForemanError, error:
+            raise AiToolsForemanError(error)
+        except KeyError, error:
+            logging.error('Id not found in response')
+            logging.debug('Response:\n%s', response)
+            raise AiToolsForemanError('Unexpected response')
+
+    def create_filter(self, role_id, search=None, permission_ids=None):
+        """
+        Create a new filter
+
+        :param role_id: the id of the role to which the filter will belong to
+        :param search: optional string for a search query limiting the filter
+            eg. "hostgroup_title ~ foo"
+        :param permission_ids: optional list of permission ids that will be
+            applied with the filter
+        :raise AiToolsForemanError: if the filter creation failed
+        :raise TypeError: if permission_ids is not a list
+        :return: the id of the newly created filter
+        """
+
+        payload = {"filter": {"role_id": str(role_id)}}
+        if search:
+            payload["filter"]["search"] = str(search)
+        if permission_ids:
+            if not isinstance(permission_ids, list):
+                raise TypeError("permission_ids has to be a list")
+            payload["filter"]["permission_ids"] = permission_ids
+
+        try:
+            code, response = self.__do_api_request('post', "filters",
+                json.dumps(payload))
+            if code == requests.codes.created:
+                return response['id']
+            else:
+                raise AiToolsForemanError("%d: %s" % (code, response))
+        except AiToolsForemanError, error:
+            raise AiToolsForemanError(error)
+        except KeyError, error:
+            logging.error('Id not found in response')
+            logging.debug('Response:\n%s', response)
+            raise AiToolsForemanError('Unexpected response')
+
     def __get_model_by_name(self, model, name):
         logging.debug("Requesting %s '%s' from Foreman" % (model, name))
 
