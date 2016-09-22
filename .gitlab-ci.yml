@@ -3,26 +3,8 @@ before_script:
 
 stages:
 - test
-- functional_7
-- functional_6
+- functional_7_juno
 - cleanup_test
-
-# Matricies not supported?
-nosetests6_juno:
-  tags: 
-    - docker
-  image: docker.cern.ch/linuxsupport/slc6-base:latest
-  script:
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients6-juno-stable/x86_64/os
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/mirror.centos.org/centos/6/cloud/x86_64/openstack-juno/
-    - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
-    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-juno*
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai6-qa/x86_64/os
-    - make -f Makefile.koji rpm
-    - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
-    - yum --enablerepo=epel install -y --nogpgcheck  python-nose python-mock python-suds
-    - cd t
-    - nosetests
 
 nosetests7_juno:
   tags: 
@@ -40,40 +22,23 @@ nosetests7_juno:
     - cd t
     - nosetests
 
-nosetests7_liberty:
+# Ignore pwn tests for now. They need to be run by admins i.e. ai-config-team
+functionaltests7_juno:
+  stage: functional_7_juno
   tags: 
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
-  script:
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-liberty
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-liberty-stable/x86_64/os/
-    - echo 'priority=1' >> /etc/yum.repos.d/*openstackclients*
-    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-liberty*
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
-    - make -f Makefile.koji rpm
-    - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
-    - yum install -y --nogpgcheck  python-nose python2-mock python-suds
-    - cd t
-    - nosetests
-  allow_failure: true
-
-# Ignore pwn tests for now. They need to be run by admins i.e. ai-config-team
-functionaltests6_juno:
-  stage: functional_6
-  tags:
-    - docker
-  image: docker.cern.ch/linuxsupport/slc6-base:latest
   script:
     - export OS_AUTH_URL=https://keystone.cern.ch/krb/v3
     - export OS_AUTH_TYPE=v3kerberos
     - export OS_IDENTITY_API_VERSION=3
     - export OS_PROJECT_DOMAIN_ID=default
     - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients6-juno-stable/x86_64/os
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/mirror.centos.org/centos/6/cloud/x86_64/openstack-juno/
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/repos.fedorapeople.org/repos/openstack/EOL/openstack-juno/epel-7/
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-juno-stable/x86_64/os/
+    - echo 'priority=1' >> /etc/yum.repos.d/*EOL*
     - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
-    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-juno*
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai6-qa/x86_64/os
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
     - make -f Makefile.koji rpm
     - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
     - echo $AITOOLCIPWD | kinit aitoolci@CERN.CH
@@ -81,23 +46,24 @@ functionaltests6_juno:
     - export PYTHONPATH=$PWD/src
     - cd t_functional
     - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
+  allow_failure: false
 
-functionaltests6_juno_foremantest:
-  stage: functional_6
-  tags:
+functionaltests7_juno_foremantest:
+  stage: functional_7_juno
+  tags: 
     - docker
-  image: docker.cern.ch/linuxsupport/slc6-base:latest
+  image: docker.cern.ch/linuxsupport/cc7-base:latest
   script:
     - export OS_AUTH_URL=https://keystone.cern.ch/krb/v3
     - export OS_AUTH_TYPE=v3kerberos
     - export OS_IDENTITY_API_VERSION=3
     - export OS_PROJECT_DOMAIN_ID=default
     - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients6-juno-stable/x86_64/os
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/mirror.centos.org/centos/6/cloud/x86_64/openstack-juno/
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/repos.fedorapeople.org/repos/openstack/EOL/openstack-juno/epel-7/
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-juno-stable/x86_64/os/
+    - echo 'priority=1' >> /etc/yum.repos.d/*EOL*
     - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
-    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-juno*
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai6-qa/x86_64/os
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
     - make -f Makefile.koji rpm
     - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
     - echo $AITOOLCIPWD | kinit aitoolci@CERN.CH
@@ -108,31 +74,6 @@ functionaltests6_juno_foremantest:
     - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
   allow_failure: true
 
-
-functionaltests7_liberty:
-  stage: functional_7
-  tags: 
-    - docker
-  image: docker.cern.ch/linuxsupport/cc7-base:latest
-  script:
-    - export OS_AUTH_URL=https://keystone.cern.ch/krb/v3
-    - export OS_AUTH_TYPE=v3kerberos
-    - export OS_IDENTITY_API_VERSION=3
-    - export OS_PROJECT_DOMAIN_ID=default
-    - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-liberty
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-liberty-stable/x86_64/os/
-    - echo 'priority=1' >> /etc/yum.repos.d/*openstackclients*
-    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-liberty*
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
-    - make -f Makefile.koji rpm
-    - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
-    - echo $AITOOLCIPWD | kinit aitoolci@CERN.CH
-    - export PATH=$PWD/bin:$PWD/scripts:$PATH
-    - export PYTHONPATH=$PWD/src
-    - cd t_functional
-    - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
-  allow_failure: true
 
 cleanup_test:
   stage: cleanup_test
