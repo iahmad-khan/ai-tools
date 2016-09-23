@@ -5,6 +5,7 @@ from aitools.config import ForemanConfig
 from aitools.common import configure_logging
 from aitools.errors import AiToolsForemanError
 from aitools.errors import AiToolsForemanNotFoundError
+from aitools.common import append_domain
 from aitools.common import shortify
 
 import argparse
@@ -105,6 +106,9 @@ def main():
     change_parser.set_defaults(func=change_main)
 
     pargs = parser.parse_args()
+    if hasattr(pargs, 'fqdn'):
+        pargs.fqdn = append_domain(pargs.fqdn)
+
     pargs.func(pargs)
 
 

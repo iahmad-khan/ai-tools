@@ -8,6 +8,7 @@ CONF=$(mktemp)
 IN=$(mktemp)
 MAC="dd:ee:ff:aa:bb:cc"
 TESTNODE="aifcliftest99.cern.ch"
+TESTNODE_NO_DOMAIN="aifcliftest99"
 TESTNODE_IPMI="aifcliftest99-ipmi.cern.ch"
 
 cat > $CONF << EOF
@@ -26,6 +27,7 @@ _expect 0 ai-foreman --config $CONF addhost -c playground/aitoolstest -e qa \
   -a x86_64 -p "\"Kickstart default\"" -o "\"SLC 6.6\"" -m SLC -r -i $IN
 _expect 0 ai-ipmi --config $CONF add-ipmi $TESTNODE $TESTNODE_IPMI $MAC foo bar -i 192.168.1.1
 _expect 0 ai-ipmi --config $CONF get-creds $TESTNODE
+_expect 0 ai-ipmi --config $CONF get-creds $TESTNODE_NO_DOMAIN
 _expect 0 ai-ipmi --config $CONF change-ipmi-creds $TESTNODE --user foo2 --pw bar2
 _expect 0 ai-ipmi --config $CONF get-creds $TESTNODE
 
