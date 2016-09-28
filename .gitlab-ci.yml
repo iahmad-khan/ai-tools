@@ -14,6 +14,7 @@ nosetests7_$IAAS_RELEASE:
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
   script:
+    - yum install --nogpgcheck -y python-nose python2-mock python-suds
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-$IAAS_RELEASE
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-$IAAS_RELEASE-stable/x86_64/os/
     - echo 'priority=1' >> /etc/yum.repos.d/*openstack-$IAAS_RELEASE*
@@ -21,7 +22,6 @@ nosetests7_$IAAS_RELEASE:
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
     - make -f Makefile.koji rpm
     - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
-    - yum install --nogpgcheck -y python-nose python2-mock python-suds
     - cd t
     - nosetests
 
