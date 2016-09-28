@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.13.0
+Version: 9.13.1
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -89,6 +89,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Sep 01 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.13.1-1
+- [ForemanClient] Add methods to create roles.
+- [ai-ipmi] Add default domain if none is specified.
+
 * Thu Sep 01 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.13.0-1
 - [ai-foreman] Add 'delhostgroup' and 'addhostgroup'.
 
