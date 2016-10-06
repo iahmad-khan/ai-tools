@@ -1,30 +1,33 @@
+variables:
+  IAAS_RELEASE: 'liberty'
+
 before_script:
   - yum install -y yum-utils yum-plugin-priorities krb5-workstation make tar rpm-build python-devel bc
 
 stages:
 - test
-- functional_7_juno
+- functional_7_$IAAS_RELEASE
 - cleanup_test
 
-nosetests7_juno:
+nosetests7_$IAAS_RELEASE:
   tags: 
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
   script:
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/repos.fedorapeople.org/repos/openstack/EOL/openstack-juno/epel-7/
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-juno-stable/x86_64/os/
-    - echo 'priority=1' >> /etc/yum.repos.d/*EOL*
-    - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
+    - yum install --nogpgcheck -y python-nose python2-mock python-suds
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-$IAAS_RELEASE
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-$IAAS_RELEASE-stable/x86_64/os/
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-$IAAS_RELEASE*
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstackclients7-$IAAS_RELEASE-stable*
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
     - make -f Makefile.koji rpm
     - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
-    - yum install --nogpgcheck -y python-nose python2-mock python-suds
     - cd t
     - nosetests
 
 # Ignore pwn tests for now. They need to be run by admins i.e. ai-config-team
-functionaltests7_juno:
-  stage: functional_7_juno
+functionaltests7_$IAAS_RELEASE:
+  stage: functional_7_$IAAS_RELEASE
   tags: 
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
@@ -34,10 +37,10 @@ functionaltests7_juno:
     - export OS_IDENTITY_API_VERSION=3
     - export OS_PROJECT_DOMAIN_ID=default
     - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/repos.fedorapeople.org/repos/openstack/EOL/openstack-juno/epel-7/
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-juno-stable/x86_64/os/
-    - echo 'priority=1' >> /etc/yum.repos.d/*EOL*
-    - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-$IAAS_RELEASE
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-$IAAS_RELEASE-stable/x86_64/os/
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-$IAAS_RELEASE*
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstackclients7-$IAAS_RELEASE-stable*
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
     - make -f Makefile.koji rpm
     - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm
@@ -48,8 +51,8 @@ functionaltests7_juno:
     - for test in *.sh; do  if [ "$test" == "aipwn.sh" ];  then continue; fi; sh $test || exit 1; done
   allow_failure: false
 
-functionaltests7_juno_foremantest:
-  stage: functional_7_juno
+functionaltests7_$IAAS_RELEASE_foremantest:
+  stage: functional_7_$IAAS_RELEASE
   tags: 
     - docker
   image: docker.cern.ch/linuxsupport/cc7-base:latest
@@ -59,10 +62,10 @@ functionaltests7_juno_foremantest:
     - export OS_IDENTITY_API_VERSION=3
     - export OS_PROJECT_DOMAIN_ID=default
     - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/mirror/repos.fedorapeople.org/repos/openstack/EOL/openstack-juno/epel-7/
-    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-juno-stable/x86_64/os/
-    - echo 'priority=1' >> /etc/yum.repos.d/*EOL*
-    - echo 'priority=1' >> /etc/yum.repos.d/*juno-stable*
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-$IAAS_RELEASE
+    - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-$IAAS_RELEASE-stable/x86_64/os/
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstack-$IAAS_RELEASE*
+    - echo 'priority=1' >> /etc/yum.repos.d/*openstackclients7-$IAAS_RELEASE-stable*
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/ai7-qa/x86_64/os
     - make -f Makefile.koji rpm
     - yum install -y --nogpgcheck ~/rpmbuild/RPMS/noarch/ai-tools*rpm

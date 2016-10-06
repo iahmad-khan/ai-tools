@@ -4,8 +4,11 @@
 import logging
 import requests
 import re
+from keystoneauth1 import session as keystone_session
 from keystoneclient.v3 import client as keystoneclient
+from openstackclient.api import auth
 from openstackclient.common import clientmanager
+from os_client_config import config as cloud_config
 from keystoneclient import exceptions
 from keystoneclient.openstack.common.apiclient import exceptions as api_exceptions
 from aitools.errors import AiToolsOpenstackAuthError
@@ -31,10 +34,7 @@ class OpenstackAuthClient():
                 re.match(r'.*v2(\.0)?/?$', auth_options.os_auth_url):
                 raise AiToolsOpenstackAuthBadEnvError('os_auth_url')
 
-            self.client = clientmanager.ClientManager(auth_options=auth_options,
-                api_version={'identity': auth_options.os_identity_api_version},
-                verify=True,
-                pw_func=None)
+            self.session = self.__make_session(auth_options)
 
         except exceptions.SSLError:
             raise AiToolsOpenstackAuthError("x509 client certificate error")
@@ -43,9 +43,39 @@ class OpenstackAuthClient():
             raise AiToolsOpenstackAuthError("- Are you using the wrong tenant?\n"
                 " - Is your Kerberos ticket expired?")
 
+    def __make_session(self, opts, **kwargs):
+        """Create our base session using simple auth from ksc plugins
+        The arguments required in opts varies depending on the auth plugin
+        that is used.  This example assumes Identity v2 will be used
+        and selects token auth if both os_url and os_token have been
+        provided, otherwise it uses password.
+        :param opts:
+            A parser options containing the authentication
+            options to be used
+        :param dict kwargs:
+            Additional options passed directly to Session constructor
+        """
+        cc = cloud_config.OpenStackConfig()
+        cloud = cc.get_one_cloud(argparse=opts)
+
+        # init OS plugin list
+        auth.get_plugin_list()
+
+        auth_plugin_name = auth.select_auth_plugin(cloud)
+        (auth_plugin, auth_params) = auth.build_auth_params(
+            auth_plugin_name,
+            cloud,
+        )
+
+        session = keystone_session.Session(
+            auth=auth_plugin.load_from_options(**auth_params),
+            **kwargs
+        )
+        return session
+
     def get_tenant_uuid(self, proj_name, username):
         try:
-            keystone = keystoneclient.Client(session=self.client.session)
+            keystone = keystoneclient.Client(session=self.session)
             projects_id = [tenant.id for tenant in
                 keystone.projects.list(user=username) \
                 if tenant.name == proj_name]
@@ -60,8 +90,3 @@ class OpenstackAuthClient():
             raise AiToolsOpenstackAuthError(error)
         except exceptions.ClientException, error:
             raise AiToolsOpenstackAuthError(error)
-
-    @property
-    def session(self):
-        logging.debug('Getting session from OpenStack ClientManager')
-        return self.client.session
