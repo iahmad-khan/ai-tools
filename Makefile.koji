@@ -25,11 +25,9 @@ rpm:   all
 
 
 scratch:
-	koji build ai6 --nowait --scratch  git+ssh://git@gitlab.cern.ch:7999/ai-config-team/ai-tools.git#$(shell git rev-parse HEAD)
 	koji build ai7 --nowait --scratch  git+ssh://git@gitlab.cern.ch:7999/ai-config-team/ai-tools.git#$(shell git rev-parse HEAD)
 
 build:
-	koji build ai6 --nowait git+ssh://git@gitlab.cern.ch:7999/ai-config-team/ai-tools.git#$(shell git rev-parse HEAD)
 	koji build ai7 --nowait git+ssh://git@gitlab.cern.ch:7999/ai-config-team/ai-tools.git#$(shell git rev-parse HEAD)
 
 
