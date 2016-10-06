@@ -21,6 +21,7 @@ Requires: python-argcomplete, python-humanize, teigi-client, python-dateutil
 Requires: python-openstackclient, python-cinderclient
 Requires: python-keystoneclient, python2-keystoneauth1, python-novaclient
 Requires: python-keystoneclient-kerberos, python-suds
+Requires: python-lxml
 Requires: hiera
 %if 0%{?el5} || 0%{?el6}
 Requires: python-argparse
