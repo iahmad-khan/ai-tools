@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 9.13.1
+Version: 10.0.0
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -90,6 +90,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Thu Oct 06 2016 Steve Traylen <steve.traylen@cern.ch> 10.0.0-1
+- [libs] Update openstack_auth_client for liberty OS.
+
 * Thu Sep 01 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 9.13.1-1
 - [ForemanClient] Add methods to create roles.
 - [ai-ipmi] Add default domain if none is specified.
