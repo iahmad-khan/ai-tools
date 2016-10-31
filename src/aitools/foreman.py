@@ -693,16 +693,23 @@ class ForemanClient(HTTPClient):
         # it will be generated from the host fqdn
         if not new_ipmi_intf_fqdn:
           new_ipmi_intf_fqdn = fqdn.replace(".cern.ch", "-ipmi.cern.ch")
-        ipmi_interface_id = self.get_ipmi_interface_id(fqdn)
-        if ipmi_interface_id is None:
+        interface = self.get_ipmi_interface(fqdn)
+        if interface is None:
           raise AiToolsForemanError("Action: add the IPMI interface for %s" % fqdn)
-        payload = { 'name': new_ipmi_intf_fqdn }
+        payload = {
+            "interface": {
+                "name": new_ipmi_intf_fqdn,
+                "provider": interface["provider"],
+                "type": interface["type"],
+            }
+        }
         try:
           code, response = self.__do_api_request('put',
-            "hosts/%s/interfaces/%s" % (fqdn, ipmi_interface_id),
+            "hosts/%s/interfaces/%s" % (fqdn, interface['id']),
             json.dumps(payload))
           if code == requests.codes.ok:
-            logging.info("IPMI interface renamed for device %s to %s" % (fqdn, payload['name']))
+            logging.info("IPMI interface renamed for device %s to %s" %
+                (fqdn, payload['interface']['name']))
           else:
             raise AiToolsForemanError("%d: %s" % (code, response))
         except AiToolsHTTPClientError, error:
