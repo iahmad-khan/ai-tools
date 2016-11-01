@@ -15,7 +15,7 @@ all:
 	rm -rf /tmp/$(PKGNAME)
 
 clean:
-	rm $(TARFILE)
+	rm *.tgz
 
 srpm:   all
 	rpmbuild -bs --define '_sourcedir $(PWD)' ${SPECFILE}
