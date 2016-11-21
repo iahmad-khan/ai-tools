@@ -650,20 +650,20 @@ class TestForemanClient(unittest.TestCase):
     @patch.object(HTTPClient, 'do_request',
         return_value=generate_response(requests.codes.internal_server_error, []))
     def test_getks_uncontrolled_status_code(self, *args):
-        ip = "127.0.0.1"
-        self.assertRaises(AiToolsForemanError, self.client.getks, ip_address=ip)
+        hostname = "foo.cern.ch"
+        self.assertRaises(AiToolsForemanError, self.client.getks, hostname=hostname)
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('get',
-                full_uri("unattended/provision?spoof=%s" % ip, api=False), ANY, ANY)
+                full_uri("unattended/provision?hostname=%s" % hostname, api=False), ANY, ANY)
 
     @patch.object(HTTPClient, 'do_request',
         return_value=generate_response(requests.codes.not_found, []))
     def test_getks_not_found(self, *args):
-        ip = "127.0.0.1"
-        self.assertRaises(AiToolsForemanError, self.client.getks, ip_address=ip)
+        hostname = "foo.cern.ch"
+        self.assertRaises(AiToolsForemanError, self.client.getks, hostname=hostname)
         super(ForemanClient, self.client).do_request\
             .assert_called_once_with('get',
-                full_uri("unattended/provision?spoof=%s" % ip, api=False), ANY, ANY)
+                full_uri("unattended/provision?hostname=%s" % hostname, api=False), ANY, ANY)
 
     #### GETFACTS ####
 

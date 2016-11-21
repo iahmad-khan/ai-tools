@@ -203,32 +203,32 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanError("Unexpected error code (%i) when getting "
                 "'%s' from Foreman" % (code, fqdn))
 
-    def getks(self, ip_address):
+    def getks(self, hostname):
         """
-        Get the Kickstart file for a given IP address.
+        Get the Kickstart file for a given host.
 
-        :param ip_address: the IP address to query
+        :param hostname: the hostname to query
         :return: the KS itself
         :raise AiToolsForemanError: if the query call failed or the host could not be found
         """
-        logging.info("Getting Kickstart for host with IP '%s' from Foreman..."
-            % ip_address)
+        logging.info("Getting Kickstart for host '%s' from Foreman..."
+            % hostname)
 
         (code, body) = self.__do_api_request("get",
-            "unattended/provision?spoof=%s" % ip_address, prefix='')
+            "unattended/provision?hostname=%s" % hostname, prefix='')
         if code == requests.codes.ok:
             return body
         elif code == requests.codes.not_found:
-            raise AiToolsForemanNotFoundError("Host with IP '%s'"
-                " not found in Foreman" % ip_address)
+            raise AiToolsForemanNotFoundError("Host with name '%s'"
+                " not found in Foreman" % hostname)
         elif code == requests.codes.bad_request:
             # Not very accurate, but it's what Foreman spits out if no KS
             # can be resolved
-            raise AiToolsForemanError("Kickstart for host with IP '%s'"
-                " not found in Foreman" % ip_address)
+            raise AiToolsForemanError("Kickstart for host with name '%s'"
+                " not found in Foreman" % hostname)
         else:
             raise AiToolsForemanError("Error code '%i' received when trying to "
-                "get a KS for '%s' from Foreman" % (code, ip_address))
+                "get a KS for '%s' from Foreman" % (code, hostname))
 
     def getfacts(self, fqdn):
         """
