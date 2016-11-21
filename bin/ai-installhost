@@ -214,7 +214,7 @@ def process_host(hostname):
             "The host does not have an IP address")
 
     try:
-        ks = foreman.getks(host['ip'])
+        ks = foreman.getks(host['name'])
         if not args.report_to:
             args.report_to = krb_principal.replace("@CERN.CH", "")
         logging.info("Editing KS to send installation report to: %s@cern.ch..." %

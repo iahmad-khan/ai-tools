@@ -12,7 +12,7 @@ stages:
 nosetests7_$IAAS_RELEASE:
   tags: 
     - docker
-  image: docker.cern.ch/linuxsupport/cc7-base:latest
+  image: gitlab-registry.cern.ch/linuxsupport/cc7-base:latest
   script:
     - yum install --nogpgcheck -y python-nose python2-mock python-suds
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-$IAAS_RELEASE
@@ -30,7 +30,7 @@ functionaltests7_$IAAS_RELEASE:
   stage: functional_7_$IAAS_RELEASE
   tags: 
     - docker
-  image: docker.cern.ch/linuxsupport/cc7-base:latest
+  image: gitlab-registry.cern.ch/linuxsupport/cc7-base:latest
   script:
     - export OS_AUTH_URL=https://keystone.cern.ch/krb/v3
     - export OS_AUTH_TYPE=v3kerberos
@@ -55,7 +55,7 @@ functionaltests7_$IAAS_RELEASE_foremantest:
   stage: functional_7_$IAAS_RELEASE
   tags: 
     - docker
-  image: docker.cern.ch/linuxsupport/cc7-base:latest
+  image: gitlab-registry.cern.ch/linuxsupport/cc7-base:latest
   script:
     - export OS_AUTH_URL=https://keystone.cern.ch/krb/v3
     - export OS_AUTH_TYPE=v3kerberos
