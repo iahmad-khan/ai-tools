@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 10.0.1
+Version: 10.0.2
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -90,6 +90,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Mon Nov 21 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.2-1
+- [ai-installhost/foreman.py] Use FQDNs to lookup Kickstarts.
+
 * Tue Nov 01 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.1-1
 - [ai-ipmi] Preserve interface type when renaming an IPMI interface.
 - [spec] Remove all .tgzs.
