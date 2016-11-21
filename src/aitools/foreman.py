@@ -203,32 +203,32 @@ class ForemanClient(HTTPClient):
             raise AiToolsForemanError("Unexpected error code (%i) when getting "
                 "'%s' from Foreman" % (code, fqdn))
 
-    def getks(self, hostname):
+    def getks(self, fqdn):
         """
         Get the Kickstart file for a given host.
 
-        :param hostname: the hostname to query
+        :param fqdn: the fqdn to query
         :return: the KS itself
         :raise AiToolsForemanError: if the query call failed or the host could not be found
         """
         logging.info("Getting Kickstart for host '%s' from Foreman..."
-            % hostname)
+            % fqdn)
 
         (code, body) = self.__do_api_request("get",
-            "unattended/provision?hostname=%s" % hostname, prefix='')
+            "unattended/provision?hostname=%s" % fqdn, prefix='')
         if code == requests.codes.ok:
             return body
         elif code == requests.codes.not_found:
             raise AiToolsForemanNotFoundError("Host with name '%s'"
-                " not found in Foreman" % hostname)
+                " not found in Foreman" % fqdn)
         elif code == requests.codes.bad_request:
             # Not very accurate, but it's what Foreman spits out if no KS
             # can be resolved
             raise AiToolsForemanError("Kickstart for host with name '%s'"
-                " not found in Foreman" % hostname)
+                " not found in Foreman" % fqdn)
         else:
             raise AiToolsForemanError("Error code '%i' received when trying to "
-                "get a KS for '%s' from Foreman" % (code, hostname))
+                "get a KS for '%s' from Foreman" % (code, fqdn))
 
     def getfacts(self, fqdn):
         """
