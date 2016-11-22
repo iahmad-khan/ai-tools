@@ -34,6 +34,7 @@ echo "Installhost..."
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --console ttyS0
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch -k -a
+_expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch -r
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --report-to someuser
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode auto
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode uefi
