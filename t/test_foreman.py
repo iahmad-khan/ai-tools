@@ -183,15 +183,28 @@ class TestForemanClient(unittest.TestCase):
 
     @patch.object(HTTPClient, 'do_request', return_value=
             generate_response(requests.codes.OK,
-            [{"id": 1,"name":"Foo","major":"6","minor":"4","title":"Foo 6.4"},
-            {"id": 2,"name":"Foo","major":"6","minor":"3","title":"Foo 6.31"}],
-            meta=True, page=1, page_size=5, subtotal=2))
+            [{"id": 2,"name":"Foo","major":"6","minor":"3","title":"Foo 6.31"}],
+            meta=True, page=1, page_size=5, subtotal=1))
     def test_resolve_operatingsystem_id(self, mock_client):
         result = self.client._ForemanClient__resolve_operatingsystem_id("Foo 6.31")
         self.assertEquals(result, 2)
-        self.assertRaises(AiToolsForemanError,
+
+    @patch.object(HTTPClient, 'do_request', return_value=
+            generate_response(requests.codes.OK,
+            [],
+            meta=True, page=1, page_size=5, subtotal=0))
+    def test_resolve_operatingsystem_id_not_found(self, mock_client):
+        self.assertRaises(AiToolsForemanNotFoundError,
             self.client._ForemanClient__resolve_operatingsystem_id,
             "Foodsfds")
+
+    @patch.object(HTTPClient, 'do_request', return_value=
+            generate_response(requests.codes.OK,
+            [{"id": 2,"name":"Bar","major":"6","minor":"3","title":"Foo 6.31"}],
+            meta=True, page=1, page_size=5, subtotal=1))
+    def test_resolve_operatingsystem_id_name_not_in_title(self, mock_client):
+        result = self.client._ForemanClient__resolve_operatingsystem_id("Foo 6.31")
+        self.assertEquals(result, 2)
 
     @patch.object(HTTPClient, 'do_request', return_value=
             generate_response(requests.codes.OK,
