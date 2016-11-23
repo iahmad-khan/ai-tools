@@ -364,12 +364,15 @@ def main():
     if not args.dryrun and len(successful_ops) > 0:
         if args.aims_attempts == 0:
             logging.warn("AIMS sync status was not checked, AIMS may not be ready")
-        logging.info("AIMS ready for %d/%d machine(s)" %
-            (len(successful_ops), len(args.hostname)))
         if not args.reboot:
+            logging.info("%d/%d machine(s) ready to be installed" %
+                (len(successful_ops), len(args.hostname)))
             logging.info("Please reboot the host(s) to start the installation:")
             logging.info("ai-remote-power-control cycle %s" %
                 " ".join(successful_ops))
+        else:
+            logging.info("%d/%d machine(s) prepared for installation and rebooted" %
+                (len(successful_ops), len(args.hostname)))
 
     if len(successful_ops) != len(args.hostname):
         return 1
