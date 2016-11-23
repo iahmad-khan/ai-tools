@@ -389,6 +389,39 @@ class TestForemanClient(unittest.TestCase):
         returned_payload = json.loads(call[0][3])
         self.assertEqual(expected_payload, returned_payload)
 
+
+    @patch.object(ForemanClient, '_ForemanClient__resolve_hostgroup_id',
+        return_value=2)
+    @patch.object(HTTPClient, 'do_request',
+        return_value=generate_response(requests.codes.OK, []))
+    def test_updatehost_none_fields_not_sent_back(self, *args):
+        host_payload = {
+          'name': 'foo.cern.ch',
+          'environment_id': 1,
+          'hostgroup_id': 1,
+          'operatingsystem_id': 1,
+          'medium_id': 1,
+          'architecture_id': 1,
+          'comment': '',
+          'ptable_id': 1,
+          'mac': None,
+          'ip': None,
+        }
+        self.client.updatehost(host=host_payload,
+            hostgroup='bar/baz')
+        self.client._ForemanClient__resolve_hostgroup_id.\
+            was_called_once_with("bar/baz")
+        host_payload['hostgroup_id'] = 2
+        expected_payload = {'host': host_payload}
+        del expected_payload['host']['mac']
+        del expected_payload['host']['ip']
+        super(ForemanClient, self.client).do_request\
+            .assert_called_once_with('put', full_uri("hosts/foo.cern.ch"),
+                ANY, ANY)
+        call = super(ForemanClient,self.client).do_request.call_args
+        returned_payload = json.loads(call[0][3])
+        self.assertEqual(expected_payload, returned_payload)
+
     @patch.object(ForemanClient, '_ForemanClient__resolve_environment_id',
         return_value=6)
     @patch.object(HTTPClient, 'do_request',
