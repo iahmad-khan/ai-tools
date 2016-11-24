@@ -271,7 +271,8 @@ class ForemanClient(HTTPClient):
             elif code == requests.codes.not_found:
                 raise AiToolsForemanNotFoundError("Host '%s' not found in Foreman" % oldfqdn)
             elif code == requests.codes.unprocessable_entity:
-                raise AiToolsForemanError("Rename of '%s' failed. Is '%s' already registered?"
+                raise AiToolsForemanError("Rename of '%s' failed. Either '%s'"
+                    " is already registered, or the host is in an invalid state."
                     % (oldfqdn, newfqdn))
             else:
                 raise AiToolsForemanError("An error occurred when changing host name to '%s'" % newfqdn)
