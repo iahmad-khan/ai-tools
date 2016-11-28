@@ -14,6 +14,7 @@
 #  20 ENC failure
 #  30 CA server failure
 #  40 AIMS failure
+#  60 IPMI operation failure
 
 import os
 import sys
@@ -23,6 +24,7 @@ import argcomplete
 import tempfile
 import multiprocessing
 import signal
+import requests
 from prettytable import PrettyTable
 
 from aitools.config import ForemanConfig, CertmgrConfig, EncConfig, RogerConfig
@@ -74,6 +76,9 @@ def parse_cmdline_args():
     parser.add_argument('-a', '--keepalarms',
         action="store_true",
         help="Don't disable alarms before triggering the installation")
+    parser.add_argument('-r', '--reboot',
+        action="store_true",
+        help="Cycle the box via IPMI after everything is ready")
     parser.add_argument('-c', '--console', type=str,
         default=DEFAULT_CONSOLE_DEVICE,
         help="Device to route the console output to (default: '%s')" % \
@@ -294,12 +299,29 @@ def process_host(hostname):
         except Exception, error:
             logging.warn("Roger: Unhandled error (%s) on %s. Call roger show/update by hand" %
                 (error, fqdn))
+
+    if args.reboot:
+        try:
+            (code, msg) = foreman.power_operation(fqdn, "cycle")
+            if code == requests.codes.ok:
+                logging.debug("Power operation done")
+            elif code == requests.codes.not_found:
+                return format_result(fqdn, 60, "No IPMI interface found")
+            else:
+                return format_result(fqdn, 60, "Uncontrolled status code (%s), please report a bug" % code)
+        except AiToolsForemanError, error:
+            return format_result(fqdn, 60, "Could not reboot: %s" % error)
+
     try:
         ksfilepath = delete_ks_from_disk(ksfilepath)
     except AiToolsError, error:
         return format_result(fqdn, 18, error)
 
-    return format_result(fqdn, 0, "Ready to install")
+    if args.reboot and not args.dryrun:
+        return format_result(fqdn, 0, "Rebooting")
+    else:
+        return format_result(fqdn, 0, "Ready to install")
+
 
 krb_principal = None
 args = None
@@ -342,11 +364,15 @@ def main():
     if not args.dryrun and len(successful_ops) > 0:
         if args.aims_attempts == 0:
             logging.warn("AIMS sync status was not checked, AIMS may not be ready")
-        logging.info("AIMS ready for %d/%d machine(s)" %
-            (len(successful_ops), len(args.hostname)))
-        logging.info("Please reboot the host(s) to start the installation:")
-        logging.info("ai-remote-power-control cycle %s" %
-            " ".join(successful_ops))
+        if not args.reboot:
+            logging.info("%d/%d machine(s) ready to be installed" %
+                (len(successful_ops), len(args.hostname)))
+            logging.info("Please reboot the host(s) to start the installation:")
+            logging.info("ai-remote-power-control cycle %s" %
+                " ".join(successful_ops))
+        else:
+            logging.info("%d/%d machine(s) prepared for installation and rebooted" %
+                (len(successful_ops), len(args.hostname)))
 
     if len(successful_ops) != len(args.hostname):
         return 1
