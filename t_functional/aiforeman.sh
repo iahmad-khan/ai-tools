@@ -64,6 +64,10 @@ _expect 1 ai-foreman --config $CONF updatehost aifcliftest16.cern.ch \
 _expect 1 ai-foreman --config $CONF updatehost --mac foo aifcliftest16.cern.ch
 _expect 1 ai-foreman --config $CONF updatehost -o "\"CentOS 7.0\"" \
   aifcliftest17.cern.ch
+_expect 0 ai-foreman --config $CONF updatehost -o "\"RHEL Server 7.2\"" \
+  -m "\"RedHat\"" aifcliftest17.cern.ch
+_expect 0 ai-foreman --config $CONF updatehost -o "\"SLC 6.7\"" \
+  -m "\"SLC\"" aifcliftest17.cern.ch
 _expect 0 ai-foreman --config $CONF updatehost -o "\"CentOS 7.0\"" \
   -m "\"CentOS mirror\"" aifcliftest17.cern.ch
 _expect 0 ai-foreman --config $CONF -g playground/aitoolstest/test1 updatehost \
