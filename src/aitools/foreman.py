@@ -114,7 +114,7 @@ class ForemanClient(HTTPClient):
         logging.debug("Updating host '%s' in Foreman..." % host['name'])
         payload_keys = ['name', 'environment_id', 'hostgroup_id', 'operatingsystem_id',
                         'medium_id', 'architecture_id', 'comment', 'ptable_id', 'mac', 'ip' ]
-        payload = dict((key, host[key]) for key in payload_keys if host[key] != None)
+        payload = dict((key, host[key]) for key in payload_keys if host.get(key, None) != None)
         if environment:
             payload['environment_id'] = self.__resolve_environment_id(environment)
         if hostgroup:
