@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 10.0.2
+Version: 10.0.3
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -90,6 +90,13 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Nov 30 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.3-1
+- [ai-installhost] Add --reboot.
+- [ai-kill-vm] Add a warning related to physical machines.
+- [ai-foreman] Allow using full names when changing operating systems.
+- [libs] updatehost(). Only send keys back when they're not None.
+- [libs] Adjust Foreman rename error message.
+
 * Mon Nov 21 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.2-1
 - [ai-installhost/foreman.py] Use FQDNs to lookup Kickstarts.
 
