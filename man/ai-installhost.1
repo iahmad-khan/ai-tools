@@ -11,13 +11,11 @@ machines
 .SH DESCRIPTION
 ai-installhost is a command line utility to prepare physical machines
 for installation. The output is a summary table informing about which
-input hosts are ready to be rebooted.
+input hosts are ready to be rebooted (or have been rebooted, if --reboot
+is passed)
 
 Note that by default this command will disable all alarms on the target
 hosts. This behaviour can be overridden, though. See below.
-
-Several command line options can be completed automatically by pressing
-TAB when typing.
 
 .LP
 .I Prerequisites:
@@ -28,7 +26,7 @@ Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
 (should be fine if you're on aiadm).
 
 .SH OPTIONS
-The behaviour of the tool can be customized by the following
+The behaviour of the tool can be customised by the following
 parameters. 
 
 .LP
@@ -42,7 +40,8 @@ Blank separated list of kernel options to be passed to Anaconda (will be
 appended to the ones coming from HWDB).
 .TP
 .B -d, --dryrun
-Don't do the requests that alter data (Alarm state change, AIMS operations)
+Don't do the requests that alter data (alarm state change, AIMS operations,
+reboot...)
 .TP
 .B -h, --help
 Display usage and exit.
@@ -61,7 +60,7 @@ to "auto" which tries to guess the correct mode based on metadata available on
 Foreman.
 .TP
 .B -r, --reboot
-Cycle the box via IPMI after everything is ready. Use with care.
+Power cycles the target hosts via IPMI after everything is ready. Use with care.
 
 .LP
 .I Other optional parameters:
@@ -116,7 +115,7 @@ Number of concurrent operations (defaults to the number of cores, with
 a maximum of twice the default value).
 .TP
 .B --dereference_alias
-Dereference aliases in urls
+Dereference aliases in URLs.
 .TP
 .B -v, --verbose
 Be chatty.
@@ -130,7 +129,7 @@ All operations executed successfully.
 Some hosts are not ready to be installed. Check summary table.
 .TP
 .B 2
-The command was CTRL-Ced
+The command was CTRL-Ced.
 .TP
 .B 4
 Kerberos TGT not found or expired.
@@ -148,6 +147,10 @@ ai-installhost -k foo.cern.ch bar.cern.ch
 .B Prepare foo.cern.ch for installation (UEFI mode)
 ai-installhost foo.cern.ch --mode uefi
 
+.TP
+.B Prepare susanne.cern.ch for installation and reboot it
+ai-installhost -r susanne.cern.ch
+
 .SH ROLLING BACK
 It is possible to undo the process of preparing a physical machine
 for installation using the 'aims2client' command.
@@ -157,6 +160,9 @@ by ai-installhost, deleting the node from AIMS should suffice
 to prevent it from PXE booting:
 
 aims2client delhost gijon01
+
+There's nothing to do of course if the machine has been rebooted using
+this tool.
 
 .SH KNOWN BUGS
 This tool does not support hosts that are unable to PXE boot
