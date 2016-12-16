@@ -41,6 +41,7 @@ _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode uefi
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode arm64
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode bios
 _expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --mode bioslgcy
+_expect 1 ai-installhost --config $CONF -d wonteverexist444.cern.ch --aims-target FOO
 
 echo "Tearing down..."
 rm -f $CONF

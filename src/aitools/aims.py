@@ -56,11 +56,12 @@ class AimsClient(object):
         logging.error("* Problem removing host from AIMS2 - please remove the host manually from AIMS using")
         logging.error("* aims2client before attempting to reinstall the host with its new name.")
 
-    def addhost(self, fqdn, operatingsystem, architecture,
+    def addhost(self, fqdn, operatingsystem, architecture, target,
             enc, ksfilepath, console, mode, user_kopts=None):
         """
         Registers a host in AIMS for installation.
 
+        :param target: String, an AIMS target. Will ignore the OS and Arch info if set.
         :param enc: Hash of host parameters coming from the ENC
         :param ksfilepath: disk location of the KS file to be uploaded
         :param user_kopts: Set of additional kernel options to be passed
@@ -79,8 +80,11 @@ class AimsClient(object):
         kopts.extend(AIMS_DEFAULT_KOPTS)
         logging.debug("Final kernel options: %s" % " ".join(kopts))
 
-        target = self._translate_foreman_os_to_target(operatingsystem,
-            architecture)
+        if not target:
+            target = self._translate_foreman_os_to_target(operatingsystem,
+                architecture)
+        else:
+            logging.info("AIMS target forced to '%s'" % target)
 
         args = ["addhost"] + self._resolv_boot_mode(mode, enc, architecture) +\
             ["--hostname", shortify(fqdn),

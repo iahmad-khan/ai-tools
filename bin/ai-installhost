@@ -127,6 +127,8 @@ def parse_cmdline_args():
         help="Number of attempts to check if the boot is synced (default: '%s')" % \
         DEFAULT_AIMS_ATTEMPTS,
         default=DEFAULT_AIMS_ATTEMPTS)
+    parser.add_argument('--aims-target', type=str, default=None,
+        help="AIMS target to use (ignores OS details in Foreman)")
     parser.add_argument('--report-to', type=str,
         help="Username to send the installation report to \
               (defaults to to Kerberos TGT principal)")
@@ -266,6 +268,7 @@ def process_host(hostname):
         aims.addhost(fqdn=fqdn,
             operatingsystem=host['operatingsystem'],
             architecture=host['architecture'],
+            target=args.aims_target,
             enc=encdata['parameters'],
             ksfilepath=ksfilepath,
             console=args.console,
