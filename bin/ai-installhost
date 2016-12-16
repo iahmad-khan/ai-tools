@@ -263,7 +263,7 @@ def process_host(hostname):
 
     aims = AimsClient(dryrun=args.dryrun)
     try:
-        pxetarget = aims.addhost(fqdn=fqdn,
+        aims.addhost(fqdn=fqdn,
             operatingsystem=host['operatingsystem'],
             architecture=host['architecture'],
             enc=encdata['parameters'],

@@ -91,12 +91,10 @@ class AimsClient(object):
 
         if self.dryrun:
             logging.info("addhost not called because dryrun is enabled")
-            return target
 
         out, returncode = self._exec(args)
         logging.info(out.strip())
         logging.info("KS for host '%s' uploaded to AIMS." % fqdn)
-        return target
 
     def showhost(self, fqdn):
         """ Gets what AIMS has to say about a given host. """
