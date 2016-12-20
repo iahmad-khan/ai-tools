@@ -44,16 +44,17 @@ class TestOpenstackAuthClient(unittest.TestCase):
     ## __validate_session
 
     @patch.object(OpenstackAuthClient, '_OpenstackAuthClient__validate_session')
-    def test_make_session_bad_tenant_authorised(self, mock_oac):
+    def test_make_session_not_found(self, mock_oac):
         mock_oac.side_effect = ka_exceptions.http.NotFound
         self.assertRaises(AiToolsOpenstackAuthError,
             OpenstackAuthClient, self.osvars)
 
     @patch.object(OpenstackAuthClient, '_OpenstackAuthClient__validate_session')
-    def test_make_session_bad_tenant_not_found(self, mock_oac):
+    def test_make_session_not_authorised(self, mock_oac):
         mock_oac.side_effect = ka_exceptions.http.Unauthorized
         self.assertRaises(AiToolsOpenstackAuthError,
             OpenstackAuthClient, self.osvars)
+
     ## get_tenant_uuid
 
     @patch.object(OpenstackAuthClient, '_OpenstackAuthClient__validate_session')
