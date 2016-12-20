@@ -96,7 +96,5 @@ class OpenstackAuthClient():
                 raise AiToolsOpenstackAuthError("There are more than one Openstack project with name:"
                     " '%s'" % proj_name)
             return projects_id[0]
-        except requests.exceptions.Timeout, error:
-            raise AiToolsOpenstackAuthError(error)
-        except ks_exceptions.ClientException, error:
+        except (requests.exceptions.Timeout, ks_exceptions.ClientException) as error:
             raise AiToolsOpenstackAuthError(error)
