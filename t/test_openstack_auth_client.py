@@ -55,6 +55,12 @@ class TestOpenstackAuthClient(unittest.TestCase):
         self.assertRaises(AiToolsOpenstackAuthError,
             OpenstackAuthClient, self.osvars)
 
+    @patch.object(OpenstackAuthClient, '_OpenstackAuthClient__validate_session')
+    def test_make_session_not_forbidden(self, mock_oac):
+        mock_oac.side_effect = ka_exceptions.http.Forbidden
+        self.assertRaises(AiToolsOpenstackAuthError,
+            OpenstackAuthClient, self.osvars)
+
     ## get_tenant_uuid
 
     @patch.object(OpenstackAuthClient, '_OpenstackAuthClient__validate_session')

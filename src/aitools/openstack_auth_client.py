@@ -40,7 +40,8 @@ class OpenstackAuthClient():
 
         except ks_exceptions.SSLError:
             raise AiToolsOpenstackAuthError("x509 client certificate error")
-        except (ka_exceptions.http.Unauthorized, ka_exceptions.NotFound):
+        except (ka_exceptions.http.Unauthorized, ka_exceptions.NotFound,
+                    ka_exceptions.Forbidden):
             raise AiToolsOpenstackAuthError("Wrong tenant? Kerberos ticket expired?")
 
     def __validate_session(self, auth_plugin):
