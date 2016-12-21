@@ -189,6 +189,7 @@ certificate_revocation = false
 dynamicfacts = memorysize,memoryfree,swapsize,swapfree,uptime_seconds,uptime_hours
 configtimeout = 500
 runinterval = 600
+splay = true
 environment = $_FOREMAN_ENVIRONMENT
 EOF
 
