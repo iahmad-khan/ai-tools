@@ -5,12 +5,12 @@ import logging
 import requests
 import re
 from keystoneauth1 import session as keystone_session
+from keystoneauth1 import exceptions as ka_exceptions
 from keystoneclient.v3 import client as keystoneclient
 from openstackclient.api import auth
 from openstackclient.common import clientmanager
 from os_client_config import config as cloud_config
-from keystoneclient import exceptions
-from keystoneclient.openstack.common.apiclient import exceptions as api_exceptions
+from keystoneclient import exceptions as ks_exceptions
 from aitools.errors import AiToolsOpenstackAuthError
 from aitools.errors import AiToolsOpenstackAuthBadEnvError
 
@@ -34,14 +34,21 @@ class OpenstackAuthClient():
                 re.match(r'.*v2(\.0)?/?$', auth_options.os_auth_url):
                 raise AiToolsOpenstackAuthBadEnvError('os_auth_url')
 
-            self.session = self.__make_session(auth_options)
+            self.session, auth_plugin = self.__make_session(auth_options)
 
-        except exceptions.SSLError:
+            self.__validate_session(auth_plugin)
+
+        except ks_exceptions.SSLError:
             raise AiToolsOpenstackAuthError("x509 client certificate error")
-        except (api_exceptions.Unauthorized, api_exceptions.Forbidden,
-            api_exceptions.NotFound):
-            raise AiToolsOpenstackAuthError("- Are you using the wrong tenant?\n"
-                " - Is your Kerberos ticket expired?")
+        except (ka_exceptions.http.Unauthorized, ka_exceptions.NotFound,
+                    ka_exceptions.Forbidden):
+            raise AiToolsOpenstackAuthError("Wrong tenant? Kerberos ticket expired?")
+
+    def __validate_session(self, auth_plugin):
+        """ Requests a token from Keystone to make sure that the
+        credetials are okay and the calling user has access to the tenant.
+        This way we can fail early and inform the calling user quickly"""
+        auth_plugin.get_auth_ref(self.session)
 
     def __make_session(self, opts, **kwargs):
         """Create our base session using simple auth from ksc plugins
@@ -67,11 +74,14 @@ class OpenstackAuthClient():
             cloud,
         )
 
+
+        auth_plugin = auth_plugin.load_from_options(**auth_params)
         session = keystone_session.Session(
-            auth=auth_plugin.load_from_options(**auth_params),
+            auth=auth_plugin,
             **kwargs
         )
-        return session
+
+        return (session, auth_plugin)
 
     def get_tenant_uuid(self, proj_name, username):
         try:
@@ -86,7 +96,5 @@ class OpenstackAuthClient():
                 raise AiToolsOpenstackAuthError("There are more than one Openstack project with name:"
                     " '%s'" % proj_name)
             return projects_id[0]
-        except requests.exceptions.Timeout, error:
-            raise AiToolsOpenstackAuthError(error)
-        except exceptions.ClientException, error:
+        except (requests.exceptions.Timeout, ks_exceptions.ClientException) as error:
             raise AiToolsOpenstackAuthError(error)
