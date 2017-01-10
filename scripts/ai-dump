@@ -162,7 +162,10 @@ def host_main(pargs):
             jj.update(rogga)
 
         if facts['is_virtual'] == 'true':
-            ec2_metadata = json.loads(facts.get('ec2_metadata'))
+            try:
+                ec2_metadata = json.loads(facts.get('ec2_metadata', {}))
+            except (TypeError, ValueError):
+                ec2_metadata = {}
             jj['flavour'] = ec2_metadata.get('instance-type', None)
             jj['availability_zone'] = ec2_metadata.get('placement', {}).get('availability-zone', None)
         else:
@@ -195,7 +198,10 @@ def host_main(pargs):
         t.add_row(["FE Responsible:", facts.get('fename', '-')])
         t.add_row(["OS:", "%s %s %s (%s)" % (facts.get('operatingsystem', '-'), facts.get('lsbdistrelease', '-'), facts.get('architecture', '-'), facts.get('configured_kernel', '-'))])
         if facts.get('is_virtual') == 'true':
-            ec2_metadata = json.loads(facts.get('ec2_metadata'))
+            try:
+                ec2_metadata = json.loads(facts.get('ec2_metadata', {}))
+            except (TypeError, ValueError):
+                ec2_metadata = {}
             t.add_row(["VM Project:", facts.get('cern_os_tenant', '-')])
             t.add_row(["VM Flavour:", ec2_metadata.get('instance-type', '-')])
             t.add_row(["Avail zone:", ec2_metadata.get('placement', {}).get('availability-zone', '-')])
