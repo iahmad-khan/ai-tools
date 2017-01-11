@@ -21,7 +21,6 @@ class ForemanCompleter(object):
     """Completes item from within forman"""
     def __init__(self,model='hosts',item='name'):
         self.model = model
-        self.name = model[:-1]
         self.item = item
 
     def __call__(self, prefix, parsed_args, **kwargs):
@@ -36,13 +35,13 @@ class ForemanCompleter(object):
             warn("Tab completion could not connect to Foreman")
             return
 
-        return [item[self.name][self.item] for item in response if item[self.name][self.item].startswith(prefix) ]
+        return [item[self.item] for item in response if item[self.item].startswith(prefix) ]
 
 class NovaCompleter(object):
     """Completes nova entities from nova cache in ~/.novaclient"""
     def __init__(self,cache='server'):
         self.cache = cache
-        
+
     def __call__(self, prefix, parsed_args, **kwargs):
         files = (glob.glob("%s/.novaclient/*/%s-human-id-cache" % ( os.environ.get('HOME'), self.cache ))[0],
           glob.glob("%s/.novaclient/*/%s-uuid-cache"     % ( os.environ.get('HOME'), self.cache ))[0])

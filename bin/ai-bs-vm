@@ -204,7 +204,7 @@ def parse_cmdline_args():
     parser.add_argument('-g', '--foreman-hostgroup', type=str,
         help="Foreman hostgroup",
         default=os.environ.get('AIBS_HOSTGROUP_NAME', None)
-        ).completer = ForemanCompleter(model='hostgroups',item='label')
+        ).completer = ForemanCompleter(model='hostgroups',item='title')
     parser.add_argument('--foreman-parameter', type=str,
         help="Foreman parameter", action='append', default=[])
     ##
