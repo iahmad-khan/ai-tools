@@ -71,6 +71,13 @@ The following parameters are for advanced users and debugging.
 Number of times that the script will check is the boot status
 is correct before giving up.
 .TP
+.B --aims-target
+AIMS target to use. Instead of determining automatically the AIMS target based
+on information available in Foreman, this option allows the user to manually
+specify it. This is a free text option so the supplied string will be directly
+passed to AIMS and no validation will be done by ai-installhost. Example:
+"CC73_x86_64_TEST".
+.TP
 .B --certmgr-hostname (AIBS_CASERVER_HOSTNAME)
 Hostname of the Cert Manager server that the virtual machine will request a certificate from
 from.
