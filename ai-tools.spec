@@ -90,7 +90,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
-* Wed Jan 18 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.4-1
+* Wed Jan 18 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.4-1
 - [ai-installhost] Minor changes to the manual page.
 - [ai-installhost] Allow overriding the AIMS target via a parameter.
 - [ai-dump] Take avail. zone and flavour from $::ec2_metadata.
