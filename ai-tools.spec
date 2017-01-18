@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 10.0.3
+Version: 10.0.4
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -90,6 +90,13 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Jan 18 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.4-1
+- [ai-installhost] Minor changes to the manual page.
+- [ai-installhost] Allow overriding the AIMS target via a parameter.
+- [ai-dump] Take avail. zone and flavour from $::ec2_metadata.
+- [all] Handle keystoneauth1.exceptions.http.Unauthorized.
+- [ai-bs-vm] Enable splay since the very first run.
+
 * Wed Nov 30 2016 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.3-1
 - [ai-installhost] Add --reboot.
 - [ai-kill-vm] Add a warning related to physical machines.
