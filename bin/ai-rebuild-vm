@@ -221,7 +221,7 @@ def main():
     logging.info("  immediately after a successful rebuild process.")
     logging.info("* It typically takes around 10-20 minutes between this command is")
     logging.info("  executed and the first Puppet report arrives to Foreman:")
-    logging.info("  https://%s/hosts/%s/reports" % (fconfig.foreman_hostname, fqdn))
+    logging.info("  https://%s/hosts/%s/config_reports" % (fconfig.foreman_hostname, fqdn))
     logging.info("  (although this depends a lot on the complexity of your configuration")
     logging.info("  and on the number of packages to be installed/updated)")
     logging.info("* After the initial configuration, if you've set rootegroups or")
