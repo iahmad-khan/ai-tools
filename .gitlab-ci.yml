@@ -36,7 +36,7 @@ functionaltests7_$IAAS_RELEASE:
     - export OS_AUTH_TYPE=v3kerberos
     - export OS_IDENTITY_API_VERSION=3
     - export OS_PROJECT_DOMAIN_ID=default
-    - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
+    - export OS_PROJECT_NAME='IT Configuration Continuous Integration'
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-$IAAS_RELEASE
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-$IAAS_RELEASE-stable/x86_64/os/
     - echo 'priority=1' >> /etc/yum.repos.d/*openstack-$IAAS_RELEASE*
@@ -61,7 +61,7 @@ functionaltests7_$IAAS_RELEASE_foremantest:
     - export OS_AUTH_TYPE=v3kerberos
     - export OS_IDENTITY_API_VERSION=3
     - export OS_PROJECT_DOMAIN_ID=default
-    - export OS_PROJECT_NAME='IT Agile Infrastructure Continuous Integration'
+    - export OS_PROJECT_NAME='IT Configuration Continuous Integration'
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/centos/7/cloud/x86_64/openstack-$IAAS_RELEASE
     - yum-config-manager --add-repo http://linuxsoft.cern.ch/internal/repos/openstackclients7-$IAAS_RELEASE-stable/x86_64/os/
     - echo 'priority=1' >> /etc/yum.repos.d/*openstack-$IAAS_RELEASE*
