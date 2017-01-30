@@ -45,7 +45,7 @@ Display usage and exit.
 Print a machine-readable output in JSON (see JSON OUTPUT for details).
 .TP
 .B -d, --dryrun
-Skip Foreman requests.
+Skip Foreman requests (all IPMI operations will be considered as successful).
 
 .LP
 .I Advanced options:
@@ -95,7 +95,8 @@ Show current chassis power status.
 .SH EXIT CODES
 .TP
 .B 0
-All operations executed successfully.
+All operations executed successfully. If dryrun is enabled all IPMI
+operations will be flagged as successful.
 .TP
 .B 1
 Some IPMI operations have failed (see details at machine level).

@@ -70,7 +70,7 @@ def foreman_power_operation(client, fqdn):
     try:
         (code, msg) = client.power_operation(fqdn, args.operation)
         if args.dryrun:
-            return (False, "Dryrun enabled")
+            return (True, "Dryrun enabled")
         if code == requests.codes.ok:
             outcome = msg["power"]
             if args.operation == "status":
