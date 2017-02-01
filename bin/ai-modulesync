@@ -1,0 +1,65 @@
+#!/usr/bin/python
+
+import argcomplete
+import logging
+import signal
+import sys
+
+from argparse import ArgumentParser
+
+from aitools.rundeck import RundeckClient
+from aitools.config import RundeckConfig
+from aitools.common import configure_logging
+from aitools.errors import AiToolsRundeckError
+
+def signal_handler(signal, frame):
+    logging.info('Output streaming terminated.')
+    sys.exit(0)
+
+def prepare_ci(pargs):
+    try:
+        client = RundeckClient(show_url=pargs.show_url,
+                               deref_alias=pargs.dereference_alias)
+
+        if pargs.all:
+            execution = client.run_job(job='modulesync')
+        else:
+            execution = client.run_job(job='modulesync',
+                                       repository=pargs.repository)
+
+        logging.info('Rundeck job triggered successfully.')
+        logging.info("You can safely terminate this process "
+                     "and follow the execution at: %s", execution['href'])
+        client.show_execution(execution['id'], execution['jobid'])
+    except AiToolsRundeckError as error:
+        logging.error(str(error))
+        sys.exit(3)
+
+
+def main():
+    signal.signal(signal.SIGINT, signal_handler)
+    parser = ArgumentParser(description='Tool for preparing '
+                            'GitLab repositories for CI')
+    rundeck_config = RundeckConfig()
+    rundeck_config.add_standard_args(parser)
+
+    parser.add_argument('--show_url', action='store_true', default=False,
+                        dest='show_url', help='show REST urls')
+    parser.add_argument('-v', '--verbose',
+                        action='store_true', help='Be chatty')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--all', action='store_true', help='Execute the job for '
+                       'every managed hostgroup and module')
+    group.add_argument('-r', dest='repository', help='Execute the job for the '
+                       'repository specified with this option (it-puppet-...)')
+
+    parser.set_defaults(func=prepare_ci)
+    argcomplete.autocomplete(parser)
+    pargs = parser.parse_args()
+    rundeck_config.read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+    pargs.func(pargs)
+
+
+if __name__ == '__main__':
+    main()
