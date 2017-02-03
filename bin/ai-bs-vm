@@ -43,7 +43,8 @@ from aitools.common import append_domain
 from aitools.common import is_valid_UUID
 from aitools.common import is_valid_size_format
 from aitools.common import generator_device_names
-from aitools.common import IMAGES_METADATA
+from aitools.common import get_nova_image_id
+from aitools.common import DEFAULT_OS_EDITION
 
 from aitools.errors import AiToolsInitError, AiToolsForemanError
 from aitools.errors import AiToolsCertmgrError, AiToolsNovaError
@@ -176,6 +177,10 @@ def parse_cmdline_args():
     images.add_argument('--cc7', action="store_const", dest='nova_image',
         const='cc7', help="Select latest CC7 image available")
     images.set_defaults(nova_image=os.environ.get('AIBS_VMIMAGE_NAME', None))
+
+    parser.add_argument('--nova-image-edition', type=str, default=DEFAULT_OS_EDITION,
+        help='OS edition to use for the specified image. Only makes sense along'
+        ' --slc[5|6] and --cc7 (default: %s)' % DEFAULT_OS_EDITION)
 
     parser.add_argument('--nova-boot-from-new-volume', type=str,
         help="Size (in GB or TB) of the cinder volume to be created"
@@ -440,11 +445,11 @@ def main():
             if args.landb_mainuser:
                 meta['landb-mainuser'] = args.landb_mainuser
 
-            image = args.nova_image
-            if image in IMAGES_METADATA:
-                image = nova.get_latest_image(*IMAGES_METADATA[image])
-            elif image and not is_valid_UUID(image):
-                image = nova.find_image_by_name(name=image)
+
+            if args.nova_image:
+                image = get_nova_image_id(nova, args.nova_image, args.nova_image_edition)
+            else:
+                image = None
 
             volumes = _manage_volumes(cinder=cinder,
                         hostname=fqdn,

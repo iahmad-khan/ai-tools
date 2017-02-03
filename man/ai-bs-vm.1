@@ -1,4 +1,4 @@
-.TH AI-BS-VM "1" "February 2014" "ai-bs-vm" "User Commands"
+.TH AI-BS-VM "1" "February 2017" "ai-bs-vm" "User Commands"
 .SH NAME
 ai-bs-vm \- Command-line tool to create Puppetized OpenStack VMs
 
@@ -197,6 +197,11 @@ to achieve the same result (see http://cern.ch/go/8rlT).
 .TP
 .B --noreboot
 Don't reboot after the Puppet initialization.
+.TP
+.B --nova-image-edition
+OS edition to use for the specified image. This option only makes sense when
+used with --slc[5|6] or --cc7 (defaults to "Base"). Test images will be
+automatically selected if "Test" is passed.
 .TP
 .B --nova-parameter
 Parameter to be passed to Nova as metaparameter (format: key=value,

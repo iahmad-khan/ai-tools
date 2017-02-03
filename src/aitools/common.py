@@ -25,10 +25,11 @@ from aitools.params import DEFAULT_LOGGING_LEVEL
 from aitools.errors import AiToolsInitError
 from aitools.config import CertmgrConfig
 
+DEFAULT_OS_EDITION = 'Base'
 IMAGES_METADATA = {
     'slc5': ('SLC', '5'),
     'slc6': ('SLC', '6'),
-    'cc7' : ('CC',  '7'),
+    'cc7' : ('CC',  '7')
 }
 
 def configure_logging(args, default_lvl=DEFAULT_LOGGING_LEVEL):
@@ -257,3 +258,16 @@ def print_progress_meter(count, total, new_line=False):
     term = "\n" if new_line else ""
     sys.stdout.write("\rIn progress... %d%% done%s" % (progress, term))
     sys.stdout.flush()
+
+def get_nova_image_id(nova, image, os_edition=DEFAULT_OS_EDITION):
+    image_id = None
+
+    if is_valid_UUID(image):
+        image_id = image
+    elif image in IMAGES_METADATA:
+        metadata = IMAGES_METADATA[image] + (os_edition,)
+        image_id = nova.get_latest_image(*metadata)
+    else:
+        image_id = nova.find_image_by_name(image)
+
+    return image_id
