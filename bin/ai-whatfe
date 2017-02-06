@@ -113,7 +113,9 @@ def main():
     fename = None
     if pdb_status:
         # Get FE fact from PuppetDB
-        fename = pdbclient.get_facts(fqdn)['fename']
+        host_facts = pdbclient.get_facts(fqdn)
+        if host_facts.has_key('fename'):
+            fename = host_facts['fename']
         deactivated = pdb_status['deactivated']
 
     if (pdb_status and deactivated):
