@@ -1,0 +1,92 @@
+.TH AI-MODULESYNC "5" "February 2017" "AI-MODULESYNC" "User Commands"
+.SH NAME
+ai-modulesync \- Prepare GitLab repositories for continuous integration
+
+.SH SYNOPSIS
+.B "ai-modulesync (--all | -r REPOSITORY)"
+
+.SH DESCRIPTION
+ai-modulesync is a tool to prepare GitLab repositories for continuous integration. It will create merge requests with the
+latest test framework and configure the repositories adding the needed variables and deployment keys.
+.LP
+.TP
+.I Effects:
+.RS
+.P
+New modulesync branch created in each repository
+.P
+New merge request (modulesync -> qa)
+.P
+New CI variable created in each repository
+.P
+Deploy key AI CI Read Key enabled
+.RE
+.LP
+.I Prerequisites:
+.TP
+.B Valid Kerberos5 ticket
+The user invoking the script must have a valid (existent and not expired)
+Kerberos ticket in the file pointed by the environment variable KRB5CCNAME
+(should be fine if you're on aiadm).
+.SH OPTIONS
+.TP
+.B --all
+Execute the job for every managed hostgroup and module.
+.TP
+\fB\-r\fR REPOSITORY
+Execute the job for the repository specified with this option (it-puppet-...).
+.TP
+.B --config
+Path to the config file (default /etc/ai/ai.conf).
+.TP
+.B -h, --help
+Display usage and exit.
+.LP
+.I Advanced options:
+.TP
+The following parameters are for advanced users and debugging.
+.TP
+\fB\-\-rundeck-hostname\fR FQDN
+FQDN of the Rundeck instance to use.
+.TP
+\fB\-\-rundeck-port\fR PORT
+Port of the Rundeck instance to use.
+.TP
+\fB\-\-rundeck-timeout\fR INT
+Timeout (in seconds) for Rundeck operations.
+.TP
+.B --dereference_alias
+Dereference aliases in urls
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Enable debug messages.
+.SH EXIT CODES
+.TP
+.B 0
+All operations executed successfully.
+.TP
+.B 1
+Bad command line.
+.TP
+.B 3
+Rundeck error
+.TP
+.B 10
+Error loading config file.
+
+.SH EXAMPLES
+.TP
+.B Prepare CI in all the managed modules
+$ ai-modulesync --all
+
+.TP
+.B Prepare CI for it-puppet-module-foo repository
+$ ai-modulesync -r it-puppet-module-foo
+
+
+.SH REPORTING BUGS
+If you experience any problem with this tool, please open a support
+call on SNOW (Functional Element "Configuration Management").
+
+.SH AUTHOR
+David Moreno García <david.mogar@cern.ch>
