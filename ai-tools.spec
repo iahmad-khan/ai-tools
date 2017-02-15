@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 10.0.4
+Version: 10.0.5
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -90,6 +90,13 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Feb 15 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.5-1
+- [ai-bs-vm] Fix link to Foreman reports. Thanks Daniel!
+- [ai-bs-vm] Change documentation about the supported images.
+- [ai-remote-power-control] Return 0 when dryrun is enabled. Thanks Daniel!
+- [ai-whatfe] Check if the fename fact exists at all before returning it.
+- [ai-modulesync] New!
+
 * Wed Jan 18 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.4-1
 - [ai-installhost] Minor changes to the manual page.
 - [ai-installhost] Allow overriding the AIMS target via a parameter.
