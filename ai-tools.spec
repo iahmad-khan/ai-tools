@@ -61,6 +61,7 @@ install -m 644 man/ai-pdb.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-dump.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-qai.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-whatfe.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install -m 644 man/ai-modulesync.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-rename-host.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-set-fe.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-hiera.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
