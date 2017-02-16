@@ -74,16 +74,17 @@ def main():
                 sys.stderr.write("Problems connecting to PuppetDB: %s" %e)
                 sys.exit(1)
 
-            cdb_status = get_cdb(shortname)
+            #cdb_status = get_cdb(shortname)
             deactivated = pdb_status['deactivated'] if pdb_status else None
-            if pdb_status and cdb_status:
-                agile_status = "BOTH_IN_QUATTOR_AND_AI"
-            elif (pdb_status and deactivated == None):
+            #if pdb_status: and cdb_status:
+            #    agile_status = "BOTH_IN_QUATTOR_AND_AI"
+            #el
+            if (pdb_status and deactivated == None):
                 agile_status = "AI"
             elif (pdb_status and deactivated != None):
                 agile_status = "AI_STALE"
-            elif cdb_status:
-                agile_status = "QUATTOR"
+            #elif cdb_status:
+            #    agile_status = "QUATTOR"
 
         if args.json:
             jhost = {}

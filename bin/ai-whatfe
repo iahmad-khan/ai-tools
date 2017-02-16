@@ -109,7 +109,7 @@ def main():
     except (AiToolsPdbError, AiToolsPdbNotAllowedError) as e:
         sys.stderr.write("Problems connecting to PuppetDB: %s" %e)
         sys.exit(1)
-    cdb_status = get_cdb(shortname)
+    #cdb_status = get_cdb(shortname)
     fename = None
     if pdb_status:
         # Get FE fact from PuppetDB
@@ -128,9 +128,9 @@ def main():
     if (pdb_status and deactivated == None):
         agile_status = "AI"
         print "%s is known to the Puppet system."  % host
-    elif cdb_status:
-        agile_status = "QUATTOR"
-        print "%s is known to the Quattor system."  % host
+    #elif cdb_status:
+    #    agile_status = "QUATTOR"
+    #    print "%s is known to the Quattor system."  % host
     else:
         agile_status = "UNKNOWN"
         print "%s is not known to either the Puppet or Quattor systems"  % host
