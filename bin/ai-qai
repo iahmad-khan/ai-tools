@@ -2,7 +2,6 @@
 # Checks to see if the hosts are managed by AI or by Quattor.
 import sys
 import argparse
-import cx_Oracle
 import json
 
 from aitools.config import PdbConfig
@@ -47,7 +46,6 @@ def main():
         if not fqdn:
             agile_status = "NOT_FOUND_IN_DNS"
         else:
-            shortname = shortify(host)
             try:
                 pdb_status = pdbclient.get_host(fqdn)
             except AiToolsPdbNotFoundError:

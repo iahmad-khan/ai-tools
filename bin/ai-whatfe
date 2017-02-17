@@ -2,7 +2,6 @@
 # Guesses the functional element for .
 import sys
 import argparse
-import cx_Oracle
 
 from aitools.config import PdbConfig
 from aitools.common import fqdnify, shortify
@@ -82,7 +81,7 @@ def main():
         sys.exit(0)
     shortname = shortify(host)
 
-    # Check status in PuppetDB and CDB
+    # Check status in PuppetDB
     try:
         pdb_status = pdbclient.get_host(fqdn)
     except AiToolsPdbNotFoundError:
