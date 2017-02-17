@@ -150,7 +150,9 @@ class NovaClient():
                 image['metadata'].get('os_distro') == os_distro and
                 image['metadata'].get('os_distro_major') == str(os_distro_major) and
                 image['metadata'].get('os_edition') == os_edition and
-                image['metadata'].get('architecture') == architecture]
+                image['metadata'].get('architecture') == architecture and
+                # The image is not a snapshot
+                image['metadata'].get('base_image_ref') == None]
 
             if not filtered_images:
                 raise AiToolsNovaError("No available '%s%s' image for '%s' "
