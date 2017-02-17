@@ -171,7 +171,7 @@ class TestNova(unittest.TestCase):
                 'release_date': '2013-06-24'
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('SLC', '6', 'Server'),
+        self.assertEquals(self.tenant.get_latest_image('SLC', '6', 'Server'),
             '49e166bb-68e1-4969-b26a-64022e87ef28')
 
     @patch.object(NovaWrapper, '_NovaClient__init_client')
@@ -199,7 +199,7 @@ class TestNova(unittest.TestCase):
                 'os_distro_minor': '2'
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('SLC', '6', 'Server'),
+        self.assertEquals(self.tenant.get_latest_image('SLC', '6', 'Server'),
             'abcd-68e1-4969-b26a-64022e87ef28')
 
     @patch.object(NovaWrapper, '_NovaClient__init_client')
@@ -227,7 +227,7 @@ class TestNova(unittest.TestCase):
                 'os_distro_minor': '2'
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+        self.assertEquals(self.tenant.get_latest_image('CC', '7'),
             'abcd-68e1-4969-b26a-64022e87ef28')
 
     @patch.object(NovaWrapper, '_NovaClient__init_client')
@@ -255,7 +255,7 @@ class TestNova(unittest.TestCase):
                 'os_distro_minor': '1',
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+        self.assertEquals(self.tenant.get_latest_image('CC', '7'),
             'abcd-68e1-4969-b26a-64022e87ef28')
 
     @patch.object(NovaWrapper, '_NovaClient__init_client')
@@ -283,7 +283,7 @@ class TestNova(unittest.TestCase):
                 'os_distro_minor': '3',
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+        self.assertEquals(self.tenant.get_latest_image('CC', '7'),
             '49e166bb-68e1-4969-b26a-64022e87ef28')
 
     @patch.object(NovaWrapper, '_NovaClient__init_client')
@@ -311,7 +311,7 @@ class TestNova(unittest.TestCase):
                 'os_distro_minor': '2'
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+        self.assertEquals(self.tenant.get_latest_image('CC', '7'),
             '49e166bb-68e1-4969-b26a-64022e87ef28')
 
     @patch.object(NovaWrapper, '_NovaClient__init_client')
@@ -339,7 +339,7 @@ class TestNova(unittest.TestCase):
                 'os_distro_minor': '2'
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+        self.assertEquals(self.tenant.get_latest_image('CC', '7'),
             'abcd-68e1-4969-b26a-64022e87ef28')
 
     @patch.object(NovaWrapper, '_NovaClient__init_client')
@@ -367,7 +367,7 @@ class TestNova(unittest.TestCase):
                 'os_distro_minor': '2'
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+        self.assertEquals(self.tenant.get_latest_image('CC', '7'),
             'abcd-68e1-4969-b26a-64022e87ef28')
 
     @patch.object(NovaWrapper, '_NovaClient__init_client')
@@ -395,7 +395,7 @@ class TestNova(unittest.TestCase):
                 'os_distro_minor': '2'
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+        self.assertEquals(self.tenant.get_latest_image('CC', '7'),
             '49e166bb-68e1-4969-b26a-64022e87ef28')
 
 
@@ -416,7 +416,7 @@ class TestNova(unittest.TestCase):
         Mock(to_dict=lambda:{
             'id': '49e166bb-68e1-4969-b26a-64022e87ef28',
         })]
-        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+        self.assertEquals(self.tenant.get_latest_image('CC', '7'),
             'abcd-68e1-4969-b26a-64022e87ef28')
 
     @patch.object(NovaWrapper, '_NovaClient__init_client')
@@ -458,5 +458,5 @@ class TestNova(unittest.TestCase):
                 'base_image_ref': 'e5d39d61-7a55-4f96-b561-904a5672fc00'
             }
         })]
-        self.assertTrue(self.tenant.get_latest_image('CC', '7'),
+        self.assertEquals(self.tenant.get_latest_image('CC', '7'),
             'abcd-68e1-4969-b26a-64022e87ef28')
