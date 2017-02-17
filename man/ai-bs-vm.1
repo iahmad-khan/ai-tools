@@ -23,9 +23,9 @@ If no FQDN is specified a random one will be generated based on a trimmed SHA1
 hashed UNIX timestamp and using cern.ch as its domain. The length is limited to
 60 characters (prefix included). Using a prefix is recommended (see --prefix).
 .LP
-The officially supported images are the publicly available: CC7, SLC6
+The recommended images are the publicly available: CC7, SLC6
 and SLC5, which contain a base system ready to be managed by Puppet. More info:
-http://linux.web.cern.ch/linux/docs/cloudimages.shtml
+http://cern.ch/linux/docs/cloudimages.shtml
 .LP
 .I Prerequisites:
 .TP
@@ -76,7 +76,7 @@ This parameter is mutually exclusive with
 { '--slc5' | '--slc6' | '--cc7' | '--nova-boot-from-existing-volume' }.
 .TP
 .B --slc5, --slc6, --cc7
-Latest released and officially supported OpenStack image for the particular
+Latest released and recommended OpenStack image for the particular
 distribution. Snapshots will be ignored. These parameteres are mutually
 exclusive with { '--nova-image' | '--nova-boot-from-existing-volume' }.
 .LP
