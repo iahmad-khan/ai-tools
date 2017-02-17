@@ -2,7 +2,6 @@
 # Guesses the functional element for .
 import sys
 import argparse
-import cx_Oracle
 
 from aitools.config import PdbConfig
 from aitools.common import fqdnify, shortify
@@ -36,25 +35,6 @@ def parse_cmdline_args():
                         help="hostnames to query for FE")
 
     return parser.parse_args()
-
-
-def get_cdb(h):
-    try:
-        conn = cx_Oracle.connect('cdbreadonly/shabba101@cdb')
-        try:
-            curs = conn.cursor()
-            curs.execute("select hostname from cdb.vwqai where hostname=:hostn and puppet_managed='false'", hostn=h)
-            rows = curs.fetchall()
-            if rows:
-                return True
-            else:
-                return False
-        finally:
-            curs.close()
-            conn.close()
-    except cx_Oracle.DatabaseError as e:
-        sys.stderr.write("Problems connecting to CDB: %s" %e)
-        sys.exit(1)
 
 
 def print_service(service):
@@ -101,7 +81,7 @@ def main():
         sys.exit(0)
     shortname = shortify(host)
 
-    # Check status in PuppetDB and CDB
+    # Check status in PuppetDB
     try:
         pdb_status = pdbclient.get_host(fqdn)
     except AiToolsPdbNotFoundError:
@@ -109,7 +89,6 @@ def main():
     except (AiToolsPdbError, AiToolsPdbNotAllowedError) as e:
         sys.stderr.write("Problems connecting to PuppetDB: %s" %e)
         sys.exit(1)
-    cdb_status = get_cdb(shortname)
     fename = None
     if pdb_status:
         # Get FE fact from PuppetDB
@@ -128,9 +107,6 @@ def main():
     if (pdb_status and deactivated == None):
         agile_status = "AI"
         print "%s is known to the Puppet system."  % host
-    elif cdb_status:
-        agile_status = "QUATTOR"
-        print "%s is known to the Quattor system."  % host
     else:
         agile_status = "UNKNOWN"
         print "%s is not known to either the Puppet or Quattor systems"  % host
