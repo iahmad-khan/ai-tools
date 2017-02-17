@@ -430,7 +430,7 @@ class TestNova(unittest.TestCase):
                 'os_edition': 'Base',
                 'architecture': 'x86_64',
                 'release_date': '2017-02-08T13:13:13',
-                'os_distro_minor': '2',
+                'os_distro_minor': '3',
                 'base_image_ref': 'e5d39d61-7a55-4f96-b561-904a5672fc00'
             }
         }),
@@ -443,7 +443,7 @@ class TestNova(unittest.TestCase):
                 'os_edition': 'Base',
                 'architecture': 'x86_64',
                 'release_date': '2017-02-08T13:13:13',
-                'os_distro_minor': '2'
+                'os_distro_minor': '3'
             }
         }),
         Mock(to_dict=lambda:{
@@ -454,7 +454,7 @@ class TestNova(unittest.TestCase):
                 'os_edition': 'Base',
                 'architecture': 'x86_64',
                 'release_date': '2017-02-08T13:13:13',
-                'os_distro_minor': '2',
+                'os_distro_minor': '3',
                 'base_image_ref': 'e5d39d61-7a55-4f96-b561-904a5672fc00'
             }
         })]
