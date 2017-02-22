@@ -126,8 +126,9 @@ def main():
     pdb = PdbClient(deref_alias=args.dereference_alias)
 
     try:
-        host = foreman.gethost(fqdn=fqdn,
-            toexpand=['environment', 'hostgroup'])
+        if not args.foreman_environment or not args.foreman_hostgroup:
+            host = foreman.gethost(fqdn=fqdn,
+                toexpand=['environment', 'hostgroup'])
         # Resolve environment
         if not args.foreman_environment:
             if host['environment']:
