@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 10.0.5
+Version: 10.0.6
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -91,6 +91,12 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Feb 22 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.6-1
+- [ai-bs-vm] Ignore images that look like snapshots when using --cc7 et al.
+- [ai-modulesync] Add manpage.
+- [ai-qai, ai-fename] Take CDB out of the equation.
+- [ai-hiera] Don't query Foreman if it's not necessary. Thanks Pablo!
+
 * Wed Feb 15 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.5-1
 - [ai-bs-vm] Fix link to Foreman reports. Thanks Daniel!
 - [ai-bs-vm] Change documentation about the supported images.
