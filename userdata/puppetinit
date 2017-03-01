@@ -182,6 +182,8 @@ rundir = /var/run/puppet
 ssldir = /var/lib/puppet/ssl
 
 [agent]
+masterport = 8144
+ca_port = 8140
 stringify_facts = false
 report = true
 ignoreschedules = true
@@ -279,7 +281,7 @@ execute_shell_block get_host_certificate 10 15 || unrecoverable_error "getcert"
 
 echo "Generating initial /etc/sysconfig/puppet"
 cat << EOF > /etc/sysconfig/puppet
-PUPPET_EXTRA_OPTS="--waitforcert=500 --masterport=8150 --ca_port=8140"
+PUPPET_EXTRA_OPTS="--waitforcert=500 --masterport=8154 --ca_port=8140"
 EOF
 
 # Turn puppet on for next boot.
@@ -294,7 +296,7 @@ if [ $OS_MAJOR_VERSION -ge 6 ]
     echo "Waiting for a time slot to run Puppet (osrepos tag only)..."
     /bin/sleep $(/usr/bin/expr $RANDOM % 180)
     echo "Running Puppet to configure only the YUM repositories"
-    /usr/bin/puppet agent -t --tags osrepos --masterport 8150 \
+    /usr/bin/puppet agent -t --tags osrepos --masterport 8154 \
         --ca_port 8140 --waitforcert 120 --color=FALSE
     echo "Running yum distro-sync for the first time..."
     [[ -x /usr/local/sbin/distro_sync.sh ]] \
