@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 10.0.6
+Version: 10.0.7
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -91,6 +91,9 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Wed Mar 1 2017 Steve Traylen <steve.traylen@cern.ch> 10.0.7-1
+* [ai-bs-vm] Use puppet4 servers for all stages of bootstrap.
+
 * Wed Feb 22 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.6-1
 - [ai-bs-vm] Ignore images that look like snapshots when using --cc7 et al.
 - [ai-modulesync] Add manpage.
