@@ -280,7 +280,12 @@ PUPPET_EXTRA_OPTS="--waitforcert=500 --masterport=8154 --ca_port=8140"
 EOF
 
 # Turn puppet on for next boot.
-/sbin/chkconfig puppet on
+if [ $OS_MAJOR_VERSION -ge 7 ]
+  then
+    /usr/bin/systemctl enable puppet.service
+else
+    /sbin/chkconfig puppet on
+fi
 
 # Restart syslog to make sure it logs with new hostname
 service rsyslog restart
