@@ -180,7 +180,6 @@ server = $_PUPPETMASTER_HOSTNAME
 ca_server = $_CASERVER_HOSTNAME
 masterport = 8144
 ca_port = 8140
-stringify_facts = false
 report = true
 ignoreschedules = true
 certificate_revocation = false
