@@ -301,8 +301,6 @@ if [ $OS_MAJOR_VERSION -ge 6 ]
       && echo "Growing /dev/vda$_GROWPART_VDA_PARTITION to use all the available space..." \
       && growpart /dev/vda $_GROWPART_VDA_PARTITION
     date
-    cp /var/log/boot.log /var/log/firstboot.log
-    chmod 600 /var/log/firstboot.log
     [[ $_NO_REBOOT -eq 1 ]] || (echo "The VM will now reboot" && /sbin/reboot)
     [[ $_NO_REBOOT -eq 1 ]] && /sbin/service puppet start
 else
