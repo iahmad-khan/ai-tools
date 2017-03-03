@@ -21,10 +21,11 @@ def prepare_ci(pargs):
                                deref_alias=pargs.dereference_alias)
 
         if pargs.all:
-            execution = client.run_job(job='modulesync')
+            execution = client.run_job(job='modulesync', tag=pargs.tag)
         else:
             execution = client.run_job(job='modulesync',
-                                       repository=pargs.repository)
+                                       repository=pargs.repository
+                                       tag=pargs.tag)
 
         logging.info('Rundeck job triggered successfully.')
         logging.info("You can safely terminate this process "
@@ -46,8 +47,9 @@ def main():
                         dest='show_url', help='show REST urls')
     parser.add_argument('-v', '--verbose',
                         action='store_true', help='Be chatty')
+    parser.add_argument('-t', '--tag', default=None, help=argparse.SUPPRESS)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--all', action='store_true', help=argparse.SUPPRESS)
+    group.add_argument('-a', '--all', action='store_true', help=argparse.SUPPRESS)
     group.add_argument('-r', dest='repository', help='Execute the job for the '
                        'repository specified with this option (it-puppet-...)')
 
