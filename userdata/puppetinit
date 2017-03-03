@@ -279,16 +279,16 @@ cat << EOF > /etc/sysconfig/puppet
 PUPPET_EXTRA_OPTS="--waitforcert=500 --masterport=8154 --ca_port=8140"
 EOF
 
-# Turn puppet on for next boot.
+# Turn puppet on for next boot 
+# restart rsyslog (to make sure it logs with new hostname)
 if [ $OS_MAJOR_VERSION -ge 7 ]
   then
     /usr/bin/systemctl enable puppet.service
+    /usr/bin/systemctl restart rsyslog.service
 else
     /sbin/chkconfig puppet on
+    /sbin/service rsyslog restart
 fi
-
-# Restart syslog to make sure it logs with new hostname
-service rsyslog restart
 
 if [ $OS_MAJOR_VERSION -ge 6 ]
   then
