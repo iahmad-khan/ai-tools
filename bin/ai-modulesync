@@ -1,11 +1,10 @@
 #!/usr/bin/python
 
 import argcomplete
+import argparse
 import logging
 import signal
 import sys
-
-from argparse import ArgumentParser
 
 from aitools.rundeck import RundeckClient
 from aitools.config import RundeckConfig
@@ -38,7 +37,7 @@ def prepare_ci(pargs):
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
-    parser = ArgumentParser(description='Tool for preparing '
+    parser = argparse.ArgumentParser(description='Tool for preparing '
                             'GitLab repositories for CI')
     rundeck_config = RundeckConfig()
     rundeck_config.add_standard_args(parser)
@@ -48,8 +47,7 @@ def main():
     parser.add_argument('-v', '--verbose',
                         action='store_true', help='Be chatty')
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--all', action='store_true', help='Execute the job for '
-                       'every managed hostgroup and module')
+    group.add_argument('--all', action='store_true', help=argparse.SUPPRESS)
     group.add_argument('-r', dest='repository', help='Execute the job for the '
                        'repository specified with this option (it-puppet-...)')
 
