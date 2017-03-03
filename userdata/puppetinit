@@ -186,7 +186,6 @@ certificate_revocation = false
 configtimeout = 500
 runinterval = 600
 splay = true
-environment = $_FOREMAN_ENVIRONMENT
 EOF
 
 #
