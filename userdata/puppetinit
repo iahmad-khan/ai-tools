@@ -183,7 +183,6 @@ ca_port = 8140
 report = true
 ignoreschedules = true
 certificate_revocation = false
-configtimeout = 500
 runinterval = 600
 splay = true
 EOF
