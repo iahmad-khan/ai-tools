@@ -243,14 +243,14 @@ esac
 #
 # Download the host certificate
 #
-HOSTCERTDIR=`puppet config print certdir`
-HOSTKEYDIR=`puppet config print privatekeydir`
-HOSTPUBKEYDIR=`puppet config print publickeydir`
+HOSTCERTDIR=`/opt/puppetlabs/bin/puppet config print certdir`
+HOSTKEYDIR=`/opt/puppetlabs/bin/puppet config print privatekeydir`
+HOSTPUBKEYDIR=`/opt/puppetlabs/bin/puppet config print publickeydir`
 mkdir -p $HOSTCERTDIR $HOSTKEYDIR $HOSTPUBKEYDIR
 chown puppet:root $HOSTCERTDIR $HOSTKEYDIR $HOSTPUBKEYDIR
-HOSTKEY=`puppet config print hostprivkey`
-HOSTPUBKEY=`puppet config print hostpubkey`
-HOSTCERT=`puppet config print hostcert`
+HOSTKEY=`/opt/puppetlabs/bin/puppet config print hostprivkey`
+HOSTPUBKEY=`/opt/puppetlabs/bin/puppet config print hostpubkey`
+HOSTCERT=`/opt/puppetlabs/bin/puppet config print hostcert`
 function get_host_certificate {
   echo "Getting host certificate..."
   certmgr-getcert -s $_CASERVER_HOSTNAME -p $_CASERVER_PORT -w $HOSTKEYDIR -o $HOSTCERT
