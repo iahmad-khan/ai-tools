@@ -161,7 +161,7 @@ function install_puppet {
   echo "Trying to install puppet-agent from AI repositories..."
   yum remove -y puppet facter hiera # Obsoleted by puppet-agent, anyway
   yum install -y --enablerepo=$AIREPO puppet-agent
-  rpm -ql puppet > /dev/null
+  rpm -ql puppet-agent > /dev/null
 }
 execute_shell_block install_puppet 60 5 || unrecoverable_error "puppet"
 
