@@ -524,7 +524,7 @@ def main():
         logging.info("  meantime, the Foreman owner will be the issuer of this command.")
         logging.info("  (%s)" % krb_principal)
     logging.info("* In case of problems, if you provided a SSH key when creating the VM")
-    logging.info("  use it to log into the box and take a look at /var/log/firstboot.log.")
+    logging.info("  use it to log into the box and take a look at /var/log/cloud-init.log.")
     logging.info("  Console log can be retrieved by using 'openstack console log show'.")
     logging.info("----------------------------------------------------------------------")
     return 0
