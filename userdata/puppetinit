@@ -227,10 +227,12 @@ cat << EOF > /etc/krb5.conf
   }
 EOF
 
-install -m 0771 -o puppet -d /var/lib/puppet/ssl
-install -m 0755 -o puppet -d /var/lib/puppet/ssl/certs
+# Legacy, but easier than to change certmgr, I guess (NB)
+install -m 0750 -d /var/lib/puppet/ssl
+HOSTCERTDIR=`/opt/puppetlabs/bin/puppet config print certdir`
+install -m 0750 -d $HOSTCERTDIR
 
-CERN_CA_BUNDLE_PATH=/var/lib/puppet/ssl/certs/ca.pem
+CERN_CA_BUNDLE_PATH=$HOSTCERTDIR/ca.pem
 case $OS_MAJOR_VERSION in
   "7"|"6" )
     cp -p /etc/pki/tls/certs/CERN-bundle.pem $CERN_CA_BUNDLE_PATH
@@ -243,11 +245,10 @@ esac
 #
 # Download the host certificate
 #
-HOSTCERTDIR=`/opt/puppetlabs/bin/puppet config print certdir`
 HOSTKEYDIR=`/opt/puppetlabs/bin/puppet config print privatekeydir`
+install -m 0750 -d $HOSTKEYDIR
 HOSTPUBKEYDIR=`/opt/puppetlabs/bin/puppet config print publickeydir`
-mkdir -p $HOSTCERTDIR $HOSTKEYDIR $HOSTPUBKEYDIR
-chown puppet:root $HOSTCERTDIR $HOSTKEYDIR $HOSTPUBKEYDIR
+install -m 0750 -d $HOSTPUBKEYDIR
 HOSTKEY=`/opt/puppetlabs/bin/puppet config print hostprivkey`
 HOSTPUBKEY=`/opt/puppetlabs/bin/puppet config print hostpubkey`
 HOSTCERT=`/opt/puppetlabs/bin/puppet config print hostcert`
@@ -258,7 +259,6 @@ function get_host_certificate {
   [[ ! -s $HOSTKEY ]] && echo "Host key not created" && return 1
   [[ ! -s $HOSTCERT ]] && echo "Host cert not created" && return 1
   openssl rsa -in $HOSTKEY -pubout 2> /dev/null > $HOSTPUBKEY
-  chown puppet:root $HOSTKEY $HOSTCERT $HOSTPUBKEY
   test -s $HOSTPUBKEY
 }
 execute_shell_block get_host_certificate 10 15 || unrecoverable_error "getcert"
