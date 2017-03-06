@@ -160,6 +160,7 @@ execute_shell_block install_dependencies 60 5 || unrecoverable_error "dependenci
 function install_puppet {
   echo "Trying to install puppet-agent from AI repositories..."
   yum remove -y puppet-agent puppet facter hiera # Obsoleted by puppet-agent, anyway
+  rm -rf /etc/puppet /var/lib/puppet
   yum install -y --enablerepo=$AIREPO puppet-agent
   rpm -ql puppet-agent > /dev/null
 }
