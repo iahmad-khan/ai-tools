@@ -46,7 +46,8 @@ def main():
                         dest='show_url', help='show REST urls')
     parser.add_argument('-v', '--verbose',
                         action='store_true', help='Be chatty')
-    parser.add_argument('-t', '--tag', help=argparse.SUPPRESS)
+    parser.add_argument('-t', '--tag', help='Execute the job using the modulesync version '
+                        'specified with this option (defaults to latest)')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-a', '--all', action='store_true', help=argparse.SUPPRESS)
     group.add_argument('-r', dest='repository', help='Execute the job for the '
