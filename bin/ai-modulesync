@@ -20,11 +20,12 @@ def prepare_ci(pargs):
         client = RundeckClient(show_url=pargs.show_url,
                                deref_alias=pargs.dereference_alias)
 
-        if pargs.all:
-            execution = client.run_job(job='modulesync')
-        else:
-            execution = client.run_job(job='modulesync',
-                                       repository=pargs.repository)
+        # Iterate over command line arguments and add them to a dictionary.
+        # These arguments will be tipically modulesync job arguments:
+        # { 'repository': 'it-puppet-...', 'tag': '0.1.0' }
+        options = ['repository', 'tag']
+        job_args = { k:v for k, v in vars(pargs).items() if v is not None and k in options }
+        execution = client.run_job(job='modulesync', **job_args)
 
         logging.info('Rundeck job triggered successfully.')
         logging.info("You can safely terminate this process "
@@ -46,8 +47,10 @@ def main():
                         dest='show_url', help='show REST urls')
     parser.add_argument('-v', '--verbose',
                         action='store_true', help='Be chatty')
+    parser.add_argument('-t', '--tag', help='Execute the job using the modulesync version '
+                        'specified with this option (defaults to latest)')
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--all', action='store_true', help=argparse.SUPPRESS)
+    group.add_argument('-a', '--all', action='store_true', help=argparse.SUPPRESS)
     group.add_argument('-r', dest='repository', help='Execute the job for the '
                        'repository specified with this option (it-puppet-...)')
 
