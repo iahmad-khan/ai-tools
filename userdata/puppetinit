@@ -278,11 +278,16 @@ PUPPET_EXTRA_OPTS="--waitforcert=500 --masterport=8154 --ca_port=8140"
 EOF
 
 # Turn puppet on for next boot
-# and restart rsyslog to make sure it logs with the new hostname
+# and restart rsyslog to make sure it logs with the new hostname.
+# Ensure ip(6)tables and not firewalld is running
+# on first boot.
 if [ $OS_MAJOR_VERSION -ge 7 ]
   then
     /usr/bin/systemctl enable puppet.service
     /usr/bin/systemctl restart rsyslog.service
+    /usr/bin/systemctl disable firewalld.service
+    /usr/bin/systemctl enable iptables.service
+    /usr/bin/systemctl enable ip6tables.service
 else
     /sbin/chkconfig puppet on
     /sbin/service rsyslog restart
