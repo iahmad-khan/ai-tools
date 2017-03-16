@@ -292,6 +292,13 @@ def parse_cmdline_args():
     for parameter in args.foreman_parameter + args.nova_parameter:
         if not re.match(r'\S+?=\S+?', parameter):
             parser.error("Invalid Foreman/Nova parameter '%s' (syntax: key=value)" % parameter)
+
+    # Temporary hack to avoid wrong inits, to be removed
+    # on the 31st March 2017. See commit message for details
+    if args.puppetinit_path == DEFAULT_PUPPETINIT_PATH and \
+        args.foreman_environment.lower() != 'qa':
+            args.puppetinit_path = "/usr/share/ai-tools/userdata/puppetinit3"
+
     return args
 
 def print_summary(args, fqdn, openstack_env):
@@ -524,7 +531,7 @@ def main():
         logging.info("  meantime, the Foreman owner will be the issuer of this command.")
         logging.info("  (%s)" % krb_principal)
     logging.info("* In case of problems, if you provided a SSH key when creating the VM")
-    logging.info("  use it to log into the box and take a look at /var/log/firstboot.log.")
+    logging.info("  use it to log into the box and take a look at /var/log/cloud-init.log.")
     logging.info("  Console log can be retrieved by using 'openstack console log show'.")
     logging.info("----------------------------------------------------------------------")
     return 0
