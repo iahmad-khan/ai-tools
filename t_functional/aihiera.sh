@@ -19,7 +19,7 @@ pdb_timeout = 15
 
 [hiera]
 hiera_config_path = /doesnt/exist
-hiera_binary_path = /usr/bin/hiera
+hiera_binary_path = /opt/puppetlabs/bin/hiera
 hiera_hostgroup_depth = 5
 hiera_fact_list = operatingsystemmajorrelease,osfamily,cern_hwvendor,datacentre
 
@@ -67,9 +67,10 @@ _expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE fo
 _expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo -t
 _expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo -a
 _expect 0 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo --foreman-hostgroup foo
-_expect 0 ai-hiera --config $CONF --hiera-binary-path '/usr/bin/hiera' --hiera-config-path $HIERACONF -n $TESTNODE foo
-_expect 0 ai-hiera --config $CONF --hiera-binary-path '/usr/bin/hiera' --hiera-hostgroup-depth 1 --hiera-config-path $HIERACONF -n $TESTNODE foo
-_expect 0 ai-hiera --config $CONF --hiera-binary-path '/usr/bin/hiera' --hiera-hostgroup-depth 5 --hiera-fact-list 'datacentre,other' --hiera-config-path $HIERACONF -n $TESTNODE foo
+_expect 0 ai-hiera --config $CONF --hiera-binary-path '/opt/puppetlabs/bin/hiera' --hiera-config-path $HIERACONF -n $TESTNODE foo
+_expect 0 ai-hiera --config $CONF --hiera-binary-path '/opt/puppetlabs/bin/hiera' --hiera-hostgroup-depth 1 --hiera-config-path $HIERACONF -n $TESTNODE foo
+_expect 0 ai-hiera --config $CONF --hiera-binary-path '/opt/puppetlabs/bin/hiera' --hiera-hostgroup-depth 5 --hiera-fact-list 'datacentre,other' --hiera-config-path $HIERACONF -n $TESTNODE foo
+_expect 20 ai-hiera --config $CONF --hiera-binary-path '/foo/bin/hiera' --hiera-config-path $HIERACONF -n $TESTNODE foo
 _expect 1 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo --foreman-environment production
 _expect 1 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo bar
 _expect 1 ai-hiera --config $CONF --hiera-config-path $HIERACONF -n $TESTNODE foo bar -t
