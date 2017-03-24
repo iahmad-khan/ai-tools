@@ -19,7 +19,7 @@ pdb_timeout = 15
 
 [hiera]
 hiera_config_path = /doesnt/exist
-hiera_binary_path = /usr/bin/hiera
+hiera_binary_path = /opt/puppetlabs/bin/hiera
 hiera_hostgroup_depth = 5
 hiera_fact_list = operatingsystemmajorrelease,osfamily,cern_hwvendor,datacentre
 
