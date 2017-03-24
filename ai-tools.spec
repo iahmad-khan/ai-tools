@@ -22,7 +22,7 @@ Requires: python-openstackclient, python-cinderclient
 Requires: python-keystoneclient, python2-keystoneauth1, python-novaclient
 Requires: python-keystoneclient-kerberos, python-suds
 Requires: python-lxml
-Requires: hiera
+Requires: puppet-agent
 %if 0%{?el5} || 0%{?el6}
 Requires: python-argparse
 %endif
