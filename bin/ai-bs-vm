@@ -293,12 +293,6 @@ def parse_cmdline_args():
         if not re.match(r'\S+?=\S+?', parameter):
             parser.error("Invalid Foreman/Nova parameter '%s' (syntax: key=value)" % parameter)
 
-    # Temporary hack to avoid wrong inits, to be removed
-    # on the 31st March 2017. See commit message for details
-    if args.puppetinit_path == DEFAULT_PUPPETINIT_PATH and \
-        args.foreman_environment.lower() != 'qa':
-            args.puppetinit_path = "/usr/share/ai-tools/userdata/puppetinit3"
-
     return args
 
 def print_summary(args, fqdn, openstack_env):

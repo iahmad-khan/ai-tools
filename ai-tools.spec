@@ -50,7 +50,6 @@ install -m 755 scripts/ai-landb-bind-mac ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-pdb ${RPM_BUILD_ROOT}/usr/bin
 install -m 755 scripts/ai-dump ${RPM_BUILD_ROOT}/usr/bin
 install -Dm 755 userdata/puppetinit ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/puppetinit
-install -m 755 userdata/puppetinit3 ${RPM_BUILD_ROOT}/usr/share/ai-tools/userdata/puppetinit3
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1
 install -m 644 man/ai-foreman-cli.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install -m 644 man/ai-create-environment-metadata.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
