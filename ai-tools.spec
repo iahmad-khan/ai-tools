@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 10.0.8
+Version: 10.0.9
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -91,6 +91,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+
+* Tue Mar 28 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.9-1
+- [ai-bs-vm] Ensure ip(6)tables in running early.
+- [ai-bs-vm] Always bootstrap Puppet 4 agents.
+
 * Wed Mar 16 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.8-1
 - [ai-bs-vm] Support boostrapping P4 agents (only if env == QA)
 - [ai-modulesync] Add tag option.
