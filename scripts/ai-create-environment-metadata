@@ -196,8 +196,8 @@ environment ('%s')." % opts.snapshot)
     logging.info("\tgit add %s.yaml && git commit -m \"Add environment %s\"" % \
         (opts.environment, opts.environment))
     logging.info("\tgit push origin %s" % suggested_branch_name)
-    logging.info("And now open a merge request by visiting:")
-    logging.info("\thttps://gitlab.cern.ch/ai/it-puppet-environments")
+    logging.info("And open a merge request by visiting the link that's")
+    logging.info("coming from the server after pushing.")
 
 if __name__ == '__main__':
     sys.exit(main())
