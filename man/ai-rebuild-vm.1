@@ -1,4 +1,4 @@
-.TH AI-REBUILD-VM "1" "November 2014" "ai-rebuild-vm" "User Commands"
+.TH AI-REBUILD-VM "1" "February 2017" "ai-rebuild-vm" "User Commands"
 .SH NAME
 ai-rebuild-vm \- Command-line tool to rebuild Puppetized OpenStack VMs
 
@@ -94,6 +94,11 @@ Timeout (in seconds) for Foreman operations.
 .B -h, --help
 Display usage and exit.
 .TP
+.B --nova-image-edition
+OS edition to use for the specified image. This option only makes sense when
+used with --slc[5|6] or --cc7 (defaults to "Base"). Test images will be
+automatically selected if "Test" is passed.
+.TP
 .B --nova-timeout
 Timeout (in seconds) for Nova operations.
 .TP
@@ -159,7 +164,7 @@ ai-rebuild-vm --cc7 higgsbox.cern.ch -a
 
 .SH REPORTING BUGS
 If you experience any issue please open a support call on SNOW (Functional
-Element "Configuration Management"). 
+Element "Configuration Management").
 
 .SH SEE ALSO
 ai-bs-vm (1), ai-kill-vm (1), ai-remote-power-control (1), ai-rc (1)

@@ -155,8 +155,8 @@ class NovaClient():
                 image['metadata'].get('base_image_ref') == None]
 
             if not filtered_images:
-                raise AiToolsNovaError("No available '%s%s' image for '%s' "
-                    "architecture" % (os_distro, os_distro_major, architecture))
+                raise AiToolsNovaError("No image available ('%s%s','%s','%s')"
+                    % (os_distro, os_distro_major, os_edition, architecture))
 
             latest = max(filtered_images,
                 key=lambda image: (int(image['metadata']['os_distro_minor']),

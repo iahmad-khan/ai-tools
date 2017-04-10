@@ -76,7 +76,16 @@ _expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground
 _expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --slc5 --nova-boot-from-new-volume '10GB' --nova-attach-new-volume 'vdb=1GB' --nova-attach-new-volume 'vdc=1GB'
 _expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --slc6 --nova-attach-new-volume 'vdb=1GB:delete-on-terminate' --nova-attach-new-volume 'auto=1GB:type=cp1' --nova-attach-new-volume 'vdd=1GB:delete-on-terminate:type=io1'
 
-
+echo "Checking valid combinations specifying os edition..."
+_expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --slc5 --nova-image-edition 'Test'
+_expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --slc6 --nova-image-edition 'Test'
+_expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --cc7 --nova-image-edition 'Test'
+_expect 30 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --nova-image 'foo' --nova-image-edition 'Test'
+_expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --slc5 --nova-boot-from-new-volume '10GB' --nova-image-edition 'Test'
+_expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --slc6 --nova-boot-from-new-volume '10GB:delete-on-terminate' --nova-image-edition 'Test'
+_expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --cc7 --nova-boot-from-new-volume '10GB:type=cp1' --nova-image-edition 'Test'
+_expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --slc5 --nova-boot-from-new-volume '10GB' --nova-attach-new-volume 'vdb=1GB' --nova-attach-new-volume 'vdc=1GB' --nova-image-edition 'Test'
+_expect 0 ai-bs-vm --config $CONF --puppetinit-path $PUPPETINIT -d -g playground/aitoolstest --slc6 --nova-attach-new-volume 'vdb=1GB:delete-on-terminate' --nova-attach-new-volume 'auto=1GB:type=cp1' --nova-attach-new-volume 'vdd=1GB:delete-on-terminate:type=io1' --nova-image-edition 'Test'
 echo "Userdata dump..."
 #_expect 7 ai-bs-vm --puppetinit-path $PUPPETINIT --config $CONF -d -g playground/aitoolstest -i "$IMAGE" --userdata-dump /etc/passwd
 DUMP=$(mktemp -u)
