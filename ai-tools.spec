@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 10.0.9
+Version: 10.1.0
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -91,6 +91,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+
+* Tue May 30 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.1.0-1
+- [ai-bs-vm] Add --nova-image-edition parameter to select OS edition.
+- [ai-create-environment-metadata] Just point to the post-commit server message.
 
 * Tue Mar 28 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.0.9-1
 - [ai-bs-vm] Ensure ip(6)tables in running early.
