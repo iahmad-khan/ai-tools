@@ -116,6 +116,9 @@ def parse_cmdline_args():
     parser.add_argument('--landb-responsible', type=str,
         help="LANDB responsible to be assigned to the virtual machine",
         default=os.environ.get('AIBS_LANDB_RESPONSIBLE', None))
+    parser.add_argument('--landb-ipv6ready',
+        action="store_true",
+        help="Set this VM as IPv6 ready in LANDB"),
     parser.add_argument('--noreboot',
         action="store_true",
         help="Don't reboot after the Puppet initialization")
@@ -326,6 +329,8 @@ def print_summary(args, fqdn, openstack_env):
         logging.info("LANDB responsible: %s" % args.landb_responsible)
     if args.landb_mainuser:
         logging.info("LANDB mainuser: %s" % args.landb_mainuser)
+    if args.landb_ipv6ready:
+        logging.info("LANDB ipv6ready: %s" % args.landb_ipv6ready)
     logging.info("Foreman environment: %s" % args.foreman_environment)
     logging.info("Foreman hostgroup: %s" % args.foreman_hostgroup)
     if args.foreman_parameter:
@@ -444,6 +449,8 @@ def main():
                 meta['landb-responsible'] = args.landb_responsible
             if args.landb_mainuser:
                 meta['landb-mainuser'] = args.landb_mainuser
+            if args.landb_ipv6ready:
+                meta['landb-ipv6ready'] = 'true'
 
 
             if args.nova_image:
