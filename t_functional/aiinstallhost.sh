@@ -17,7 +17,7 @@ roger_port = 8201
 roger_timeout = 15
 
 [certmgr]
-certmgr_hostname = baby02.cern.ch
+certmgr_hostname = hector.cern.ch
 certmgr_port = 8008
 certmgr_timeout = 15
 EOF
