@@ -122,7 +122,7 @@ class TestCinder(unittest.TestCase):
         mock_tenant.return_value.volumes.create = Mock(side_effect=ConnectionError('error'))
         self.assertRaises(AiToolsCinderError, self.tenant.create, size='1TB')
         mock_tenant.assert_called_once_with()
-        mock_tenant.return_value.volumes.create.assert_called_once_with(size=1024, volume_type=None,
+        mock_tenant.return_value.volumes.create.assert_called_once_with(size=1000, volume_type=None,
             name=None, imageRef=None, description=None)
 
     @patch.object(CinderWrapper, '_CinderClient__init_client')
