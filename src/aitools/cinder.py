@@ -41,7 +41,7 @@ class CinderClient():
             # size is in the format 'XGB' or 'XTB'
             size_in_GB, unit = int(size[:-2]), size[-2:]
             if unit == 'TB':
-                size_in_GB *= 1024
+                size_in_GB *= 1000
 
         logging.info("Creating volume %s..." % vol_name)
         tenant = self.__init_client()

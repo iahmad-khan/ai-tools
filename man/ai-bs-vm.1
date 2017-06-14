@@ -122,23 +122,24 @@ same volume more than once nor attach several volumes to the same device.
 .B --nova-attach-new-volume
 Create a volume to be attached during boot time.
 The format is \'<device>=<size>[:delete-on-terminate][:type=string]\', where
-\'size\' is represented as "XGB" or "XTB", being X an integer larger than 0 and
-\'delete-on-terminate\' an optional flag that indicates that the volume will be
-deleted when the VM is destroyed. It's also possible to optionally specify the
-volume type via the "type" parameter. The volume will be attached in
-\'/dev/<device>\'.  This option can be specified several times but it is not
-possible to attach several volumes to the same device.
+\'size\' is represented as "XGB" or "XTB" (1TB = 1000GB), being X an integer
+larger than 0 and \'delete-on-terminate\' an optional flag that indicates that
+the volume will be deleted when the VM is destroyed. It's also possible to
+optionally specify the volume type via the "type" parameter. The volume will be
+attached in \'/dev/<device>\'.  This option can be specified several times but
+it is not possible to attach several volumes to the same device.
 .TP
 .B --nova-boot-from-new-volume
 Create a volume from an image and boot from there.
 The format is \'<size>[:delete-on-terminate][:type=string]\', where \'size\' is
-represented as "XGB" or "XTB", being X an integer larger than 0 and
-\'delete-on-terminate\' an optional flag that indicates that the volume will be
-deleted when the VM is destroyed. It's also possible to optionally specify the
-volume type via the \'type\' parameter. In order to create a bootable volume
-{ --nova-image | --slc5 | --slc6 | --cc7 } must be specified.  This parameter
-is mutually exclusive with "--nova-boot-from-existing-volume", as only one bootable
-element can be specified per VM. (see http://cern.ch/go/l9xP)
+represented as "XGB" or "XTB" (1TB = 1000GB), being X an integer larger than 0
+and \'delete-on-terminate\' an optional flag that indicates that the volume
+will be deleted when the VM is destroyed. It's also possible to optionally
+specify the volume type via the \'type\' parameter. In order to create a
+bootable volume { --nova-image | --slc5 | --slc6 | --cc7 } must be specified.
+This parameter is mutually exclusive with "--nova-boot-from-existing-volume",
+as only one bootable element can be specified per VM. (see
+http://cern.ch/go/l9xP)
 .TP
 .B --nova-flavor (AIBS_VMFLAVOR_NAME)
 OpenStack flavor name of the virtual machine (defaults to "m2.small").
