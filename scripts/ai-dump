@@ -147,8 +147,10 @@ def host_main(pargs):
                 "fename": facts.get('fename', None),
                 "lsbdistrelease": facts.get('lsbdistrelease', None), "arch": facts.get('architecture', None),
                 "kernel": facts.get('configured_kernel', None), "landbsets": landbsets, "lbaliases": lbaliases,
-                "ipaddress": facts.get('ipaddress', None), "ipdomain": facts.get('landb_network_domain', None),
-                "lastreport": host_info['catalog_timestamp'],
+                "ipaddress": facts.get('networking', None).get('ip', None),
+                "ip6address": facts.get('networking', None).get('ip6', None),
+                "ipdomain": facts.get('landb_network_domain', None),
+                "lastreport": host_info['catalog-timestamp'],
                 "environment": enc["environment"], "comment": enc["parameters"]["comment"],
                 "cnames": cnaliases, "landb_service_name": facts.get('landb_service_name', None),
                 "aidump_recordversion": 1, "cern_os_tenant": facts.get('cern_os_tenant', None)}
@@ -206,7 +208,10 @@ def host_main(pargs):
         t.add_row(["LANDBsets:", landbsets])
         t.add_row(["LB aliases:", lbaliases])
         t.add_row(["CNAME aliases:",cnaliases])
-        t.add_row(["IP:", "%s (%s) (%s)" % (facts.get('ipaddress', '-'), facts.get('landb_network_domain', '-'), facts.get('landb_service_name', '-'))])
+        t.add_row(["IPv4:", "%s (%s) (%s)" % (facts.get('networking',
+        '-').get('ip', '-'), facts.get('landb_network_domain', '-'), facts.get('landb_service_name', '-'))])
+        t.add_row(["IPv6:", "%s (%s) (%s)" % (facts.get('networking',
+        '-').get('ip6', '-'), facts.get('landb_network_domain', '-'), facts.get('landb_service_name', '-'))])
 
         if roger:
             t.add_row(["App state:", roger['appstate']])
