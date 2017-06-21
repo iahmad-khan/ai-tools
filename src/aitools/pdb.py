@@ -39,13 +39,13 @@ class PdbClient(HTTPClient):
 
     def get_host(self, hostname):
         """
-        Returns the basic host info record for a host from the /v3/nodes/[hostname] URL.
+        Returns the basic host info record for a host from the /v4/nodes/[hostname] URL.
 
         :param hostname: the hostname to query
         :return: the parsed structure from the returned JSON
         :raise AiToolsPdbError: in case the hostname is not found
         """
-        host_endpoint = "v3/nodes/%s" % hostname
+        host_endpoint = "v4/nodes/%s" % hostname
         (code, body) = self.__do_api_request("get", host_endpoint)
         if code == requests.codes.not_found:
             raise AiToolsPdbNotFoundError("Host %s not found in PuppetDB" % hostname)
@@ -54,14 +54,14 @@ class PdbClient(HTTPClient):
     def get_facts(self, hostname, fact=None):
         """
         Return all current facts (or a single fact, if specified) for the specified host, from
-        the /v3/nodes/[hostname]/facts/[fact] URL.
+        the /v4/nodes/[hostname]/facts/[fact] URL.
 
         :param hostname: the hostname to query
         :param hostname: the fact to query, if present
         :return: dict of facts
         :raise AiToolsPdbError: in case the hostname is not found
         """
-        host_endpoint = "v3/nodes/%s/facts/%s" % (hostname, fact or '')
+        host_endpoint = "v4/nodes/%s/facts/%s" % (hostname, fact or '')
         (code, body) = self.__do_api_request("get", host_endpoint)
         if code == requests.codes.not_found or not body:
             # Code is 200 even when hostname is not found.
@@ -75,14 +75,14 @@ class PdbClient(HTTPClient):
     def get_resources(self, hostname, resource):
         """
         Return the specificed resource record for the specified host, from the
-        /v3/nodes/[hostname]/resources/[resource] URL
+        /v4/nodes/[hostname]/resources/[resource] URL
 
         :param hostname: the hostname to query
         :param resource: the resource to query
         :return: the parsed structure from the returned JSON
         :raise AiToolsPdbError: in case the hostname,resource combination is not found
         """
-        host_endpoint = "v3/nodes/%s/resources/%s" % (hostname, resource)
+        host_endpoint = "v4/nodes/%s/resources/%s" % (hostname, resource)
         (code, body) = self.__do_api_request("get", host_endpoint)
         if code == requests.codes.not_found:
             raise AiToolsPdbNotFoundError("Resource %s for host %s not found in PuppetDB" % (resource, hostname))
