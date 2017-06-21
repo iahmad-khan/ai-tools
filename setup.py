@@ -26,7 +26,6 @@ setup(name='ai-tools',
         'bin/ai-remote-power-control',
         'bin/ai-rename-host',
         'bin/ai-set-fe',
-        'bin/ai-qai',
         'bin/ai-whatfe',
         'bin/tbag'
       ],
