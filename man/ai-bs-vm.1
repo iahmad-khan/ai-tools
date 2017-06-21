@@ -98,6 +98,10 @@ machine to join (defaults to "production").
 Parameter to be added to the host in Foreman (format: key=value,
 example: network=23). This option can be specified several times.
 .TP
+.B --landb-ipv6ready
+Ask Openstack to enable the IPv6 ready LANDB flag. More info:
+https://network.cern.ch/sc/html/help/ipv6_ready.html
+.TP
 .B --landb-mainuser (AIBS_LANDB_MAINUSER)
 E-group name to be set as main user in LANDB. If not specified
 the user creating the VM is set as main user (Grizzly and onwards
