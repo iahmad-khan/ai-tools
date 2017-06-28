@@ -53,7 +53,12 @@ def deref_url(url):
     """
     url = urlparse(url)
     try:
-        deref_name = socket.gethostbyaddr(random.choice(socket.gethostbyname_ex(url.hostname)[2]))[0]
+        addrinfos = socket.getaddrinfo(url.hostname, None,
+            socket.AF_UNSPEC, socket.SOCK_STREAM)
+        ips_behind = [x[0] for x in [x[4] for x in addrinfos]]
+        if not ips_behind:
+            raise socket.gaierror("%s resolves but it's empty" % url.hostname)
+        deref_name = socket.gethostbyaddr(random.choice(ips_behind))[0]
     except socket.gaierror, e:
         logging.warn("Could not deference '%s' in '%s' received error: '%s' attempting connection to original url'" %
         (url.hostname, url, e))
