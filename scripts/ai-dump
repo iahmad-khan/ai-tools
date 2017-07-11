@@ -105,8 +105,8 @@ def host_main(pargs):
     else:
         cnaliases = '-'
 
-    if host_info['report_timestamp']:
-        ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['report_timestamp'])
+    if host_info['report-timestamp']:
+        ago = pytz.UTC.localize(datetime.datetime.utcnow()) - iso8601.parse_date(host_info['report-timestamp'])
     else:
         ago = "PuppetDB does not have any report for this node"
 
@@ -147,8 +147,10 @@ def host_main(pargs):
                 "fename": facts.get('fename', None),
                 "lsbdistrelease": facts.get('lsbdistrelease', None), "arch": facts.get('architecture', None),
                 "kernel": facts.get('configured_kernel', None), "landbsets": landbsets, "lbaliases": lbaliases,
-                "ipaddress": facts.get('ipaddress', None), "ipdomain": facts.get('landb_network_domain', None),
-                "lastreport": host_info['catalog_timestamp'],
+                "ipaddress": facts.get('networking', None).get('ip', None),
+                "ip6address": facts.get('networking', None).get('ip6', None),
+                "ipdomain": facts.get('landb_network_domain', None),
+                "lastreport": host_info['catalog-timestamp'],
                 "environment": enc["environment"], "comment": enc["parameters"]["comment"],
                 "cnames": cnaliases, "landb_service_name": facts.get('landb_service_name', None),
                 "aidump_recordversion": 1, "cern_os_tenant": facts.get('cern_os_tenant', None)}
@@ -161,11 +163,8 @@ def host_main(pargs):
                      "nc_alarmed": roger['nc_alarmed'] }
             jj.update(rogga)
 
-        if facts['is_virtual'] == 'true':
-            try:
-                ec2_metadata = json.loads(facts.get('ec2_metadata', {}))
-            except (TypeError, ValueError):
-                ec2_metadata = {}
+        if facts['is_virtual'] == True:
+            ec2_metadata = facts.get('ec2_metadata', {})
             jj['flavour'] = ec2_metadata.get('instance-type', None)
             jj['availability_zone'] = ec2_metadata.get('placement', {}).get('availability-zone', None)
         else:
@@ -197,11 +196,8 @@ def host_main(pargs):
         t.add_row(["Responsible:", facts.get('landb_responsible_email', '-')])
         t.add_row(["FE Responsible:", facts.get('fename', '-')])
         t.add_row(["OS:", "%s %s %s (%s)" % (facts.get('operatingsystem', '-'), facts.get('lsbdistrelease', '-'), facts.get('architecture', '-'), facts.get('configured_kernel', '-'))])
-        if facts.get('is_virtual') == 'true':
-            try:
-                ec2_metadata = json.loads(facts.get('ec2_metadata', {}))
-            except (TypeError, ValueError):
-                ec2_metadata = {}
+        if facts.get('is_virtual') == True:
+            ec2_metadata = facts.get('ec2_metadata', {})
             t.add_row(["VM Project:", facts.get('cern_os_tenant', '-')])
             t.add_row(["VM Flavour:", ec2_metadata.get('instance-type', '-')])
             t.add_row(["Avail zone:", ec2_metadata.get('placement', {}).get('availability-zone', '-')])
@@ -212,7 +208,10 @@ def host_main(pargs):
         t.add_row(["LANDBsets:", landbsets])
         t.add_row(["LB aliases:", lbaliases])
         t.add_row(["CNAME aliases:",cnaliases])
-        t.add_row(["IP:", "%s (%s) (%s)" % (facts.get('ipaddress', '-'), facts.get('landb_network_domain', '-'), facts.get('landb_service_name', '-'))])
+        t.add_row(["IPv4:", "%s (%s) (%s)" % (facts.get('networking',
+        '-').get('ip', '-'), facts.get('landb_network_domain', '-'), facts.get('landb_service_name', '-'))])
+        t.add_row(["IPv6:", "%s (%s) (%s)" % (facts.get('networking',
+        '-').get('ip6', '-'), facts.get('landb_network_domain', '-'), facts.get('landb_service_name', '-'))])
 
         if roger:
             t.add_row(["App state:", roger['appstate']])
