@@ -65,11 +65,27 @@ def getcred_main(pargs):
         print "For example:"
         print
         print '  ipmitool chassis status -H %s -U "%s" -P "%s"' % ("%s-ipmi.cern.ch" % shortify(pargs.fqdn), user, pw)
+        print
+        print 'Why not the following next time? :)'
+        print
+        print '  ai-ipmi ipmitool-cmd \'chassis status\' %s | sh' % pargs.fqdn
     except AiToolsForemanError:
         logging.error("Could not fetch IPMI credentials for %s" % (pargs.fqdn))
         sys.exit(1)
 
 
+
+def getcmd_main(pargs):
+    ForemanConfig().read_config_and_override_with_pargs(pargs)
+    configure_logging(pargs)
+
+    f = ForemanClient(deref_alias=pargs.dereference_alias)
+    try:
+        (user, pw) = f.get_ipmi_credentials(pargs.fqdn)
+        print 'ipmitool %s -H %s -U "%s" -P "%s"' % (pargs.command, "%s-ipmi.cern.ch" % shortify(pargs.fqdn), user, pw)
+    except AiToolsForemanError:
+        logging.error("Could not fetch IPMI credentials for %s" % (pargs.fqdn))
+        sys.exit(1)
 
 def main():
     parser = argparse.ArgumentParser(description="Manipulate IPMI interface definition in Foreman")
@@ -92,6 +108,11 @@ def main():
     getcred_parser = subparsers.add_parser("get-creds", help="Retrieve the IPMI username and password")
     getcred_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
     getcred_parser.set_defaults(func=getcred_main)
+
+    getcmd_parser = subparsers.add_parser("ipmitool-cmd", help="Print an ipmitool command with valid credentials. Pipe to sh if you want to run the command.")
+    getcmd_parser.add_argument("command", metavar="COMMAND", help="The ipmitool command to run, e.g. 'mc cold reset'")
+    getcmd_parser.add_argument("fqdn", metavar="FQDN", help="The hostname of the real node (not the BMC)")
+    getcmd_parser.set_defaults(func=getcmd_main)
 
     rename_parser = subparsers.add_parser("rename-ipmi", help="Rename the IPMI interface name in Foreman.")
     rename_parser.add_argument("-n", "--new_ipmi_fqdn", metavar="new_BMC_FQDN", help="The new FQDN of the BMC.\
