@@ -18,6 +18,9 @@ Add an IPMI interface definition to a node
 get-creds
 Retrieve the IPMI username and password
 .TP
+ipmitool-cmd
+Retrieve the IPMI credentials and use them to generate an ipmitool command line
+.TP
 rename-ipmi
 Change the name of the IPMI interface name in Foreman
 .TP
@@ -54,6 +57,21 @@ usage: ai-ipmi get-creds host_FQDN
 .TP
 host_FQDN
 The host whose IPMI credentials you want to fetch
+.SS ai-ipmi ipmitool-cmd
+usage: ai-ipmi ipmitool-cmd command host_FQDN
+.IP
+.TP
+.B "positional arguments:"
+.TP
+command
+The command you want to be wrapped inside the ipmitool command line.
+.TP
+host_FQDN
+The host whose IPMI credentials you want to fetch and use with ipmitool.
+.TP
+example: ai-ipmi ipmitool-cmd 'mc info' foo.cern.ch
+.TP
+example: ai-ipmi ipmitool-cmd 'mc info' foo.cern.ch | sh
 .SS ai-ipmi rename-ipmi
 usage: ai-ipmi rename-ipmi host_FQDN [IPMI_FQDN]
 .IP
