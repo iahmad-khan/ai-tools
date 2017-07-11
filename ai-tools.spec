@@ -3,7 +3,7 @@
 
 Summary: Tools for Agile Infrastructure project
 Name: ai-tools
-Version: 10.1.0
+Version: 10.2.0
 Release: 1%{?dist}
 BuildArch: noarch
 Source: %{name}-%{version}.tgz
@@ -90,6 +90,14 @@ rm -rf ${RPM_BUILD_ROOT}
 %config(noreplace) %{_sysconfdir}/bash_completion.d
 
 %changelog
+* Tue Jul 11 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.2.0-1
+- [ai-bs-vm] Use powers of ten when translating TBs into GBs.
+- [ai-qai] No Quattor -> No need for ai-qai. Removed.
+- [ai-bs-vm] Add --landb-ipv6ready flag.
+- [ai-dump] Print information about IPv6 addressing.
+- [ai-ipmi] Add ipmitool-cmd subcommand.
+- [libs] Use getaddrinfo() when derefencing aliases to profit from ncsd.
+- [libs] Use /v4 when querying PDB for nodes, facts and resources.
 
 * Tue May 30 2017 Nacho Barrientos <nacho.barrientos@cern.ch> 10.1.0-1
 - [ai-bs-vm] Add --nova-image-edition parameter to select OS edition.
