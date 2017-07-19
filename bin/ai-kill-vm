@@ -120,7 +120,7 @@ def main():
             logging.info("* If the machine was not found, then you're probably in the wrong")
             logging.info("  project. What about eval $(ai-rc --same-project-as %s)?"
                 % args.hostname[0])
-            logging.info("* OTOH, if your machine is a physcial machine ai-kill-vm is")
+            logging.info("* OTOH, if your machine is a physical machine ai-kill-vm is")
             logging.info("  probably not the correct tool to use.")
             logging.info("* OTOOH, if you're sure that the VM does not exist anymore")
             logging.info("  then you can skip this step by adding --nova-disable")
